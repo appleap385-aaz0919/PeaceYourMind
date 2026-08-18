@@ -89,7 +89,7 @@ def run_verify(verses_file: VersesFile, bible: KrvBible) -> int:
     추출이 옳다면 '지금 추출한 값'과 '이미 검수된 text'가 같아야 한다.
     다르면 추출 경로(ref 파싱·범위 조회·이어붙이기) 어딘가가 틀린 것이다.
     """
-    targets = [v for v in verses_file.verses if not verses_file.text_is_empty(v["id"])]
+    targets = [v for v in verses_file.entries if not verses_file.text_is_empty(v["id"])]
 
     print("=" * 72)
     print("추출 경로 검증 - 채워진 구절 {}건".format(len(targets)))
@@ -143,10 +143,10 @@ def run_verify(verses_file: VersesFile, bible: KrvBible) -> int:
 
 
 def run_fill(verses_file: VersesFile, bible: KrvBible, dry_run: bool) -> int:
-    targets = [v for v in verses_file.verses if verses_file.text_is_empty(v["id"])]
+    targets = [v for v in verses_file.entries if verses_file.text_is_empty(v["id"])]
 
     print("=" * 72)
-    print("빈 text 채우기 - 대상 {}건 / 전체 {}건".format(len(targets), len(verses_file.verses)))
+    print("빈 text 채우기 - 대상 {}건 / 전체 {}건".format(len(targets), len(verses_file.entries)))
     print("모드: {}".format("--dry-run (쓰지 않음)" if dry_run else "쓰기"))
     print("=" * 72)
 

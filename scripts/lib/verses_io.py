@@ -56,10 +56,21 @@ class VersesFile:
 
         self.translation: str = document.get("translation", "")
         self.version: str = document.get("version", "")
+
+        # 감정 풀과 위기 풀을 나눠 들고, 검증은 둘 다 한다.
+        #
+        # 위기 구절은 감정 매핑을 타지 않는 별도 고정 큐레이션이다
+        # (PLAN.md 7절). 그래서 최상위 키를 분리했다 — PLAN 4.2가
+        # videos.json에 정한 "crisis 최상위 분리 + 빌드 시 교차 검증 단언"과
+        # 같은 구조다. 구조로 섞임을 막는다.
+        #
+        # 본문 정확성 요구는 양쪽이 같으므로 entries로 합쳐 검증한다.
         self.verses: list[dict] = document["verses"] or []
+        self.crisis: list[dict] = document.get("crisis") or []
+        self.entries: list[dict] = self.verses + self.crisis
         self.blocks: dict[str, VerseBlock] = self._index_blocks()
 
-        parsed_ids = [v["id"] for v in self.verses]
+        parsed_ids = [v["id"] for v in self.entries]
         missing = [i for i in parsed_ids if i not in self.blocks]
         if missing:
             raise VersesFormatError(
@@ -112,7 +123,7 @@ class VersesFile:
         빈 형태가 여럿이다: `text:`(null), `text: ""`, `text: >` 뒤에 아무것도
         없는 경우. 어느 쪽이든 '아직 안 채워졌다'로 본다.
         """
-        verse = next(v for v in self.verses if v["id"] == verse_id)
+        verse = next(v for v in self.entries if v["id"] == verse_id)
         value = verse.get("text")
         return value is None or not str(value).strip()
 

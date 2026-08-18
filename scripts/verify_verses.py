@@ -174,6 +174,51 @@ def report(results: list[Result], check_only: bool, updated: list[str]) -> None:
         print("[갱신] 이미 전건 verified: true - 바꿀 것이 없다")
 
 
+CRISIS_PREFIX = "crisis."
+CRISIS_THEME = "crisis_fixed"
+
+
+def check_crisis_separation(verses_file: VersesFile) -> list[str]:
+    """위기 풀과 감정 풀이 섞이지 않았는지 구조로 확인한다.
+
+    위기 화면 구절은 감정 매핑을 타지 않는 별도 고정 큐레이션이다
+    (PLAN.md 7절). 실수로 감정 풀에 섞이면 위기 전용 구절이 일반 화면에
+    뜨거나, 반대로 감정 구절이 위기 화면에 뜬다. 후자가 특히 위험하다 —
+    죄·심판 프레임을 걸러낸 것이 위기 풀뿐이기 때문이다.
+
+    PLAN 4.2가 videos.json에 정한 "crisis 최상위 분리 + 빌드 시 교차 검증
+    단언"을 구절에도 그대로 적용한 것이다.
+    """
+    errors: list[str] = []
+
+    for verse in verses_file.crisis:
+        verse_id = verse["id"]
+        if not verse_id.startswith(CRISIS_PREFIX):
+            errors.append(f"{verse_id}: 위기 구절의 id는 '{CRISIS_PREFIX}'로 시작해야 한다")
+        if verse.get("emotion_tags"):
+            errors.append(
+                f"{verse_id}: 위기 구절에 emotion_tags가 있다 — "
+                "위기 풀은 감정 매핑을 타지 않는다"
+            )
+        if verse.get("theme") != CRISIS_THEME:
+            errors.append(
+                f"{verse_id}: 위기 구절의 theme은 '{CRISIS_THEME}'이어야 한다 "
+                f"(현재 {verse.get('theme')!r})"
+            )
+
+    for verse in verses_file.verses:
+        verse_id = verse["id"]
+        if verse_id.startswith(CRISIS_PREFIX):
+            errors.append(f"{verse_id}: 감정 풀에 위기 id가 있다")
+        if verse.get("theme") == CRISIS_THEME:
+            errors.append(
+                f"{verse_id}: 감정 풀 구절의 theme이 '{CRISIS_THEME}'이다 — "
+                "themes.yaml이 이 주제를 매핑 금지로 정했다"
+            )
+
+    return errors
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="verses.yaml의 구절 본문을 개역한글 원문과 대조한다.",
@@ -202,13 +247,15 @@ def main() -> int:
             file=sys.stderr,
         )
 
-    results = [compare(verse, bible) for verse in verses_file.verses]
+    structure_errors = check_crisis_separation(verses_file)
+
+    results = [compare(verse, bible) for verse in verses_file.entries]
 
     updated: list[str] = []
     if not args.check:
         today = dt.date.today().isoformat()
         verified_by = "verify_verses.py({})".format(SOURCE_ID)
-        by_id = {v["id"]: v for v in verses_file.verses}
+        by_id = {v["id"]: v for v in verses_file.entries}
         for result in results:
             if not result.ok:
                 continue
@@ -232,12 +279,18 @@ def main() -> int:
 
     report(results, check_only=args.check, updated=updated)
 
+    if structure_errors:
+        print()
+        print("[구조 오류] {}건 - 위기 풀과 감정 풀의 분리가 깨졌다".format(len(structure_errors)))
+        for message in structure_errors:
+            print("  X " + message)
+
     failed = [r for r in results if not r.ok]
 
     if args.check:
         # 갱신을 하지 않으므로 파일에 남아 있는 verified 값을 그대로 본다.
-        unverified = [v["id"] for v in verses_file.verses if not v.get("verified")]
-        if failed or unverified:
+        unverified = [v["id"] for v in verses_file.entries if not v.get("verified")]
+        if failed or unverified or structure_errors:
             print()
             print("=" * 72)
             if failed:
@@ -245,6 +298,8 @@ def main() -> int:
             if unverified:
                 print("게이트 실패: verified: false 구절 {}건 - {}".format(
                     len(unverified), ", ".join(unverified)))
+            if structure_errors:
+                print("게이트 실패: 위기 풀 구조 오류 {}건".format(len(structure_errors)))
             print("검수를 통과하지 않은 구절이 있으면 배포하지 않는다.")
             print("=" * 72)
             return 1
@@ -252,7 +307,7 @@ def main() -> int:
         print("게이트 통과: 전건 원문 일치 + verified: true")
         return 0
 
-    return 1 if failed else 0
+    return 1 if (failed or structure_errors) else 0
 
 
 if __name__ == "__main__":
