@@ -1,6 +1,6 @@
 # HANDOFF — 세션 인수인계
 
-작성 2026-08-18 (KST) · 개정 2026-08-18 (2차분 큐레이션) · 최신 상태는 `git log`로 확인할 것
+작성 2026-08-18 (KST) · 개정 2026-08-18 (3차분 큐레이션) · 최신 상태는 `git log`로 확인할 것
 
 > 이 문서는 **다음 세션이 바로 일을 이어받기 위한 것**이다.
 > 정책·구조는 `PLAN.md`, 주제 체계는 `themes.yaml`, 원문 출처는 `data/krv/SOURCE.md`에 있고
@@ -22,7 +22,7 @@
 | Phase | 상태 |
 |---|---|
 | 0 정책·채널 | **부분** — 주제 체계 24개 확정(`themes.yaml`), 채널 승인 0개 (기준만 문서화) |
-| 1 구절 큐레이션 | **진행 중** — 1·2차분 90구절 검수 완료. 3·4차분 약 160구절 미착수 |
+| 1 구절 큐레이션 | **진행 중** — 1~3차분 150구절 검수 완료. 4차분(8개 세분류) + crisis 전용 미착수 |
 | 1.5 검증·추출 파이프라인 | **완료** — 이번 세션 산출물 (`verify_verses.py` + `fill_verses.py`) |
 | 2 배치 개작 | 미착수 |
 | 3 PWA 조립 | 미착수 |
@@ -30,16 +30,17 @@
 **규모**
 
 ```
-구절        90 / 목표 약 250   (24개 세분류 중 9개 완료)
-            1차분 anxiety.* 30 · 2차분 sadness.* 30 + exhaustion.* 30
-주제        24개 정의 · 감정 24개 매핑 완료 (12개 주제에 구절 배정됨)
+구절        150 / 목표 약 250  (24개 세분류 중 16개 완료)
+            1차분 anxiety.* 30 · 2차분 sadness.*+exhaustion.* 60
+            3차분 anger.*+frustration.* 60
+주제        24개 정의 · 감정 24개 매핑 완료 (17개 주제에 구절 배정됨)
 원문 데이터  66권 1,189장 31,102절
 채널        allowlist 0개 · blocklist 0개  (둘 다 스켈레톤)
 ```
 
 **게이트** — `python scripts/verify_verses.py --check` → 종료 코드 0.
-90건 전건 원문 일치 + `verified: true`.
-`python scripts/fill_verses.py --verify` → 추출 경로 90/90 재현. API 소모 0.
+150건 전건 원문 일치 + `verified: true`.
+`python scripts/fill_verses.py --verify` → 추출 경로 150/150 재현. API 소모 0.
 
 ---
 
@@ -169,59 +170,94 @@ scj-peter는 부분적으로 현대 맞춤법화된 사본이었다.
 **원문 데이터 발견** — `-ㄹ지어다`/`-ㄹ찌어다` 혼재가 원문 그대로임을 확인했다.
 첫 세션의 판정 방향이 이 구간에서는 뒤집힌다. 상세는 `data/krv/SOURCE.md` 4절.
 
----
+### 2.6 3차분 큐레이션 60구절 — 화자를 바꿔서 푼 문제
 
-## 3. 다음 세션 할 일 — 3차분 큐레이션 (분노·답답함 계열)
+`anger.*` 3개 + `frustration.*` 3개. 누적 150구절. **본문 오류 0건**(2차분에 이어 두 번째).
 
-**대상** `anger.irritation` / `anger.unfair` / `anger.rage` /
-`frustration.stuck` / `frustration.blocked` / `frustration.suppressed` — 6개 세분류.
-같은 밀도면 세분류당 10구절 = **약 60구절**. 누적 150구절이 된다.
+**이 차수의 난점은 데이터가 아니라 선정이었다.**
+분노를 다루는 유명 구절 대부분이 화난 사람을 질책한다.
 
-**주제 매핑** (`themes.yaml` 참조, 수정 대상 아님)
-`self_control` · `justice` · `forgiveness` · `guidance` · `patience` · `lament` · `hope` · `comfort` · `peace`
-
-### 작업 방식 — 2차분에서 확립됐다. 그대로 따를 것
-
-**구절 선정은 `ref`(장절)까지만 한다. `text`는 타이핑하지 않고
-`scripts/fill_verses.py`가 원문에서 추출해 채운다.**
-
-2차분 60건에서 **본문 오류 0건**이 나왔다. 1차분은 30건 중 8건(27%)이었다.
-방식을 바꾼 결과이지 주의를 더 기울인 결과가 아니다 — 추출한 문자열은
-정의상 원문과 같으므로 오류가 발생할 자리가 없다.
-
-```bash
-python scripts/fill_verses.py             # text가 빈 구절만 원문에서 채운다
-python scripts/fill_verses.py --dry-run   # 무엇을 채울지 보여주기만
-python scripts/fill_verses.py --verify    # 추출 경로가 옳은지 검증 (쓰지 않음)
-python scripts/verify_verses.py           # 대조 + verified 갱신
-python scripts/verify_verses.py --check   # 검사만. CI 게이트용
+```
+잠 29:11  "어리석은 자는 그 노를 다 드러내어도"
+전  7:9   "노는 우매자의 품에 머무름이니라"
+약 1:20   "사람의 성내는 것이 하나님의 의를 이루지 못함이니라"
+잠 16:32  "노하기를 더디하는 자는 용사보다 낫고"   (비교 우위 —
+          이미 화난 사람은 자동으로 하위에 놓인다)
 ```
 
-**세분류 단위로 끊어서 승인받는다.** 2차분에서 6개를 한 번에 보여주면
-검토가 불가능하다는 것이 확인됐다. 한 세분류의 `ref` 목록 + 선정 근거 +
-제외한 구절과 이유를 제시하고 승인받은 뒤 채운다.
+`themes.yaml`의 `self_control` intent가 "정죄하지 않으면서 가라앉히는 방향,
+**잠언 계열**"이라고 정의했지만 실제 잠언의 분노 구절은 대부분 정죄한다.
 
-**선정 전에 원문을 조회한다.** 기억으로 고르면 절 경계와 내용이 어긋난다.
-`scripts/lib/krv_source.py`의 `parse_ref` · `KrvBible.verses_in_range`를
-쓰는 짧은 조회 스크립트를 임시로 만들어 후보를 읽고 고르면 된다
-(2차분에서는 scratchpad에 두고 썼다 — 저장소에는 넣지 않았다).
+**해법은 어휘를 버리는 것이 아니라 화자를 바꾸는 것이었다.**
+"너는 노하기를 더디 하라"(잠언)를 버리고
+"여호와는 노하기를 더디 하시며"(시 103:8)를 취했다.
+같은 어휘가 요구에서 서술로 바뀌면 정죄가 사라진다. 잠언에서는 15:1
+한 건만 살렸다.
 
-### 3차분에서 특히 주의할 것
+**주제 해석도 한 번 바꿨다.** `anger.rage`에서 `self_control`을 "억누름"이
+아니라 **"쏟아낼 자리를 준다"**로 읽었다 — `psa.62.8`("마음을 토하라"),
+`psa.142.2`("원통함을 토하며"), `psa.55.1`("응답하소서"). 격분에 통제를
+요구하면 짜증 화면보다 더 크게 어긋난다.
 
-- **`justice`와 `forgiveness`의 순서.** `themes.yaml`이 `anger.unfair` 매핑을
-  `[justice, lament, forgiveness]` 순으로 두고 "용서를 justice보다 뒤에 둔다"고
-  명시했다. **억울한 상태의 사용자에게 용서를 먼저 요구하면 2차 가해가 된다.**
-  구절 선정에서도 같은 순서를 지킬 것 — `forgiveness` 주제 구절은
-  당위("용서해야 한다")가 아니라 매임에서 풀려나는 방향으로 고른다.
-- **분노에 죄책감을 얹지 않는다.** 분노를 다루는 구절은 "노하기를 더디 하라"
-  계열이 많은데, 이미 화가 난 사람에게는 질책으로 도착한다. 2차분에서
-  무기력에 빌 4:13을 뺀 것과 같은 판단이 여기서 더 자주 필요하다.
-  `self_control` 주제는 "정죄하지 않으면서 가라앉히는 방향"이라고
-  `themes.yaml`이 정의해 두었다.
-- **죄·심판 프레임.** 분노 구절은 이 프레임과 특히 자주 엮인다.
-  2차분에서 걸러낸 유형 목록이 `verses.yaml` 말미 요약 주석에 있다.
-- **`frustration.suppressed`(억눌림)는 위기 인접이다.** `lament` 주제를 쓰되
-  감정 증폭이 아니라 "말해도 된다"는 허용 방향인지 본다.
+**배분으로 정책을 구현했다.** `anger.unfair`를 `justice` 5 / `lament` 3 /
+`forgiveness` 2로 두어 `themes.yaml` mapping 순서를 구절 수로도 반영했다.
+남긴 forgiveness 2건도 사용자에게 용서를 요구하지 않는 형식만 골랐다.
+마 6:14-15("용서하지 아니하면 아버지께서도 용서하지 아니하시리라")는
+조건에 더해 **미용서에 대한 위협**이 붙어 제외했다.
+
+3차분에서는 원문 데이터 문제가 새로 나오지 않았다(`SOURCE.md` 5절).
+
+---
+
+## 3. 다음 세션 할 일 — 4차분 큐레이션 (긍정 계열 + crisis 전용)
+
+**마지막 감정 차수다.** 대상 8개 세분류 — 지금까지와 달리 부정 감정이 아니다.
+
+| 세분류 | 매핑 주제 |
+|---|---|
+| `joy.proud` · `joy.delight` · `joy.grateful` | `gratitude` · `joy_praise` |
+| `flutter.anticipation` | `new_thing` · `hope` |
+| `flutter.thrill` | `joy_praise` · `new_thing` |
+| `calm.ease` | `quiet_worship` · `creation` |
+| `boredom.dull` · `boredom.novelty` | `daily_word` · `bible_story` |
+
+`calm.stable`은 1차분 `psa.4.8` 교차 태깅으로 1건이 이미 있다 —
+세분류당 10구절이면 **약 80구절**, 누적 230구절이 된다.
+
+**그리고 crisis 전용 섹션.** `verses.yaml` 선정 원칙 5가 "위기 화면용 구절은
+이 파일이 아니라 crisis 전용 섹션에서 별도 관리"라고 정해 두었고,
+`PLAN.md` 7절이 **죄·심판·형벌 프레임 배제**를 못박고 있다. 감정 매핑을
+타지 않는 운영자 고정 큐레이션이므로 구조부터 정해야 한다
+(별도 파일로 뺄지, `verses.yaml` 안에 `crisis:` 최상위 키를 둘지).
+
+### 작업 방식 — 2·3차분에서 확립됐다. 그대로 따를 것
+
+`ref`만 선정하고 `text`는 `scripts/fill_verses.py`로 추출한다.
+세분류 단위로 끊어서 승인받는다. 선정 전에 원문을 조회한다
+(`scripts/lib/krv_source.py`의 `parse_ref`·`KrvBible.verses_in_range`를 쓰는
+짧은 조회 스크립트를 scratchpad에 만들어 쓰면 된다 — 저장소에는 넣지 않았다).
+
+**본문 오류: 1차분 27% → 2차분 0% → 3차분 0%.** 방식이 유지되는 한 이 값은 0이다.
+
+### 4차분에서 특히 주의할 것
+
+- **긍정 감정은 지금까지와 실패 방식이 다르다.** 1~3차분의 위험은
+  "질책·요구가 얹히는 것"이었다. 여기서는 **번영신학과 자기계발 톤**이
+  위험이다. `themes.yaml` 전역 금지어(`은혜`·`치유`·`축복`·`간증`·`기적`)가
+  경고하는 그 영역이다. 감사·기쁨 구절은 "감사하면 복이 온다" 계열로
+  미끄러지기 쉽다.
+- **`isa.43.19`("광야에 길과 사막에 강을 내리니")를 남겨 두었다.**
+  3차분 `frustration.stuck`에서 쓰지 않고 `flutter.anticipation`의
+  `new_thing`을 위해 비워 둔 자리다.
+- **`boredom.*`의 `daily_word`·`bible_story`는 성격이 다르다.**
+  다른 주제들은 감정에 응답하지만 이 둘은 **진입점**이다
+  (`themes.yaml` intent: "가벼운 진입점", "지적 호기심 진입점").
+  위로 구절이 아니라 읽을거리로서 고르는 편이 맞을 수 있다 —
+  선정 기준 자체를 다시 볼 것.
+- **`calm.ease`의 `creation`은 풀이 얇을 수 있다.** `themes.yaml` caution이
+  이미 경고했다. 시 8편·19편 계열로 충분한지 먼저 확인할 것.
+- **crisis 구절은 감정 계열과 완전히 분리한다.** 4차분 작업 중
+  "이건 위기 화면에 좋겠다" 싶은 구절이 나와도 감정 풀에 넣지 않는다.
 
 ---
 
@@ -239,20 +275,29 @@ python scripts/verify_verses.py --check   # 검사만. CI 게이트용
 - `php.4.19` — 공급 약속 구절. 번영신학 오용이 많고, `themes.yaml`의
   전역 금지어(`축복`) 원칙과의 일관성 문제가 제기돼 있다.
 
-### 4.2 교차 태깅 구절의 영상 풀 (Phase 2 배치 설계 전 확정)
+### 4.2 교차 태깅 구절의 영상 풀 — **4차분 착수 전에 결정할 것**
 
-1차분 8구절이 인접 세분류에 걸쳐 있고, 이때 구절의 `theme`이 해당 감정의
-`mapping` 주제 밖일 수 있다 (예: `anxiety.worry` 화면에 `theme: courage` 구절).
+구절의 `theme`이 해당 감정의 `mapping` 주제 밖일 수 있다
+(예: `anxiety.worry` 화면에 `theme: courage` 구절).
 영상 풀을 "mapping 주제 ∪ 표시된 구절의 theme"으로 확장할지,
 구절을 mapping 주제 안으로 제한할지가 미결이다.
 
-**2차분은 이 문제를 키우지 않는 쪽으로 작업했다** — 60구절 중 교차 태깅은
-`psa.42.5` 한 건뿐이다(`sadness.sorrow` + `sadness.lonely`, 둘 다 같은 대분류).
-결정을 미룰 수 있게 하되, 미결 자체는 남아 있다.
+**2·3차분은 이 문제를 키우지 않는 쪽으로 작업했다.** 120구절 중 교차 태깅은
+`psa.42.5` 한 건뿐이다. 현재 교차로 구절이 더 붙는 화면은 다섯이다:
 
-현재 교차 태깅으로 구절이 더 붙는 화면은 셋이다:
-`anxiety.tension` 13 · `anxiety.worry` 13 · `sadness.lonely` 13 (나머지는 10).
-**Phase 2 배치 설계 전에는 반드시 정해야 한다.**
+```
+anxiety.tension 13 · anxiety.worry 13 · sadness.lonely 13
+frustration.stuck 12 · frustration.blocked 11      (나머지는 전부 10)
+```
+
+**이 결정을 4차분보다 뒤로 미루면 안 되는 이유가 생겼다.**
+4차분의 `joy.*` 3개 세분류는 매핑 주제가 `[gratitude, joy_praise]`로
+사실상 동일하고 `flutter.thrill`·`boredom.*`도 서로 겹친다.
+즉 **긍정 계열은 구조적으로 교차 태깅이 많이 나올 수밖에 없는 구간**이다.
+규칙 없이 60~80구절을 더 쌓으면 나중에 전수 재검토가 필요해진다.
+
+결정 자체는 Phase 2 배치 설계 사항이지만, **선정 규칙으로 쓸 잠정 방침만은
+4차분 착수 전에 정해야 한다.**
 
 ### 4.3 `verified_at` 형식 불일치 3건 (기능 영향 없음)
 
@@ -273,9 +318,10 @@ python scripts/verify_verses.py --check   # 검사만. CI 게이트용
 - 배치·앱 코드 — `scripts/`에는 검증 스크립트만 있다
 - `themes.yaml` · `channel_allowlist.yaml` 수정 — 읽기만 했다
 - `verses.yaml`의 `note`·선정 판단 변경 — 본문 `text`만 고쳤다
-- 3차분·4차분 구절 선정 — 파이프라인은 준비돼 있고 `ref` 목록만 없다
-- `themes.yaml` 수정 — `strength` intent가 지목한 빌 4:13을 뺐지만
-  주제 정의는 건드리지 않았다 (수정 대상 아님)
+- 4차분 구절 선정 + crisis 전용 섹션 — 파이프라인은 준비돼 있고 `ref` 목록만 없다
+- `themes.yaml` 수정 — 개별 구절 채택에서 intent와 어긋난 판단을 여러 번
+  했지만(빌 4:13 제외, `self_control`을 "쏟아냄"으로 해석, 잠언 분노 구절
+  대부분 제외) 주제 정의는 건드리지 않았다. 근거는 각 `note`에 있다
 
 ---
 
@@ -286,7 +332,7 @@ PLAN.md                      목표·제약·아키텍처·단계별 계획
 themes.yaml                  주제 24개 + 감정→주제 매핑 + 키워드 설계 원칙
 channel_allowlist.yaml       채널 승인 기준 (등록 0개)
 channel_blocklist.yaml       채널 차단 (등록 0개) — PYM에서는 2차 안전망
-verses.yaml                  구절 큐레이션 소스 90건. 검수 절차가 헤더에 있다
+verses.yaml                  구절 큐레이션 소스 150건. 검수 절차가 헤더에 있다
 HANDOFF.md                   이 문서
 
 data/krv/

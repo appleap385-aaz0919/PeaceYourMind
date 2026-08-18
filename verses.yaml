@@ -37,9 +37,11 @@
 #   2차분: 우울·지침 계열 (sadness.*, exhaustion.*) 60구절 — 검수 완료 (2026-08-18)
 #          6개 세분류 × 10구절. 본문은 타이핑하지 않고 원문에서 추출했다
 #          (scripts/fill_verses.py — 아래 2차분 헤더 주석 참조)
-#   3차분: 분노·답답함 계열 (anger.*, frustration.*) — 미착수
+#   3차분: 분노·답답함 계열 (anger.*, frustration.*) 60구절 — 검수 완료 (2026-08-18)
 #   4차분: 기쁨·설렘·평온·심심함 계열 + crisis 전용 — 미착수
-#   현재 90구절 / 목표 약 250구절
+#          joy.* 3 · flutter.* 2 · calm.ease · boredom.* 2 = 8개 세분류
+#          (calm.stable은 1차분 psa.4.8 교차 태깅으로 이미 1건 있다)
+#   현재 150구절 / 24개 세분류 중 16개 완료 / 목표 약 250구절
 # =====================================================================
 
 version: "0.1.0"
@@ -1388,4 +1390,959 @@ verses:
 # [다음 차수로 넘긴 판단]
 #   isa.61.3(125자) · rom.8.38(116자) · isa.40.30(112자)이 100자를 넘는다.
 #   카드 UI 실물이 나오는 Phase 3에서 길이 상한을 정하고 재검토할 것.
+# =====================================================================
+
+# =====================================================================
+# 3차분 — 분노·답답함 계열 (anger.*, frustration.*)
+#
+# [이 계열의 구조적 난점 — 3차분 착수 시 확인됨]
+#   분노를 다루는 유명 구절 대부분이 화난 사람을 질책한다.
+#     잠 29:11 "어리석은 자는 그 노를 다 드러내어도"
+#     전  7:9  "노는 우매자의 품에 머무름이니라"
+#     약 1:20  "사람의 성내는 것이 하나님의 의를 이루지 못함이니라"
+#     잠 16:32 "노하기를 더디하는 자는 용사보다 낫고"  (비교 우위 구조 —
+#              이미 화난 사람은 자동으로 하위에 놓인다)
+#   themes.yaml의 self_control intent가 "정죄하지 않으면서 가라앉히는
+#   방향, 잠언 계열"이라고 정의했지만, 실제 잠언의 분노 구절은 대부분
+#   정죄한다. 그래서 잠언에서는 15:1만 살리고 나머지 자리를
+#   "하나님이 노하기를 더디 하시는 분"이라는 진술로 채웠다.
+#   같은 어휘를 사용자에 대한 요구에서 하나님에 대한 서술로 뒤집은 것이다.
+# =====================================================================
+
+  # ═══════════════════════════════════════════════════════════
+  # anger.irritation (짜증) — 주제: self_control, quiet_worship
+  # 방향: 화를 낸 것을 탓하지 않고 가라앉을 자리를 준다.
+  #      "참아라"는 구절은 넣지 않는다 — 이미 화가 난 사람에게는
+  #      가라앉히는 말이 아니라 하나 더 얹는 말이 된다
+  # ═══════════════════════════════════════════════════════════
+
+  - id: psa.103.8
+    ref: 시편 103:8
+    text: >
+      여호와는 자비로우시며 은혜로우시며 노하기를 더디 하시며 인자하심이
+      풍부하시도다
+    emotion_tags: [anger.irritation]
+    theme: self_control
+    note: >
+      "노하기를 더디 하시며" — 잠언이 사용자에게 요구하는 바로 그 어휘를
+      하나님의 성품으로 진술한다. 요구가 아니라 서술이라 정죄가 없다.
+      이 세분류의 첫 후보.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.103.13
+    ref: 시편 103:13-14
+    text: >
+      아비가 자식을 불쌍히 여김 같이 여호와께서 자기를 경외하는 자를 불쌍히
+      여기시나니 이는 저가 우리의 체질을 아시며 우리가 진토임을 기억하심이로다
+    emotion_tags: [anger.irritation]
+    theme: self_control
+    note: >
+      "우리의 체질을 아시며 우리가 진토임을 기억하심이로다" — 약함을
+      아신다는 진술. 짜증을 낸 자신이 이해받는 방향이라 자책을 덜어낸다.
+      13절만 쓰면 근거("이는 ... 아시며")가 없어 14절과 묶는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: exo.34.6
+    ref: 출애굽기 34:6
+    text: >
+      여호와께서 그의 앞으로 지나시며 반포하시되 여호와로라 여호와로라 자비롭고
+      은혜롭고 노하기를 더디하고 인자와 진실이 많은 하나님이로라
+    emotion_tags: [anger.irritation]
+    theme: self_control
+    note: >
+      하나님이 자기 이름을 반복해 선포하는 형식("여호와로라 여호와로라")
+      이라 진술의 무게가 다르다. psa.103.8과 같은 계열의 원형.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: eph.4.26
+    ref: 에베소서 4:26
+    text: >
+      분을 내어도 죄를 짓지 말며 해가 지도록 분을 품지 말고
+    emotion_tags: [anger.irritation]
+    theme: self_control
+    note: >
+      "분을 내어도" — 분노 자체를 허용하고 분노와 죄를 분리한다.
+      분노를 죄로 규정하는 통념과 반대 방향이라 이 화면에 필요한 구절.
+      뒤의 "죄를 짓지 말며"가 조건처럼 보이지만, 전제가 이미
+      "분을 내어도"라 분노를 금지하지 않는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.141.3
+    ref: 시편 141:3
+    text: >
+      여호와여 내 입 앞에 파숫군을 세우시고 내 입술의 문을 지키소서
+    emotion_tags: [anger.irritation]
+    theme: self_control
+    note: >
+      "내 입 앞에 파숫군을 세우시고" — 참으라는 명령이 아니라 도와달라는
+      간구다. 자기 통제를 혼자 감당하지 않아도 된다는 방향.
+      옛 표기 "파숫군"이 살아 있는 구절.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: pro.15.1
+    ref: 잠언 15:1
+    text: >
+      유순한 대답은 분노를 쉬게 하여도 과격한 말은 노를 격동하느니라
+    emotion_tags: [anger.irritation]
+    theme: self_control
+    note: >
+      잠언의 분노 구절 중 드물게 자기를 탓하지 않는다 — 화난 나에 대한
+      평가가 아니라 상대와의 상호작용에 대한 관찰이기 때문이다.
+      (잠 16:32·19:11·15:18·17:27은 전부 비교 우위 구조라 제외했다)
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: hab.2.20
+    ref: 하박국 2:20
+    text: >
+      오직 여호와는 그 성전에 계시니 온 천하는 그 앞에서 잠잠할찌니라
+    emotion_tags: [anger.irritation]
+    theme: quiet_worship
+    note: >
+      조용해지는 이유가 자책이 아니라 임재다. 옛 표기 "잠잠할찌니라".
+      (시 37:7도 "잠잠하고"로 시작하지만 뒤가 "불평하여 말지어다"라 제외)
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.23.3
+    ref: 시편 23:3
+    text: >
+      내 영혼을 소생시키시고 자기 이름을 위하여 의의 길로 인도하시는도다
+    emotion_tags: [anger.irritation]
+    theme: quiet_worship
+    note: >
+      "내 영혼을 소생시키시고" — 요구 없이 회복만 말한다.
+      이로써 시편 23편 1~4절이 모두 쓰인다 (1 trust / 2 rest /
+      3 quiet_worship / 4 comfort). 넷 다 주제와 세분류가 달라 겹치지 않는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.19.14
+    ref: 시편 19:14
+    text: >
+      나의 반석이시요 나의 구속자이신 여호와여 내 입의 말과 마음의 묵상이
+      주의 앞에 열납되기를 원하나이다
+    emotion_tags: [anger.irritation]
+    theme: quiet_worship
+    note: 짜증날 때 말이 먼저 나가는 것에 대한 기도. 자책이 아니라 바람의 형식이다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: isa.32.17
+    ref: 이사야 32:17
+    text: >
+      의의 공효는 화평이요 의의 결과는 영원한 평안과 안전이라
+    emotion_tags: [anger.irritation]
+    theme: quiet_worship
+    note: '31자. 이 풀에서 톤이 가장 조용하다 — 잔잔한 찬양 영상과 결이 맞는다.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  # ═══════════════════════════════════════════════════════════
+  # anger.unfair (억울함) — 주제: justice, lament, forgiveness
+  # 방향: 억울함을 "네가 참아라"로 누르지 않고 갚으시는 분께 넘긴다.
+  #
+  # [배분으로 순서를 구현했다] justice 5 / lament 3 / forgiveness 2.
+  #   themes.yaml의 mapping 순서(justice → lament → forgiveness)를
+  #   구절 수로도 반영했다. 억울한 상태에 용서를 먼저 요구하면 2차 가해다.
+  #   남긴 forgiveness 2건도 사용자에게 용서를 요구하지 않는 형식만 골랐다 —
+  #   gen.50.20은 가해 사실을 먼저 인정한 뒤의 말이고,
+  #   luk.23.34는 명령문이 아니라 예수가 하는 기도다.
+  #
+  # [제외 — 당위·조건·위협]
+  #   마 6:14-15 "용서하면 ... 용서하지 아니하면 아버지께서도 용서하지
+  #              아니하시리라" — 조건절에 미용서에 대한 위협까지 붙는다
+  #   골 3:13   "피차 용서하되 ... 너희도 그리하고" — 당위 명령
+  #   themes.yaml의 forgiveness caution이 경고한 그대로였다
+  # ═══════════════════════════════════════════════════════════
+
+  - id: rom.12.19
+    ref: 로마서 12:19
+    text: >
+      내 사랑하는 자들아 너희가 친히 원수를 갚지 말고 진노하심에 맡기라
+      기록되었으되 원수 갚는 것이 내게 있으니 내가 갚으리라고 주께서
+      말씀하시니라
+    emotion_tags: [anger.unfair]
+    theme: justice
+    note: >
+      "원수 갚는 것이 내게 있으니 내가 갚으리라" — 참으라는 요구가 아니라
+      갚는 주체가 바뀐다는 선언이다. themes.yaml justice intent가 지목한 구절.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.9.9
+    ref: 시편 9:9
+    text: >
+      여호와는 또 압제를 당하는 자의 산성이시요 환난 때의 산성이시로다
+    emotion_tags: [anger.unfair]
+    theme: justice
+    note: '"압제를 당하는 자의 산성" — 억울한 쪽에 서신다는 진술. 짧아 카드 UI에 적합.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.103.6
+    ref: 시편 103:6
+    text: >
+      여호와께서 의로운 일을 행하시며 압박 당하는 모든 자를 위하여
+      판단하시는도다
+    emotion_tags: [anger.unfair]
+    theme: justice
+    note: 판단의 주체가 내가 아니라는 구조. 억울함을 스스로 증명해야 한다는 압박을 던다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.37.6
+    ref: 시편 37:6
+    text: >
+      네 의를 빛같이 나타내시며 네 공의를 정오의 빛같이 하시리로다
+    emotion_tags: [anger.unfair]
+    theme: justice
+    note: >
+      "네 의를 빛같이 나타내시며" — 억울함이 언젠가 드러난다는 약속.
+      1차분 psa.37.5(37:5, trust)와 인접 절이지만 본문도 주제도 다르다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.35.1
+    ref: 시편 35:1
+    text: >
+      여호와여 나와 다투는 자와 다투시고 나와 싸우는 자와 싸우소서
+    emotion_tags: [anger.unfair]
+    theme: justice
+    note: >
+      "나와 다투는 자와 다투시고" — 억울함의 강도를 누르지 않고 그대로 받는
+      간구다. 온건한 표현으로 순화하지 않은 점이 이 구절의 값이다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: hab.1.2
+    ref: 하박국 1:2
+    text: >
+      여호와여 내가 부르짖어도 주께서 듣지 아니하시니 어느 때까지리이까 내가
+      강포를 인하여 외쳐도 주께서 구원치 아니하시나이다
+    emotion_tags: [anger.unfair]
+    theme: lament
+    note: >
+      "어느 때까지리이까 ... 주께서 구원치 아니하시나이다" — 하나님을 향한
+      항의를 그대로 둔다. 이런 말도 성경 안에 있다는 것이 이 화면의 메시지다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.13.1
+    ref: 시편 13:1-2
+    text: >
+      여호와여 어느 때까지니이까 나를 영영히 잊으시나이까 주의 얼굴을 나에게서
+      언제까지 숨기시겠나이까 내가 나의 영혼에 경영하고 종일토록 마음에
+      근심하기를 어느 때까지 하오며 내 원수가 나를 쳐서 자긍하기를 어느
+      때까지 하리이까
+    emotion_tags: [anger.unfair]
+    theme: lament
+    note: >
+      "어느 때까지"가 네 번 반복된다. 반복 자체가 억울함의 리듬이라
+      124자 길이를 감수했다. 1절만 쓰면 반복이 완성되지 않아 2절과 묶는다.
+      [검토 필요] 3차분 최장. 카드 UI 길이 상한이 정해지면 재검토 대상.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.42.9
+    ref: 시편 42:9
+    text: >
+      내 반석이신 하나님께 말하기를 어찌하여 나를 잊으셨나이까 내가 어찌하여
+      원수의 압제로 인하여 슬프게 다니나이까 하리로다
+    emotion_tags: [anger.unfair]
+    theme: lament
+    note: >
+      "원수의 압제로 인하여 슬프게 다니나이까" — 억울함이 슬픔으로 넘어가는
+      지점을 말한다. 시편 42편에서 세 번째 절(5 sorrow / 8 tired / 9 unfair).
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: gen.50.20
+    ref: 창세기 50:20
+    text: >
+      당신들은 나를 해하려 하였으나 하나님은 그것을 선으로 바꾸사 오늘과 같이
+      만민의 생명을 구원하게 하시려 하셨나니
+    emotion_tags: [anger.unfair]
+    theme: forgiveness
+    note: >
+      "당신들은 나를 해하려 하였으나" — 가해 사실을 부정하지 않은 채로 하는
+      말이다. 억울함을 없던 일로 만들지 않는 용서라 당위 설교와 결이 다르다.
+      요셉 서사의 결론부라 맥락도 온전하다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: luk.23.34
+    ref: 누가복음 23:34
+    text: >
+      이에 예수께서 가라사대 아버지여 저희를 사하여 주옵소서 자기의 하는 것을
+      알지 못함이니이다 하시더라 저희가 그의 옷을 나눠 제비 뽑을쌔
+    emotion_tags: [anger.unfair]
+    theme: forgiveness
+    note: >
+      명령문이 아니라 예수가 하는 기도다 — 사용자에게 용서를 요구하지 않는다.
+      서사 구절 사용은 1차분 mrk.4.39, 2차분 1ki.19.7의 선례를 따른다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  # ═══════════════════════════════════════════════════════════
+  # anger.rage (격분) — 주제: self_control, peace
+  # 방향: 격분에 통제를 요구하지 않는다. self_control을 "억누름"이 아니라
+  #      "쏟아낼 자리를 준다"로 해석했다 — psa.62.8 "마음을 토하라",
+  #      psa.142.2 "원통함을 토하며", psa.55.1 "응답하소서"가 그 계열이다.
+  #      짜증(irritation)보다 강도가 높은 만큼 질책이 어긋나는 폭도 크다
+  # ═══════════════════════════════════════════════════════════
+
+  - id: psa.62.8
+    ref: 시편 62:8
+    text: >
+      백성들아 시시로 저를 의지하고 그 앞에 마음을 토하라 하나님은 우리의
+      피난처시로다(셀라)
+    emotion_tags: [anger.rage]
+    theme: self_control
+    note: >
+      "그 앞에 마음을 토하라" — 다스림의 방식이 억누름이 아니라 쏟아냄이다.
+      이 세분류의 방향을 정하는 구절. 1차분 psa.62.1("잠잠히")과 같은 시편의
+      다른 얼굴이라 함께 보면 대비가 뚜렷하다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.142.2
+    ref: 시편 142:2
+    text: >
+      내가 내 원통함을 그 앞에 토하며 내 우환을 그 앞에 진술하는도다
+    emotion_tags: [anger.rage]
+    theme: self_control
+    note: '"내 원통함을 그 앞에 토하며" — psa.62.8의 1인칭 판. 36자로 짧다.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.55.1
+    ref: 시편 55:1-2
+    text: >
+      하나님이여 내 기도에 귀를 기울이시고 내가 간구할 때에 숨지 마소서 내게
+      굽히사 응답하소서 내가 근심으로 편치 못하여 탄식하오니
+    emotion_tags: [anger.rage]
+    theme: self_control
+    note: >
+      "숨지 마소서 내게 굽히사 응답하소서" — 절박한 부르짖음의 형식.
+      1절만 쓰면 상태 서술("근심으로 편치 못하여 탄식하오니")이 없어 2절과 묶는다.
+      1차분 psa.55.22("네 짐을 맡겨 버리라")와 같은 시편이며, 22절이 결론이라면
+      1-2절은 그 앞의 토로다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.103.9
+    ref: 시편 103:9
+    text: >
+      항상 경책지 아니하시며 노를 영원히 품지 아니하시리로다
+    emotion_tags: [anger.rage]
+    theme: self_control
+    note: >
+      "노를 영원히 품지 아니하시리로다" — 노를 품지 않는 쪽이 사용자가 아니라
+      하나님이다. 30자로 짧고 요구가 없다.
+      시편 103편에서 세 번째(8·13-14는 irritation, 9는 rage).
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.61.2
+    ref: 시편 61:2
+    text: >
+      내 마음이 눌릴 때에 땅 끝에서부터 주께 부르짖으오리니 나보다 높은
+      바위에 나를 인도하소서
+    emotion_tags: [anger.rage]
+    theme: self_control
+    note: '"내 마음이 눌릴 때에" — 압력 상태를 전제하고 시작하는 구절.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.107.29
+    ref: 시편 107:29
+    text: >
+      광풍을 평정히 하사 물결로 잔잔케 하시는도다
+    emotion_tags: [anger.rage]
+    theme: peace
+    note: >
+      "광풍을 평정히 하사 물결로 잔잔케 하시는도다" — 24자. 격분을 광풍에
+      겹치는 이미지다. 1차분 mrk.4.39(풍랑 진압 서사)와 같은 계열이지만
+      이쪽은 짧은 진술이라 화면에서 쓰임이 다르다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: isa.26.12
+    ref: 이사야 26:12
+    text: >
+      여호와여 주께서 우리를 위하여 평강을 베푸시오리니 주께서 우리 모든 일을
+      우리를 위하여 이루심이니이다
+    emotion_tags: [anger.rage]
+    theme: peace
+    note: 평강이 내 노력의 결과가 아니라 베풀어지는 것이라는 구조.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.29.11
+    ref: 시편 29:11
+    text: >
+      여호와께서 자기 백성에게 힘을 주심이여 여호와께서 자기 백성에게 평강의
+      복을 주시리로다
+    emotion_tags: [anger.rage]
+    theme: peace
+    note: '"힘을 주심이여 ... 평강의 복을 주시리로다" — 힘과 평강을 함께 놓는다.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: isa.54.10
+    ref: 이사야 54:10
+    text: >
+      산들은 떠나며 작은 산들은 옮길찌라도 나의 인자는 네게서 떠나지 아니하며
+      화평케 하는 나의 언약은 옮기지 아니하리라 너를 긍휼히 여기는 여호와의
+      말이니라
+    emotion_tags: [anger.rage]
+    theme: peace
+    note: >
+      "화평케 하는 나의 언약은 옮기지 아니하리라" — 격분한 상태에서도 관계가
+      흔들리지 않는다는 방향. 화를 낸 것에 대한 불안을 함께 받는다.
+      옛 표기 "옮길찌라도"가 살아 있는 구절.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: num.6.24
+    ref: 민수기 6:24-26
+    text: >
+      여호와는 네게 복을 주시고 너를 지키시기를 원하며 여호와는 그 얼굴로
+      네게 비취사 은혜 베푸시기를 원하며 여호와는 그 얼굴을 네게로 향하여
+      드사 평강 주시기를 원하노라 할찌니라 하라
+    emotion_tags: [anger.rage]
+    theme: peace
+    note: >
+      아론의 축복. 요구가 하나도 없는 축복 기원문이라 격분 상태에 얹히는
+      부담이 없다. 세 절이 한 문장이라 24-26을 함께 쓴다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  # ═══════════════════════════════════════════════════════════
+  # frustration.stuck (막막함) — 주제: guidance, hope
+  # 방향: 길이 보이지 않는 상태를 판단하지 않는다. "믿음이 부족해서"가
+  #      아니라 원래 자취가 안 보이는 인도도 있다(psa.77.19)는 쪽에 선다.
+  #
+  # 이 화면에는 1차분 교차 태깅 pro.3.5 · psa.121.1 이 더해진다
+  # ═══════════════════════════════════════════════════════════
+
+  - id: psa.119.105
+    ref: 시편 119:105
+    text: >
+      주의 말씀은 내 발에 등이요 내 길에 빛이니이다
+    emotion_tags: [frustration.stuck]
+    theme: guidance
+    note: >
+      "내 발에 등이요" — 발치 한 걸음치만 밝히는 이미지다. 전체 경로를
+      보여주지 않는다는 점이 막막한 상태에 오히려 정직하다. 26자.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.32.8
+    ref: 시편 32:8
+    text: >
+      내가 너의 갈 길을 가르쳐 보이고 너를 주목하여 훈계하리로다
+    emotion_tags: [frustration.stuck]
+    theme: guidance
+    note: 33자로 짧고 1인칭 약속("내가 ... 가르쳐 보이고") 형식이라 요구가 없다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: isa.30.21
+    ref: 이사야 30:21
+    text: >
+      너희가 우편으로 치우치든지 좌편으로 치우치든지 네 뒤에서 말 소리가 네
+      귀에 들려 이르기를 이것이 정로니 너희는 이리로 행하라 할 것이며
+    emotion_tags: [frustration.stuck]
+    theme: guidance
+    note: >
+      "이것이 정로니 너희는 이리로 행하라" — 갈림길에서 뒤에서 들리는 소리라는
+      구조. 미리 알려주지 않고 그 자리에서 알려준다.
+      1차분 isa.30.15(같은 장, [검토 필요] 표시)와는 다른 성격의 구절이다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: isa.42.16
+    ref: 이사야 42:16
+    text: >
+      내가 소경을 그들의 알지 못하는 길로 이끌며 그들의 알지 못하는 첩경으로
+      인도하며 흑암으로 그 앞에 광명이 되게 하며 굽은데를 곧게 할 것이라
+      내가 이 일을 행하여 그들을 버리지 아니하리니
+    emotion_tags: [frustration.stuck]
+    theme: guidance
+    note: >
+      "소경을 그들의 알지 못하는 길로 이끌며" — 막막함을 눈이 보이지 않는
+      상태로 인정하고 시작한다. 105자로 길지만 "알지 못하는"이 두 번 반복되며
+      상태를 정당화하는 구조라 줄이기 어렵다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: pro.16.9
+    ref: 잠언 16:9
+    text: >
+      사람이 마음으로 자기의 길을 계획할지라도 그 걸음을 인도하는 자는
+      여호와시니라
+    emotion_tags: [frustration.stuck]
+    theme: guidance
+    note: 계획이 막힌 상태에 정확히 대응한다. 계획을 세운 것 자체를 탓하지 않는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.77.19
+    ref: 시편 77:19
+    text: >
+      주의 길이 바다에 있었고 주의 첩경이 큰 물에 있었으나 주의 종적을 알
+      수 없었나이다
+    emotion_tags: [frustration.stuck]
+    theme: guidance
+    note: >
+      "주의 종적을 알 수 없었나이다" — 이 세분류의 성격을 잡는 구절이다.
+      홍해를 건넌 그 인도조차 자취가 보이지 않았다고 말한다. 길이 안 보이는
+      것이 인도가 없다는 뜻이 아니라는 진술이라 막막함을 판단하지 않는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.18.19
+    ref: 시편 18:19
+    text: >
+      나를 또 넓은 곳으로 인도하시고 나를 기뻐하심으로 구원하셨도다
+    emotion_tags: [frustration.stuck]
+    theme: hope
+    note: '"넓은 곳으로 인도하시고" — 갇힌 느낌의 반대말. 34자.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.138.8
+    ref: 시편 138:8
+    text: >
+      여호와께서 내게 관계된 것을 완전케 하실찌라 여호와여 주의 인자하심이
+      영원하오니 주의 손으로 지으신 것을 버리지 마옵소서
+    emotion_tags: [frustration.stuck]
+    theme: hope
+    note: >
+      "내게 관계된 것을 완전케 하실찌라" — 미완의 상태를 전제하고 말한다.
+      막막함이 곧 끝났다는 뜻이 아니라는 점에서 정직하다.
+      [선정 메모] 이 자리에는 사 43:19("광야에 길과 사막에 강을 내리니")가
+      더 잘 맞지만, themes.yaml이 그 구절을 new_thing intent에 직접 지목했다
+      (flutter.anticipation 매핑). 4차분에서 쓸 수 있도록 양보했다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: lam.3.25
+    ref: 예레미야애가 3:25
+    text: >
+      무릇 기다리는 자에게나 구하는 영혼에게 여호와께서 선을 베푸시는도다
+    emotion_tags: [frustration.stuck]
+    theme: hope
+    note: >
+      진전 없는 시간에 "기다리는" 이름을 붙인다. 애가 3장에서 네 번째 구절
+      (22 sorrow / 24 listless / 25 stuck / 26 tired) — 전부 세분류가 다르다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: rom.8.28
+    ref: 로마서 8:28
+    text: >
+      우리가 알거니와 하나님을 사랑하는 자 곧 그 뜻대로 부르심을 입은
+      자들에게는 모든 것이 합력하여 선을 이루느니라
+    emotion_tags: [frustration.stuck]
+    theme: hope
+    note: >
+      지금 보이지 않는 것이 무의미하지 않다는 방향. 앞의 조건절은 자격 심사가
+      아니라 대상 지정으로 읽었다.
+      로마서 8장에서 세 번째(28 stuck / 31 anxiety.tension / 38 sadness.lonely).
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  # ═══════════════════════════════════════════════════════════
+  # frustration.blocked (진전 없음) — 주제: patience, hope
+  # 방향: 지연을 인정하고 시작한다. "곧 잘 될 것"이라고 재촉하지 않는다.
+  #      분발을 요구하는 구절(시 27:14 "강하고 담대하며", 갈 6:9 "피곤하지
+  #      아니하면")은 2차분과 같은 기준으로 제외했다
+  #
+  # 이 화면에는 1차분 교차 태깅 psa.55.22 가 더해진다
+  # ═══════════════════════════════════════════════════════════
+
+  - id: hab.2.3
+    ref: 하박국 2:3
+    text: >
+      이 묵시는 정한 때가 있나니 그 종말이 속히 이르겠고 결코 거짓되지
+      아니하리라 비록 더딜찌라도 기다리라 지체되지 않고 정녕 응하리라
+    emotion_tags: [frustration.blocked]
+    theme: patience
+    note: >
+      "비록 더딜찌라도 기다리라" — 더딤을 부정하지 않고 인정한 채로 말한다.
+      themes.yaml patience intent가 지목한 구절. 옛 표기 "더딜찌라도".
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: rom.8.25
+    ref: 로마서 8:25
+    text: >
+      만일 우리가 보지 못하는 것을 바라면 참음으로 기다릴찌니라
+    emotion_tags: [frustration.blocked]
+    theme: patience
+    note: >
+      "보지 못하는 것을 바라면 참음으로 기다릴찌니라" — 안 보이는 상태가
+      기다림의 결함이 아니라 전제다. 32자로 짧다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.130.6
+    ref: 시편 130:6
+    text: >
+      파숫군이 아침을 기다림보다 내 영혼이 주를 더 기다리나니 참으로 파숫군의
+      아침을 기다림보다 더하도다
+    emotion_tags: [frustration.blocked]
+    theme: patience
+    note: >
+      "파숫군이 아침을 기다림보다"가 두 번 반복된다 — 반복 자체가 기다림의
+      길이를 표현한다. psa.130.5(tired)의 다음 절.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: jas.5.7
+    ref: 야고보서 5:7
+    text: >
+      그러므로 형제들아 주의 강림하시기까지 길이 참으라 보라 농부가 땅에서
+      나는 귀한 열매를 바라고 길이 참아 이른 비와 늦은 비를 기다리나니
+    emotion_tags: [frustration.blocked]
+    theme: patience
+    note: >
+      농부와 이른 비·늦은 비 비유. 통제할 수 없는 시간을 다루는 방식을
+      비유로 보여줘서 "참으라"는 명령이 훈계로 떨어지지 않는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: ecc.3.11
+    ref: 전도서 3:11
+    text: >
+      하나님이 모든 것을 지으시되 때를 따라 아름답게 하셨고 또 사람에게
+      영원을 사모하는 마음을 주셨느니라 그러나 하나님의 하시는 일의 시종을
+      사람으로 측량할 수 없게 하셨도다
+    emotion_tags: [frustration.blocked]
+    theme: patience
+    note: >
+      "하시는 일의 시종을 사람으로 측량할 수 없게 하셨도다" — 때를 모르는
+      것이 내 결함이 아니라는 설명이다. 2차분 ecc.3.4(loss)와 같은 장.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.31.15
+    ref: 시편 31:15
+    text: >
+      내 시대가 주의 손에 있사오니 내 원수와 핍박하는 자의 손에서 나를
+      건지소서
+    emotion_tags: [frustration.blocked]
+    theme: patience
+    note: '"내 시대가 주의 손에 있사오니" — 시간의 주권을 넘기는 구절. psa.31.9(sorrow)와 같은 시편.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: jer.29.11
+    ref: 예레미야 29:11
+    text: >
+      나 여호와가 말하노라 너희를 향한 나의 생각은 내가 아나니 재앙이 아니라
+      곧 평안이요 너희 장래에 소망을 주려하는 생각이라
+    emotion_tags: [frustration.blocked]
+    theme: hope
+    note: >
+      themes.yaml hope intent가 지목한 대표 구절.
+      [주의] 번영신학 문맥에서 오용이 잦은 구절이다(1차분 php.4.19와 같은
+      계열의 우려). 다만 이 말은 포로기 70년을 앞둔 사람들에게 준 것이라
+      "곧 잘 될 것"이 아니라 "긴 시간 뒤에도 계획이 있다"는 쪽이며,
+      그 점에서 진전 없음 화면의 방향과 맞는다. Phase 3 문구 작업에서
+      이 맥락이 화면에 드러나는지 확인할 것.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.39.7
+    ref: 시편 39:7
+    text: >
+      주여 내가 무엇을 바라리요 나의 소망은 주께 있나이다
+    emotion_tags: [frustration.blocked]
+    theme: hope
+    note: '"내가 무엇을 바라리요"라는 질문에 스스로 답하는 구조. 29자.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.71.14
+    ref: 시편 71:14
+    text: >
+      나는 항상 소망을 품고 주를 더욱 더욱 찬송하리이다
+    emotion_tags: [frustration.blocked]
+    theme: hope
+    note: '28자. "항상"이 진전 없는 시간에도 유지된다는 뜻으로 읽힌다. psa.71.20(loss)과 같은 시편.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: heb.6.19
+    ref: 히브리서 6:19
+    text: >
+      우리가 이 소망이 있는 것은 영혼의 닻 같아서 튼튼하고 견고하여 휘장
+      안에 들어 가나니
+    emotion_tags: [frustration.blocked]
+    theme: hope
+    note: >
+      "영혼의 닻 같아서" — 멈춰 있는 상태와 닻의 이미지가 겹친다.
+      움직이지 못하는 것이 표류가 아니라는 방향. heb.4.9(tired)와 같은 서신.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  # ═══════════════════════════════════════════════════════════
+  # frustration.suppressed (억눌림) — 주제: lament, comfort
+  # 방향: "말해도 된다"는 허용이 핵심이다. lament를 6건으로 둔 이유다.
+  #      comfort 4건은 그 허용의 뒷면 — 말하지 못한 상태에서도 이미
+  #      전달되고 있다는 쪽이라, 표현하지 못하는 것이 실패가 되지 않는다.
+  #
+  # [위기 인접 — HANDOFF 3절 주의사항 3]
+  #   psa.69.1 · psa.88.1 은 강도가 높다. 둘 다 압도감의 묘사이지
+  #   자기 파괴 표현이 아니고 방향이 부르짖음(바깥을 향함)이라 채택했다.
+  #   2차분 psa.40.1("기가 막힐 웅덩이와 수렁")과 같은 계열로 보았다.
+  #   위기 화면용 구절은 여전히 이 파일이 아니라 crisis 전용 섹션에서
+  #   별도 관리한다 (선정 원칙 5).
+  # ═══════════════════════════════════════════════════════════
+
+  - id: psa.32.3
+    ref: 시편 32:3
+    text: >
+      내가 토설치 아니할 때에 종일 신음하므로 내 뼈가 쇠하였도다
+    emotion_tags: [frustration.suppressed]
+    theme: lament
+    note: >
+      "토설치 아니할 때에 종일 신음하므로 내 뼈가 쇠하였도다" — 억눌림
+      그 자체를 묘사한다. 말하지 않은 결과를 몸으로 말하는 구절.
+      [맥락 주의] 시편 32편 전체는 죄 고백 시편이라 원래 "토설"은 죄 자백이다.
+      3절 자체에는 죄 어휘가 없어 보편적 진술로 읽히지만, proof-texting
+      경계(선정 원칙 4)에 걸릴 수 있어 기록해 둔다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: job.7.11
+    ref: 욥기 7:11
+    text: >
+      그런즉 내가 내 입을 금하지 아니하고 내 마음의 아픔을 인하여 말하며 내
+      영혼의 괴로움을 인하여 원망하리이다
+    emotion_tags: [frustration.suppressed]
+    theme: lament
+    note: >
+      "내 입을 금하지 아니하고 ... 원망하리이다" — 말하기로 하는 결심이다.
+      억눌림이 풀리는 지점을 그대로 보여준다. "원망"이라는 강한 어휘를
+      순화하지 않은 것이 이 구절의 값이다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.6.6
+    ref: 시편 6:6
+    text: >
+      내가 탄식함으로 곤핍하여 밤마다 눈물로 내 침상을 띄우며 내 요를
+      적시나이다
+    emotion_tags: [frustration.suppressed]
+    theme: lament
+    note: >
+      눌러둔 것이 밤에 나오는 상태를 묘사한다.
+      6절 단독이다 — 같은 시편 1절("주의 분으로 나를 견책하지 마시오며")은
+      진노·책망 프레임이지만 6절에는 그 어휘가 없다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.88.1
+    ref: 시편 88:1-2
+    text: >
+      여호와 내 구원의 하나님이여 내가 주야로 주의 앞에 부르짖었사오니 나의
+      기도로 주의 앞에 달하게 하시며 주의 귀를 나의 부르짖음에 기울이소서
+    emotion_tags: [frustration.suppressed]
+    theme: lament
+    note: >
+      응답이 없는 상태에서도 계속 부르짖는 형식.
+      [범위 주의] 시편 88편은 성경에서 가장 어두운 시편으로 마지막이
+      "흑암"으로 끝난다. 1-2절만 쓰는 이유가 그것이다 — 부르짖음까지는
+      허용이지만 그 뒤의 절망 서술은 이 화면의 방향이 아니다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.69.1
+    ref: 시편 69:1-2
+    text: >
+      하나님이여 나를 구원하소서 물들이 내 영혼까지 흘러 들어왔나이다 내가 설
+      곳이 없는 깊은 수렁에 빠지며 깊은 물에 들어가니 큰 물이 내게
+      넘치나이다
+    emotion_tags: [frustration.suppressed]
+    theme: lament
+    note: >
+      "설 곳이 없는 깊은 수렁" — 압도감의 신체 감각. 1절만 쓰면 상태 묘사가
+      없어 2절과 묶는다.
+      [위기 경계] 강도가 높지만 자기 파괴 표현이 아니라 압도감의 묘사이고
+      방향이 부르짖음이다. 2차분 psa.40.1과 같은 계열로 판단했다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.102.1
+    ref: 시편 102:1-2
+    text: >
+      여호와여 내 기도를 들으시고 나의 부르짖음을 주께 상달케 하소서 나의
+      괴로운 날에 주의 얼굴을 내게 숨기지 마소서 주의 귀를 기울이사 내가
+      부르짖는 날에 속히 내게 응답하소서
+    emotion_tags: [frustration.suppressed]
+    theme: lament
+    note: '"주의 얼굴을 내게 숨기지 마소서" — 응답 없음을 그대로 말하는 간구.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: rom.8.26
+    ref: 로마서 8:26
+    text: >
+      이와 같이 성령도 우리 연약함을 도우시나니 우리가 마땅히 빌바를 알지
+      못하나 오직 성령이 말할 수 없는 탄식으로 우리를 위하여 친히
+      간구하시느니라
+    emotion_tags: [frustration.suppressed]
+    theme: comfort
+    note: >
+      "우리가 마땅히 빌바를 알지 못하나 오직 성령이 말할 수 없는 탄식으로" —
+      말이 안 나오는 상태를 그대로 받는다. 이 세분류의 핵심 구절.
+      로마서 8장에서 다섯 번째 절이다 (25 blocked / 26 suppressed /
+      28 stuck / 31 anxiety.tension / 38 sadness.lonely) — 전부 세분류가 다르다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: isa.65.24
+    ref: 이사야 65:24
+    text: >
+      그들이 부르기 전에 내가 응답하겠고 그들이 말을 마치기 전에 내가 들을
+      것이며
+    emotion_tags: [frustration.suppressed]
+    theme: comfort
+    note: >
+      "부르기 전에 내가 응답하겠고 그들이 말을 마치기 전에 내가 들을 것이며" —
+      말하지 못해도 들으신다. 표현하지 못하는 것이 실패가 되지 않게 한다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.38.9
+    ref: 시편 38:9
+    text: >
+      주여 나의 모든 소원이 주의 앞에 있사오며 나의 탄식이 주의 앞에
+      감추이지 아니하나이다
+    emotion_tags: [frustration.suppressed]
+    theme: comfort
+    note: '"나의 탄식이 주의 앞에 감추이지 아니하나이다" — 표현하지 못한 것도 이미 아신다.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.139.1
+    ref: 시편 139:1-2
+    text: >
+      여호와여 주께서 나를 감찰하시고 아셨나이다 주께서 나의 앉고 일어섬을
+      아시며 멀리서도 나의 생각을 통촉하시오며
+    emotion_tags: [frustration.suppressed]
+    theme: comfort
+    note: >
+      "멀리서도 나의 생각을 통촉하시오며" — 말로 옮기기 전의 생각까지
+      닿아 있다는 진술. psa.139.7(lonely)과 같은 시편의 앞부분이다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+# =====================================================================
+# [3차분 요약 — 2026-08-18]
+#
+#   anger.irritation 10 / anger.unfair 10 / anger.rage 10
+#   frustration.stuck 10 / frustration.blocked 10 / frustration.suppressed 10
+#   = 60구절. 누적 150구절. 본문 오류 0건 (2차분에 이어 두 번째).
+#
+# [이 차수의 핵심 난점 — 다음 차수도 참고할 것]
+#   분노를 다루는 유명 구절 대부분이 화난 사람을 질책한다. 그대로 쓰면
+#   감정을 판단하지 않는다는 선정 원칙 1이 통째로 무너진다.
+#   해법은 어휘를 버리는 것이 아니라 화자를 바꾸는 것이었다 —
+#   "너는 노하기를 더디 하라"(잠언)를 버리고
+#   "여호와는 노하기를 더디 하시며"(시 103:8)를 취했다.
+#   같은 어휘가 요구에서 서술로 바뀌면 정죄가 사라진다.
+#
+# [주제 해석을 바꾼 사례]
+#   self_control 을 "억누름"이 아니라 "쏟아낼 자리를 준다"로 읽었다.
+#   anger.rage 풀의 psa.62.8("마음을 토하라") · psa.142.2("원통함을 토하며")
+#   · psa.55.1("응답하소서")이 그 결과다. 격분에 통제를 요구하면
+#   짜증 화면보다 더 크게 어긋난다.
+#
+# [배분으로 정책을 구현한 사례]
+#   anger.unfair 를 justice 5 / lament 3 / forgiveness 2 로 두었다.
+#   themes.yaml mapping 순서(justice → lament → forgiveness)를 구절 수로도
+#   반영한 것이다. 남긴 forgiveness 2건도 사용자에게 용서를 요구하지 않는
+#   형식만 골랐다 (gen.50.20은 가해 인정 후의 말, luk.23.34는 예수의 기도).
+#   마 6:14-15 · 골 3:13은 조건·위협·당위라 제외했다.
+#
+# [4차분에 넘기는 것]
+#   isa.43.19("광야에 길과 사막에 강을 내리니")를 frustration.stuck에서
+#   일부러 쓰지 않았다. themes.yaml이 new_thing intent에 이 구절을 지목했고
+#   flutter.anticipation 매핑에 new_thing이 있어서다. 4차분에서 쓸 것.
+#
+# [길이 상한 미결 — 누적]
+#   100자 초과 8건: isa.61.3(125) psa.13.1(124) rom.8.38(116)
+#   isa.40.30(112) php.4.6(109) isa.42.16(105) isa.43.1(103) num.6.24(101)
+#   카드 UI 실물이 나오는 Phase 3에서 상한을 정하고 일괄 재검토할 것.
 # =====================================================================
