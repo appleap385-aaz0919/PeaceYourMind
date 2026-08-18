@@ -252,13 +252,105 @@ scj-peter는 부분적으로 현대 맞춤법화된 사본이었다.
 **이 유형은 정답지 대조로도 옛 표기 분포로도 잡히지 않고, 두 소스가 같은 결과를
 내므로 교차 검증으로도 안 드러난다** (`SOURCE.md` 5절).
 
+### 2.8 Phase 2 준비 — 도구 두 개와 결함 두 건
+
+**`gen_verses_json.py`** (신규, API 0). `verses.yaml` -> `verses.json`,
+60,613바이트 / 감정 240 + 위기 10. `note`·`verified*`를 제거하고
+`crisis`를 최상위로 분리한다.
+
+게이트 5종을 넣었고 그중 셋은 고장 테스트로 실제 차단을 확인했다.
+
+```
+verified: false 잔존          확인  종료 코드 1
+개수 기대치(240 + 10)          확인  종료 코드 1
+themes.yaml에 없는 theme       확인  종료 코드 1
+위기·감정 풀 분리              verify_verses.py 규칙 재사용
+입출력 id 집합 일치            개수만 보면 "같은 수의 다른 구절"을 못 잡는다
+```
+
+**작성 중 결함을 하나 잡았다.** 첫 생성 결과의 `text` 끝에 `
+`이 붙어 있었다 —
+YAML 폴디드 스칼라(`>`)가 값 끝에 개행을 붙이기 때문이다. `verify_verses.py`는
+정규화 후 비교하므로 **소스 검사로는 드러나지 않던 결함**이고, 앱에 나가는
+문자열에서만 보인다. 공백 정규화를 넣고 `assert_matches_source()`를 추가해
+**정규화된 결과를 원문과 다시 대조**하게 했다. 검사 대상이 다르다는 것이 요점이다 —
+`verify_verses`는 `verses.yaml`의 값을, 이 함수는 JSON에 실제로 들어간 문자열을 본다.
+
+**`suggest_channels.py`** (FYM 이식 + PYM 고유 변경). `lib/`에
+quota · quota_log · youtube · actions_status · normalize · channel_blocklist를
+이식했고, allowlist는 PYM 필드로 새로 썼다.
+
+- **`교단/소속 확인` 열** — 요약표에 비운 채 내보낸다. 승인 기준 1·2는 기계가
+  판단할 수 없다. 검색은 이단 채널도 똑같이 데려온다 — 그들도 주일예배를 올린다.
+- **타임스탬프 파일명** — `channel_candidates.20260818-064420.md`. 드라이런은
+  `.dry-run`까지 붙어 두 겹으로 막는다 (FYM에서 661 units 결과가 덮인 사고).
+- **검색어 6종 신규** — `themes.yaml` 전역 금지어를 그대로 적용하고, PYM 발굴에서만
+  피하는 것(`설교` 단독 · `예언` · `환상` · `부흥회`)을 추가했다.
+- **성격 신호어** — 제목 blocklist 사전이 없는 대신 신유·집회 / 번영신학 /
+  자극 서사 / 신비주의 어휘를 센다. **차단이 아니라 표시**다.
+- **quota_log 예약값 200** (FYM 7,900). 배치가 search를 쓰지 않아 실제 ~150이다.
+
+**결함 2건 수정**
+
+1. **빈 필수 필드가 통과했다** (`_is_blank`). 원본은
+   `not str(entry.get(f, "")).strip()`로 검사했는데, YAML에서 값을 비운 키는
+   빈 문자열이 아니라 `None`이고 `str(None)`이 `"None"`이라 truthy가 된다.
+   `suggest_channels`가 내보내는 블록이 정확히 그 형태(`affiliation:` 비움)라,
+   **"채우지 않으면 배치가 돌지 않는다"는 설계가 그대로 무력화되는** 상황이었다.
+   `allowlist.py`·`channel_blocklist.py` 양쪽을 고치고 4케이스로 재확인했다.
+   → **FYM 원본에도 남아 있다. 4.3절 참조.**
+2. **`.gitignore`가 타임스탬프 파일명을 못 잡았다.** `channel_candidates.md`는
+   정확히 그 이름만 매칭한다. 와일드카드로 바꿨다 — 그대로 뒀으면 실제 검토 시트가
+   전부 추적 대상이 됐다.
+
+이번 세션 API 소모 **0** (전부 드라이런).
+
 ---
 
 ## 3. 다음 세션 할 일 — Phase 2 배치 개작
 
-**Phase 1(구절 큐레이션)이 끝났다.** 250구절 전건 검수 완료.
-다음은 `PLAN.md` 8절의 Phase 2 — FYM `build_videos.py` 골격을 가져와
-search를 제거하고 재생목록 수집 + 주제 태깅으로 교체하는 작업이다.
+### 바로 할 일 — `suggest_channels.py` 실제 실행 (승인 완료)
+
+**실행 승인은 이미 받았다.** 재부팅으로 세션이 끊겨 실행만 남았다.
+
+```bash
+# 1. 로컬 셸에 API 키를 넣는다 (Actions Secret은 러너 전용이라 로컬에는 안 잡힌다)
+export YOUTUBE_API_KEY="..."        # PowerShell: $env:YOUTUBE_API_KEY="..."
+
+# 2. 실행
+python scripts/suggest_channels.py --top 30 --reviewer jaehyuk.myung
+```
+
+| 항목 | 호출 | units |
+|---|---:|---:|
+| `search.list` (발굴 검색어 6) | 6 | **600** |
+| `channels.list` | 1 | 1 |
+| `playlistItems.list` | 30 | 30 |
+| `videos.list` | 30 | 30 |
+| **합계** | | **661** |
+
+일일 상한 9,500에 배치 몫 200을 예약해도 여유 8,639. 하드캡 1,200 이내이고,
+PYM 배치는 아직 돌지 않으므로 충돌도 없다.
+
+> **결과 시트는 사람이 검토한다. 승인 판단을 스크립트나 AI가 대신하지 않는다.**
+>
+> 시트가 주는 것은 사실뿐이다 — 등장 횟수, 구독자 수, 업로드 지속성, 쇼츠 비중,
+> 성격 신호어 집계. 승인 기준 1(정체 확인)·2(이단 배제)·3(콘텐츠 성격)은
+> 전부 사람 몫이고, `자동 점검: 통과`는 **객관적 실격 사유가 없다**는 뜻일 뿐이다.
+>
+> 검색은 이단 채널도 똑같이 데려온다. 그들도 주일예배와 성경 강해를 올리고
+> 총회도 있다. 교단·소속을 2개 이상 교차 확인하고 이단 규정 목록과 대조한 뒤
+> `affiliation` / `affiliation_verified`를 채워야 비로소 승인이 성립한다.
+> 그 두 필드가 비면 로더가 실패해 배치가 돌지 않는다 — 구조로 막아 뒀다.
+
+실행 후 흐름: 시트 검토 → `channel_allowlist.yaml`에 승인 채널 등록(PR) →
+15개 미만이면 `allowlist_undersized` 경보 → 20~30개가 목표.
+
+### 그다음 — 배치 본체
+
+`PLAN.md` 8절의 Phase 2. FYM `build_videos.py` 골격을 가져와 search를 제거하고
+재생목록 수집 + 주제 태깅으로 교체한다. 화이트리스트가 채워진 뒤에 착수한다 —
+목록이 비면 수집할 것이 없다.
 
 ### 준비 완료 (2026-08-18)
 
@@ -276,15 +368,11 @@ search를 제거하고 재생목록 수집 + 주제 태깅으로 교체하는 �
 `lib/`에 quota · quota_log · youtube · actions_status · normalize ·
 channel_blocklist를 이식했고 allowlist는 PYM 필드로 새로 썼다.
 
-### 착수 전에 정해야 할 것
+### 변함없는 원칙
 
-**채널 화이트리스트가 비어 있다.** `channel_allowlist.yaml`은 승인 기준만 있고
-등록 0개다. 배치는 이 목록에서만 수집하므로(전면 화이트리스트, `PLAN.md` 5절)
-**목록 없이는 배치를 돌릴 수 없다.** Phase 0의 남은 절반이며, 초기 목표는
-20~30개다. 후보 발굴에 `suggest_channels.py`(월 1회, 이때만 search 사용,
-약 600 units)가 필요하다.
-
-실제 API 실행은 명령어와 예상 쿼터를 먼저 제시하고 승인을 받는다 (변함없음).
+실제 API를 소모하는 실행은 명령어와 예상 쿼터를 먼저 제시하고 승인을 받는다.
+`--dry-run`은 API를 부르지 않지만 파일은 쓴다 — 산출물 경로가 겹치지 않는지
+항상 확인한다 (FYM 사고의 교훈, 2.8절).
 
 ### 구절 쪽에서 넘기는 것
 
@@ -328,6 +416,54 @@ channel_blocklist를 이식했고 allowlist는 PYM 필드로 새로 썼다.
 스크립트는 기존 `verified: true`를 건드리지 않으므로 이 값은 유지된다.
 `verified_at`을 날짜로 파싱하는 코드를 나중에 쓸 일이 생기면 이 3건이 걸린다는 것만 기억할 것.
 
+### 4.3 **FYM에 남아 있는 결함 — 그쪽 세션에서 고쳐야 한다**
+
+> ⚠ **이 항목은 PYM이 아니라 FYM(`Demo_28_FYM`)의 할 일이다.**
+> PYM에서 발견했지만 PYM에서는 고칠 수 없다 — 다른 저장소다.
+
+**증상** `scripts/lib/allowlist.py`와 `scripts/lib/channel_blocklist.py`의
+필수 필드 검사가 **빈 값을 통과시킨다.**
+
+```python
+missing = [f for f in REQUIRED_FIELDS if not str(entry.get(f, "")).strip()]
+```
+
+YAML에서 값을 비운 키(`reviewed_by:`)는 빈 문자열이 아니라 `None`으로 파싱된다.
+`str(None)`이 `"None"`이라 truthy가 되어 검사를 빠져나간다.
+기본값 `""`는 **키 자체가 없을 때만** 쓰이므로 이 경로를 막지 못한다.
+
+**왜 실제로 문제가 되는가** FYM `suggest_channels.py`가 내보내는 붙여넣기용
+YAML 블록에는 `note`가 자동 수집 문구로 채워져 있지만, 사람이 그 항목을 손보다가
+필드를 비워두는 일이 생긴다. 그러면 검증 없이 화이트리스트에 들어간다 —
+로더가 "필수 필드가 있다"고 판정하기 때문이다.
+
+**PYM에서 한 수정** `lib/allowlist.py`에 `_is_blank()`를 두고 두 로더에 적용했다.
+
+```python
+def _is_blank(value: Any) -> bool:
+    return value is None or not str(value).strip()
+
+missing = [f for f in REQUIRED_FIELDS if _is_blank(entry.get(f))]
+```
+
+**영향 범위 — PYM에서 미리 확인해 뒀다 (2026-08-18)**
+
+```
+결함이 있는 파일   scripts/lib/allowlist.py:107
+                  scripts/lib/channel_blocklist.py:72
+                  (`str(entry.get(` 로 훑어 두 곳뿐임을 확인했다)
+
+현재 실제 피해     없음 — channel_allowlist.yaml 16개 채널 전부 필드가 차 있다
+```
+
+**즉 지금 잘못 들어간 채널은 없다.** 잠재 결함이므로 급하지는 않지만,
+FYM도 `suggest_channels.py`로 후보를 계속 추가하는 구조라 언제든 발현될 수 있다.
+
+**FYM에서 할 일**
+1. 두 파일에 `_is_blank()` 적용 (위 PYM 수정과 동일)
+2. 고친 뒤 빈 필드 YAML로 거부되는지 한 번 확인
+3. 채널을 새로 추가하기 전에 고쳐 두는 편이 낫다 — 추가 시점이 발현 시점이다
+
 ---
 
 ## 5. 하지 않은 것 (범위 밖이었음을 명시)
@@ -338,7 +474,8 @@ channel_blocklist를 이식했고 allowlist는 PYM 필드로 새로 썼다.
 - `themes.yaml` · `channel_allowlist.yaml` 수정 — 읽기만 했다
 - `verses.yaml`의 `note`·선정 판단 변경 — 본문 `text`만 고쳤다
 - `build_videos.py` — 일일 배치 본체 (FYM 골격 + 재생목록 수집 + 주제 태깅)
-- 채널 화이트리스트 승인 — `suggest_channels.py` 실행은 승인 대기 중
+- **`suggest_channels.py` 실제 실행** — 승인은 받았고 재부팅으로 중단됐다 (3절 첫 항목)
+- 채널 화이트리스트 승인 — 위 실행 결과를 사람이 검토한 뒤에 성립한다
 - GitHub Actions 워크플로 2종 (build / deploy-app)
 - `themes.yaml` 수정 — 개별 구절 채택에서 intent와 어긋난 판단을 여러 번
   했지만(빌 4:13 제외, `self_control`을 "쏟아냄"으로 해석, 잠언 분노 구절
