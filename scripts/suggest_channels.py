@@ -60,6 +60,7 @@ from lib.allowlist import NO_UPLOAD_DAYS, load_allowlist
 from lib.channel_blocklist import load_channel_blocklist
 from lib.normalize import matched_terms
 from lib.quota import COST, QuotaBudget, QuotaExceeded
+from lib.reviewed_out import ReviewedOutChannel, load_reviewed_out
 from lib.quota_log import (
     DAILY_CEILING,
     DEFAULT_LOG,
@@ -76,6 +77,35 @@ RECENT_VIDEO_COUNT = 10  # 채널당 살펴볼 최근 영상 수
 DEFAULT_TOP = 30
 DEFAULT_HARD_CAP = 1_200
 MIN_DURATION_SECONDS = 180  # 쇼츠 판정 하한 (PLAN.md — 상한은 두지 않는다)
+
+# 실격 기준: 최근 10건 중 쇼츠를 뺀 영상이 이 수 미만이면 탈락.
+#
+# [왜 쇼츠 "비율"이 아니라 "건수"인가 — 2026-08-18 개정]
+#   개정 전에는 쇼츠 비율 50% 이상을 실격 사유로 삼았다(FYM 승계).
+#   FYM은 검색으로 영상을 모아서 채널 단위 쇼츠 비중이 품질 신호였지만,
+#   PYM은 화이트리스트 채널의 업로드를 순회하고 **영상 단위로 길이 필터를 건다**
+#   (channel_allowlist.yaml: "화이트리스트는 필터 면제권이 아니다").
+#   쇼츠는 배치에서 개별로 걸러지므로 채널 자체를 탈락시킬 이유가 약하다.
+#
+#   게다가 배치는 채널당 1~2페이지(50~100건)를 순회하는데(PLAN.md 6절)
+#   검토 시트는 최근 10건만 본다. "최근 10건 중 8건이 쇼츠"여도 배치가 실제로
+#   가져오는 50건 중에는 긴 영상이 10건쯤 된다.
+#   **10건 표본의 비율로 채널을 탈락시키는 것은 표본 창이 좁아 생기는 오판이었다.**
+#
+#   실제 피해: 2차 발굴에서 CTS기독교TV·CGN·CBSJOY·ANOINTING 등 PYM이 가장
+#   원하는 기관형 채널이 콘텐츠 문제 없이 쇼츠 비중만으로 실격됐다.
+#
+#   그래서 판단을 "쇼츠를 뺀 영상이 실제로 몇 건 있는가"로 바꿨다.
+#   쇼츠만 올리는 채널은 이 기준에서 자연히 걸린다(0~1건).
+#
+# [임계값 2를 고른 근거 — 2차 30건 실측]
+#   1건 미만: CBSTV올포원(0건)만 탈락. 90% 쇼츠 채널이 통과해 너무 느슨하다.
+#   2건 미만: + YERAM WORSHIP(1건). 표본 10건에서 1건은 통계적으로 불안정하다
+#            (실제로 0일 수도 있었다는 뜻).
+#   3건 미만: CTS·극동방송·ANOINTING(각 2건)까지 탈락 — 회복시키려던 대상이
+#            다시 걸려 개정 목적에 반한다.
+#   → 2로 정했다. 표본이 10건뿐이라 정밀도에 한계가 있음을 전제한 값이다.
+MIN_NON_SHORT_VIDEOS = 2
 
 EXIT_OK = 0
 EXIT_RETRYABLE = 1
@@ -112,14 +142,51 @@ EXIT_QUOTA = 2
 #   기관형 채널로 기울일 뿐이다. 이단 단체도 정기 예배를 올리고 총회도 있다.
 #   걸러내는 것은 사람이며, 그 판단 근거를 남기는 칸이 검토 시트의
 #   `교단/소속 확인` 열이다.
-DISCOVERY_QUERIES: tuple[tuple[str, str], ...] = (
-    ("주일예배 설교", "교회 공식 채널의 정기 콘텐츠. 기관형 채널이 상위에 온다"),
-    ("성경 강해", "본문 중심 설교. 주제 설교보다 교리적 안정성이 높은 편이다"),
-    ("새벽기도회 말씀", "매일 올리는 채널이라 업로드 지속성이 함께 확인된다"),
-    ("수요예배 말씀", "주일과 다른 시간대. 주일만 올리는 채널과 구분된다"),
-    ("찬양 예배 실황", "worship 갈래. CCM 단체·교회 찬양팀을 부른다"),
-    ("매일성경 묵상", "devotion 갈래. 출판 사역(성서유니온·두란노) 계열 진입점"),
-)
+# [세트를 나누는 이유]
+#   1차(church) 실행 결과 89채널 중 상위 30개가 대부분 개별 교회 채널이었다.
+#   검색어가 "주일예배·새벽기도회" 같은 예배 이벤트 어휘라 그렇게 나온 것이다.
+#   기관형(교단 미디어·초교파 방송·선교/출판 사역)을 노리려면 다른 갈래가 필요하다.
+#
+#   1차 검색어를 덮어쓰지 않고 세트로 나눈 것은 재현성 때문이다.
+#   나중에 1차 결과를 다시 만들거나 두 세트의 수확을 비교할 수 있어야 한다.
+QUERY_SETS: dict[str, tuple[tuple[str, str], ...]] = {
+    # 1차 (2026-08-18 실행, 661 units) — 개별 교회 채널이 주로 잡힌다
+    "church": (
+        ("주일예배 설교", "교회 공식 채널의 정기 콘텐츠. 기관형 채널이 상위에 온다"),
+        ("성경 강해", "본문 중심 설교. 주제 설교보다 교리적 안정성이 높은 편이다"),
+        ("새벽기도회 말씀", "매일 올리는 채널이라 업로드 지속성이 함께 확인된다"),
+        ("수요예배 말씀", "주일과 다른 시간대. 주일만 올리는 채널과 구분된다"),
+        ("찬양 예배 실황", "worship 갈래. CCM 단체·교회 찬양팀을 부른다"),
+        ("매일성경 묵상", "devotion 갈래. 출판 사역(성서유니온·두란노) 계열 진입점"),
+    ),
+    # 2차 — 기관만 만들 수 있는 콘텐츠를 노린다
+    #
+    # [브랜드명을 쓰는 이유와 그 위험]
+    #   1차에서 "매일성경 묵상"이 성서유니온을 정확히 데려왔다. 고유 브랜드는
+    #   목표 기관을 확실히 잡는다. PLAN.md 5.1 초기 후보 풀에 명시된
+    #   CTS·CBS·CGNTV·극동방송을 그대로 노린다.
+    #
+    #   ⚠ 브랜드명 검색은 **이름을 도용한 사칭 채널도 데려온다.** 1차에는 없던
+    #   위험이다(일반 어휘였으므로). 검토 시 채널 설명의 홈페이지 링크가 실제
+    #   그 방송사 도메인인지 반드시 확인한다 — 기준 1a가 "채널→홈페이지 방향
+    #   우선"인 것이 여기서 특히 중요해진다.
+    #
+    #   ⚠ 방송사 계열에는 시사·뉴스 전문 채널이 있다. 기준 3(정치·시사 논평이
+    #   주력이면 교리가 건전해도 제외)에 걸리므로 최근 영상 제목으로 판별한다.
+    "institution": (
+        ("CTS기독교TV", "초교파 방송 + 계열 채널. PLAN 5.1 후보 풀 명시"),
+        ("CBS 기독교방송", "후보 풀이 '성서학당·새롭게하소서 등 계열 채널 포함'으로 명시"),
+        ("CGNTV", "초교파 방송 + 계열 채널. 후보 풀 명시"),
+        ("극동방송", "초교파 방송 + 계열 채널. 후보 풀 명시"),
+        (
+            "성경통독",
+            "출판 사역·선교단체가 꾸준히 만드는 콘텐츠라 기관형을 안정적으로 잡는다. "
+            "'총회 개회예배'는 연 1회 행사라 결과가 얇고 평소 콘텐츠를 알 수 없어 대체했다",
+        ),
+        ("워십 콘서트 실황", "찬양 사역 단체. 1차 '찬양 예배 실황'과 어휘를 분리해 중복을 줄인다"),
+    ),
+}
+DEFAULT_QUERY_SET = "church"
 
 # =============================================================================
 # 성격 신호어 — 차단이 아니라 사람에게 보여줄 표시
@@ -136,8 +203,20 @@ SIGNAL_TERMS: dict[str, tuple[str, ...]] = {
     "신유·집회": ("신유", "안수", "치유집회", "부흥성회", "능력집회"),
     "번영신학": ("축복", "형통", "재물", "부자되는", "성공비결"),
     "자극 서사": ("간증", "기적", "충격", "소름", "실화"),
-    "신비주의": ("예언", "환상", "계시받", "영분별"),
+    # "환상"을 뺐다 (2026-08-18) — 에스겔·계시록 강해에 흔한 성경 어휘라 오탐이 많다.
+    # 2차 발굴에서 CGN 생명의 삶(큐티 채널, 쇼츠 0%)이 "절망 속 희망, 새 성전 환상"
+    # 때문에 신비주의 2건으로 잡혔다. 에스겔 40장 본문 제목이다.
+    "신비주의": ("예언", "계시받", "영분별"),
 }
+
+# [오탐 사례 — 신호어를 차단이 아니라 표시로 둔 이유]
+#   "축복"은 유지한다. 번영신학 제목에 실제로 흔하기 때문이다. 다만 오탐도 있다:
+#     극동방송 "[매일기도] 대한민국을 축복의 통로로 사용하소서" → 국가 중보기도
+#   이 채널은 매일기도·경건생활 콘텐츠가 주력이고 번영신학과 무관하다.
+#
+#   신호어가 걸렸다고 자동 탈락시켰다면 2차 발굴에서 큐티 채널(CGN 생명의 삶)과
+#   매일기도 채널(극동방송)을 모두 잃었을 것이다. 표시로 두고 사람이 제목을
+#   읽게 하는 설계가 여기서 값을 했다. 신호어를 늘릴 때 이 사례를 기억할 것.
 
 
 @dataclass
@@ -178,9 +257,19 @@ class Candidate:
 
     @property
     def short_ratio(self) -> float | None:
+        """쇼츠 비율 — **참고 지표다. 실격 기준이 아니다.**
+
+        실격은 non_short_count로 판단한다. 이 값은 채널 성격을 사람이
+        가늠하는 데만 쓴다 (예: 쇼츠 위주 큐레이션 채널인지).
+        """
         if not self.recent:
             return None
         return sum(1 for v in self.recent if v.is_short) / len(self.recent)
+
+    @property
+    def non_short_count(self) -> int:
+        """최근 표본에서 쇼츠를 뺀 영상 수 — 실격 판단의 기준."""
+        return sum(1 for v in self.recent if not v.is_short)
 
     @property
     def signal_counts(self) -> Counter[str]:
@@ -206,8 +295,11 @@ class Candidate:
             return ["최근 영상을 가져오지 못함"]
         if self.days_since_upload is None or self.days_since_upload > NO_UPLOAD_DAYS:
             issues.append(f"{NO_UPLOAD_DAYS}일 내 업로드 없음")
-        if (self.short_ratio or 0) >= 0.5:
-            issues.append("최근 영상 절반 이상이 3분 미만")
+        if self.non_short_count < MIN_NON_SHORT_VIDEOS:
+            issues.append(
+                f"쇼츠 제외 최근 업로드 {self.non_short_count}건 "
+                f"(최소 {MIN_NON_SHORT_VIDEOS}건)"
+            )
         return issues
 
     @property
@@ -225,11 +317,13 @@ class Candidate:
 # =============================================================================
 
 
-def collect_appearances(client: Client) -> tuple[Counter[str], dict[str, str]]:
+def collect_appearances(
+    client: Client, queries: tuple[tuple[str, str], ...]
+) -> tuple[Counter[str], dict[str, str]]:
     """발굴 검색어로 검색해 채널별 등장 횟수를 센다."""
     counter: Counter[str] = Counter()
     titles: dict[str, str] = {}
-    for query, _why in DISCOVERY_QUERIES:
+    for query, _why in queries:
         items = client.search_items(query)
         for item in items:
             snippet = item.get("snippet") or {}
@@ -248,11 +342,22 @@ def inspect_candidates(
     titles: dict[str, str],
     listed: set[str],
     blocked: dict[str, str],
+    reviewed_out: frozenset[str],
     top: int,
     now: datetime,
-) -> list[Candidate]:
-    """상위 채널의 상세 정보와 최근 영상을 조사한다."""
-    ranked = [cid for cid, _ in counter.most_common(top)]
+) -> tuple[list[Candidate], list[tuple[str, str, int]]]:
+    """상위 채널의 상세 정보와 최근 영상을 조사한다.
+
+    **기검토 제외 채널은 상위 N 선정에서 뺀다.** 판단이 끝난 채널이 자리를
+    차지하면 새 후보를 그만큼 못 본다. 조회도 하지 않으므로 쿼터도 아낀다.
+    건너뛴 목록은 따로 돌려주어 시트에 남긴다.
+    """
+    skipped = [
+        (cid, titles.get(cid, "(이름 미확인)"), count)
+        for cid, count in counter.most_common()
+        if cid in reviewed_out
+    ]
+    ranked = [cid for cid, _ in counter.most_common() if cid not in reviewed_out][:top]
     found = {str(item["id"]): item for item in client.channels(ranked)}
 
     candidates: list[Candidate] = []
@@ -271,7 +376,7 @@ def inspect_candidates(
             _fill_channel_stats(candidate, item)
             _fill_recent_videos(candidate, client, item, now)
         candidates.append(candidate)
-    return candidates
+    return candidates, skipped
 
 
 def _fill_channel_stats(candidate: Candidate, item: dict[str, Any]) -> None:
@@ -347,6 +452,10 @@ def _parse_duration(iso: str) -> int:
 def render_markdown(
     candidates: list[Candidate],
     *,
+    skipped: list[tuple[str, str, int]],
+    reviewed_out: dict[str, ReviewedOutChannel],
+    queries: tuple[tuple[str, str], ...],
+    query_set: str,
     now: datetime,
     spent: int,
     total_channels: int,
@@ -359,20 +468,21 @@ def render_markdown(
         "",
         f"- 생성: {now.strftime('%Y-%m-%d %H:%M:%S')} UTC"
         + ("  **(드라이런 — 실제 데이터 아님)**" if dry_run else ""),
-        f"- 검색어 {len(DISCOVERY_QUERIES)}개에서 영상 {total_videos}건 수집 → "
-        f"채널 {total_channels}개 집계 → 상위 {len(candidates)}개 조사",
+        f"- 검색어 세트: **{query_set}** ({len(queries)}개)",
+        f"- 영상 {total_videos}건 수집 → 채널 {total_channels}개 집계 → "
+        f"상위 {len(candidates)}개 조사",
         f"- 소모 쿼터: {spent:,} units",
         "",
         _render_howto(),
         "",
-        _render_queries(),
+        _render_queries(queries),
         "",
         "## 요약",
         "",
         "**`교단/소속 확인` 열은 비어 있습니다. 사람이 채우는 칸입니다.**",
         "",
-        "| # | 채널명 | 교단/소속 확인 | 등장 | 구독자 | 총영상 | 최근 업로드 | 3분미만 | 성격 신호 | 자동 점검 |",
-        "|---:|---|---|---:|---:|---:|---|---:|---|---|",
+        "| # | 채널명 | 교단/소속 확인 | 등장 | 구독자 | 총영상 | 최근 업로드 | 쇼츠제외 | 쇼츠비율 | 성격 신호 | 자동 점검 |",
+        "|---:|---|---|---:|---:|---:|---|---:|---:|---|---|",
     ]
     for index, c in enumerate(candidates, start=1):
         lines.append(_render_summary_row(index, c))
@@ -381,6 +491,7 @@ def render_markdown(
     for index, c in enumerate(candidates, start=1):
         lines += _render_detail(index, c)
 
+    lines += _render_skipped(skipped, reviewed_out)
     lines += _render_yaml_block(candidates, now, reviewer)
     return "\n".join(lines) + "\n"
 
@@ -391,7 +502,11 @@ def _render_howto() -> str:
             "## 읽는 법",
             "",
             "**자동 점검은 객관적으로 확인 가능한 것만 봅니다.** 최근 업로드 지속성,",
-            "영상 길이 분포, channel_blocklist 등재 여부입니다.",
+            "쇼츠를 제외한 업로드 건수, channel_blocklist 등재 여부입니다.",
+            "",
+            "`쇼츠제외` 열이 실격 기준입니다(최소 2건). `쇼츠비율`은 참고 지표일 뿐",
+            "실격 사유가 아닙니다 — 쇼츠는 배치가 영상 단위로 거르므로 채널을",
+            "탈락시킬 이유가 되지 않습니다.",
             "",
             "`channel_allowlist.yaml`의 승인 기준 중 **1·2·3은 자동으로 판단할 수 없습니다.**",
             "",
@@ -417,7 +532,7 @@ def _render_howto() -> str:
     )
 
 
-def _render_queries() -> str:
+def _render_queries(queries: tuple[tuple[str, str], ...]) -> str:
     lines = [
         "## 사용한 검색어",
         "",
@@ -427,7 +542,7 @@ def _render_queries() -> str:
         "| 검색어 | 고른 이유 |",
         "|---|---|",
     ]
-    for query, why in DISCOVERY_QUERIES:
+    for query, why in queries:
         lines.append(f"| `{query}` | {why} |")
     return "\n".join(lines)
 
@@ -455,9 +570,10 @@ def _render_summary_row(index: int, c: Candidate) -> str:
         verdict = "통과"
     else:
         verdict = " / ".join(c.warnings)
+    non_short = f"{c.non_short_count}/{len(c.recent)}" if c.recent else "-"
     return (
         f"| {index} | {_escape(c.title)} |  | {c.appearances} | {subs} | {videos} | "
-        f"{upload} | {short} | {signal_text} | {verdict} |"
+        f"{upload} | {non_short} | {short} | {signal_text} | {verdict} |"
     )
 
 
@@ -478,6 +594,36 @@ def _render_detail(index: int, c: Candidate) -> list[str]:
         flag = ", ".join(v.signals)
         short = " (3분 미만)" if v.is_short else ""
         lines.append(f"| {i} | {_escape(v.title)} | {v.duration_text}{short} | {flag} |")
+    lines.append("")
+    return lines
+
+
+def _render_skipped(
+    skipped: list[tuple[str, str, int]], reviewed_out: dict[str, ReviewedOutChannel]
+) -> list[str]:
+    """기검토 제외로 건너뛴 채널. 왜 뺐는지 보여줘 재조사를 막는다."""
+    if not skipped:
+        return []
+    lines = [
+        "## 기검토 제외로 건너뛴 채널",
+        "",
+        f"아래 {len(skipped)}개는 `channel_reviewed_out.yaml`에 판단이 기록돼 있어 "
+        "조사하지 않았습니다.",
+        "그만큼 새 후보가 상위 N에 들어왔습니다. 다시 검토하려면 그 파일에서 "
+        "항목을 지우세요.",
+        "",
+        "| 채널명 | 등장 | 기준 | 재검토 | 제외 사유 |",
+        "|---|---:|---|---|---|",
+    ]
+    for cid, name, count in skipped:
+        entry = reviewed_out.get(cid)
+        if entry is None:
+            continue
+        recheck = "가능" if entry.recheckable else "영구"
+        lines.append(
+            f"| {_escape(entry.channel_name or name)} | {count} | {entry.criterion} | "
+            f"{recheck} | {_escape(entry.reason)[:110]} |"
+        )
     lines.append("")
     return lines
 
@@ -547,9 +693,9 @@ def _escape(text: str) -> str:
 # =============================================================================
 
 
-def print_estimate(top: int, hard_cap: int) -> int:
+def print_estimate(top: int, hard_cap: int, query_count: int) -> int:
     rows = [
-        ("발굴 검색", "search.list", len(DISCOVERY_QUERIES)),
+        ("발굴 검색", "search.list", query_count),
         ("후보 채널 조회", "channels.list", -(-top // 50)),
         ("채널별 최근 업로드", "playlistItems.list", top),
         ("최근 영상 상세", "videos.list", top),
@@ -591,19 +737,24 @@ def run(args: argparse.Namespace, budget_box: dict[str, Any] | None = None) -> i
     now = datetime.now(timezone.utc)
     allowlist = load_allowlist(args.allowlist)
     blocklist = load_channel_blocklist(args.blocklist)
+    reviewed_out = load_reviewed_out(args.reviewed_out)
     listed = set(allowlist.active_ids)
     blocked = {c.channel_id: c.reason for c in blocklist.channels}
 
+    queries = QUERY_SETS[args.query_set]
     logger.info(
-        "발굴 검색어 %d개로 후보를 모은다 (등록 %d개 / 차단 %d개는 표시만 한다)",
-        len(DISCOVERY_QUERIES),
+        "검색어 세트 '%s' %d개로 후보를 모은다 "
+        "(등록 %d / 차단 %d은 표시만, 기검토 제외 %d은 상위 N에서 뺀다)",
+        args.query_set,
+        len(queries),
         len(listed),
         len(blocked),
+        reviewed_out.size,
     )
     if allowlist.size == 0:
         logger.info("화이트리스트가 비어 있다 — Phase 0 진행 중이면 정상이다")
 
-    estimated = print_estimate(args.top, args.hard_cap)
+    estimated = print_estimate(args.top, args.hard_cap, len(queries))
     if estimated > args.hard_cap:
         logger.error("예상 소모량이 하드캡을 넘는다 — 중단한다")
         return EXIT_QUOTA
@@ -643,13 +794,18 @@ def run(args: argparse.Namespace, budget_box: dict[str, Any] | None = None) -> i
     else:
         client = YouTubeClient(os.environ.get("YOUTUBE_API_KEY", ""), budget)
 
-    counter, titles = collect_appearances(client)
+    counter, titles = collect_appearances(client, queries)
     total_videos = sum(counter.values())
     logger.info("영상 %d건에서 채널 %d개 집계", total_videos, len(counter))
 
-    candidates = inspect_candidates(
-        client, counter, titles, listed, blocked, args.top, now
+    candidates, skipped = inspect_candidates(
+        client, counter, titles, listed, blocked, reviewed_out.ids, args.top, now
     )
+    if skipped:
+        logger.info(
+            "기검토 제외로 건너뛴 채널 %d개 — 그만큼 새 후보가 상위 N에 들어왔다",
+            len(skipped),
+        )
     ready = sum(1 for c in candidates if c.auto_ok and not c.already_listed)
     logger.info(
         "상위 %d개 조사 완료 — 자동 점검 통과 %d개, 실격 %d개, 이미 등록 %d개",
@@ -661,6 +817,10 @@ def run(args: argparse.Namespace, budget_box: dict[str, Any] | None = None) -> i
 
     markdown = render_markdown(
         candidates,
+        skipped=skipped,
+        reviewed_out=reviewed_out.by_id,
+        queries=queries,
+        query_set=args.query_set,
         now=now,
         spent=budget.spent,
         total_channels=len(counter),
@@ -669,7 +829,10 @@ def run(args: argparse.Namespace, budget_box: dict[str, Any] | None = None) -> i
         dry_run=args.dry_run,
     )
 
-    out = resolve_out_path(args.out, args.dry_run)
+    out = resolve_out_path(
+        args.out.with_name(f"{args.out.stem}.{args.query_set}{args.out.suffix}"),
+        args.dry_run,
+    )
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(markdown, encoding="utf-8", newline="\n")
 
@@ -693,6 +856,12 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         "--blocklist", type=Path, default=root / "channel_blocklist.yaml"
     )
     parser.add_argument(
+        "--reviewed-out",
+        type=Path,
+        default=root / "channel_reviewed_out.yaml",
+        help="검토를 마치고 제외한 채널 기록. 상위 N 선정에서 제외된다",
+    )
+    parser.add_argument(
         "--out",
         type=Path,
         default=root / "channel_candidates.md",
@@ -705,6 +874,13 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         "--reviewer",
         default=os.environ.get("REVIEWER") or os.environ.get("USERNAME") or "TODO",
         help="YAML 블록의 reviewed_by 값",
+    )
+    parser.add_argument(
+        "--query-set",
+        choices=sorted(QUERY_SETS),
+        default=DEFAULT_QUERY_SET,
+        help=f"발굴 검색어 세트 (기본 {DEFAULT_QUERY_SET}). "
+        "church=개별 교회 / institution=기관형",
     )
     parser.add_argument("--hard-cap", type=int, default=DEFAULT_HARD_CAP)
     parser.add_argument("--dry-run", action="store_true")
