@@ -1,6 +1,6 @@
 # HANDOFF — 세션 인수인계
 
-작성 2026-08-18 (KST) · PYM 첫 세션
+작성 2026-08-18 (KST) · PYM 첫 세션 · 최신 상태는 `git log`로 확인할 것
 
 > 이 문서는 **다음 세션이 바로 일을 이어받기 위한 것**이다.
 > 정책·구조는 `PLAN.md`, 주제 체계는 `themes.yaml`, 원문 출처는 `data/krv/SOURCE.md`에 있고
@@ -11,7 +11,7 @@
 
 ## 1. 현재 상태
 
-**저장소** https://github.com/appleap385-aaz0919/PeaceYourMind (main = `18d07cd`, 로컬과 동기화됨)
+**저장소** https://github.com/appleap385-aaz0919/PeaceYourMind (`main`, 로컬과 동기화됨)
 **로컬** `D:\jaehyuk.myung\claude_demo\Demo_29_PYM`
 
 > FYM(`FindYourMind`)과 **완전히 분리된 별도 레포**다. API 키도 분리한다(`PLAN.md` 6절).
@@ -23,7 +23,7 @@
 |---|---|
 | 0 정책·채널 | **부분** — 주제 체계 24개 확정(`themes.yaml`), 채널 승인 0개 (기준만 문서화) |
 | 1 구절 큐레이션 | **진행 중** — 1차분 30구절 검수 완료. 나머지 약 220구절 미착수 |
-| 1.5 검증 파이프라인 | **완료** — 이번 세션 산출물 |
+| 1.5 검증·추출 파이프라인 | **완료** — 이번 세션 산출물 (`verify_verses.py` + `fill_verses.py`) |
 | 2 배치 개작 | 미착수 |
 | 3 PWA 조립 | 미착수 |
 
@@ -37,7 +37,8 @@
 ```
 
 **게이트** — `python scripts/verify_verses.py --check` → 종료 코드 0.
-30건 전건 원문 일치 + `verified: true`. API 소모 0.
+30건 전건 원문 일치 + `verified: true`.
+`python scripts/fill_verses.py --verify` → 추출 경로 30/30 재현. API 소모 0.
 
 ---
 
@@ -187,25 +188,42 @@ scj-peter는 부분적으로 현대 맞춤법화된 사본이었다.
 4. 통과하지 않으면 **본문이 아니라 `ref`를 의심한다.** 추출한 본문이 원문과
    다를 수는 없으므로, 불일치는 곧 ref 오류이거나 추출 경로 결함이다
 
-**추출 스크립트 — 아직 없다. 2차분 착수 시 만든다.**
-
-`scripts/verify_verses.py`가 쓰는 것과 같은 `ref` 파서·로더를 그대로 재사용하면
-되므로 새로 만들 로직이 거의 없다. `scripts/lib/krv_source.py`의
-`parse_ref` · `KrvBible.verses_in_range` · `normalize_ws`가 이미 전부 갖춰져 있다.
+**추출 스크립트 — `scripts/fill_verses.py`, 작성·검증 완료.**
 
 ```bash
-# 권장 인터페이스
-python scripts/fill_verses.py            # text가 빈 구절만 원문에서 채운다
-python scripts/fill_verses.py --dry-run  # 무엇을 채울지 보여주기만
+python scripts/fill_verses.py             # text가 빈 구절만 원문에서 채운다
+python scripts/fill_verses.py --dry-run   # 무엇을 채울지 보여주기만
+python scripts/fill_verses.py --verify    # 추출 경로가 옳은지 검증 (쓰지 않음)
 ```
 
-두 가지는 지켜야 한다.
+지키는 것 두 가지 — 둘 다 코드로 강제된다.
 
-- **이미 채워진 `text`를 덮어쓰지 않는다.** 1차분 30건은 검수를 마쳤고
-  일부는 사람이 웹 원문과 대조한 이력이 있다. 빈 것만 채운다.
-- **줄바꿈은 `verses.yaml`의 폴디드 스칼라(`>`) 형식에 맞춰 넣는다.**
-  `verify_verses.py`가 공백을 정규화하므로 줄 나눔 위치는 자유지만,
-  기존 구절과 같은 폭으로 접어야 diff가 읽힌다.
+- **이미 채워진 `text`를 덮어쓰지 않는다.** `text_is_empty()`가 참인 구절만
+  대상이고, 채워진 구절에 `set_text()`를 부르면 예외로 거부한다.
+  1차분 30건은 검수를 마쳤고 일부는 사람이 웹 원문과 대조한 이력이 있다 —
+  덮어쓰면 그 이력이 가리키는 대상이 소리 없이 바뀐다.
+- **폴디드 스칼라(`>`) 형식을 유지한다.** 접기 폭은 라인 전체 46자
+  (`WRAP_WIDTH`). 1차분 본문 라인 57개의 실측 길이가 43~46에 몰려 있어
+  그 결에 맞췄다. 어절 단위로만 접는다.
+
+`--verify`가 중요하다. **추출이 옳다면 지금 추출한 값과 이미 검수된 `text`가
+같아야 한다.** 다르면 추출 경로(ref 파싱·범위 조회·이어붙이기) 어딘가가 틀린 것이다.
+데이터를 교체하거나 파서를 고친 뒤에는 이걸 먼저 돌린다.
+
+**검증 결과 (2026-08-18)**
+
+| 항목 | 결과 |
+|---|---|
+| 1차분 30건 추출 경로 재현 | **30/30 일치** — 접기 왕복(`fold`→정규화)까지 무손실 |
+| 범위 ref (`빌립보서 4:6-7`) | 2절 이어붙이기 정상. 접힌 결과가 기존 `php.4.6`과 **글자 단위 동일** |
+| 없는 ref (`시편 200:1`) | `원문에 없는 장` 오류, 채우지 않음, 종료 코드 1 |
+| `text:` (null) / `text: ""` | 둘 다 빈 것으로 인식해 정상 처리 |
+| `--dry-run` | 파일 미변경 확인 |
+| 덮어쓰기 시도 | 예외로 거부 |
+| 채운 뒤 `verify_verses.py` | 채운 본문 전건 일치 (ref 오류 건만 게이트 실패) |
+
+30/30 재현이 핵심 증거다. 추출 경로가 **사람이 웹 원문과 대조해 확정한 본문을
+그대로 만들어낸다**는 뜻이므로, 2차분에서 나올 본문도 같은 신뢰도를 갖는다.
 
 **2차분에서 특히 주의할 것**
 
@@ -261,7 +279,7 @@ python scripts/fill_verses.py --dry-run  # 무엇을 채울지 보여주기만
 - 배치·앱 코드 — `scripts/`에는 검증 스크립트만 있다
 - `themes.yaml` · `channel_allowlist.yaml` 수정 — 읽기만 했다
 - `verses.yaml`의 `note`·선정 판단 변경 — 본문 `text`만 고쳤다
-- 2차분 추출 스크립트(`scripts/fill_verses.py`) 구현 — 방식과 인터페이스만 3절에 정해뒀다
+- 2차분 구절 선정 자체 — 추출 스크립트는 준비됐고 `ref` 목록이 없다
 
 ---
 
@@ -281,6 +299,7 @@ data/krv/
 
 scripts/
   verify_verses.py           본문 대조 + verified 갱신 + --check 게이트
+  fill_verses.py             빈 text를 원문에서 추출해 채움 + --verify 경로 검증
   lib/krv_source.py          원문 로더 · 책 이름 매핑 132개 · ref 파서 · 공백 정규화
   lib/verses_io.py           verses.yaml 라인 단위 in-place 편집 (주석 보존)
 ```
@@ -288,9 +307,14 @@ scripts/
 **쓰는 법**
 
 ```bash
+python scripts/fill_verses.py             # 빈 text를 원문에서 채운다 (2차분 진입점)
+python scripts/fill_verses.py --verify    # 추출 경로가 옳은지 검증
 python scripts/verify_verses.py           # 대조 + 일치 건 verified 갱신
 python scripts/verify_verses.py --check   # 검사만. CI 빌드 게이트용 (종료 코드)
 ```
+
+2차분 흐름은 `fill_verses.py` -> `verify_verses.py` 순이다.
+앞이 본문을 만들고 뒤가 안전망으로 받는다.
 
 Phase 2에서 CI에 넣을 때는 `--check`를 배포 전 단계에 건다.
 `verified: false`가 하나라도 있으면 배포되지 않는다.

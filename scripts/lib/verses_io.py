@@ -106,6 +106,55 @@ class VersesFile:
         anchor = self._set_or_insert(verse_id, "verified_by", verified_by, anchor)
         self._set_or_insert(verse_id, "verified_at", f'"{verified_at}"', anchor)
 
+    def text_is_empty(self, verse_id: str) -> bool:
+        """text가 비어 있는가 — 채울 대상인지 판정한다.
+
+        빈 형태가 여럿이다: `text:`(null), `text: ""`, `text: >` 뒤에 아무것도
+        없는 경우. 어느 쪽이든 '아직 안 채워졌다'로 본다.
+        """
+        verse = next(v for v in self.verses if v["id"] == verse_id)
+        value = verse.get("text")
+        return value is None or not str(value).strip()
+
+    def set_text(self, verse_id: str, folded: list[str]) -> None:
+        """text를 폴디드 스칼라(`>`) 블록으로 교체한다.
+
+        folded는 들여쓰기 없는 본문 줄들이다. 여기서 6칸을 붙인다 —
+        verses.yaml의 기존 구절과 같은 형식이 되도록.
+
+        **비어 있지 않은 text에는 쓰지 않는다.** 1차분 30건은 검수를 마쳤고
+        일부는 사람이 웹 원문과 대조한 이력이 있다. 덮어쓰면 그 이력이
+        가리키는 대상이 소리 없이 바뀐다.
+        """
+        if not self.text_is_empty(verse_id):
+            raise VersesFormatError(
+                f"{verse_id}: text가 이미 채워져 있다. 덮어쓰지 않는다."
+            )
+        if not folded:
+            raise VersesFormatError(f"{verse_id}: 채울 본문이 비어 있다")
+
+        block = self.blocks[verse_id]
+        start = block.fields["text"]
+        end = self._text_block_end(start, block.end)
+
+        replacement = ["    text: >"] + [f"      {line}" for line in folded]
+        self.lines[start:end] = replacement
+        self._shift_after(end - 1, len(replacement) - (end - start))
+
+    def _text_block_end(self, start: int, block_end: int) -> int:
+        """text 필드가 차지하는 라인 범위의 끝(exclusive)을 찾는다.
+
+        `    text: >` 다음의 6칸 이상 들여쓴 연속 줄이 값의 일부다.
+        4칸 들여쓴 다음 필드를 만나면 거기서 끝난다.
+        """
+        index = start + 1
+        while index < block_end:
+            line = self.lines[index]
+            if _FIELD.match(line) or not line.startswith("      "):
+                break
+            index += 1
+        return index
+
     def _set_field(self, verse_id: str, key: str, value: str) -> None:
         index = self.blocks[verse_id].fields[key]
         self.lines[index] = f"    {key}: {value}"
