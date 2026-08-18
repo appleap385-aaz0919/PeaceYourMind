@@ -1,0 +1,49 @@
+# 배치 산출물 — gh-pages에 배포되므로 저장소에 커밋하지 않는다 (FYM 승계)
+dist/
+
+# Actions에서 직전 배포본을 체크아웃하는 경로
+_previous/
+
+# 부분 실행(--only) 산출물 — 주제가 다 들어 있지 않아 배포 대상이 아니다.
+*.partial.json
+
+# 후보 검토 시트 — suggest_channels.py가 매번 새로 만드는 일회성 작업 문서.
+# 승인 결과는 channel_allowlist.yaml에 남으므로 이 파일 자체는 이력이 필요 없다.
+channel_candidates.md
+
+# 로컬 환경변수 (YOUTUBE_API_KEY 등)
+# 운영 키는 GitHub Actions Secrets에만 두고, 저장소에는 어떤 형태로도 넣지 않는다.
+# PYM은 FYM과 API 키를 분리한다 (PLAN.md 6절) — 두 저장소의 .env를 섞지 않는다.
+.env
+.env.*
+!.env.example
+
+# 일일 쿼터 소모 기록 (Phase 2에서 이식)
+# 기기마다 값이 다르고 매 실행마다 바뀐다. 커밋하면 워킹트리가 계속 더러워진다.
+.quota_log.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# --- 앱 (Phase 3) ---
+node_modules/
+app/dist/
+
+# themes.yaml에서 빌드 때마다 생성한다.
+# 사본을 커밋하면 원본과 반드시 어긋난다 — 단일 소스를 지킨다.
+app/src/data/themes.json
+app/src/data/taxonomy.json
+
+# verses.yaml에서 생성한다 (gen_verses_json.py, Phase 2).
+# note 등 큐레이션 메타가 제거된 파생물이라 소스가 아니다.
+app/src/data/verses.json
+
+# --- 커밋하는 것 (무시하지 않는다) ---
+#
+# data/krv/  개역한글 원문. 저작재산권 보호기간 만료로 자유 사용 가능하며
+#            (verses.yaml 헤더 참조), 구절 본문 대조의 기준이 된다.
+#            이 파일이 바뀌면 모든 verified 판정의 근거가 바뀌므로
+#            버전 관리 대상이다. 무결성은 data/krv/SOURCE.md의 sha256으로 확인한다.

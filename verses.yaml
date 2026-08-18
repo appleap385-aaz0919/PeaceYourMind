@@ -1,0 +1,464 @@
+# =====================================================================
+# verses.yaml — PYM 구절 큐레이션 소스 (Phase 1)
+#
+# 이 파일이 구절을 관리하는 유일한 곳이다. 빌드 스크립트(gen_verses_json.py,
+# Phase 2에서 작성)가 이 파일에서 verses.json을 생성한다 — note 등
+# 큐레이션 메타는 앱 번들에서 제거된다.
+#
+# [번역본] 개역한글(1961). PLAN.md 1절 확정 사항.
+#   저작재산권은 보호기간 만료로 자유 사용 가능 — 대한성서공회 공식 FAQ 확인
+#   (2026-08-18). 단 저작인격권 2가지를 준수해야 한다:
+#   1. 동일성유지권 — 본문을 한 글자도 바꾸지 않는다. 축약·현대 맞춤법 교정 금지.
+#      개역한글은 옛 표기를 쓴다: -ㄹ찌어다, -ㄹ찌라도, 잠간, 훤화 등.
+#      현대 맞춤법으로 "고치는" 것이 곧 훼손이다. (실제로 1차 초안에서
+#      "알찌어다"를 "알지어다"로 쓴 오류가 검출됐다)
+#   2. 성명표시권 — 앱에 출처 표기: "성경전서 개역한글판, 대한성서공회"
+#      (Phase 3에서 설정/정보 화면에 고정 표기)
+#
+# [검수 절차 — 중요]
+#   text는 AI가 작성한 초안이다. 등록 전 반드시 개역한글 원문과 대조한다.
+#   개역한글/개역개정은 표현이 미세하게 다르다 (예: 벧전 5:7 "권고하심이라"
+#   vs "돌보심이라"). 두 번역이 섞이면 저작권 전제가 깨지므로 대조는
+#   개역한글 원문 기준으로만 한다.
+#   대조 완료 시 verified를 true로 바꾸고 verified_by / verified_at을 채운다.
+#   빌드는 verified: false 구절을 포함하면 실패한다 (검수 없이 배포 불가).
+#
+# [선정 원칙]
+#   1. 감정을 판단·질책하지 않는 구절 (FYM 감성 터치 원칙의 PYM 판)
+#   2. 개역한글 문체로 읽어도 자연스러운 구절 우선
+#   3. 당위 명령형("~하라")만으로 끝나는 구절은 약속·근거가 함께 있는 것 우선
+#   4. proof-texting 경계 — 맥락에서 떼어내면 뜻이 왜곡되는 구절은 제외,
+#      note에 선정 근거를 남긴다
+#   5. 위기 화면용 구절은 이 파일이 아니라 crisis 전용 섹션에서 별도 관리
+#      (Phase 1 후반, 죄·심판 프레임 배제 원칙 적용)
+#
+# [진행 현황]
+#   1차분: 불안 계열 (anxiety.*) 30구절 — 본 파일. 검수 대기
+#   2차분: 우울·지침 계열 (sadness.*, exhaustion.*) — 1차 검수 피드백 반영 후
+#   3차분: 분노·답답함 계열 (anger.*, frustration.*)
+#   4차분: 기쁨·설렘·평온·심심함 계열 + crisis 전용
+# =====================================================================
+
+version: "0.1.0"
+translation: krv1961
+
+verses:
+
+  # ═══════════════════════════════════════════════════════════
+  # anxiety.restless (초조함) — 주제: peace, quiet_worship
+  # 방향: 초조함을 없애라고 하지 않고, 잠잠함·고요함으로 초대한다
+  # ═══════════════════════════════════════════════════════════
+
+  - id: jhn.14.27
+    ref: 요한복음 14:27
+    text: >
+      평안을 너희에게 끼치노니 곧 나의 평안을 너희에게 주노라 내가 너희에게
+      주는 것은 세상이 주는 것 같지 아니하니라 너희는 마음에 근심도 말고
+      두려워하지도 말라
+    emotion_tags: [anxiety.restless, anxiety.tension]
+    theme: peace
+    note: 서비스명(Peace Your Mind)과 직결되는 대표 구절. 초조함 화면의 첫 후보.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: isa.26.3
+    ref: 이사야 26:3
+    text: >
+      주께서 심지가 견고한 자를 평강에 평강으로 지키시리니 이는 그가 주를
+      의뢰함이니이다
+    emotion_tags: [anxiety.restless]
+    theme: peace
+    note: '"평강에 평강으로" — 개역한글 특유의 리듬이 살아 있는 구절.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: php.4.6
+    ref: 빌립보서 4:6-7
+    text: >
+      아무 것도 염려하지 말고 오직 모든 일에 기도와 간구로, 너희 구할 것을
+      감사함으로 하나님께 아뢰라 그리하면 모든 지각에 뛰어난 하나님의 평강이
+      그리스도 예수 안에서 너희 마음과 생각을 지키시리라
+    emotion_tags: [anxiety.restless, anxiety.worry]
+    theme: peace
+    note: >
+      6절 단독은 명령형으로 끝나 7절(약속)과 반드시 묶는다 — 선정 원칙 3.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.94.19
+    ref: 시편 94:19
+    text: >
+      내 속에 생각이 많을 때에 주의 위안이 내 영혼을 즐겁게 하시나이다
+    emotion_tags: [anxiety.restless]
+    theme: peace
+    note: >
+      "생각이 많을 때" — 초조함의 실제 언어와 정확히 겹친다. 자연어 입력
+      "생각이 너무 많아"와 직결되는 드문 구절. 강력 추천.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.131.2
+    ref: 시편 131:2
+    text: >
+      실로 내가 내 심령으로 고요하고 평온케 하기를 젖 뗀 아이가 그 어미 품에
+      있음 같게 하였나니 내 중심이 젖 뗀 아이와 같도다
+    emotion_tags: [anxiety.restless]
+    theme: peace
+    note: 이미지(어미 품의 아이)가 위로의 톤을 만든다. 개역한글 문체 검수 필요.
+    verified: true
+    verified_by: 웹 원문 대조 (bible.com KRV)
+    verified_at: \"2026-08-18\"
+
+  - id: psa.62.1
+    ref: 시편 62:1
+    text: >
+      나의 영혼이 잠잠히 하나님만 바람이여 나의 구원이 그에게서 나는도다
+    emotion_tags: [anxiety.restless]
+    theme: quiet_worship
+    note: '"잠잠히" — 잔잔한 찬양 주제와 자연스럽게 연결.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.46.10
+    ref: 시편 46:10
+    text: >
+      이르시기를 너희는 가만히 있어 내가 하나님 됨을 알찌어다 내가 열방과
+      세계 중에서 높임을 받으리라 하시도다
+    emotion_tags: [anxiety.restless]
+    theme: peace
+    note: >
+      "가만히 있어" — 무언가 해야 할 것 같은 초조함에 대한 직접 응답.
+      [검수 이력] 초안 "알지어다"(현대 표기) → 원문 "알찌어다"로 정정 (2026-08-18)
+    verified: true
+    verified_by: 웹 원문 대조 (bible.com KRV + 대한성서공회)
+    verified_at: "2026-08-18"
+
+  - id: psa.4.8
+    ref: 시편 4:8
+    text: >
+      내가 평안히 눕고 자기도 하리니 나를 안전히 거하게 하시는 이는 오직
+      여호와시니이다
+    emotion_tags: [anxiety.restless, calm.stable]
+    theme: peace
+    note: 밤·잠들기 전 사용 맥락에 맞는 구절. 시간대별 노출 아이디어(Phase 3)와 연결 가능.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: mrk.4.39
+    ref: 마가복음 4:39
+    text: >
+      예수께서 깨어 바람을 꾸짖으시며 바다더러 이르시되 잠잠하라 고요하라
+      하시니 바람이 그치고 아주 잔잔하여지더라
+    emotion_tags: [anxiety.restless, anxiety.tension]
+    theme: peace
+    note: >
+      서사 구절(풍랑 진압). 교리 진술이 아닌 장면 묘사라 감정 화면에서
+      이미지로 작동한다. 서사 구절 사용의 선례로 검토 요망.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: isa.30.15
+    ref: 이사야 30:15
+    text: >
+      주 여호와 이스라엘의 거룩하신 자가 말씀하시되 너희가 돌이켜 안연히
+      처하여야 구원을 얻을 것이요 잠잠하고 신뢰하여야 힘을 얻을 것이어늘
+      너희가 원치 아니하고
+    emotion_tags: [anxiety.restless]
+    theme: peace
+    note: >
+      [검토 필요] 후반부 "너희가 원치 아니하고"는 책망 맥락이다.
+      전반부만 쓰면 proof-texting(선정 원칙 4), 전체를 쓰면 톤이 꺾인다.
+      제외 쪽으로 기울지만 판단을 남긴다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  # ═══════════════════════════════════════════════════════════
+  # anxiety.worry (걱정) — 주제: trust, peace
+  # 방향: 걱정의 대상을 붙들고 있는 손을 펴게 한다 (맡김)
+  # ═══════════════════════════════════════════════════════════
+
+  - id: 1pe.5.7
+    ref: 베드로전서 5:7
+    text: >
+      너희 염려를 다 주께 맡겨 버리라 이는 저가 너희를 권고하심이니라
+    emotion_tags: [anxiety.worry]
+    theme: trust
+    note: >
+      맡김 주제의 대표 구절. 개역한글은 "권고하심"(돌보심의 옛말) —
+      필요 시 화면에 짧은 낱말 풀이를 붙이는 옵션 검토 (Phase 3).
+    verified: true
+    verified_by: 웹 원문 대조 (bible.com KRV)
+    verified_at: \"2026-08-18\"
+
+  - id: mat.6.34
+    ref: 마태복음 6:34
+    text: >
+      그러므로 내일 일을 위하여 염려하지 말라 내일 일은 내일 염려할 것이요
+      한 날 괴로움은 그 날에 족하니라
+    emotion_tags: [anxiety.worry]
+    theme: trust
+    note: '"한 날 괴로움은 그 날에 족하니라" — 걱정의 시간 범위를 오늘로 줄여주는 구절.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: mat.6.26
+    ref: 마태복음 6:26
+    text: >
+      공중의 새를 보라 심지도 않고 거두지도 않고 창고에 모아 들이지도
+      아니하되 너희 천부께서 기르시나니 너희는 이것들보다 귀하지 아니하냐
+    emotion_tags: [anxiety.worry]
+    theme: trust
+    note: 자연 이미지 + "귀하지 아니하냐"의 존재 긍정. creation 주제와도 접점.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.55.22
+    ref: 시편 55:22
+    text: >
+      네 짐을 여호와께 맡겨 버리라 너를 붙드시고 의인의 요동함을 영영히
+      허락지 아니하시리로다
+    emotion_tags: [anxiety.worry, frustration.blocked]
+    theme: trust
+    note: '"짐" 메타포 — 걱정을 무게로 경험하는 사용자 언어와 맞닿는다.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: pro.3.5
+    ref: 잠언 3:5-6
+    text: >
+      너는 마음을 다하여 여호와를 의뢰하고 네 명철을 의지하지 말라 너는
+      범사에 그를 인정하라 그리하면 네 길을 지도하시리라
+    emotion_tags: [anxiety.worry, frustration.stuck]
+    theme: trust
+    note: guidance 주제와 걸치는 구절 — 걱정과 막막함 양쪽에서 쓸 수 있다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.37.5
+    ref: 시편 37:5
+    text: >
+      너의 길을 여호와께 맡기라 저를 의지하면 저가 이루시고
+    emotion_tags: [anxiety.worry]
+    theme: trust
+    note: 짧고 명료 — 카드 UI에서 첫 화면 후보.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.121.1
+    ref: 시편 121:1-2
+    text: >
+      내가 산을 향하여 눈을 들리라 나의 도움이 어디서 올꼬 나의 도움이
+      천지를 지으신 여호와에게서로다
+    emotion_tags: [anxiety.worry, frustration.stuck]
+    theme: trust
+    note: 질문("어디서 올꼬")으로 시작해 답으로 끝나는 구조 — 걱정의 내적 대화와 닮았다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.23.1
+    ref: 시편 23:1
+    text: >
+      여호와는 나의 목자시니 내가 부족함이 없으리로다
+    emotion_tags: [anxiety.worry]
+    theme: trust
+    note: 가장 널리 알려진 구절 — 비신자 사용자에게도 진입 장벽이 낮다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: php.4.19
+    ref: 빌립보서 4:19
+    text: >
+      나의 하나님이 그리스도 예수 안에서 영광 가운데 그 풍성한대로 너희
+      모든 쓸 것을 채우시리라
+    emotion_tags: [anxiety.worry]
+    theme: trust
+    note: >
+      [검토 필요] 공급 약속 구절 — 번영신학 오용이 많은 구절이다.
+      생계 걱정 맥락에서는 정당한 위로이지만, 전역 금지어(축복) 원칙과의
+      일관성 관점에서 포함 여부 판단 요망.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.56.3
+    ref: 시편 56:3
+    text: >
+      내가 두려워하는 날에는 주를 의지하리이다
+    emotion_tags: [anxiety.worry, anxiety.tension]
+    theme: trust
+    note: >
+      두려움을 부정하지 않는다("두려워하는 날에는") — 감정 판단 없음
+      원칙의 모범 구절. 한 문장이라 카드 UI 최적.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  # ═══════════════════════════════════════════════════════════
+  # anxiety.tension (긴장) — 주제: courage, peace
+  # 방향: 긴장을 풀라고 하지 않고, 함께하심을 근거로 담대함을 준다
+  # ═══════════════════════════════════════════════════════════
+
+  - id: isa.41.10
+    ref: 이사야 41:10
+    text: >
+      두려워 말라 내가 너와 함께 함이니라 놀라지 말라 나는 네 하나님이
+      됨이니라 내가 너를 굳세게 하리라 참으로 너를 도와 주리라 참으로 나의
+      의로운 오른손으로 너를 붙들리라
+    emotion_tags: [anxiety.tension, anxiety.worry]
+    theme: courage
+    note: 담대함 주제의 대표 구절. "참으로"의 반복이 개역한글에서 살아 있다.
+    verified: true
+    verified_by: 웹 원문 대조 (bible.com KRV)
+    verified_at: \"2026-08-18\"
+
+  - id: jos.1.9
+    ref: 여호수아 1:9
+    text: >
+      내가 네게 명한 것이 아니냐 마음을 강하게 하고 담대히 하라 두려워 말며
+      놀라지 말라 네가 어디로 가든지 네 하나님 여호와가 너와 함께 하느니라 하시니라
+    emotion_tags: [anxiety.tension]
+    theme: courage
+    note: 명령형이지만 근거("어디로 가든지 함께")가 뒤따른다 — 선정 원칙 3 충족.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: 2ti.1.7
+    ref: 디모데후서 1:7
+    text: >
+      하나님이 우리에게 주신 것은 두려워하는 마음이 아니요 오직 능력과
+      사랑과 근신하는 마음이니
+    emotion_tags: [anxiety.tension]
+    theme: courage
+    note: >
+      "두려움은 주신 것이 아니다"라는 프레임 전환. "근신"은 옛말 —
+      낱말 풀이 옵션 대상.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.27.1
+    ref: 시편 27:1
+    text: >
+      여호와는 나의 빛이요 나의 구원이시니 내가 누구를 두려워하리요 여호와는
+      내 생명의 능력이시니 내가 누구를 무서워하리요
+    emotion_tags: [anxiety.tension]
+    theme: courage
+    note: 수사 의문의 리듬 — 소리 내어 읽는 낭독 영상(quiet_worship 풀)과 결이 맞다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.118.6
+    ref: 시편 118:6
+    text: >
+      여호와는 내 편이시라 내게 두려움이 없나니 사람이 내게 어찌할꼬
+    emotion_tags: [anxiety.tension]
+    theme: courage
+    note: >
+      "사람이 내게 어찌할꼬" — 긴장의 실제 원인(대인·평가 상황)과 정확히
+      만나는 구절. 면접·발표 전 사용 맥락 예상.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: deu.31.8
+    ref: 신명기 31:8
+    text: >
+      여호와 그가 네 앞서 행하시며 너와 함께하사 너를 떠나지 아니하시며
+      버리지 아니하시리니 너는 두려워 말라 놀라지 말라
+    emotion_tags: [anxiety.tension, sadness.lonely]
+    theme: courage
+    note: '"앞서 행하시며" — 처음 겪는 일 앞의 긴장에 맞는 방향성. presence 주제와 접점.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.46.1
+    ref: 시편 46:1
+    text: >
+      하나님은 우리의 피난처시요 힘이시니 환난 중에 만날 큰 도움이시라
+    emotion_tags: [anxiety.tension]
+    theme: courage
+    note: >
+      "피난처" 메타포 — 압도되는 상황의 언어.
+      [검수 이력] 초안은 46:1-2로 잡고 3절 끝("우리는 두려워 아니하리로다")을
+      2절에 이어붙였다 — 절 경계 오류. 1절 단독으로 정정 (2026-08-18).
+      1~3절 전체 수록안은 "요동할찌라도"의 옛 표기 포함 원문 그대로일 때만 가능.
+    verified: true
+    verified_by: 웹 원문 대조 (bible.com KRV + 대한성서공회)
+    verified_at: "2026-08-18"
+
+  - id: isa.43.1
+    ref: 이사야 43:1
+    text: >
+      야곱아 너를 창조하신 여호와께서 이제 말씀하시느니라 이스라엘아 너를
+      조성하신 자가 이제 말씀하시느니라 너는 두려워 말라 내가 너를
+      구속하였고 내가 너를 지명하여 불렀나니 너는 내 것이라
+    emotion_tags: [anxiety.tension, sadness.lonely]
+    theme: courage
+    note: >
+      "지명하여 불렀나니" — 익명의 긴장(군중 속 나) 반대편의 언어.
+      love 주제와도 접점. 길어도 축약 불가(동일성유지권).
+      [검수 이력] 초안에서 두 번째 "이제" 누락 → 원문 대조로 보정 (2026-08-18)
+    verified: true
+    verified_by: 웹 원문 대조 (bible.com KRV + 대한성서공회)
+    verified_at: "2026-08-18"
+
+  - id: rom.8.31
+    ref: 로마서 8:31
+    text: >
+      그런즉 이 일에 대하여 우리가 무슨 말 하리요 만일 하나님이 우리를
+      위하시면 누가 우리를 대적하리요
+    emotion_tags: [anxiety.tension]
+    theme: courage
+    note: '"우리를 위하시면" — 혼자 맞서는 느낌의 반대 프레임.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.34.4
+    ref: 시편 34:4
+    text: >
+      내가 여호와께 구하매 내게 응답하시고 내 모든 두려움에서 나를
+      건지셨도다
+    emotion_tags: [anxiety.tension, anxiety.worry]
+    theme: courage
+    note: 과거형 고백("건지셨도다") — 약속이 아니라 경험의 언어라 톤이 다르다. 균형용.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+# =====================================================================
+# [1차분 요약 — 2026-08-18 셀프 리뷰 반영]
+#   anxiety.restless 10 / anxiety.worry 10 / anxiety.tension 10 = 30구절
+#   검토 필요 표시: isa.30.15 (책망 맥락 — 제외 권고), php.4.19 (번영신학 오용 우려)
+#
+#   [셀프 리뷰 결과] 표본 6구절 원문 대조 → 오류 3건 검출·정정:
+#     isa.43.1  "이제" 1회 누락
+#     psa.46.1  절 경계 오류 (3절 끝을 2절에 이어붙임) → 46:1 단독으로 정정
+#     psa.46.10 현대 맞춤법화 ("알지어다" ← 원문 "알찌어다")
+#   오류율 약 10%가 실측됐다. 나머지 24구절(verified: false)은 사용 전
+#   전수 원문 대조가 필수다 — Claude Code에서 배치 대조 스크립트로 처리 권장.
+#   특히 옛 표기(-ㄹ찌-, 잠간 등) 현대화 오류를 중점 확인할 것.
+#
+#   교차 태깅: 8구절이 인접 세분류에 걸침. 이때 구절의 theme이 해당 감정의
+#   mapping 주제 밖일 수 있다 (예: anxiety.worry 화면에 theme=courage 구절).
+#   [설계 결정 필요] 영상 풀을 "mapping 주제 ∪ 표시된 구절의 theme"으로
+#   확장할지, 구절을 mapping 주제 안으로 제한할지 — Phase 2 배치 설계 전 확정
+# =====================================================================

@@ -1,0 +1,10 @@
+# 줄바꿈을 저장소·워킹트리 모두 LF로 고정한다. (FYM 승계)
+#
+# core.autocrlf 설정은 개발자마다 다르고 Windows에서는 기본이 true라,
+# 같은 파일이 사람에 따라 CRLF/LF로 오가며 diff 전체가 바뀐 것처럼 보인다.
+# 배치는 Linux 러너(ubuntu-latest)에서 돌고 산출물도 LF이므로 LF로 통일한다.
+* text=auto eol=lf
+
+# 개역한글 원문은 대조의 기준이다. 바이트 단위로 원본과 동일해야
+# SOURCE.md에 기록한 sha256이 재현된다. 어떤 변환도 적용하지 않는다.
+data/krv/bible_1961_krv.json -text
