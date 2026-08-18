@@ -11,8 +11,13 @@
 
 ## 1. 현재 상태
 
-**저장소** `D:\jaehyuk.myung\claude_demo\Demo_29_PYM` — 로컬 git 초기화 완료.
-**원격 없음. push 안 함** (사용자 지시 대기).
+**저장소** https://github.com/appleap385-aaz0919/PeaceYourMind (main = `18d07cd`, 로컬과 동기화됨)
+**로컬** `D:\jaehyuk.myung\claude_demo\Demo_29_PYM`
+
+> FYM(`FindYourMind`)과 **완전히 분리된 별도 레포**다. API 키도 분리한다(`PLAN.md` 6절).
+> 커밋 author는 FYM과 동일하게 `aaz0919 <appleap385@gmail.com>`로 맞췄다 —
+> 첫 커밋이 회사 이메일로 잡혀 있어 push 전에 amend했다. 이 저장소의 로컬 설정이라
+> 새로 clone하면 다시 지정해야 한다.
 
 | Phase | 상태 |
 |---|---|
@@ -150,14 +155,57 @@ scj-peter는 부분적으로 현대 맞춤법화된 사본이었다.
 **주제 매핑** (`themes.yaml` 참조, 수정 대상 아님)
 `comfort` · `lament` · `hope` · `presence` · `love` · `renewal` · `rest` · `strength`
 
-**작업 순서 (권장)**
+### 작업 방식 — 본문을 타이핑하지 않는다 (2차분부터 적용)
 
-1. 구절 선정 + `note`에 근거 기록 — `verses.yaml` 선정 원칙 5개 적용
-2. `text` 초안 작성 — **원문 데이터에서 복사하는 것이 가장 안전하다.**
-   1차분 오류율이 5/30(약 17%)였고 전부 기억에 의존한 초안에서 나왔다.
-   `data/krv/bible_1961_krv.json`에서 그대로 가져오면 이 오류가 원천 차단된다.
-3. `python scripts/verify_verses.py` 실행 → 전건 통과 확인
-4. 불일치가 나오면 diff를 보고 (a)/(b) 판단 후 사람이 승인
+**구절 선정은 `ref`(장절)까지만 한다. `text`는 사람도 AI도 쓰지 않고
+`data/krv/bible_1961_krv.json`에서 스크립트로 추출해 채운다.**
+
+근거는 1차분 실측이다. **30건 중 8건(27%)이 본문 오류였고 전부 기억에 의존해
+쓴 초안에서 나왔다.**
+
+```
+1차 셀프 리뷰 (표본 6건)  3건 — isa.43.1 "이제" 누락 / psa.46.1 절 경계 오류
+                              / psa.46.10 "알찌어다"→"알지어다" 현대화
+스크립트 대조 (나머지 24건) 5건 — php.4.6 쉼표 / psa.55.22 "저가" 추가
+                              / php.4.19·deu.31.8 띄어쓰기 / jos.1.9 "하시니라" 누락
+```
+
+오류 유형이 쉼표·띄어쓰기·조사·옛 표기처럼 **눈으로 읽어서는 안 걸리는 층위**에
+몰려 있다. 사람이 한 번 더 보는 것으로는 27%가 내려가지 않는다.
+반면 추출은 이 오류를 **원천 차단**한다 — 복사한 문자열은 정의상 원문과 같다.
+
+이렇게 하면 `verify_verses.py`의 역할이 바뀐다. **검출기가 아니라 안전망이 된다.**
+추출 경로가 깨졌을 때(잘못된 ref, 범위 파싱 오류, 데이터 교체)만 울리며,
+평소에는 조용히 통과하는 것이 정상이다.
+
+**작업 순서**
+
+1. 구절 선정 — `ref`와 `emotion_tags` / `theme` / `note`만 쓴다.
+   `text`는 비워두거나 빈 문자열로 둔다. `verses.yaml` 선정 원칙 5개 적용
+2. 추출 스크립트로 `text` 채우기 (아래 인터페이스 참조)
+3. `python scripts/verify_verses.py` → 전건 통과 확인
+4. 통과하지 않으면 **본문이 아니라 `ref`를 의심한다.** 추출한 본문이 원문과
+   다를 수는 없으므로, 불일치는 곧 ref 오류이거나 추출 경로 결함이다
+
+**추출 스크립트 — 아직 없다. 2차분 착수 시 만든다.**
+
+`scripts/verify_verses.py`가 쓰는 것과 같은 `ref` 파서·로더를 그대로 재사용하면
+되므로 새로 만들 로직이 거의 없다. `scripts/lib/krv_source.py`의
+`parse_ref` · `KrvBible.verses_in_range` · `normalize_ws`가 이미 전부 갖춰져 있다.
+
+```bash
+# 권장 인터페이스
+python scripts/fill_verses.py            # text가 빈 구절만 원문에서 채운다
+python scripts/fill_verses.py --dry-run  # 무엇을 채울지 보여주기만
+```
+
+두 가지는 지켜야 한다.
+
+- **이미 채워진 `text`를 덮어쓰지 않는다.** 1차분 30건은 검수를 마쳤고
+  일부는 사람이 웹 원문과 대조한 이력이 있다. 빈 것만 채운다.
+- **줄바꿈은 `verses.yaml`의 폴디드 스칼라(`>`) 형식에 맞춰 넣는다.**
+  `verify_verses.py`가 공백을 정규화하므로 줄 나눔 위치는 자유지만,
+  기존 구절과 같은 폭으로 접어야 diff가 읽힌다.
 
 **2차분에서 특히 주의할 것**
 
@@ -213,7 +261,7 @@ scj-peter는 부분적으로 현대 맞춤법화된 사본이었다.
 - 배치·앱 코드 — `scripts/`에는 검증 스크립트만 있다
 - `themes.yaml` · `channel_allowlist.yaml` 수정 — 읽기만 했다
 - `verses.yaml`의 `note`·선정 판단 변경 — 본문 `text`만 고쳤다
-- git push · 원격 저장소 생성
+- 2차분 추출 스크립트(`scripts/fill_verses.py`) 구현 — 방식과 인터페이스만 3절에 정해뒀다
 
 ---
 
