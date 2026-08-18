@@ -33,10 +33,13 @@
 #      (Phase 1 후반, 죄·심판 프레임 배제 원칙 적용)
 #
 # [진행 현황]
-#   1차분: 불안 계열 (anxiety.*) 30구절 — 본 파일. 검수 대기
-#   2차분: 우울·지침 계열 (sadness.*, exhaustion.*) — 1차 검수 피드백 반영 후
-#   3차분: 분노·답답함 계열 (anger.*, frustration.*)
-#   4차분: 기쁨·설렘·평온·심심함 계열 + crisis 전용
+#   1차분: 불안 계열 (anxiety.*) 30구절 — 검수 완료 (2026-08-18)
+#   2차분: 우울·지침 계열 (sadness.*, exhaustion.*) 60구절 — 검수 완료 (2026-08-18)
+#          6개 세분류 × 10구절. 본문은 타이핑하지 않고 원문에서 추출했다
+#          (scripts/fill_verses.py — 아래 2차분 헤더 주석 참조)
+#   3차분: 분노·답답함 계열 (anger.*, frustration.*) — 미착수
+#   4차분: 기쁨·설렘·평온·심심함 계열 + crisis 전용 — 미착수
+#   현재 90구절 / 목표 약 250구절
 # =====================================================================
 
 version: "0.1.0"
@@ -461,4 +464,928 @@ verses:
 #   mapping 주제 밖일 수 있다 (예: anxiety.worry 화면에 theme=courage 구절).
 #   [설계 결정 필요] 영상 풀을 "mapping 주제 ∪ 표시된 구절의 theme"으로
 #   확장할지, 구절을 mapping 주제 안으로 제한할지 — Phase 2 배치 설계 전 확정
+# =====================================================================
+
+# =====================================================================
+# 2차분 — 우울·지침 계열 (sadness.*, exhaustion.*)
+#
+# [작업 방식 — 1차분과 다르다]
+#   구절 선정은 ref(장절)까지만 하고, text는 타이핑하지 않는다.
+#   scripts/fill_verses.py 가 data/krv 원문에서 추출해 채운다.
+#   근거: 1차분 30건 중 8건(27%)이 본문 오류였고 전부 기억에 의존해 쓴
+#   초안에서 나왔다. 유형이 쉼표·띄어쓰기·조사·옛 표기라 눈으로 읽어서는
+#   걸리지 않는다. 추출한 문자열은 정의상 원문과 같다.
+#   자세한 경위는 HANDOFF.md 3절.
+# =====================================================================
+
+  # ═══════════════════════════════════════════════════════════
+  # sadness.sorrow (슬픔·비통) — 주제: comfort, lament, hope
+  # 방향: 슬픔을 고치려 하지 않고 곁에 있는다.
+  #      위로 → 탄식 허용 → 소망 순으로 두어, 슬픔을 건너뛰라고 말하지 않는다
+  # ═══════════════════════════════════════════════════════════
+
+  - id: jhn.11.35
+    ref: 요한복음 11:35
+    text: >
+      예수께서 눈물을 흘리시더라
+    emotion_tags: [sadness.sorrow]
+    theme: comfort
+    note: >
+      위로의 말을 하지 않고 함께 우는 장면이다 — 감정을 판단하지 않는다는
+      선정 원칙 1이 가장 짧게 구현된 구절. 슬픔 화면의 첫 후보.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.34.18
+    ref: 시편 34:18
+    text: >
+      여호와는 마음이 상한 자에게 가까이 하시고 중심에 통회하는 자를
+      구원하시는도다
+    emotion_tags: [sadness.sorrow]
+    theme: comfort
+    note: >
+      "마음이 상한 자에게 가까이 하시고" — 슬픔을 없애는 방향이 아니라
+      거리를 좁히는 방향이다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.147.3
+    ref: 시편 147:3
+    text: >
+      상심한 자를 고치시며 저희 상처를 싸매시는도다
+    emotion_tags: [sadness.sorrow]
+    theme: comfort
+    note: '"상처를 싸매시는" 이미지가 위로의 톤을 만든다. 짧아 카드 UI에 적합.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: mat.5.4
+    ref: 마태복음 5:4
+    text: >
+      애통하는 자는 복이 있나니 저희가 위로를 받을 것임이요
+    emotion_tags: [sadness.sorrow]
+    theme: comfort
+    note: >
+      애통을 고쳐야 할 결함이 아니라 복으로 뒤집는다. 슬픔에 머무는 것을
+      허용하는 방향이라 comfort 주제의 축과 맞는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.56.8
+    ref: 시편 56:8
+    text: >
+      나의 유리함을 주께서 계수하셨으니 나의 눈물을 주의 병에 담으소서 이것이
+      주의 책에 기록되지 아니하였나이까
+    emotion_tags: [sadness.sorrow]
+    theme: lament
+    note: >
+      눈물이 계수되고 기록된다는 이미지. 탄식이되 슬픔을 미화하지 않는다 —
+      themes.yaml의 lament 원칙("감정 증폭이 아니라 말해도 된다는 허용").
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.31.9
+    ref: 시편 31:9
+    text: >
+      여호와여 내 고통을 인하여 나를 긍휼히 여기소서 내가 근심으로 눈과 혼과
+      몸이 쇠하였나이다
+    emotion_tags: [sadness.sorrow]
+    theme: lament
+    note: >
+      "눈과 혼과 몸이 쇠하였나이다" — 슬픔의 신체화를 그대로 말한다.
+      해결을 제시하지 않는 탄식 구절이라 lament 풀의 성격을 규정한다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.42.5
+    ref: 시편 42:5
+    text: >
+      내 영혼아 네가 어찌하여 낙망하며 어찌하여 내 속에서 불안하여 하는고
+      너는 하나님을 바라라 그 얼굴의 도우심을 인하여 내가 오히려 찬송하리로다
+    emotion_tags: [sadness.sorrow, sadness.lonely]
+    theme: hope
+    note: >
+      낙망을 부정하지 않으면서 소망으로 향하는 구절 — 우울 계열 대표.
+      PLAN.md 4.1의 verses.json 스키마 예시에 쓰인 구절이다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: jhn.16.22
+    ref: 요한복음 16:22
+    text: >
+      지금은 너희가 근심하나 내가 다시 너희를 보리니 너희 마음이 기쁠 것이요
+      너희 기쁨을 빼앗을 자가 없느니라
+    emotion_tags: [sadness.sorrow]
+    theme: hope
+    note: >
+      "지금은 너희가 근심하나"로 현재 감정을 먼저 인정하고 약속이 뒤따른다 —
+      선정 원칙 3 충족.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: lam.3.22
+    ref: 예레미야애가 3:22-23
+    text: >
+      여호와의 자비와 긍휼이 무궁하시므로 우리가 진멸되지 아니함이니이다 이것이
+      아침마다 새로우니 주의 성실이 크도소이다
+    emotion_tags: [sadness.sorrow]
+    theme: hope
+    note: >
+      탄식서 한복판의 소망 구절. 22절만 쓰면 문장이 끝나지 않아 23절과 묶는다
+      (선정 원칙 3과 같은 이유 — 약속이 뒤에 온다).
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.126.5
+    ref: 시편 126:5
+    text: >
+      눈물을 흘리며 씨를 뿌리는 자는 기쁨으로 거두리로다
+    emotion_tags: [sadness.sorrow]
+    theme: hope
+    note: >
+      눈물의 시간에 의미를 놓되 "곧 끝난다"고 재촉하지 않는다.
+      짧아 카드 UI에 적합.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  # ═══════════════════════════════════════════════════════════
+  # sadness.lonely (외로움) — 주제: presence, love
+  # 방향: "혼자가 아니다"에서 멈추지 않고 "사랑받고 있다"까지 간다.
+  #      단절을 부정하지 않는 구절을 앞에 둔다 (외롭다고 먼저 말하게 한다)
+  #
+  # 이 화면에는 1차분 교차 태깅 deu.31.8 · isa.43.1 과 psa.42.5 가 더해진다
+  # ═══════════════════════════════════════════════════════════
+
+  - id: psa.25.16
+    ref: 시편 25:16
+    text: >
+      주여 나는 외롭고 괴롭사오니 내게 돌이키사 나를 긍휼히 여기소서
+    emotion_tags: [sadness.lonely]
+    theme: presence
+    note: >
+      "나는 외롭고 괴롭사오니" — 본문에 "외롭"이 직접 나오는 드문 구절이라
+      자연어 입력 "외로워"와 정확히 겹친다. 간구 형식이라 사용자의 말을
+      대신 해주는 위치에 선다. 강력 추천.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: jhn.14.18
+    ref: 요한복음 14:18
+    text: >
+      내가 너희를 고아와 같이 버려두지 아니하고 너희에게로 오리라
+    emotion_tags: [sadness.lonely]
+    theme: presence
+    note: >
+      "고아와 같이 버려두지 아니하고" — 외로움을 버림받음으로 경험하는
+      언어에 정면으로 대응한다. 짧아 카드 UI에 적합.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.73.23
+    ref: 시편 73:23
+    text: >
+      내가 항상 주와 함께하니 주께서 내 오른손을 붙드셨나이다
+    emotion_tags: [sadness.lonely]
+    theme: presence
+    note: '"내 오른손을 붙드셨나이다" — 접촉의 이미지. 짧고 명료.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: mat.28.20
+    ref: 마태복음 28:20
+    text: >
+      내가 너희에게 분부한 모든 것을 가르쳐 지키게 하라 볼찌어다 내가 세상
+      끝날까지 너희와 항상 함께 있으리라 하시니라
+    emotion_tags: [sadness.lonely]
+    theme: presence
+    note: >
+      임마누엘 프레임의 대표 구절. 절 앞부분이 명령이지만 뒤에 약속
+      ("세상 끝날까지 함께")이 따라온다 — 선정 원칙 3 충족.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.139.7
+    ref: 시편 139:7-8
+    text: >
+      내가 주의 신을 떠나 어디로 가며 주의 앞에서 어디로 피하리이까 내가
+      하늘에 올라갈찌라도 거기 계시며 음부에 내 자리를 펼찌라도 거기
+      계시니이다
+    emotion_tags: [sadness.lonely]
+    theme: presence
+    note: >
+      "어디로 피하리이까"의 답이 "거기 계시니이다"로 이어진다. 8절까지 묶어야
+      질문이 답을 만난다 — 7절 단독은 도피 실패로만 읽힌다(선정 원칙 4).
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.27.10
+    ref: 시편 27:10
+    text: >
+      내 부모는 나를 버렸으나 여호와는 나를 영접하시리이다
+    emotion_tags: [sadness.lonely]
+    theme: love
+    note: >
+      "내 부모는 나를 버렸으나" — 가장 가까운 관계의 단절을 전제하고 말하는
+      구절이라, 외로움을 축소하지 않으면서 그 다음을 놓는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: isa.49.15
+    ref: 이사야 49:15
+    text: >
+      여인이 어찌 그 젖먹는 자식을 잊겠으며 자기 태에서 난 아들을 긍휼히
+      여기지 않겠느냐 그들은 혹시 잊을찌라도 나는 너를 잊지 아니할 것이라
+    emotion_tags: [sadness.lonely]
+    theme: love
+    note: >
+      "그들은 혹시 잊을찌라도 나는 너를 잊지 아니할 것이라" — 잊혀짐의
+      두려움에 정확히 대응한다. 옛 표기 "잊을찌라도"가 살아 있는 구절.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: jer.31.3
+    ref: 예레미야 31:3
+    text: >
+      나 여호와가 옛적에 이스라엘에게 나타나 이르기를 내가 무궁한 사랑으로
+      너를 사랑하는고로 인자함으로 너를 인도하였다 하였노라
+    emotion_tags: [sadness.lonely]
+    theme: love
+    note: '"무궁한 사랑으로 너를 사랑하는고로" — love 주제의 대표 구절.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: isa.43.4
+    ref: 이사야 43:4
+    text: >
+      내가 너를 보배롭고 존귀하게 여기고 너를 사랑하였은즉 내가 사람들을 주어
+      너를 바꾸며 백성들로 네 생명을 대신하리니
+    emotion_tags: [sadness.lonely]
+    theme: love
+    note: >
+      "보배롭고 존귀하게 여기고" — 존재 가치의 언어. 1차분 isa.43.1
+      ("지명하여 불렀나니")과 같은 장의 연장이라 톤이 이어진다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: rom.8.38
+    ref: 로마서 8:38-39
+    text: >
+      내가 확신하노니 사망이나 생명이나 천사들이나 권세자들이나 현재 일이나
+      장래 일이나 능력이나 높음이나 깊음이나 다른 아무 피조물이라도 우리를
+      우리 주 그리스도 예수 안에 있는 하나님의 사랑에서 끊을 수 없으리라
+    emotion_tags: [sadness.lonely]
+    theme: love
+    note: >
+      2차분 최장(116자). 그럼에도 넣는 이유는 열거 구조 자체가 메시지라서다
+      — 무엇을 갖다 대도 끊을 수 없다는 결론이 목록의 길이로 표현된다.
+      38절만 쓰면 "끊을 수 없으리라"가 없어 문장이 성립하지 않는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  # ═══════════════════════════════════════════════════════════
+  # sadness.loss (상실) — 주제: comfort, renewal
+  # 방향: 애도에 시간을 허용한다. 회복을 말하되 "이제 그만"이라고 하지 않는다.
+  #      상실을 축소하는 구절(고후 4:17 "경한 것")과 수용을 요구하는 구절
+  #      (욥 1:21 "취하신 자도 여호와시오니")은 유명해도 넣지 않았다 —
+  #      상실 직후의 사용자에게 건넬 말이 아니다 (선정 원칙 1)
+  # ═══════════════════════════════════════════════════════════
+
+  - id: isa.66.13
+    ref: 이사야 66:13
+    text: >
+      어미가 자식을 위로함 같이 내가 너희를 위로할 것인즉 너희가 예루살렘에서
+      위로를 받으리니
+    emotion_tags: [sadness.loss]
+    theme: comfort
+    note: >
+      "어미가 자식을 위로함 같이" — 위로하겠다는 선언이 아니라 위로의
+      방식을 이미지로 보여준다. 짧아 카드 UI에 적합.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: ecc.3.4
+    ref: 전도서 3:4
+    text: >
+      울 때가 있고 웃을 때가 있으며 슬퍼할 때가 있고 춤출 때가 있으며
+    emotion_tags: [sadness.loss]
+    theme: comfort
+    note: >
+      "슬퍼할 때가 있고" — 애도에 시간을 허용하는 구절. 회복을 재촉하지
+      않는다는 이 세분류의 방향을 가장 짧게 말한다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.23.4
+    ref: 시편 23:4
+    text: >
+      내가 사망의 음침한 골짜기로 다닐찌라도 해를 두려워하지 않을 것은 주께서
+      나와 함께 하심이라 주의 지팡이와 막대기가 나를 안위하시나이다
+    emotion_tags: [sadness.loss]
+    theme: comfort
+    note: >
+      sadness.lonely 검토 때 "사망의 음침한 골짜기"가 외로움 화면에는
+      무겁다고 보아 보류했던 구절. 사별 맥락에서는 그 무게가 제자리를 찾는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: rev.21.4
+    ref: 요한계시록 21:4
+    text: >
+      모든 눈물을 그 눈에서 씻기시매 다시 사망이 없고 애통하는 것이나 곡하는
+      것이나 아픈 것이 다시 있지 아니하리니 처음 것들이 다 지나갔음이러라
+    emotion_tags: [sadness.loss]
+    theme: comfort
+    note: >
+      종말론적 위로. 지금 슬픔이 끝난다고 말하지 않는 점이 오히려 정직하다 —
+      상실 직후에 "곧 괜찮아진다"고 하는 것보다 낫다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.116.15
+    ref: 시편 116:15
+    text: >
+      성도의 죽는 것을 여호와께서 귀중히 보시는도다
+    emotion_tags: [sadness.loss]
+    theme: comfort
+    note: >
+      떠난 이를 가볍게 두지 않는 구절.
+      [주의] 이 세분류는 사별뿐 아니라 이별·상실 전반을 받는데 이 구절은
+      죽음에 특화돼 있다. 사별이 아닌 상실에는 겉돌 수 있다 — Phase 3에서
+      노출 우선순위를 둘 때 고려할 것.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.30.11
+    ref: 시편 30:11
+    text: >
+      주께서 나의 슬픔을 변하여 춤이 되게 하시며 나의 베옷을 벗기고 기쁨으로
+      띠 띠우셨나이다
+    emotion_tags: [sadness.loss]
+    theme: renewal
+    note: >
+      "슬픔을 변하여 춤이 되게 하시며" — 슬픔을 없애는 것이 아니라
+      변화시킨다는 어휘라 애도를 부정하지 않는다.
+      (같은 시편 30편 5절은 앞부분 "그 노염은 잠간이요" 때문에 제외했다)
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: joe.2.25
+    ref: 요엘 2:25
+    text: >
+      내가 전에 너희에게 보낸 큰 군대 곧 메뚜기와 늣과 황충과 팟종이의 먹은
+      햇수대로 너희에게 갚아주리니
+    emotion_tags: [sadness.loss]
+    theme: renewal
+    note: >
+      잃어버린 "햇수" 곧 시간을 회복 대상으로 말하는 드문 구절.
+      [검수 이력] 희귀 어휘(메뚜기·늣·황충·팟종이)가 있어 HANDOFF 3절이
+      별도 확인을 지시한 구절이다. 제2 소스와 전문 대조해 일치 확인 (2026-08-18).
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.71.20
+    ref: 시편 71:20
+    text: >
+      우리에게 많고 심한 고난을 보이신 주께서 우리를 다시 살리시며 땅 깊은
+      곳에서 다시 이끌어 올리시리이다
+    emotion_tags: [sadness.loss]
+    theme: renewal
+    note: '"다시 살리시며", "다시 이끌어 올리시리이다" — "다시"의 반복이 회복의 리듬을 만든다.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: isa.61.3
+    ref: 이사야 61:3
+    text: >
+      무릇 시온에서 슬퍼하는 자에게 화관을 주어 그 재를 대신하며 희락의
+      기름으로 그 슬픔을 대신하며 찬송의 옷으로 그 근심을 대신하시고 그들로
+      의의 나무 곧 여호와의 심으신바 그 영광을 나타낼 자라 일컬음을 얻게
+      하려 하심이니라
+    emotion_tags: [sadness.loss]
+    theme: renewal
+    note: >
+      2차분 최장(125자). 그럼에도 넣는 이유는 "재를 대신하며 / 슬픔을
+      대신하며 / 근심을 대신하시고"의 3연속이 renewal 주제의 핵심이라서다.
+      [검토 필요] 길이가 카드 UI에 부담이면 가장 먼저 재검토할 후보다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: isa.25.8
+    ref: 이사야 25:8
+    text: >
+      사망을 영원히 멸하실 것이라 주 여호와께서 모든 얼굴에서 눈물을 씻기시며
+      그 백성의 수치를 온 천하에서 제하시리라 여호와께서 이같이 말씀하셨느니라
+    emotion_tags: [sadness.loss]
+    theme: renewal
+    note: >
+      rev.21.4("모든 눈물을 그 눈에서 씻기시매")의 구약 원형.
+      두 구절이 겹치지만 theme이 갈려(comfort / renewal) 다른 화면에 놓인다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  # ═══════════════════════════════════════════════════════════
+  # exhaustion.burnout (번아웃) — 주제: rest, renewal
+  # 방향: 쉬라고 권하기 전에 "쉬어도 된다"는 허가를 준다.
+  #      더 애쓰라는 방향의 구절은 넣지 않는다 — 번아웃 화면에서
+  #      분발 요구는 이 서비스가 낼 수 있는 최악의 출력에 가깝다
+  # ═══════════════════════════════════════════════════════════
+
+  - id: mat.11.28
+    ref: 마태복음 11:28
+    text: >
+      수고하고 무거운 짐진 자들아 다 내게로 오라 내가 너희를 쉬게 하리라
+    emotion_tags: [exhaustion.burnout]
+    theme: rest
+    note: >
+      themes.yaml의 rest 키워드("수고하고 무거운", "쉬게 하리라")가 그대로
+      나오는 대표 구절. 번아웃 화면의 첫 후보.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: mrk.6.31
+    ref: 마가복음 6:31
+    text: >
+      이르시되 너희는 따로 한적한 곳에 와서 잠간 쉬어라 하시니 이는 오고
+      가는 사람이 많아 음식 먹을 겨를도 없음이라
+    emotion_tags: [exhaustion.burnout]
+    theme: rest
+    note: >
+      예수가 제자들에게 쉬라고 명하는 장면이고, 그 사유가 "음식 먹을
+      겨를도 없음이라" — 번아웃 상태 묘사 그 자체다. 옛 표기 "잠간"이
+      살아 있는 구절(verses.yaml 헤더가 든 예시 어휘).
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.23.2
+    ref: 시편 23:2
+    text: >
+      그가 나를 푸른 초장에 누이시며 쉴만한 물 가으로 인도하시는도다
+    emotion_tags: [exhaustion.burnout]
+    theme: rest
+    note: >
+      "누이시며" — 쉬라고 권하는 것이 아니라 눕히신다. 쉬는 데 죄책감을
+      느끼는 상태에 맞는 방향.
+      시편 23편에서 세 번째 절이다(psa.23.1=trust, psa.23.4=comfort).
+      주제가 셋 다 달라 같은 화면에 함께 뜨지 않는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: exo.33.14
+    ref: 출애굽기 33:14
+    text: >
+      여호와께서 가라사대 내가 친히 가리라 내가 너로 편케 하리라
+    emotion_tags: [exhaustion.burnout]
+    theme: rest
+    note: '"내가 너로 편케 하리라" — 짧고 명료. 카드 UI 첫 화면 후보.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.127.2
+    ref: 시편 127:2
+    text: >
+      너희가 일찌기 일어나고 늦게 누우며 수고의 떡을 먹음이 헛되도다 그러므로
+      여호와께서 그 사랑하시는 자에게는 잠을 주시는도다
+    emotion_tags: [exhaustion.burnout]
+    theme: rest
+    note: >
+      "일찌기 일어나고 늦게 누우며" — 과로를 직접 묘사하고 결론이 "잠을
+      주시는도다"로 떨어진다. "헛되도다"가 질책이 아니라 놓아도 된다는
+      방향으로 읽히는지 Phase 3 문구 검토 때 확인할 것.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: mat.11.29
+    ref: 마태복음 11:29-30
+    text: >
+      나는 마음이 온유하고 겸손하니 나의 멍에를 메고 내게 배우라 그러면 너희
+      마음이 쉼을 얻으리니 이는 내 멍에는 쉽고 내 짐은 가벼움이라 하시니라
+    emotion_tags: [exhaustion.burnout]
+    theme: rest
+    note: >
+      mat.11.28("쉬게 하리라")의 "어떻게"에 해당한다. 29절만 쓰면
+      "멍에를 메라"는 요구로 끝나므로 30절("내 짐은 가벼움이라")과 묶는다
+      — 선정 원칙 3.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: 1ki.19.7
+    ref: 열왕기상 19:7
+    text: >
+      여호와의 사자가 또 다시 와서 어루만지며 이르되 일어나서 먹으라 네가
+      길을 이기지 못할까 하노라 하는지라
+    emotion_tags: [exhaustion.burnout]
+    theme: renewal
+    note: >
+      소진해 죽기를 구하던 엘리야에게 천사가 준 것이 잠과 음식이었다.
+      영적 처방도 분발 요구도 아니라는 점이 이 구절을 고른 이유다.
+      서사 구절 사용은 1차분 mrk.4.39가 선례.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: jer.31.25
+    ref: 예레미야 31:25
+    text: >
+      이는 내가 그 피곤한 심령을 만족케 하며 무릇 슬픈 심령을 상쾌케
+      하였음이니라 하시기로
+    emotion_tags: [exhaustion.burnout]
+    theme: renewal
+    note: '"피곤한 심령을 만족케 하며" — 피곤을 영적 결함으로 두지 않는 어휘.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: isa.58.11
+    ref: 이사야 58:11
+    text: >
+      나 여호와가 너를 항상 인도하여 마른 곳에서도 네 영혼을 만족케 하며 네
+      뼈를 견고케 하리니 너는 물 댄 동산 같겠고 물이 끊어지지 아니하는 샘
+      같을 것이라
+    emotion_tags: [exhaustion.burnout]
+    theme: renewal
+    note: >
+      "마른 곳에서도" — 고갈된 상태를 전제하고 말한다. 회복을 조건 없이
+      약속하는 구조라 번아웃에 맞는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.116.7
+    ref: 시편 116:7
+    text: >
+      내 영혼아 네 평안함에 돌아갈지어다 여호와께서 너를 후대하심이로다
+    emotion_tags: [exhaustion.burnout]
+    theme: renewal
+    note: >
+      쉼을 "돌아감"으로 표현한다 — 새로 얻는 것이 아니라 원래 자리로
+      되돌아가는 것.
+      [검수 이력] 이 구절은 "돌아갈지어다"(지)이고 시 46:10은 "알찌어다"(찌)다.
+      개역한글 원문 자체가 이 어미에서 일관되지 않으며 둘 다 공식 표기임을
+      대한성서공회 사이트로 확인했다 (2026-08-18). data/krv/SOURCE.md 참조.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  # ═══════════════════════════════════════════════════════════
+  # exhaustion.tired (피곤·지침) — 주제: rest, quiet_worship
+  # 방향: burnout보다 가벼운 일상적 피로를 받는다. 회복을 약속하기보다
+  #      지금 이대로 조용히 있어도 된다는 쪽에 무게를 둔다.
+  #
+  # [시간대 어휘] 이 풀은 시간대 어휘가 유독 풍부하다 —
+  #   잠들기 전 psa.3.5 · pro.3.24 / 밤중 psa.63.6 / 낮과 밤 psa.42.8 /
+  #   아침 psa.143.8 (1차분 psa.4.8도 밤 맥락)
+  #   1차분 psa.4.8 note의 "시간대별 노출"(Phase 3) 아이디어를 실제로
+  #   시험해 볼 수 있는 풀이 여기서 만들어진다
+  # ═══════════════════════════════════════════════════════════
+
+  - id: psa.3.5
+    ref: 시편 3:5
+    text: >
+      내가 누워 자고 깨었으니 여호와께서 나를 붙드심이로다
+    emotion_tags: [exhaustion.tired]
+    theme: rest
+    note: >
+      잠들고 깬 것 자체를 붙드심으로 본다 — 아무것도 해내지 못한 날에도
+      성립하는 진술이라 지친 상태에 맞는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: pro.3.24
+    ref: 잠언 3:24
+    text: >
+      네가 누울 때에 두려워하지 아니하겠고 네가 누운즉 네 잠이 달리로다
+    emotion_tags: [exhaustion.tired]
+    theme: rest
+    note: '"네 잠이 달리로다" — 감각 어휘라 관념적이지 않다.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.91.1
+    ref: 시편 91:1
+    text: >
+      지존자의 은밀한 곳에 거하는 자는 전능하신 자의 그늘 아래 거하리로다
+    emotion_tags: [exhaustion.tired]
+    theme: rest
+    note: '"그늘 아래" — 쉼을 공간 이미지로 준다. 무엇을 하라는 요구가 없다.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.131.1
+    ref: 시편 131:1
+    text: >
+      여호와여 내 마음이 교만치 아니하고 내 눈이 높지 아니하오며 내가 큰
+      일과 미치지 못할 기이한 일을 힘쓰지 아니하나이다
+    emotion_tags: [exhaustion.tired]
+    theme: rest
+    note: >
+      "큰 일과 미치지 못할 기이한 일을 힘쓰지 아니하나이다" — 과욕을
+      내려놓는 고백이라 지침의 원인 쪽을 건드린다.
+      1차분 psa.131.2의 바로 앞 절이다. 131편을 묶지 않고 나눈 것은 두 절이
+      받는 감정이 달라서다 — 1절은 과욕 내려놓기(지침), 2절은 젖 뗀 아이의
+      고요함(초조함). 서로 다른 화면에 놓인다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: heb.4.9
+    ref: 히브리서 4:9-10
+    text: >
+      그런즉 안식할 때가 하나님의 백성에게 남아 있도다 이미 그의 안식에
+      들어간 자는 하나님이 자기 일을 쉬심과 같이 자기 일을 쉬느니라
+    emotion_tags: [exhaustion.tired]
+    theme: rest
+    note: >
+      "안식할 때가 남아 있도다" — 쉼이 아직 소진되지 않았다는 진술.
+      9절만 쓰면 근거가 없어 10절과 묶는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: lam.3.26
+    ref: 예레미야애가 3:26
+    text: >
+      사람이 여호와의 구원을 바라고 잠잠히 기다림이 좋도다
+    emotion_tags: [exhaustion.tired]
+    theme: quiet_worship
+    note: >
+      "잠잠히 기다림이 좋도다" — 아무것도 하지 않는 상태를 긍정한다.
+      29자로 짧아 카드 UI에 적합.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.130.5
+    ref: 시편 130:5
+    text: >
+      나 곧 내 영혼이 여호와를 기다리며 내가 그 말씀을 바라는도다
+    emotion_tags: [exhaustion.tired]
+    theme: quiet_worship
+    note: 기다림의 자세만 있고 성취 요구가 없다. 잔잔한 찬양 영상과 결이 맞는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.63.6
+    ref: 시편 63:6
+    text: >
+      내가 나의 침상에서 주를 기억하며 밤중에 주를 묵상할 때에 하오리니
+    emotion_tags: [exhaustion.tired]
+    theme: quiet_worship
+    note: '"침상에서", "밤중에" — 밤 시간대 사용 맥락에 직접 맞는 구절.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.42.8
+    ref: 시편 42:8
+    text: >
+      낮에는 여호와께서 그 인자함을 베푸시고 밤에는 그 찬송이 내게 있어
+      생명의 하나님께 기도하리로다
+    emotion_tags: [exhaustion.tired]
+    theme: quiet_worship
+    note: >
+      "낮에는 ... 밤에는"이 한 절 안에 들어 있어 하루 전체를 받는다.
+      1차분에 없던 리듬 구조.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.143.8
+    ref: 시편 143:8
+    text: >
+      아침에 나로 주의 인자한 말씀을 듣게 하소서 내가 주를 의뢰함이니이다
+      나의 다닐 길을 알게 하소서 내가 내 영혼을 주께 받듦이니이다
+    emotion_tags: [exhaustion.tired]
+    theme: quiet_worship
+    note: '"아침에" — 하루를 시작하는 시간대. psa.63.6(밤)과 짝을 이룬다.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  # ═══════════════════════════════════════════════════════════
+  # exhaustion.listless (무기력) — 주제: strength, hope
+  # 방향: 의욕 없음을 질책하지 않고 힘의 출처를 바꾼다.
+  #      위기 표현과 인접한 세분류다(HANDOFF 3절). 분발 요구·조건절이 붙은
+  #      구절은 넣지 않았다 — 아무것도 할 수 없는 상태에서는 격려도
+  #      요구로 도착한다. 제외 사례는 psa.40.1 아래 note 참조
+  # ═══════════════════════════════════════════════════════════
+
+  - id: isa.40.29
+    ref: 이사야 40:29
+    text: >
+      피곤한 자에게는 능력을 주시며 무능한 자에게는 힘을 더하시나니
+    emotion_tags: [exhaustion.listless]
+    theme: strength
+    note: >
+      "무능한 자에게는 힘을 더하시나니" — 조건이 없다. 무능을 자격 미달로
+      두지 않는 드문 구절이라 무기력 화면의 첫 후보.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: isa.40.30
+    ref: 이사야 40:30-31
+    text: >
+      소년이라도 피곤하며 곤비하며 장정이라도 넘어지며 자빠지되 오직 여호와를
+      앙망하는 자는 새 힘을 얻으리니 독수리의 날개치며 올라감 같을 것이요
+      달음박질하여도 곤비치 아니하겠고 걸어가도 피곤치 아니하리로다
+    emotion_tags: [exhaustion.listless]
+    theme: strength
+    note: >
+      themes.yaml의 strength 키워드("새 힘", "독수리")가 그대로 나오는 구절.
+      31절의 "앙망하는 자는"이 조건절로 읽힐 수 있어 조건 없는 isa.40.29와
+      같은 풀에 두었다. 30절부터 묶는 것은 "장정이라도 넘어지며"가
+      무기력을 정상 상태로 놓기 때문이다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.73.26
+    ref: 시편 73:26
+    text: >
+      내 육체와 마음은 쇠잔하나 하나님은 내 마음의 반석이시요 영원한
+      분깃이시라
+    emotion_tags: [exhaustion.listless]
+    theme: strength
+    note: >
+      "내 육체와 마음은 쇠잔하나" — 쇠잔함을 부정하지 않고 그 위에 반석을
+      놓는 구조. 감정을 판단하지 않는다는 선정 원칙 1에 정확히 맞는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.103.5
+    ref: 시편 103:5
+    text: >
+      좋은 것으로 네 소원을 만족케 하사 네 청춘으로 독수리 같이 새롭게
+      하시는도다
+    emotion_tags: [exhaustion.listless]
+    theme: strength
+    note: >
+      exhaustion.tired 검토 때 주제 매핑(rest/quiet_worship)과 맞지 않아
+      보류했던 구절. strength 주제에서 제자리를 찾았다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.138.3
+    ref: 시편 138:3
+    text: >
+      내가 간구하는 날에 주께서 응답하시고 내 영혼을 장려하여 강하게
+      하셨나이다
+    emotion_tags: [exhaustion.listless]
+    theme: strength
+    note: '"내 영혼을 장려하여 강하게 하셨나이다" — 힘의 출처가 내가 아니라는 구조.'
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: isa.42.3
+    ref: 이사야 42:3
+    text: >
+      상한 갈대를 꺾지 아니하며 꺼져가는 등불을 끄지 아니하고 진리로 공의를
+      베풀 것이며
+    emotion_tags: [exhaustion.listless]
+    theme: hope
+    note: >
+      "상한 갈대를 꺾지 아니하며 꺼져가는 등불을 끄지 아니하고" —
+      이미 약해진 것을 더 밀지 않겠다는 선언이다. 이 세분류의 핵심 구절.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.27.13
+    ref: 시편 27:13
+    text: >
+      내가 산 자의 땅에 있음이여 여호와의 은혜 볼 것을 믿었도다
+    emotion_tags: [exhaustion.listless]
+    theme: hope
+    note: >
+      살아 있음 자체를 근거로 두는 구절. 14절("강하고 담대하며")은
+      분발 요구라 범위에서 뺐다 — 13절 단독으로 문장이 성립한다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: lam.3.24
+    ref: 예레미야애가 3:24
+    text: >
+      내 심령에 이르기를 여호와는 나의 기업이시니 그러므로 내가 저를 바라리라
+      하도다
+    emotion_tags: [exhaustion.listless]
+    theme: hope
+    note: >
+      "내 심령에 이르기를" — 자기 자신에게 하는 말이라 외부의 훈계가 아니다.
+      애가 3장에서 세 구절을 쓰지만(22 sorrow / 24 listless / 26 tired)
+      세분류가 갈려 같은 화면에 겹치지 않는다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: rom.15.13
+    ref: 로마서 15:13
+    text: >
+      소망의 하나님이 모든 기쁨과 평강을 믿음 안에서 너희에게 충만케 하사
+      성령의 능력으로 소망이 넘치게 하시기를 원하노라
+    emotion_tags: [exhaustion.listless]
+    theme: hope
+    note: hope 주제의 대표 구절. 축복 기원문 형식이라 요구가 없다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+  - id: psa.40.1
+    ref: 시편 40:1-2
+    text: >
+      내가 여호와를 기다리고 기다렸더니 귀를 기울이사 나의 부르짖음을
+      들으셨도다 나를 기가 막힐 웅덩이와 수렁에서 끌어 올리시고 내 발을 반석
+      위에 두사 내 걸음을 견고케 하셨도다
+    emotion_tags: [exhaustion.listless]
+    theme: hope
+    note: >
+      "기가 막힐 웅덩이와 수렁" — 무기력의 신체 감각과 겹치는 이미지.
+      1절만 쓰면 건져냄이 없어 2절과 묶는다.
+      [제외 기록] 이 세분류에서 뺀 구절과 이유 —
+        빌 4:13  "내가 모든 것을 할 수 있느니라". themes.yaml의 strength
+                 intent가 직접 지목한 구절이지만, 아무것도 할 수 없는 상태에서
+                 읽으면 자신의 현재가 반증으로 보인다. 주제의 intent는 방향을
+                 정하는 것이고 개별 구절 채택은 별개 판단이라고 보았다.
+                 (themes.yaml은 수정하지 않았다 — 2차분 범위 밖)
+        갈 6:9   "선을 행하되 ... 피곤하지 아니하면"이 행위 조건.
+        고후 12:9 "약한 것들을 자랑하리니"가 무기력 상태에는 고차원이다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-18"
+
+# =====================================================================
+# [2차분 요약 — 2026-08-18]
+#
+#   sadness.sorrow 10 / sadness.lonely 10 / sadness.loss 10
+#   exhaustion.burnout 10 / exhaustion.tired 10 / exhaustion.listless 10
+#   = 60구절. 누적 90구절.
+#
+# [본문 오류 0건]
+#   1차분은 30건 중 8건(27%)이 본문 오류였다. 2차분은 60건 중 0건이다.
+#   방식을 바꾼 결과다 — 선정은 ref까지만 하고 text는 원문에서 추출했다.
+#   추출한 문자열은 정의상 원문과 같으므로 오류가 발생할 자리가 없다.
+#   verify_verses.py는 검출기가 아니라 안전망으로 작동했다(전건 통과).
+#
+# [선정에서 걸러낸 것 — 유형별]
+#   죄·심판 프레임      사 53:4("징벌") · 시 68:6("거역하는 자의 거처")
+#                       시 4:4("범죄치 말지어다") · 시 30:5("그 노염은")
+#   상실 축소·수용 요구  욥 1:21("취하신 자도") · 고후 4:17("경한 것")
+#   분발·행위 요구       빌 4:13("모든 것을 할 수 있느니라") · 갈 6:9
+#                       시 27:14("강하고 담대하며" — 13절만 채택)
+#   맥락 이탈           히 13:5(절 앞부분이 "돈을 사랑치 말고")
+#                       사 40:1(명령 대상이 위로하는 자들)
+#   조건절              시 34:19("의인은")
+#   각 건의 근거는 해당 세분류 헤더 주석과 개별 note에 있다.
+#
+# [원문 데이터 관련 발견]
+#   psa.116.7 "돌아갈지어다"(지)와 1차분 psa.46.10 "알찌어다"(찌)는
+#   둘 다 공식 표기다 — 개역한글 원문 자체가 이 어미에서 일관되지 않다.
+#   대한성서공회 사이트로 확인했다. data/krv/SOURCE.md의 "지/찌 혼재" 절 참조.
+#
+# [다음 차수로 넘긴 판단]
+#   isa.61.3(125자) · rom.8.38(116자) · isa.40.30(112자)이 100자를 넘는다.
+#   카드 UI 실물이 나오는 Phase 3에서 길이 상한을 정하고 재검토할 것.
 # =====================================================================
