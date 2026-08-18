@@ -187,7 +187,10 @@
 # 목표 규모: 20~30개로 시작, 40~50개까지 확장
 #   15개 미만이면 allowlist_undersized 경보 (FYM 승계)
 #
-# 현재 등록: 0개 — 아래 후보 풀에서 suggest_channels 검토 시트를 거쳐 채운다
+# 현재 등록: 15개 (2026-08-18 승인) — 하한선과 같다. 한 건이라도 빠지면 경보가 뜬다.
+#   교회 5 (오륜·꿈의·낮은담·우리들·베이직) + 초교파 방송·선교 미디어 10
+#   승인 근거 시트: channel_criterion_c.20260818.md
+#   제외 1건: 연세중앙교회 — 기준 1c (channel_reviewed_out.yaml)
 #
 # [초기 후보 풀 — 검토 대상이지 승인이 아니다]
 #   아래는 발굴 시작점일 뿐, 개별 채널은 반드시 검토 시트(자동 점검 +
@@ -212,7 +215,7 @@
 
 version: "0.1.0"
 
-channels: []
+channels:
   # 등록 예시 (형식 참고용 — 실제 승인 후 이 형식으로 추가)
   #
   # - channel_id: UCxxxxxxxxxxxxxxxxxxxxxx
@@ -226,3 +229,305 @@ channels: []
   #   note: >
   #     검토 승인 (2026-08-19). 주일설교·수요묵상 정기 업로드.
   #     blocklist 통과율 100%, 쇼츠 비중 낮음, 썸네일 확인 완료.
+
+  # =====================================================================
+  # 승인 등록 — 2026-08-18
+  #
+  # 기준 1a·1b는 2026-08-18 발굴 검토에서, 1c(이단 규정 목록 대조)는
+  # 같은 날 별도 대조로 통과했다. 근거 시트: channel_criterion_c.20260818.md
+  #
+  # 1c 대조 범위 (시트 1절) — 이 범위 밖은 확인하지 않았다
+  #   1차  예장통합 총회 「이단사이비 관련 총회 주요 결의」 제4회~제110회
+  #        (1915~2025, 결의행 161개) 전수 대조
+  #   2차  크리스찬타임스(출처 현대종교) 1915~2021 집계 · 코람데오닷컴 2010 집계
+  #   미확인 합동·합신·기감·기침의 1차 통합 목록은 공개본을 찾지 못해 전수 대조 못 함
+  #
+  # **channel_id는 등록 직전 전건 재검증했다** — 채널 설명의 고유 표지를
+  # 대조하는 방식이다. 이름만 보고 넣으면 틀린다: "우리들교회"라는 이름의
+  # 채널이 둘이고 둘은 서로 다른 교회다 (시트 4.3절). 아래 3개는 절대 넣지 말 것.
+  #   UCMbkK7p3B2RJBr2KQEBHJYA  우리들교회 (천마산 · 예장합동 수도노회 — 다른 교회)
+  #   UC-XplxFnkawMMm6f-7L8ZJQ  낮은담교회 (설명 없는 동명 채널)
+  #   UCZutF13kJKfai0hDDu3rsOw  베이직교회 Basic Church (설명 없는 동명 채널)
+  #
+  # crisis_eligible은 전부 false다. 위기 풀은 정신건강 전문 사역·상담 사역
+  # 채널 중심의 별도 기준이며(PLAN 7절) 아래 15건 중 해당 채널은 없다.
+  # =====================================================================
+
+  # ── 교단이 확인된 교회 3건 ──────────────────────────────────
+  - channel_id: UCCATFGVyXoa361VN6lELz3w
+    channel_name: 오륜교회 oryunchurch
+    affiliation: 오륜교회 (예장합동 수경노회)
+    affiliation_verified: >
+      채널 설명에 "오륜교회 유튜브 공식계정입니다. 오륜교회는.. 대한예수교장로회(합동)
+      수경노회 소속교회입니다" 명시 + 같은 설명에 공식 홈페이지 https://oryun.org 링크
+      (채널→홈페이지 방향). 1c는 예장통합 총회결의표(1915~2025)·크리스찬타임스
+      집계(1915~2021)·코람데오 집계(2010)에서 오륜교회·김은호 모두 검색되지 않음.
+    content_type: sermon
+    added_at: "2026-08-18"
+    last_reviewed_at: "2026-08-18"
+    reviewed_by: jaehyuk.myung
+    note: >
+      승인 (2026-08-18). 주일설교 중심 정기 업로드.
+      [기록해 둘 사실] 이 교회가 주최하는 다니엘기도회(김은호 목사가 운영위원장)에 대해
+      예장고신 제73회 총회(2023)가 이대위 보고를 받아 "당분간 <경계>"로 결의했다.
+      교회·담임 본인에 대한 이단 규정은 아니지만, PYM은 이 채널의 영상을 수집하므로
+      다니엘기도회 영상이 풀에 들어올 수 있다. 기준 3(콘텐츠 성격)에서 다시 볼 여지가 있어
+      남긴다. 출처: 교회와신앙 2023-10-16 장운철,
+      https://www.amennews.com/news/articleView.html?idxno=19829
+
+  - channel_id: UCaNoaz05HCffa_61Jf_9Qng
+    channel_name: 김학중 목사_꿈의교회 미디어교회
+    affiliation: 꿈의교회 (기독교대한감리회 경기연회)
+    affiliation_verified: >
+      채널 설명에 "삶의 희망을 주는 꿈의교회(김학중 목사) 공식채널입니다" 명시 +
+      공식 홈페이지 https://dream10.org 링크 (채널→홈페이지 방향). 교단은 홈페이지에서
+      기독교대한감리회 경기연회로 확인. 1c는 통합 총회결의표·크리스찬타임스·코람데오
+      집계에서 꿈의교회·김학중 모두 검색되지 않음.
+    content_type: sermon
+    added_at: "2026-08-18"
+    last_reviewed_at: "2026-08-18"
+    reviewed_by: jaehyuk.myung
+    note: >
+      승인 (2026-08-18). 미디어예배·설교 정기 업로드.
+      기감은 CBS 재단이사 추천 교단이자 CTS 공동 운영 교단으로, 이단 규정 대상이 아니다.
+
+  - channel_id: UCm2kV3p3f2Es2XOohDCrcnA
+    channel_name: 낮은담교회
+    affiliation: 낮은담침례교회 (기독교한국침례회)
+    affiliation_verified: >
+      채널 설명에 "낮은담침례교회는 기독교한국침례회(라이트하우스울산)에 소속된 교회입니다"
+      명시 + 공식 홈페이지 http://www.lowwall.org 링크 (채널→홈페이지 방향).
+      1c는 통합 총회결의표·크리스찬타임스·코람데오 집계에서 낮은담·라이트하우스울산
+      모두 검색되지 않음.
+    content_type: sermon
+    added_at: "2026-08-18"
+    last_reviewed_at: "2026-08-18"
+    reviewed_by: jaehyuk.myung
+    note: >
+      승인 (2026-08-18). 2022-08 울산에서 시작한 교회로 예배·설교 업로드.
+      동명 채널 UC-XplxFnkawMMm6f-7L8ZJQ와 혼동하지 말 것 — 그쪽은 설명이 유튜브
+      기본 문구뿐이고 외부 링크가 없다.
+
+  # ── 교단 미표기 2건 (기준 1 개정으로 탈락 사유가 아니다) ───────
+  - channel_id: UCwA76_SKJYUSlimH_iZJGlw
+    channel_name: 우리들교회
+    affiliation: 우리들교회 (교단 미표기)
+    affiliation_verified: >
+      채널 설명에 "말씀대로 믿고 살고 누리는 우리들교회 (https://woori.cc)" +
+      주일 1~4부·수요·새벽 예배 시간표 기재 (채널→홈페이지 방향 + 실체 정보).
+      교단은 채널 설명·홈페이지 어디에도 표기가 없어 "교단 미표기"로 적는다 —
+      기준 1 개정(2026-08-18)에 따라 탈락 사유가 아니다. 1c는 통합 총회결의표·
+      크리스찬타임스·코람데오 집계에서 우리들교회·김양재 모두 검색되지 않음.
+    content_type: sermon
+    added_at: "2026-08-18"
+    last_reviewed_at: "2026-08-18"
+    reviewed_by: jaehyuk.myung
+    note: >
+      승인 (2026-08-18). 김양재 목사 시무, 판교. 주일설교 정기 업로드.
+      [등록 사고 주의] 동명 채널 UCMbkK7p3B2RJBr2KQEBHJYA는 **다른 교회**다
+      (2006년 창립, 천마산, 예장합동 수도노회 30주년 기념교회). 그쪽은 교단까지
+      표기돼 있어 근거가 더 좋아 보이는 것이 함정이다. 반드시 channel_id로 대조할 것.
+
+  - channel_id: UCGrMG52egZF3j0CUv9c5FUA
+    channel_name: 베이직교회
+    affiliation: 베이직교회 (교단 미표기 — 독립교회)
+    affiliation_verified: >
+      채널 설명에 "* 이 채널은 베이직교회 공식 채널입니다" 명시 + 공식 홈페이지
+      http://www.basicchurch.or.kr 링크 (채널→홈페이지 방향). 발굴 당시 홈페이지가
+      인증서 오류로 확인되지 않았으나 채널 설명 근거로 대체했다 — 기준 1b는
+      "채널 설명 또는 홈페이지에"이므로 충족된다. 1c는 통합 총회결의표·크리스찬타임스·
+      코람데오 집계에서 베이직교회·조정민 모두 검색되지 않음.
+    content_type: sermon
+    added_at: "2026-08-18"
+    last_reviewed_at: "2026-08-18"
+    reviewed_by: jaehyuk.myung
+    note: >
+      승인 (2026-08-18). 조정민 목사 시무. 설교 중심 업로드.
+      동명 채널 UCZutF13kJKfai0hDDu3rsOw는 설명이 기본 문구뿐이라 구별된다.
+
+  # ── 초교파 방송 · 선교 미디어 8건 ────────────────────────────
+  - channel_id: UCjpIl-p9sFNPXfcuoU2KS-g
+    channel_name: CTS기독교TV
+    affiliation: 초교파 ((주)기독교텔레비전)
+    affiliation_verified: >
+      채널 설명에 "영상으로 복음을 전하는 CTS기독교TV 공식채널입니다" 명시 +
+      https://www.cts.tv 링크 (채널→홈페이지 방향). 법인은 홈페이지에서
+      (주)기독교텔레비전 / 대표 이철·정훈·장봉생 3인 공동 / 사업자등록번호
+      120-81-54212 / 서울 동작구 노량진로 100 확인 (https://www.cts.tv/company,
+      https://www.cts.tv/company/about). 1c는 통합 총회결의표·크리스찬타임스·
+      코람데오 집계에서 검색되지 않음. 통합 표의 "이단옹호언론" 규정 8건은 전부
+      신문이고 방송사는 없다.
+    content_type: mixed
+    added_at: "2026-08-18"
+    last_reviewed_at: "2026-08-18"
+    reviewed_by: jaehyuk.myung
+    note: >
+      승인 (2026-08-18). 초교파 기독교 방송. 발굴 검색어에 39회 등장으로 최다.
+      대표가 3인 공동 체제인 점은 예장통합·예장합동·기감 3개 교단 공동 운영 구조와
+      부합하나, "3개 교단 공동 운영"이라는 서술 자체는 2차 자료에만 있어 근거로 쓰지 않았다.
+      쇼츠 비중이 높아(최근 10건 중 80%) 배치의 길이 하한 필터가 상당수를 걸러낼 것으로 본다.
+
+  - channel_id: UCB8GtWm-5xKmIeh9ssIDyBA
+    channel_name: CGN
+    affiliation: 초교파 (CGN — 온누리교회 설립 선교 미디어)
+    affiliation_verified: >
+      채널 설명에 "선교 미디어 CGN 어디서나 모두에게" + CGN 후원 문의 02-796-2243 등
+      실체 정보 기재. 계열 채널(CGN 생명의 삶·성경통독) 설명에 공식 홈페이지
+      http://www.cgntv.net 링크가 있어 동일 기관임이 확인된다. 설립 주체가 온누리교회라는
+      사실은 2차 자료에서만 확인했다(cgnkorea.net 본문 조회 실패) — 1c 대조는 그래서
+      CGN과 온누리교회를 둘 다 검색했고, 통합 총회결의표·크리스찬타임스·코람데오
+      집계 어디에서도 검색되지 않았다.
+    content_type: mixed
+    added_at: "2026-08-18"
+    last_reviewed_at: "2026-08-18"
+    reviewed_by: jaehyuk.myung
+    note: >
+      승인 (2026-08-18). 선교 미디어 본 채널. 구독 853,000.
+      [남은 확인] 설립 주체·법인 형태를 1차 자료로 확인하지 못했다. 다음 재검토
+      (last_reviewed_at + 120일) 때 cgnkorea.net 소개 페이지를 다시 볼 것.
+
+  - channel_id: UCbaI7e7lhkfLSdMUfd5Fy0Q
+    channel_name: CGN 생명의 삶
+    affiliation: 초교파 (CGN — 온누리교회 설립 선교 미디어)
+    affiliation_verified: >
+      채널 설명에 "선교 미디어 CGN, 어디서나 모두에게" + 공식 홈페이지
+      http://www.cgntv.net 링크 (채널→홈페이지 방향). 두란노
+      http://www.duranno.com/qt/ 연계로 생명의 삶 QT 콘텐츠임이 확인된다.
+      1c는 CGN·온누리교회 모두 통합 총회결의표·크리스찬타임스·코람데오 집계에서
+      검색되지 않음.
+    content_type: devotion
+    added_at: "2026-08-18"
+    last_reviewed_at: "2026-08-18"
+    reviewed_by: jaehyuk.myung
+    note: >
+      승인 (2026-08-18). 두란노 생명의 삶 QT 계열. 발굴 자동 점검 통과(쇼츠 0%,
+      최근 업로드 지속). 성격 신호어 "신비주의" 2건은 제목 어휘 집계일 뿐 차단 사유가
+      아니며, 영상 확인 결과 문제 없다고 판단했다.
+
+  - channel_id: UCvLBLb1EobX94kP4ohDWjKg
+    channel_name: CGN 성경통독
+    affiliation: 초교파 (CGN — 온누리교회 설립 선교 미디어)
+    affiliation_verified: >
+      채널 설명에 "CGN의 존재 이유는 온 세상 모두에게 하나님의 사랑을 전하는 것입니다" +
+      공식 홈페이지 http://www.cgntv.net 기재. 1c는 CGN·온누리교회 모두 통합
+      총회결의표·크리스찬타임스·코람데오 집계에서 검색되지 않음.
+    content_type: devotion
+    added_at: "2026-08-18"
+    last_reviewed_at: "2026-08-18"
+    reviewed_by: jaehyuk.myung
+    note: >
+      승인 (2026-08-18). 성경통독 콘텐츠. 발굴 자동 점검 통과(쇼츠 0%).
+
+  - channel_id: UC0NOO9jkIj_4ML7IbtTwQHQ
+    channel_name: CBSJOY
+    affiliation: 초교파 (재단법인 CBS 기독교방송)
+    affiliation_verified: >
+      채널 설명에 "기독교방송 CBS TV의 유튜브 공식 채널 CBS JOY 입니다" 명시 +
+      cbs.co.kr 링크. CBS는 1954-12-15 설립, 한국기독교교회협의회 음영위원회가 설립했고
+      각 교단 추천 이사 19명·감사 2명의 재단이사회로 운영된다 (예장통합·기감·기장·
+      구세군대한본영·예장합동·기독교대한성결교회·예장고신·기독교한국루터회·대한성공회·
+      기독교한국침례회·기독교대한복음교회). 출처 http://about.cbs.co.kr/info/cbs.asp,
+      https://www.cbs.co.kr/event/view/aboutCBS_council. 1c는 통합 총회결의표·
+      크리스찬타임스·코람데오 집계에서 검색되지 않음.
+    content_type: mixed
+    added_at: "2026-08-18"
+    last_reviewed_at: "2026-08-18"
+    reviewed_by: jaehyuk.myung
+    note: >
+      승인 (2026-08-18). CBS TV 종합 채널. 초교파성이 11개 교단 추천 이사회 구성으로
+      문서화되는 유일한 사례라 기준 1c 판단이 가장 단단하다.
+      쇼츠 비중이 높다(최근 10건 중 60%).
+
+  - channel_id: UCnaTpTJdJvff5Q2Qz6O-9eA
+    channel_name: CBS설교
+    affiliation: 초교파 (재단법인 CBS 기독교방송)
+    affiliation_verified: >
+      채널 설명에 "CBS기독교방송에서 방송된 설교를 모아놓은 공식 유튜브 채널" 명시 +
+      https://www.cbs.co.kr/mission/sermonTvSearch 링크 (채널→홈페이지 방향).
+      법인 근거는 CBSJOY 항목과 동일하다. 1c는 통합 총회결의표·크리스찬타임스·
+      코람데오 집계에서 검색되지 않음.
+    content_type: sermon
+    added_at: "2026-08-18"
+    last_reviewed_at: "2026-08-18"
+    reviewed_by: jaehyuk.myung
+    note: >
+      승인 (2026-08-18). 설교 전용 채널이라 말씀 풀의 중심이 될 것으로 본다.
+      여러 교단 목사의 설교가 섞이므로, 개별 설교자 단위 확인은 이 화이트리스트가
+      보장하지 않는다 — CBS 편성이 1차 여과라는 전제다.
+
+  - channel_id: UCqZ6R9Js2HG-6ZNP71soeUg
+    channel_name: ANOINTING
+    affiliation: 초교파 (어노인팅 — 찬양 사역 단체)
+    affiliation_verified: >
+      채널 설명에 "Anointing Official Youtube Channel" + 공식 홈페이지
+      http://anointing.co.kr, 샵 anointingmusic.com, 문의 02-574-6305 기재
+      (채널→홈페이지 방향 + 실체 정보). 1c는 통합 총회결의표·크리스찬타임스·
+      코람데오 집계에서 검색되지 않음.
+    content_type: worship
+    added_at: "2026-08-18"
+    last_reviewed_at: "2026-08-18"
+    reviewed_by: jaehyuk.myung
+    note: >
+      승인 (2026-08-18). 찬양 풀의 축. media_type 판별에서 worship으로 갈릴 채널이다.
+      쇼츠 비중이 높다(최근 10건 중 절반 이상).
+
+  - channel_id: UCujB5Oh0mCufksAmtdl-DBw
+    channel_name: 옹기장이선교단 Official
+    affiliation: 초교파 (옹기장이선교단 — 1987.9 창단 선교단체)
+    affiliation_verified: >
+      채널 설명에 "1987년 9월에 창단" + 공식 홈페이지 https://ongi.ai.kr 링크
+      (채널→홈페이지 방향 + 실체 정보). 1c는 통합 총회결의표·크리스찬타임스·
+      코람데오 집계에서 검색되지 않음.
+    content_type: worship
+    added_at: "2026-08-18"
+    last_reviewed_at: "2026-08-18"
+    reviewed_by: jaehyuk.myung
+    note: >
+      승인 (2026-08-18). 찬양 사역 선교단체. 발굴 자동 점검 통과.
+
+  # ── 경계선 후보에서 근거 보강으로 승인된 2건 ──────────────────
+  # HANDOFF는 극동방송을 "b가 주파수만", 광주극동방송을 "a 미충족"으로 적었으나
+  # 2026-08-18 재확인으로 둘 다 뒤집혔다. 근거 시트 5.2절.
+  - channel_id: UCTwQ9iAIojmsw_mFlYj54SA
+    channel_name: 극동방송
+    affiliation: 초교파 (재단법인 극동방송)
+    affiliation_verified: >
+      채널 설명에 공식 홈페이지 https://www.febc.net/ 및 http://www.febc.net/intro
+      링크 (채널→홈페이지 방향, 기준 1a의 우선 근거). 홈페이지에서 재단법인 극동방송 /
+      1956-12-23 개국 / 설립 주체 재단법인 한국복음주의방송협회(1954-05-01 창립,
+      초대 이사장 황성수) / 대표 김장환 / 사업자등록번호 105-82-00373 확인
+      (https://seoul.febc.net/intro/history). 채널 소유 확인은 홈페이지가 게시한
+      재생목록 PLD_h6icUlbphx01suJn5yrgVhB-bIUw7n의 소유 채널이 이 channel_id임을
+      대조해 교차 확인했다. 1c는 통합 총회결의표·크리스찬타임스·코람데오 집계에서
+      극동방송·김장환 모두 검색되지 않음.
+    content_type: mixed
+    added_at: "2026-08-18"
+    last_reviewed_at: "2026-08-18"
+    reviewed_by: jaehyuk.myung
+    note: >
+      승인 (2026-08-18). 매일기도·경건생활365 등 짧은 묵상물과 행사 생방송이 섞여
+      content_type을 mixed로 둔다. 쇼츠 비중이 높아(최근 10건 중 80%) 길이 하한
+      필터가 상당수를 걸러낼 것이다. 성격 신호어 "번영신학" 1건은 제목 어휘 집계이며
+      해당 영상은 국가 중보기도 제목으로 차단 사유로 보지 않았다.
+
+  - channel_id: UClpO2x4opXyHxQY8kE6eILg
+    channel_name: 광주극동방송
+    affiliation: 초교파 (재단법인 극동방송 광주지사)
+    affiliation_verified: >
+      채널 설명에 FM93.1MHz · 대표번호 062-373-1000 · 주소 광주광역시 상무번영로 73
+      기재 (기준 1b 실체 정보). 채널 설명에는 홈페이지 링크가 없어(네이버 블로그만)
+      반대 방향으로 확인했다 — 공식 홈페이지 https://gj.febc.net 이 게시한 재생목록
+      PLqG8Crf-raBKKAGDqxLQMCFtcHr82_Xtq의 소유 채널이 이 channel_id임을 대조해
+      **동일 채널임을 확인**했다 (기준 1a의 단서 조건: 홈페이지→채널 방향만 있을 때는
+      후보 채널과 동일한지 확인해야 한다). 본사 연혁에 광주극동방송 2012-05-26 개국이
+      명시돼 공식 지역국임이 확인된다 (https://seoul.febc.net/intro/history).
+      1c는 통합 총회결의표·크리스찬타임스·코람데오 집계에서 극동방송 계열이
+      검색되지 않음.
+    content_type: mixed
+    added_at: "2026-08-18"
+    last_reviewed_at: "2026-08-18"
+    reviewed_by: jaehyuk.myung
+    note: >
+      승인 (2026-08-18). 극동방송 12개 지역국 중 하나. 전도대회 실황·찬양·지역 프로그램이
+      섞여 mixed로 둔다. 분당우리교회 사례(홈페이지가 부속 채널을 링크)와 달리
+      재생목록 소유자 대조로 동일 채널임이 확정됐다.
