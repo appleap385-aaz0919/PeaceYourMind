@@ -281,10 +281,158 @@ mapping:
   boredom.dull:          [daily_word, bible_story]
   boredom.novelty:       [bible_story, daily_word]
 
+# =====================================================================
+# media_type — 영상을 말씀/찬양으로 가르는 축 (Phase 2 배치에서 구현)
+#
+# [주제 태깅과 다른 축이다]
+#   주제(theme)      감정에 무엇으로 응답할 것인가   comfort · rest · guidance ...
+#   media_type       그 응답을 어떤 형식으로 받을 것인가   말씀 / 찬양
+#   한 영상은 둘 다 갖는다. theme=comfort 이면서 media_type=worship 인 영상이 있고,
+#   같은 주제에 media_type=sermon 인 영상이 따로 있다.
+#
+# [판별 키워드 사전을 주제 태깅 사전과 분리한 이유 — 용도가 다르다]
+#   themes[].title_keywords  "이 영상이 어느 감정 화면에 갈 것인가"를 정한다.
+#                            그래서 전역 금지어(은혜·치유·축복·간증·기적)를 쓰지
+#                            않는다 — 변별력이 없거나 잘못된 장르를 부르기 때문이다.
+#   media_types[].title_keywords  "이 영상이 말씀인가 찬양인가"만 가린다.
+#                            이미 수집된 영상을 분류하는 것이라 장르를 부를 위험이
+#                            없다. 그래서 "설교" 같은 단어를 여기서는 쓴다
+#                            (발굴 검색어에서는 너무 넓어 피했지만, 여기서는
+#                            그 넓음이 오히려 정확하다).
+#   ⚠ 두 사전을 섞지 말 것. 한쪽 원칙을 다른 쪽에 적용하면 둘 다 망가진다.
+#
+# [쿼터는 늘지 않는다]
+#   판별에 쓰는 것은 배치가 이미 받아오는 값뿐이다 —
+#   채널 content_type(allowlist), 영상 title·duration(videos.list).
+#   추가 API 호출이 없다.
+# =====================================================================
+
+media_types:
+
+  - id: sermon
+    label: 말씀
+    intent: 내용을 듣고 싶은 상태에 맞는 형식. 설교·강해·묵상·큐티.
+    title_keywords:
+      [주일예배, 수요예배, 새벽기도, 금요기도, 저녁예배, 청년예배,
+       설교, 강해, 말씀, 묵상, 큐티, QT, 성경통독, 매일성경, 세미나, 특강]
+    caution: >
+      "말씀"은 찬양 제목에도 쓰인다("말씀 위에 서리라"). 단독으로 판정하지 않고
+      아래 우선순위 규칙을 따른다. 본문 장절 패턴이 더 강한 신호다.
+
+  - id: worship
+    label: 찬양
+    intent: 듣기만 하면 되는 형식. 지치거나 불안한 상태에 부담이 적다.
+    title_keywords:
+      [찬양, 워십, 경배, CCM, 특송, 연주, 피아노, 찬양대, 워십팀,
+       콘티, 메들리, 라이브클립, 예배실황, 성가]
+    caution: >
+      "예배"는 양쪽에 다 걸린다(주일예배 설교 / 찬양예배). 그래서 sermon 쪽은
+      "주일예배·수요예배"처럼 예배 종류와 결합한 형태만 넣었다.
+
+# 본문 장절 패턴 — sermon의 가장 강한 신호
+#   "요한복음 3:16", "에스겔 40장", "누가복음 8:19-21" 형태.
+#   책 이름 66권은 scripts/lib/krv_source.py의 BOOK_KEYS를 재사용한다
+#   (정식 명칭 + 표준 약어 132개가 이미 들어 있다. 사전을 두 벌 두지 않는다).
+#   찬양 제목에는 장절이 거의 붙지 않아 변별력이 높다.
+scripture_reference_signal: true
+
+# 길이 신호 — 보조. 제목으로 갈리지 않을 때만 쓴다.
+#   설교는 30분 이상이 흔하고 찬양 한 곡은 5분 내외다. 다만 찬양 메들리·
+#   예배 실황은 1시간을 넘기도 하므로 단독 판정 근거로 쓰지 않는다.
+duration_signal:
+  sermon_min_seconds: 1800   # 30분 이상이면 sermon 쪽
+  worship_max_seconds: 600   # 10분 이하면 worship 쪽 (메들리 여유 포함)
+
+# ---------------------------------------------------------------------
+# 판별 우선순위 (배치가 이 순서로 판정한다)
+#
+#   1. 채널 content_type이 sermon 또는 worship이면 그대로 확정한다.
+#      전용 채널은 여기서 끝난다 (MARKERS WORSHIP=worship, CBS설교=sermon).
+#      devotion은 sermon으로 본다 — 큐티·묵상은 말씀 해설이다.
+#
+#   2. content_type이 mixed면 제목으로 가린다.
+#      **mixed 채널이 실제 판별 대상이다** (오륜교회·꿈의교회·우리들교회처럼
+#      설교와 찬양을 한 채널에서 올리는 곳).
+#      본문 장절 패턴이 있으면 sermon. 없으면 title_keywords로 판정하되
+#      한쪽만 걸릴 때만 확정한다.
+#
+#   3. 양쪽 다 걸리거나 아무것도 안 걸리면 길이로 가린다.
+#
+#   4. 그래도 못 가리면 unknown으로 둔다.
+#      **unknown은 양쪽 토글 모두에 노출한다.** 판별 실패로 영상이 사라지는 것보다
+#      낫고, unknown 비율이 리포트에 남아 사전을 고칠 근거가 된다.
+#      (주제 태깅의 untagged와 다르다 — untagged는 노출하지 않는다.
+#       거기서는 "어느 감정에 맞는지 모른다"가 곧 "보여줄 근거가 없다"이지만,
+#       여기서는 "형식을 모른다"일 뿐 감정 적합성은 이미 판정된 상태다.)
+# ---------------------------------------------------------------------
+
+# =====================================================================
+# 감정 세분류별 media_type 기본값
+#
+# [기본값일 뿐이다 — 사용자 전환이 필수 요건이다]
+#   감정 분류가 완벽하지 않으므로 기본값이 안 맞는 경우가 상당수 나온다.
+#   영상 리스트 상단에 [말씀]/[찬양] 토글을 두어 한 번의 탭으로 바뀌게 한다.
+#   설정 화면에 숨기지 않는다 (PLAN.md 3.4).
+#
+# [배분 근거]
+#   worship 우선 — 듣기만 하면 되는 형식이라 부담이 적다.
+#     불안·분노·슬픔·지침처럼 여력이 없는 상태, 그리고 기쁨·설렘·평온처럼
+#     내용보다 분위기가 맞는 상태.
+#   sermon 우선 — 내용을 원하는 상태.
+#     frustration(막막함·진전 없음·억눌림)은 "길을 알려달라"는 방향이고,
+#     boredom(지루함·새 자극)은 읽을거리를 찾는 상태다.
+#     themes.yaml mapping에 이미 그 결이 있다 — 이 두 계열의 주제가
+#     guidance·patience·daily_word·bible_story로 내용 중심이다.
+#
+# [조정 여지 — 실사용 데이터로 다시 볼 것]
+#   anger.unfair 는 판단이 갈렸다. 매핑 주제(justice·lament·forgiveness)가
+#   전부 내용 중심이라 sermon 쪽 근거가 있지만, 억울한 상태에서 긴 설교를
+#   들을 여력이 있는지는 다른 문제다. 일단 worship으로 두었다.
+#   calm.stable 도 daily_word를 매핑에 갖고 있어 sermon 여지가 있다.
+#   토글 사용 로그가 쌓이면 기본값이 뒤집히는 세분류가 보일 것이다.
+# =====================================================================
+
+media_defaults:
+  anxiety.restless:      worship
+  anxiety.worry:         worship
+  anxiety.tension:       worship
+
+  anger.irritation:      worship
+  anger.unfair:          worship    # 조정 후보 — 위 주석 참조
+  anger.rage:            worship
+
+  frustration.stuck:     sermon
+  frustration.blocked:   sermon
+  frustration.suppressed: sermon
+
+  sadness.sorrow:        worship
+  sadness.lonely:        worship
+  sadness.loss:          worship
+
+  exhaustion.burnout:    worship
+  exhaustion.tired:      worship
+  exhaustion.listless:   worship
+
+  joy.proud:             worship
+  joy.delight:           worship
+  joy.grateful:          worship
+
+  flutter.anticipation:  worship
+  flutter.thrill:        worship
+
+  calm.ease:             worship
+  calm.stable:           worship    # 조정 후보 — 위 주석 참조
+
+  boredom.dull:          sermon
+  boredom.novelty:       sermon
+
 # ---------------------------------------------------------------------
 # 빌드 시 검증 (배치가 단언할 것)
 #   1. mapping의 모든 세분류 id가 taxonomy에 존재한다 (역방향도 — 빠진 세분류 없음)
 #   2. mapping이 참조하는 모든 주제가 themes에 정의되어 있다
 #   3. crisis_fixed는 mapping 어디에도 없다
-#   4. 전역 금지어(은혜·치유·축복·간증·기적)가 title_keywords에 없다
+#   4. 전역 금지어(은혜·치유·축복·간증·기적)가 themes[].title_keywords에 없다
+#      ※ media_types[].title_keywords에는 적용하지 않는다 — 용도가 다르다
+#   5. media_defaults의 세분류 id 집합이 mapping과 정확히 같다 (누락·초과 없음)
+#   6. media_defaults의 값이 media_types에 정의된 id뿐이다 (sermon / worship)
 # ---------------------------------------------------------------------
