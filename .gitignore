@@ -9,7 +9,11 @@ _previous/
 
 # 후보 검토 시트 — suggest_channels.py가 매번 새로 만드는 일회성 작업 문서.
 # 승인 결과는 channel_allowlist.yaml에 남으므로 이 파일 자체는 이력이 필요 없다.
-channel_candidates.md
+#
+# 파일명에 타임스탬프가 붙는다(channel_candidates.20260818-064420.md).
+# 드라이런이 실제 결과를 덮어쓴 FYM 사고를 막기 위한 것이라, 와일드카드로 받는다.
+# `channel_candidates.md`만 적으면 실제 산출물이 전부 추적 대상이 된다.
+channel_candidates*.md
 
 # 로컬 환경변수 (YOUTUBE_API_KEY 등)
 # 운영 키는 GitHub Actions Secrets에만 두고, 저장소에는 어떤 형태로도 넣지 않는다.

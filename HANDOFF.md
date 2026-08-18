@@ -1,6 +1,6 @@
 # HANDOFF — 세션 인수인계
 
-작성 2026-08-18 (KST) · 개정 2026-08-18 (4차분 — Phase 1 완료) · 최신 상태는 `git log`로 확인할 것
+작성 2026-08-18 (KST) · 개정 2026-08-18 (Phase 2 준비) · 최신 상태는 `git log`로 확인할 것
 
 > 이 문서는 **다음 세션이 바로 일을 이어받기 위한 것**이다.
 > 정책·구조는 `PLAN.md`, 주제 체계는 `themes.yaml`, 원문 출처는 `data/krv/SOURCE.md`에 있고
@@ -24,7 +24,7 @@
 | 0 정책·채널 | **부분** — 주제 체계 24개 확정(`themes.yaml`), 채널 승인 0개 (기준만 문서화) |
 | 1 구절 큐레이션 | **완료** — 250구절 (감정 240 + 위기 10). 24개 세분류 전부 10건 이상 |
 | 1.5 검증·추출 파이프라인 | **완료** — 이번 세션 산출물 (`verify_verses.py` + `fill_verses.py`) |
-| 2 배치 개작 | 미착수 |
+| 2 배치 개작 | **진행 중** — 도구·lib 이식 완료. `build_videos.py`와 채널 승인이 남았다 |
 | 3 PWA 조립 | 미착수 |
 
 **규모**
@@ -260,6 +260,22 @@ scj-peter는 부분적으로 현대 맞춤법화된 사본이었다.
 다음은 `PLAN.md` 8절의 Phase 2 — FYM `build_videos.py` 골격을 가져와
 search를 제거하고 재생목록 수집 + 주제 태깅으로 교체하는 작업이다.
 
+### 준비 완료 (2026-08-18)
+
+**API 키** PYM 전용 발급 + Actions Secret(`YOUTUBE_API_KEY`) 등록 완료.
+
+**`gen_verses_json.py`** — `verses.yaml` -> `verses.json`. API 소모 0.
+`note`·`verified*`를 제거하고 `crisis`를 최상위로 분리한다.
+출력 60,613바이트 (PLAN 4.1 예상 50KB 근사).
+게이트 5종: `verified: false` 잔존 / 위기·감정 풀 분리 / 입출력 id 집합 일치 /
+개수 기대치(240 + 10) / theme·emotion_tags가 themes.yaml에 있는가.
+**본문은 공백 정규화 후 원문과 다시 대조한다** — YAML 폴디드 스칼라가 붙이는
+개행이 앱 문자열에 섞이던 것을 여기서 잡았다.
+
+**`suggest_channels.py`** — FYM 이식 + PYM 고유 변경.
+`lib/`에 quota · quota_log · youtube · actions_status · normalize ·
+channel_blocklist를 이식했고 allowlist는 PYM 필드로 새로 썼다.
+
 ### 착수 전에 정해야 할 것
 
 **채널 화이트리스트가 비어 있다.** `channel_allowlist.yaml`은 승인 기준만 있고
@@ -268,15 +284,10 @@ search를 제거하고 재생목록 수집 + 주제 태깅으로 교체하는 �
 20~30개다. 후보 발굴에 `suggest_channels.py`(월 1회, 이때만 search 사용,
 약 600 units)가 필요하다.
 
-**API 키가 없다.** PYM 전용 GCP 프로젝트·키를 발급해야 한다
-(FYM과 분리 확정, `PLAN.md` 6절). 실제 API 실행은 명령어와 예상 비용을
-먼저 제시하고 승인을 받는다.
+실제 API 실행은 명령어와 예상 쿼터를 먼저 제시하고 승인을 받는다 (변함없음).
 
 ### 구절 쪽에서 넘기는 것
 
-- **`gen_verses_json.py`** — `verses.yaml`에서 `verses.json`을 생성한다.
-  `note` 등 큐레이션 메타를 앱 번들에서 제거하고, `crisis`는 최상위로
-  분리해 내보낸다(`PLAN.md` 4.1·4.2). 아직 없다.
 - **CI 게이트 연결** — `verify_verses.py --check`를 배포 전 단계에 건다.
   `verified: false`가 하나라도 있으면 배포되지 않는다.
 - **주제별 구절 수 편중** — 영상 풀 설계 시 참고. `hope` 21 · `joy_praise` 20 ·
@@ -326,8 +337,9 @@ search를 제거하고 재생목록 수집 + 주제 태깅으로 교체하는 �
 - 배치·앱 코드 — `scripts/`에는 검증 스크립트만 있다
 - `themes.yaml` · `channel_allowlist.yaml` 수정 — 읽기만 했다
 - `verses.yaml`의 `note`·선정 판단 변경 — 본문 `text`만 고쳤다
-- `gen_verses_json.py` — `verses.yaml` -> `verses.json` 빌드 스크립트 (Phase 2)
-- 채널 화이트리스트 승인 · API 키 발급 — Phase 2 착수 전 필요
+- `build_videos.py` — 일일 배치 본체 (FYM 골격 + 재생목록 수집 + 주제 태깅)
+- 채널 화이트리스트 승인 — `suggest_channels.py` 실행은 승인 대기 중
+- GitHub Actions 워크플로 2종 (build / deploy-app)
 - `themes.yaml` 수정 — 개별 구절 채택에서 intent와 어긋난 판단을 여러 번
   했지만(빌 4:13 제외, `self_control`을 "쏟아냄"으로 해석, 잠언 분노 구절
   대부분 제외) 주제 정의는 건드리지 않았다. 근거는 각 `note`에 있다
@@ -351,8 +363,18 @@ data/krv/
 scripts/
   verify_verses.py           본문 대조 + verified 갱신 + --check 게이트
   fill_verses.py             빈 text를 원문에서 추출해 채움 + --verify 경로 검증
-  lib/krv_source.py          원문 로더 · 책 이름 매핑 132개 · ref 파서 · 공백 정규화
+  gen_verses_json.py         verses.yaml -> verses.json (앱 번들, crisis 최상위 분리)
+  suggest_channels.py        채널 후보 발굴 — search를 쓰는 유일한 스크립트 (월 1회)
+  requirements.txt           PyYAML · requests
+  lib/krv_source.py          원문 로더 · 책 이름 매핑 · ref 파서 · 절 합본 방어
   lib/verses_io.py           verses.yaml 라인 단위 in-place 편집 (주석 보존)
+  lib/allowlist.py           channel_allowlist.yaml 로더 (PYM 필드 확장)
+  lib/channel_blocklist.py   channel_blocklist.yaml 로더
+  lib/quota.py               쿼터 회계 · 비용표 · 배치 예상량
+  lib/quota_log.py           일일 누적 기록 (PT 기준, PYM 예약값 200)
+  lib/youtube.py             API 클라이언트 + 드라이런 클라이언트
+  lib/actions_status.py      Actions 배치 실행 여부 조회 (gh, 쿼터 0)
+  lib/normalize.py           문자열 정규화 (신호어 매칭용)
 ```
 
 **쓰는 법**
@@ -362,6 +384,8 @@ python scripts/fill_verses.py             # 빈 text를 원문에서 채운다 (
 python scripts/fill_verses.py --verify    # 추출 경로가 옳은지 검증
 python scripts/verify_verses.py           # 대조 + 일치 건 verified 갱신
 python scripts/verify_verses.py --check   # 검사만. CI 빌드 게이트용 (종료 코드)
+python scripts/gen_verses_json.py         # 앱 번들 생성 (API 0)
+python scripts/suggest_channels.py --dry-run   # 채널 발굴 (실행 시 661 units)
 ```
 
 큐레이션 흐름은 `fill_verses.py` -> `verify_verses.py` 순이다.
