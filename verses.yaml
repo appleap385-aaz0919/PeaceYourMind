@@ -2026,6 +2026,38 @@ verses:
     verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
     verified_at: "2026-08-18"
 
+  - id: psa.145.9
+    ref: 시편 145:9
+    text: >
+      여호와께서는 만유를 선대하시며 그 지으신 모든 것에 긍휼을 베푸시는도다
+    emotion_tags: [anger.irritation]
+    theme: comfort
+    note: >
+      2026-08-19 추가. 이 화면은 self_control 6 · quiet_worship 4의 두 축뿐이었다.
+      "만유를 선대하시며 그 지으신 **모든 것에** 긍휼을 베푸시는도다" —
+      짜증은 모든 것이 거슬리는 상태인데 이 구절은 시야를 정확히 반대로 넓힌다.
+      시편 145가 신규 책이라 편중도 함께 완화된다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: psa.103.10
+    ref: 시편 103:10
+    text: >
+      우리의 죄를 따라 처치하지 아니하시며 우리의 죄악을 따라 갚지
+      아니하셨으니
+    emotion_tags: [anger.irritation]
+    theme: self_control
+    note: >
+      2026-08-19 추가. "우리의 죄악을 따라 **갚지 아니하셨으니**" — 짜증에는
+      사소하게 갚아주고 싶은 마음이 붙는다. 그것을 요구로 막지 않고
+      **하나님이 그러지 않으신다는 서술**로 놓는다. 3차분의 "화자를 바꾼다"
+      해법(HANDOFF 2.6)을 그대로 잇는 형태다.
+      ⚠ 시편 103을 다섯 번째로 쓴다(103:6 unfair · 103:8·103:13-14 irritation ·
+        103:9 rage). 그중 셋이 이 화면이다. 103편이 하나님의 긍휼을 다루는
+        대표 시편이라 자연스러운 쏠림으로 봤으나, 편중이 문제가 되면
+        **이 건이 먼저 빠질 후보**다.
+
   # ═══════════════════════════════════════════════════════════
   # anger.unfair (억울함) — 주제: justice, lament, forgiveness
   # 방향: 억울함을 "네가 참아라"로 누르지 않고 갚으시는 분께 넘긴다.
@@ -2044,6 +2076,9 @@ verses:
   #   themes.yaml의 forgiveness caution이 경고한 그대로였다
   # ═══════════════════════════════════════════════════════════
 
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
   - id: rom.12.19
     ref: 로마서 12:19
     text: >
@@ -2182,6 +2217,82 @@ verses:
     verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
     verified_at: "2026-08-18"
 
+  - id: 1pe.2.23
+    ref: 베드로전서 2:23
+    text: >
+      욕을 받으시되 대신 욕하지 아니하시고 고난을 받으시되 위협하지 아니하시고
+      오직 공의로 심판하시는 자에게 부탁하시며
+    emotion_tags: [anger.unfair]
+    theme: justice
+    note: >
+      2026-08-19 추가. "욕을 받으시되 대신 욕하지 아니하시고 …공의로 심판하시는
+      자에게 부탁하시며" — **화자가 예수이고 3인칭 서술이다.** 사용자에게
+      참으라고 요구하지 않고, 억울함을 넘기는 곳이 사람이 아니라는 것만 말한다.
+      3차분의 화자 전환 원칙(HANDOFF 2.6)에 맞는 형태다.
+      ⚠ forgiveness 축은 2건을 유지한다(정책). 이 구절은 justice로 둔다 —
+        용서가 아니라 심판을 맡기는 방향이기 때문이다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: psa.140.12
+    ref: 시편 140:12
+    text: >
+      내가 알거니와 여호와는 고난 당하는 자를 신원하시며 궁핍한 자에게 공의를
+      베푸시리이다
+    emotion_tags: [anger.unfair]
+    theme: justice
+    note: >
+      2026-08-19 추가. "여호와는 고난 당하는 자를 **신원하시며**" —
+      themes.yaml justice의 title_keywords에 "신원"이 그대로 있다.
+      내가 갚는 것이 아니라는 화자 전환이고, 47자로 짧다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: psa.73.13
+    ref: 시편 73:13
+    text: >
+      내가 내 마음을 정히 하며 내 손을 씻어 무죄하다 한 것이 실로 헛되도다
+    emotion_tags: [anger.unfair]
+    theme: lament
+    note: >
+      2026-08-19 추가. "내 손을 씻어 무죄하다 한 것이 **실로 헛되도다**" —
+      바르게 살았는데 소용없다는, 억울함의 정확한 언어다. 40자로 짧다.
+      ⚠ 시편 73은 17절("하나님의 성소에 들어갈 때에야")에서 전환하는데
+        **13절만 떼어 헛됨에서 끝낸다.** 이 화면의 방향이 그것이다 —
+        억울함에 자리를 주는 것이 먼저이고, 전환은 사용자의 시간에 맡긴다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: psa.10.1
+    ref: 시편 10:1
+    text: >
+      여호와여 어찌하여 멀리 서시며 어찌하여 환난 때에 숨으시나이까
+    emotion_tags: [anger.unfair]
+    theme: lament
+    note: >
+      2026-08-19 추가. "어찌하여 멀리 서시며 어찌하여 환난 때에 숨으시나이까" —
+      억울할 때의 부재감을 그대로 묻는다. 34자로 짧아 잔량 4 → 5.
+      이 화면은 위기 인접 목록에 없어 이 강도를 허용한다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: psa.69.4
+    ref: 시편 69:4
+    text: >
+      무고히 나를 미워하는 자가 내 머리털보다 많고 무리히 내 원수가 되어
+      나를 끊으려 하는 자가 강하였으니 내가 취치 아니한 것도 물어 주게
+      되었나이다
+    emotion_tags: [anger.unfair]
+    theme: lament
+    note: >
+      2026-08-19 추가. "**내가 취치 아니한 것도 물어 주게 되었나이다**" —
+      하지 않은 일의 책임을 지는 것, 억울함의 핵심 상황이 문장에 그대로 있다.
+      82자로 길지만 이 문장 때문에 골랐다.
+
   # ═══════════════════════════════════════════════════════════
   # anger.rage (격분) — 주제: self_control, peace
   # 방향: 격분에 통제를 요구하지 않는다. self_control을 "억누름"이 아니라
@@ -2190,6 +2301,9 @@ verses:
   #      짜증(irritation)보다 강도가 높은 만큼 질책이 어긋나는 폭도 크다
   # ═══════════════════════════════════════════════════════════
 
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
   - id: psa.62.8
     ref: 시편 62:8
     text: >
@@ -2327,6 +2441,34 @@ verses:
     verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
     verified_at: "2026-08-18"
 
+  - id: psa.130.1
+    ref: 시편 130:1
+    text: >
+      여호와여 내가 깊은데서 주께 부르짖었나이다
+    emotion_tags: [anger.rage]
+    theme: self_control
+    note: >
+      2026-08-19 추가. 3차분에서 이 화면의 self_control을 "억누름"이 아니라
+      **"쏟아낼 자리를 준다"**로 읽은 해석을 그대로 잇는다.
+      "**깊은데서** 주께 부르짖었나이다" — 격분의 바닥에서 소리내는 자리다.
+      23자로 이 계열 최단이고 짧은 구절 잔량을 3 → 4로 올린다.
+      ⚠ 시 130:5가 exhaustion.tired에 있으나 절도 화면도 다르다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: psa.3.4
+    ref: 시편 3:4
+    text: >
+      내가 나의 목소리로 여호와께 부르짖으니 그 성산에서 응답하시는도다(셀라)
+    emotion_tags: [anger.rage]
+    theme: self_control
+    note: >
+      2026-08-19 추가. "부르짖으니 …**응답하시는도다**" — 쏟아낸 뒤 들으심까지
+      간다. 40자로 짧아 잔량 4 → 5.
+      "(셀라)" 표기가 본문에 붙는다 — psa.62.8 선례가 있다.
+      ⚠ 시 3:5가 exhaustion.tired에 있으나 절도 화면도 다르다.
+
   # ═══════════════════════════════════════════════════════════
   # frustration.stuck (막막함) — 주제: guidance, hope
   # 방향: 길이 보이지 않는 상태를 판단하지 않는다. "믿음이 부족해서"가
@@ -2335,6 +2477,9 @@ verses:
   # 이 화면에는 1차분 교차 태깅 pro.3.5 · psa.121.1 이 더해진다
   # ═══════════════════════════════════════════════════════════
 
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
   - id: psa.119.105
     ref: 시편 119:105
     text: >
@@ -2846,12 +2991,46 @@ verses:
 #   scripts/lib/krv_source.py가 RefError로 막는다. data/krv/SOURCE.md 참조.
 # =====================================================================
 
+  - id: psa.39.2
+    ref: 시편 39:2
+    text: >
+      내가 잠잠하여 선한 말도 발하지 아니하니 나의 근심이 더 심하도다
+    emotion_tags: [frustration.suppressed]
+    theme: lament
+    note: >
+      2026-08-19 추가. "내가 **잠잠하여 선한 말도 발하지 아니하니 나의 근심이
+      더 심하도다**" — 억눌림의 인과를 성경이 그대로 적었다. 침묵이 해결이
+      아니라는 것을 앱이 말하지 않고 본문이 말한다.
+      36자로 짧아 이 화면의 짧은 구절 잔량을 3 → 4로 올린다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: job.10.1
+    ref: 욥기 10:1
+    text: >
+      내 영혼이 살기에 곤비하니 내 원통함을 발설하고 내 마음의 괴로운대로
+      말하리라
+    emotion_tags: [frustration.suppressed]
+    theme: lament
+    note: >
+      2026-08-19 추가. "내 원통함을 **발설하고** 내 마음의 괴로운대로 **말하리라**" —
+      헤더가 말한 "말해도 된다는 허용"의 가장 직접적인 형태다. 43자.
+      [제외 기록] 시 77:4("내가 괴로워 말할 수 없나이다")를 검토하고 뺐다 —
+      **억눌림은 말하지 못하는 상태이지 말할 힘이 없는 상태가 아니다.**
+      77:4는 무력감 쪽으로 기울어 이 화면의 방향과 어긋난다.
+      이 화면은 위기 인접이라 강도가 높은 구절은 방향(바깥을 향한 부르짖음)이
+      분명할 때만 채택한다 — psa.69.1 · psa.88.1의 판단 기준과 같다.
+
   # ═══════════════════════════════════════════════════════════
   # joy.grateful (감사) — 주제: gratitude, joy_praise
   # 방향: 감사를 거래로 만들지 않는다. 받은 것의 크기가 아니라
   #      주시는 분의 성품을 근거로 두는 구절을 앞에 놓는다
   # ═══════════════════════════════════════════════════════════
 
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
   - id: psa.100.4
     ref: 시편 100:4
     text: >
