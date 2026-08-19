@@ -92,6 +92,7 @@ from lib.results import (
     ThemeResult,
 )
 from lib.selection import select_fallback_videos, select_theme_videos
+from lib.taxonomy import load_subcategory_ids
 from lib.tagging import SERMON, UNKNOWN, WORSHIP, classify_media_type, tag_themes
 from lib.themes import (
     FALLBACK_HEAVY_RATIO,
@@ -581,6 +582,7 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description="videos.json 생성 배치 (PYM Phase 2)")
     parser.add_argument("--themes", type=Path, default=root / "themes.yaml")
+    parser.add_argument("--taxonomy", type=Path, default=root / "taxonomy.yaml")
     parser.add_argument("--allowlist", type=Path, default=root / "channel_allowlist.yaml")
     parser.add_argument(
         "--channel-blocklist", type=Path, default=root / "channel_blocklist.yaml"
@@ -659,7 +661,9 @@ def run(args: argparse.Namespace, spent_box: dict[str, Any] | None = None) -> in
     now = datetime.now(timezone.utc)
     day_of_year = args.day_of_year if args.day_of_year is not None else now.timetuple().tm_yday
 
-    themes = load_themes(args.themes)
+    # taxonomy.yaml이 이식되면 themes.yaml 검증 1번(mapping ↔ 세분류 대조)이 켜진다.
+    # 감정 체계와 주제 매핑이 어긋난 채로 배치가 도는 것을 여기서 막는다.
+    themes = load_themes(args.themes, taxonomy_ids=load_subcategory_ids(args.taxonomy))
     allowlist = load_allowlist(args.allowlist)
     blocklist = load_channel_blocklist(args.channel_blocklist)
     previous = load_previous(args.previous)
