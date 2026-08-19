@@ -19,12 +19,19 @@
  *   위기 상태에서 문제가 되는 표현은 감정 화면에서 문제가 되지 않는 것과 다르다.
  *   시편 34:18을 위기 풀에서 뺀 것이 그 사례다 — 후반부 "중심에 통회하는 자"가
  *   구원의 조건처럼 읽힐 여지가 있어 조건이 없는 시편 147:3으로 대체했다.
+ *
+ * [출처 표기를 뺐다 — 2026-08-19, 결과 화면과 같은 정책]
+ *   구절 아래 회색 한 줄이 빠졌다. 여기서는 이유가 하나 더 있다 — 이 화면은
+ *   상담 안내가 주인공이고 구절은 그 다음이다. 표기 줄까지 있으면 화면 아래쪽에
+ *   작은 회색 글씨가 겹쳐 정작 읽어야 할 전화번호에서 시선이 멀어진다.
+ *   **표기는 "이 앱에 대해" 화면에 남아 있고 그것은 삭제하지 않는다**
+ *   (성명표시권은 만료되지 않는다 — VerseCard.jsx 상단 주석 참조).
  */
 
 import { formatDuration, thumbnailUrl, watchUrl } from "../lib/videos.js";
 import { T, SERIF } from "../theme.js";
 
-export function CrisisScreen({ response, verse, attribution, videos, closing, onBack }) {
+export function CrisisScreen({ response, verse, videos, closing, onBack }) {
   return (
     <div className="rise" style={{ paddingTop: 8 }}>
       {/* 1. 상담 안내 — 항상 최상단 */}
@@ -46,7 +53,6 @@ export function CrisisScreen({ response, verse, attribution, videos, closing, on
           <p style={styles.verseLead}>짧은 구절 하나만 두고 갈게요</p>
           <p style={styles.verseText}>{verse.text}</p>
           <p style={styles.verseRef}>{verse.ref}</p>
-          <p style={styles.attribution}>{attribution}</p>
         </section>
       ) : null}
 
@@ -142,7 +148,6 @@ const styles = {
     wordBreak: "keep-all",
   },
   verseRef: { margin: "14px 0 0", fontSize: 13, color: T.sand, fontFamily: SERIF },
-  attribution: { margin: "14px 0 0", fontSize: 11, color: "#ffffff33" },
   heading: {
     margin: "0 0 12px",
     fontFamily: SERIF,

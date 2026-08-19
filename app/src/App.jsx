@@ -57,8 +57,6 @@ import { About } from "./components/About.jsx";
 import { T, SERIF } from "./theme.js";
 
 const MIN_DURATION_MS = taxonomy.ui.loading.min_duration_ms;
-const VERSE_LEAD = "지금 마음에 닿을 구절 하나";
-
 /**
  * 공감 문구 크기 — **구절보다 항상 작다.**
  *
@@ -66,14 +64,18 @@ const VERSE_LEAD = "지금 마음에 닿을 구절 하나";
  * 전부 같아 — 공감 문구는 짧아서 크기를 키워도 레이아웃이 흔들리지 않는다.
  * 즉 이 값은 레이아웃 제약이 아니라 **위계**로 정한다.
  *
- * 그런데 구절 본문이 길이에 따라 20 / 18 / 16.5px로 변한다(VerseCard).
- * 공감 문구를 17.5px로 고정하면 100자 넘는 구절(16.5px)에서 **공감 문구가
- * 구절보다 커진다** — 구절이 주인공이라는 위계가 뒤집힌다.
- * 그래서 상한 17.5를 두되 구절 크기에 연동시킨다.
+ * 그런데 구절 본문이 길이에 따라 크기가 변한다(VerseCard의 SIZE_STEPS).
+ * 공감 문구를 고정값으로 두면 가장 작은 구절 구간에서 **공감 문구가 구절보다
+ * 커질 수 있다** — 구절이 주인공이라는 위계가 뒤집힌다.
+ * 그래서 상한 17.5를 두되 구절 크기에 연동시킨다. min()이 그 안전장치다.
  *
- *   구절 20px  (66%) → 공감 17.5px
- *   구절 18px  (28%) → 공감 17.5px
- *   구절 16.5px (6%) → 공감 16px
+ *   [2026-08-19 구절이 22/20/18로 커진 뒤]
+ *   구절 22px (66%) → 공감 17.5px   구절 20px (28%) → 공감 17.5px
+ *   구절 18px  (6%) → 공감 17.5px
+ *
+ * 지금은 세 구간 모두 상한 17.5px에 걸린다. 구절 최소 크기가 18px이라
+ * 18 - 0.5 = 17.5가 상한과 같아졌기 때문이다. **연동을 지우지 말 것** —
+ * 구절 크기를 다시 낮추면(예: 상한 구간 16.5px) 그 순간 다시 필요해진다.
  *
  * 구절 18px일 때 크기 차이는 0.5px로 작다. 그래도 위계가 유지되는 것은 크기만이
  * 근거가 아니기 때문이다 — 구절은 mist(밝은 색)에 화면 위쪽이고, 공감 문구는
@@ -317,8 +319,6 @@ function Result({ result, data, onBack }) {
           이어 붙인 뒤, 영상으로 넘어간다. */}
       <VerseCard
         verse={verse}
-        attribution={attributionOf(versesData)}
-        lead={VERSE_LEAD}
         canRotate={pool.length > 1}
         onNext={() => setVerse(nextVerse(pool, verse?.id))}
       />
@@ -354,7 +354,6 @@ function Crisis({ data, onBack }) {
     <CrisisScreen
       response={response}
       verse={verse}
-      attribution={attributionOf(versesData)}
       videos={videos}
       closing={closing}
       onBack={onBack}
@@ -425,16 +424,39 @@ function Input({
 
   return (
     <div className="rise">
-      <p style={styles.greeting}>{greeting}</p>
-      <textarea
+      {/* [2026-08-19] 입력 화면 배치를 FYM 구조로 맞췄다. 색·문구가 아니라 배치 문제였다.
+          고친 것 넷 — 전부 "시선이 어디로 모이는가"에 관한 것이다.
+            ① 배경  헤드라인 뒤 radial glow(orb). 균일한 어둠에는 시선이 모이는
+                     지점이 없다. 이 glow가 후광 역할을 해서 첫 문장을 붙든다
+            ② 정렬  중앙 정렬. 좌측 정렬이면 "지금은 어떤 마음인가요?"가 질문이
+                     아니라 **입력 필드 라벨**처럼 읽힌다 — 실제로 그 문장은
+                     라벨이 아니라 재방문 인사 풀(same_day)의 한 문장이다
+            ③ 수직  height 150의 헤더 블록이 위 여백을 만든다. 위에서부터 쌓으면
+                     아래가 비어 미완성으로 읽힌다
+            ④ 캡션  자간 넓은 작은 글씨가 헤드라인 위에 있어야 헤드라인이 무거워진다
+          문구는 PYM 것을 유지했다. 바뀐 것은 배치와 배경이다. */}
+      <div style={styles.hero}>
+        <div className="orb" style={styles.heroGlow} />
+        <div style={styles.heroText}>
+          <div style={styles.heroCaption}>오늘의 마음</div>
+          <div style={styles.greeting}>{greeting}</div>
+        </div>
+      </div>
+
+      {/* 한 줄 입력이다. textarea 4줄 상자였던 것을 바꿨다 —
+          placeholder가 "한 줄로 적어봐요"라고 말하는데 4줄 상자를 내밀면
+          말과 화면이 어긋나고, 큰 상자는 "길게 써야 하나" 하는 부담을 준다.
+          FYM도 같은 이유로 input 한 줄이다. */}
+      <input
         value={text}
         onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && onSubmit(text)}
         placeholder={placeholder}
-        rows={3}
-        style={styles.textarea}
+        aria-label="지금 마음"
+        style={styles.input}
       />
       <button type="button" onClick={() => onSubmit(text)} style={styles.submit}>
-        확인
+        마음 들여다보기
       </button>
       <button type="button" onClick={() => setMode("select")} style={styles.switch}>
         {taxonomy.ui.select_mode.switch_to_select}
@@ -454,7 +476,15 @@ function Shell({ children, onAbout }) {
         @media (prefers-reduced-motion: reduce){ .orb{animation:none} .rise{animation:none} }
         button{ font-family:inherit; cursor:pointer }
         a{ -webkit-tap-highlight-color: transparent }
-        textarea::placeholder{ color:#ffffff40 }
+        input::placeholder{ color:#ffffff40 }
+
+        /* 포커스 표시 — 브라우저 기본 outline을 끄되 **반드시 대체 표시를 남긴다.**
+           기본 outline은 흰 사각형이라, 면을 쓰지 않는 이 화면에서 상자가
+           갑자기 하나 생긴 것처럼 보였다. 대신 밑줄을 jade로 밝힌다
+           (#ffffff26 → ${T.jade}). 키보드 사용자가 지금 어디에 있는지 알아야
+           하므로 outline:none만 두고 끝내면 안 된다 — 색 대비가 충분히 커서
+           밑줄 하나로도 위치가 분명하다. */
+        input:focus{ outline:none; border-bottom-color:${T.jade} !important }
       `}</style>
       <div style={styles.inner}>{children}</div>
       {onAbout ? (
@@ -490,26 +520,55 @@ const styles = {
     boxSizing: "border-box",
   },
   inner: { maxWidth: 520, margin: "0 auto" },
+
+  // --- 입력 화면 헤더 (FYM 구조) ------------------------------------------
+  hero: {
+    position: "relative",
+    height: 150,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  // 헤드라인 뒤에 깔리는 후광. .orb가 10초 주기로 호흡한다(Shell의 keyframes).
+  // prefers-reduced-motion에서는 애니메이션만 꺼지고 glow 자체는 남는다 —
+  // 시선을 모으는 것은 움직임이 아니라 밝기이기 때문이다.
+  heroGlow: {
+    position: "absolute",
+    width: 190,
+    height: 190,
+    borderRadius: "50%",
+    background: `radial-gradient(circle, ${T.jade}55 0%, ${T.jade}00 68%)`,
+  },
+  heroText: { position: "relative", textAlign: "center" },
+  heroCaption: {
+    fontSize: 12,
+    letterSpacing: "0.22em",
+    color: T.muted,
+    marginBottom: 12,
+  },
   greeting: {
     fontFamily: SERIF,
-    fontSize: 17,
+    fontSize: 25,
+    fontWeight: 400,
+    lineHeight: 1.5,
     color: T.mist,
-    margin: "6px 0 22px",
   },
+
   // 상자가 아니라 밑줄 하나. FYM 입력과 같은 언어다 —
   // 테두리를 두르면 화면에 면이 하나 더 생긴다.
-  textarea: {
+  // 포커스 표시는 Shell의 `input:focus` 규칙이 맡는다(밑줄이 jade로 밝아진다).
+  input: {
     width: "100%",
+    marginTop: 30,
     background: "transparent",
     border: "none",
     borderBottom: "1px solid #ffffff26",
     color: T.mist,
     fontSize: 16,
-    lineHeight: 1.7,
     padding: "13px 2px",
     fontFamily: "inherit",
     boxSizing: "border-box",
-    resize: "none",
   },
   submit: {
     marginTop: 26,
@@ -534,12 +593,23 @@ const styles = {
     cursor: "pointer",
   },
   selectLead: { fontFamily: SERIF, fontSize: 16.5, margin: "6px 0 20px" },
-  grid: { display: "flex", flexWrap: "wrap", gap: 9 },
+  grid: { display: "flex", flexWrap: "wrap", gap: 8 },
+
+  // [라운드 언어는 요소마다 다르다 — 2026-08-19]
+  //   선택 칩      pill (radius 99)   ← FYM 카테고리 화면과 같다
+  //   입력·주 버튼·카드  각진 3~4px      ← FYM 입력 화면과 같다
+  //
+  // 앞서 "pill을 걷어내라"는 지시가 있었는데, 그건 **구절 카드 안의 pill 버튼**을
+  // 두고 한 말이었다(카드 상자 위에 pill이 얹혀 면이 겹쳐 보였다). 그것을 칩까지
+  // 일괄 적용해 radius 3의 각진 사각형이 됐고, 선택지가 딱딱해졌다.
+  // 칩은 "고르는 것"이라 손에 닿는 느낌이 필요하고, 입력·버튼은 "쓰는 것"이라
+  // 각진 편이 화면과 어울린다. FYM이 두 언어를 나눠 쓰는 이유가 그것이다.
+  // ⚠ 다음에 라운드를 손볼 때 이 구분을 지울 것 — 또 일괄 적용하지 말 것.
   chip: {
-    padding: "11px 16px",
-    borderRadius: 3,
-    border: "1px solid #ffffff1a",
-    background: "none",
+    padding: "9px 15px",
+    borderRadius: 99,
+    border: "1px solid #ffffff1f",
+    background: "transparent",
     color: T.mist,
     fontSize: 14,
     fontFamily: "inherit",

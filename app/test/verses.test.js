@@ -29,6 +29,8 @@ const verses = JSON.parse(readFileSync(join(root, "src", "data", "verses.json"),
 const taxonomy = JSON.parse(readFileSync(join(root, "src", "data", "taxonomy.json"), "utf8"));
 const verseCardSrc = readFileSync(join(root, "src", "components", "VerseCard.jsx"), "utf8");
 const aboutSrc = readFileSync(join(root, "src", "components", "About.jsx"), "utf8");
+const crisisSrc = readFileSync(join(root, "src", "components", "CrisisScreen.jsx"), "utf8");
+const appSrc = readFileSync(join(root, "src", "App.jsx"), "utf8");
 
 const ATTRIBUTION = "성경전서 개역한글판, 대한성서공회";
 
@@ -45,12 +47,40 @@ test("출처 표기가 없어도 기본 문구로 대체된다 (표기가 사라
   assert.equal(attributionOf({ attribution: "   " }), ATTRIBUTION);
 });
 
-test("구절 카드가 출처를 그린다", () => {
-  assert.ok(verseCardSrc.includes("attribution"), "카드에 출처 표기가 없다");
+/**
+ * [2026-08-19 정책 변경 — 표기 자리가 두 곳에서 한 곳으로 줄었다]
+ *   전에는 구절 카드와 "이 앱에 대해" 두 곳에 표기가 있었고, 이 자리의 테스트도
+ *   "구절 카드가 출처를 그린다"였다. 카드 상자를 걷어내고 본문이 화면의 첫
+ *   인상이 된 뒤 카드 쪽 표기를 뺐다(VerseCard.jsx 상단 주석).
+ *
+ *   ⚠ 그래서 이 검사를 **없애지 않고 옮겼다.** 성명표시권은 저작재산권과 달리
+ *     만료되지 않으므로 앱 어딘가에는 반드시 표기가 있어야 한다. 표기 자리가
+ *     한 곳뿐이라는 것은 그 한 곳이 **더 중요해졌다**는 뜻이지 덜 중요해졌다는
+ *     뜻이 아니다. 아래 두 검사가 그 요건을 고정한다.
+ */
+test("이 앱에 대해 화면에 출처 표기가 있다 (성명표시권 — 삭제 금지)", () => {
+  assert.ok(
+    aboutSrc.includes("attribution"),
+    "출처 표기가 앱에서 사라졌다. 성명표시권은 만료되지 않는다",
+  );
+  assert.ok(
+    aboutSrc.includes("성경 본문"),
+    "출처를 밝히는 절이 사라졌다",
+  );
 });
 
-test("정보 화면에도 출처가 있다 (중복 표기는 요건이다)", () => {
-  assert.ok(aboutSrc.includes("attribution"));
+test("이 앱에 대해 화면으로 갈 길이 있다 (표기에 도달할 수 없으면 표기가 아니다)", () => {
+  // 표기가 파일에 있어도 화면에 갈 수 없으면 고지가 되지 않는다.
+  // 셸 하단의 진입 버튼이 그 유일한 경로다.
+  assert.ok(appSrc.includes("이 앱에 대해"), "정보 화면 진입 버튼이 없다");
+  assert.ok(appSrc.includes("attributionOf(versesData)"), "정보 화면에 표기가 전달되지 않는다");
+});
+
+test("구절 카드·위기 화면은 출처를 그리지 않는다 (2026-08-19 정책)", () => {
+  // 되돌리는 것 자체는 판단의 문제지만, **조용히** 되돌아가지는 않게 한다.
+  // 이 검사가 깨지면 위 정책 주석을 함께 고쳤는지 확인할 것.
+  assert.ok(!verseCardSrc.includes("styles.attribution"), "구절 카드에 표기가 다시 생겼다");
+  assert.ok(!crisisSrc.includes("styles.attribution"), "위기 화면에 표기가 다시 생겼다");
 });
 
 test("구절 카드가 본문을 가공하지 않는다 (동일성유지권)", () => {
