@@ -55,8 +55,12 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: PyYAML 설치
-        run: pip install "PyYAML>=6.0.1"
+      - name: 의존성 설치 (파이썬)
+        # PyYAML만으로는 부족하다 — 배포 게이트의 spread_test가 배치 코드를
+        # import하고, 그 경로에 lib/youtube.py(requests)가 걸린다.
+        # 첫 실행에서 ModuleNotFoundError로 게이트가 멈췄고, 그 덕에 배포는
+        # 되지 않았다(게이트가 제 역할을 한 것이다).
+        run: pip install -r scripts/requirements.txt
 
       - name: Node 준비
         uses: actions/setup-node@v4
