@@ -11,7 +11,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -30,34 +30,16 @@ import {
 import { isCompleteVideosPayload } from "../src/lib/payload.js";
 import { revisitSlot, sameDayGreetingPool, visitNumberOf } from "../src/lib/messages.js";
 import { withMinDuration } from "../src/lib/offline.js";
+import { readSource } from "./helpers.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const load = (p) => JSON.parse(readFileSync(join(here, "..", "src", "data", p), "utf8"));
 const taxonomy = load("taxonomy.json");
 const videos = load("seed-videos.json");
 const verses = load("verses.json");
-const crisisSrcRaw = readFileSync(join(here, "..", "src", "components", "CrisisScreen.jsx"), "utf8");
 
-/**
- * 주석을 걷어낸 소스.
- *
- * 소스 주석에는 "MediaToggle을 import하지 않는다", "추천 표현 없음" 같은
- * 문장이 있다. 원문 그대로 검사하면 **설명이 위반으로 잡힌다** — 첫 실행에서
- * 실제로 그렇게 걸렸다. 검사 대상은 실행되는 코드지 그것을 설명한 문장이 아니다.
- *
- * ⚠ 2026-08-19에 같은 함정에 두 번째로 걸렸다. 토글 밑줄 검사가 "전에는
- *   borderBottom 단축을 썼다"고 적은 주석을 위반으로 잡았다. 그래서 이걸
- *   crisisSrc 전용이 아니라 **함수로 빼 둔다** — 소스를 검사하는 새 테스트는
- *   전부 이걸 통과시켜서 읽는다.
- */
-export function stripComments(source) {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, "")
-    .replace(/^\s*\/\/.*$/gm, "");
-}
-
-const crisisSrc = stripComments(crisisSrcRaw);
+// 소스 검사는 전부 readSource()를 지난다 — 주석이 검사를 오염시킨다(helpers.js).
+const crisisSrc = readSource("components", "CrisisScreen.jsx");
 
 // =============================================================================
 // 위기 경로 — 분류보다 먼저, 화면에서는 상담 안내가 최상단
@@ -247,7 +229,7 @@ test("배포 데이터에서 주제분이 폴백보다 앞에 온다", () => {
 });
 
 test("VideoList가 두 층에 다른 제목을 붙인다", () => {
-  const src = readFileSync(join(here, "..", "src", "components", "VideoList.jsx"), "utf8");
+  const src = readSource("components", "VideoList.jsx");
   assert.ok(src.includes("이 마음에 맞춰 고른 영상"));
   assert.ok(src.includes("딱 맞는 건 아니지만"), "폴백 헤더가 못 맞췄다는 사실을 먼저 말해야 한다");
 });
@@ -431,9 +413,7 @@ test("토글 밑줄은 개별 속성으로만 지정한다 (단축과 섞으면 
   //   검정으로 해석돼 **비활성 탭에 검은 밑줄**이 남았고, 활성 탭의
   //   jade 60%보다 진하게 보여 "밑줄이 반대"로 읽혔다.
   //   양쪽 상태가 항상 같은 개별 속성을 지정해야 값이 교체되기만 한다.
-  const src = stripComments(
-    readFileSync(join(here, "..", "src", "components", "MediaToggle.jsx"), "utf8"),
-  );
+  const src = readSource("components", "MediaToggle.jsx");
   const styles = src.slice(src.indexOf("const styles"));
   assert.ok(
     !/borderBottom:\s*"/.test(styles),
@@ -452,7 +432,24 @@ test("토글 밑줄은 개별 속성으로만 지정한다 (단축과 섞으면 
 test("결과 화면에 스크롤 후 돌아갈 길이 있다", () => {
   // 실측(360×640, 말씀 14건): 문서 1,686px에 하단 "다시 적어보기"가 1,573px —
   // 2.5화면을 내려야 닿는다. 그 사이 화면에는 돌아갈 길이 없었다.
-  const src = readFileSync(join(here, "..", "src", "App.jsx"), "utf8");
+  const src = readSource("App.jsx");
   assert.ok(src.includes("<FloatingRestart"), "결과 화면에 FloatingRestart가 없다");
   assert.ok(src.includes("<Closing"), "하단 마무리 문구·되돌아가기가 없다");
+});
+
+test("소스를 읽는 테스트는 전부 readSource()를 지난다 (같은 함정 4회차 방지)", () => {
+  // 주석이 검사를 오염시킨 사건이 세 번 있었다(helpers.js 상단).
+  // 세 번째는 **거짓 통과**였다 — 실제 렌더 문구를 XXX로 바꿔도 통과했다.
+  // 그래서 규칙을 기계로 고정한다: test/ 안에서 .jsx/.js 소스를 readFileSync로
+  // 직접 읽으면 그 자리가 다음 사건의 자리다.
+  const dir = join(here);
+  for (const file of readdirSync(dir).filter((f) => f.endsWith(".test.js"))) {
+    const body = readFileSync(join(dir, file), "utf8");
+    const direct = body.match(/readFileSync\([^)]*\.(?:jsx|js)"/g) || [];
+    assert.deepEqual(
+      direct,
+      [],
+      `${file}이 소스를 직접 읽는다 — readSource()를 쓸 것: ${direct.join(", ")}`,
+    );
+  }
 });

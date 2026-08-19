@@ -23,6 +23,8 @@
 
 from __future__ import annotations
 
+import difflib
+import itertools
 import re
 import sys
 from pathlib import Path
@@ -32,6 +34,42 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 TAXONOMY = ROOT / "taxonomy.yaml"
 EXIT_OK, EXIT_FAIL = 0, 1
+
+# --- 유사 문구 임계값 (2026-08-19 신설) --------------------------------------
+#
+# [왜 완전 일치만으로는 부족한가]
+#   원래 이 파일은 **똑같은 문자열**만 잡았다. 그래서 아래가 통과했다.
+#     0.97  "조용한 소리 하나만 두고 자요." / "조용한 소리 하나 두고 자요."
+#     0.96  "오늘 하루도 견뎠어요."       / "오늘 하루 견뎠어요."
+#   한 글자만 다르면 다른 문구로 친 것이다. 사용자에게는 같은 말이다.
+#
+# [0.85를 고른 근거 — 480건 전수 실측 후 구간별로 눈으로 확인했다]
+#   0.90 이상 (7쌍)     전부 같은 문장이다. 조사 하나·동의어 하나 차이
+#   0.85~0.90 (10쌍)    대부분 같다. "삼키느라 애쓴 하루" / "참느라 애쓴 하루"
+#   0.80~0.85 (32쌍)    **갈린다.** "마음이 팽팽한 날이군요"(긴장) /
+#                       "마음이 고요한 날이군요"(안정)처럼 반대 감정에
+#                       같은 틀을 의도적으로 쓴 것이 섞여 있다
+#   0.75~0.80 (42쌍)    대개 정상 변주다
+#
+#   그래서 0.85에서 끊었다. 더 내리면 정상 변주까지 잡아 **문장을 어색하게
+#   비틀게 만든다** — 이 파일이 위기 인접 검사에서 이미 경계한 실패 모드다
+#   ("오탐을 내다가 무시당하거나 문장을 어색하게 비틀게 만든다").
+#   더 올리면 0.85~0.90의 명백한 중복 10쌍이 그대로 통과한다.
+#
+# ⚠ 임계값을 내리려면 그 구간을 **눈으로 다시 확인하고** 내려라.
+#   숫자만 바꾸면 통과시키려고 문장을 비트는 압력이 생긴다.
+SIMILARITY_THRESHOLD = 0.85
+
+# 세분류당 문구 **하한**. 정원이 아니다 — 위쪽은 열려 있고 세분류마다 달라도 된다.
+MIN_MESSAGES = 10
+
+# 세분류 **안**은 검사하지 않는다. 실측에서 같은 세분류·같은 슬롯 안의
+# 유사쌍(0.7 이상)이 0건이었다 — 작성자가 한 그룹 안에서는 잘 갈랐고,
+# 충돌은 전부 그룹을 넘나들며 생겼다. 안쪽까지 보면 얻는 것 없이 느려진다.
+
+
+def similarity(a: str, b: str) -> float:
+    return difflib.SequenceMatcher(None, a, b).ratio()
 
 # 부정 감정 대분류 — 증폭 방향 문구가 들어가면 안 된다 (FYM 원칙 승계).
 NEGATIVE_PARENTS = {"anxiety", "anger", "frustration", "sadness", "exhaustion"}
@@ -132,14 +170,26 @@ def main() -> int:
 
     print(f"문구 {len(messages)}건 (세분류 {len(subs)}개 + 위기 {len(crisis)}건)")
 
-    print("\n1. 개수 — 세분류마다 공감 10 · 마무리 10")
+    # [하한이지 정원이 아니다 — 2026-08-19 명확화]
+    #   개수는 세분류마다 **달라도 된다.** 감정마다 성경 본문·표현의 두께가
+    #   다른데 일괄 숫자를 맞추면 얇은 쪽이 억지로 채워진다. 구절 쪽은 이미
+    #   10~13으로 다르고, 문구도 앞으로 그렇게 갈 수 있다.
+    #   그래서 이 검사는 "10개인가"가 아니라 **"10개 아래로 떨어졌는가"**다.
+    #   전에는 이름이 "모든 세분류가 10건씩 채워졌다"여서 정원처럼 읽혔다.
+    print(f"\n1. 개수 — 세분류마다 공감·마무리 각 {MIN_MESSAGES}건 이상 (하한)")
     print("-" * 76)
     short = [
         f"{s['id']}({len(s.get('empathy_messages') or [])}/{len(s.get('closing_messages') or [])})"
         for _p, s in subs
-        if len(s.get("empathy_messages") or []) < 10 or len(s.get("closing_messages") or []) < 10
+        if len(s.get("empathy_messages") or []) < MIN_MESSAGES
+        or len(s.get("closing_messages") or []) < MIN_MESSAGES
     ]
-    _check(failures, not short, "모든 세분류가 10건씩 채워졌다", ", ".join(short))
+    _check(
+        failures,
+        not short,
+        f"모든 세분류가 하한 {MIN_MESSAGES}건을 넘는다",
+        ", ".join(short),
+    )
     _check(failures, len(crisis) >= 3, "위기 화면 마무리 문구가 있다", f"{len(crisis)}건")
 
     print("\n2. 작성 원칙 4종 위반")
@@ -210,9 +260,33 @@ def main() -> int:
     _check(
         failures,
         not dupes,
-        "중복 문구 없음",
+        "완전 중복 없음",
         "; ".join(f"{t} ({', '.join(w)})" for t, w in list(dupes.items())[:3]),
     )
+
+    # 세분류를 넘나드는 유사 문구. 완전 일치만 보면 한 글자 차이가 다 새어 나간다.
+    similar = []
+    for (sub_a, slot_a, text_a), (sub_b, slot_b, text_b) in itertools.combinations(
+        messages, 2
+    ):
+        if sub_a == sub_b:
+            continue  # 그룹 안은 검사하지 않는다 (상단 주석)
+        ratio = similarity(text_a, text_b)
+        if ratio >= SIMILARITY_THRESHOLD:
+            similar.append((ratio, sub_a, slot_a, text_a, sub_b, slot_b, text_b))
+    similar.sort(reverse=True)
+
+    _check(
+        failures,
+        not similar,
+        f"유사 문구 없음 (임계 {SIMILARITY_THRESHOLD})",
+        f"{len(similar)}쌍" if similar else "",
+    )
+    for ratio, sub_a, slot_a, text_a, sub_b, slot_b, text_b in similar[:12]:
+        print(f"      {ratio:.2f}  [{sub_a}/{slot_a}] {text_a}")
+        print(f"            [{sub_b}/{slot_b}] {text_b}")
+    if len(similar) > 12:
+        print(f"      … 외 {len(similar) - 12}쌍")
 
     print("\n" + "=" * 76)
     if failures:

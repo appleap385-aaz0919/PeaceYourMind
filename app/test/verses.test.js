@@ -26,15 +26,17 @@ import {
   rememberVerse,
   versesFor,
 } from "../src/lib/verses.js";
+import { readSource } from "./helpers.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..");
 const verses = JSON.parse(readFileSync(join(root, "src", "data", "verses.json"), "utf8"));
 const taxonomy = JSON.parse(readFileSync(join(root, "src", "data", "taxonomy.json"), "utf8"));
-const verseCardSrc = readFileSync(join(root, "src", "components", "VerseCard.jsx"), "utf8");
-const aboutSrc = readFileSync(join(root, "src", "components", "About.jsx"), "utf8");
-const crisisSrc = readFileSync(join(root, "src", "components", "CrisisScreen.jsx"), "utf8");
-const appSrc = readFileSync(join(root, "src", "App.jsx"), "utf8");
+// 소스 검사는 전부 readSource()를 지난다 — 주석이 검사를 오염시킨다(helpers.js).
+const verseCardSrc = readSource("components", "VerseCard.jsx");
+const aboutSrc = readSource("components", "About.jsx");
+const crisisSrc = readSource("components", "CrisisScreen.jsx");
+const appSrc = readSource("App.jsx");
 
 const ATTRIBUTION = "성경전서 개역한글판, 대한성서공회";
 
