@@ -429,15 +429,29 @@ test("토글 밑줄은 개별 속성으로만 지정한다 (단축과 섞으면 
   );
 });
 
-test("결과 화면의 되돌아가기는 하단 한 곳뿐이다 (떠 있는 버튼을 두지 않는다)", () => {
-  // [2026-08-19 결정] FloatingRestart를 뺐다. 근거는 HANDOFF 2.22.
-  //   결과 화면을 끝까지 읽고 나가는 것이 이 앱의 흐름이라, 중간에
-  //   되돌아가기를 급하게 만들 이유가 없다. 하단 "다시 적어보기"가 그 자리다.
-  //   되돌리려면 .rise **바깥**에 렌더해야 한다 — 안에 두면 transform이
-  //   containing block을 만들어 fixed가 문서에 붙는다 (HANDOFF 4.8).
+test("떠 있는 버튼은 Shell에서만 그린다 (.rise 안에 두면 fixed가 죽는다)", () => {
+  // [2026-08-19 — 넣었다 빼고 다시 넣었다. HANDOFF 2.22]
+  //   처음엔 Result 안 .rise 내부에 렌더했다. .rise의 transform이 fixed 자손의
+  //   containing block을 만들어(HANDOFF 4.8) 버튼이 뷰포트가 아니라 그 div에
+  //   붙었고, 화면에 떠 있지 않고 문서와 함께 흘러갔다.
+  //   실측으로 확인했다 — 스크롤 +310px에 뷰포트 위치가 −310px 움직였다.
+  //
+  //   그래서 렌더 위치를 Shell 한 곳으로 고정한다. 이 검사는 "있는가"가 아니라
+  //   **"어디서 그리는가"**를 본다 — 있어도 자리가 틀리면 동작하지 않는다.
   const src = readSource("App.jsx");
   assert.ok(src.includes("<Closing"), "하단 마무리 문구·되돌아가기가 없다");
-  assert.ok(!src.includes("FloatingRestart"), "떠 있는 버튼이 다시 들어왔다");
+
+  const shell = src.slice(src.indexOf("function Shell("));
+  assert.ok(
+    shell.includes("<FloatingRestart"),
+    "Shell이 떠 있는 버튼을 그리지 않는다",
+  );
+  // Shell 바깥(= 화면 컴포넌트 안)에서 그리면 .rise 안이 된다.
+  const outside = src.slice(0, src.indexOf("function Shell("));
+  assert.ok(
+    !outside.includes("<FloatingRestart"),
+    "화면 컴포넌트 안에서 그린다 — .rise의 transform 때문에 fixed가 죽는다",
+  );
 });
 
 test("소스를 읽는 테스트는 전부 readSource()를 지난다 (같은 함정 4회차 방지)", () => {

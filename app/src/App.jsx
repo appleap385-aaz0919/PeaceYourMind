@@ -22,7 +22,7 @@ import versesData from "./data/verses.json";
 
 import { RESULT, classify, findSubcategory, subcategoriesOf } from "./lib/classify.js";
 import { KEYS, getSetting, setSetting } from "./lib/db.js";
-import { withMinDuration } from "./lib/offline.js";
+import { usePrefersReducedMotion, withMinDuration } from "./lib/offline.js";
 import {
   loadMessageIndexes,
   pickMessage,
@@ -52,7 +52,7 @@ import {
   toggleCounts,
 } from "./lib/videos.js";
 
-import { Closing, Msg } from "./components/common.jsx";
+import { Closing, FloatingRestart, Msg } from "./components/common.jsx";
 import { CrisisScreen } from "./components/CrisisScreen.jsx";
 import { MediaToggle } from "./components/MediaToggle.jsx";
 import { VerseCard, verseFontSize } from "./components/VerseCard.jsx";
@@ -100,6 +100,7 @@ export default function App() {
   const [placeholder, setPlaceholder] = useState(taxonomy.ui.placeholders[0]);
   const [greeting, setGreeting] = useState("");
   const [showAbout, setShowAbout] = useState(false);
+  const reducedMotion = usePrefersReducedMotion();
 
   const [data, setData] = useState(null);
   const dataRef = useRef(null);
@@ -213,14 +214,18 @@ export default function App() {
   if (phase === "result" && result) {
     if (result.kind === RESULT.CRISIS) {
       return (
-        <Shell>
+        <Shell onRestart={reset} reducedMotion={reducedMotion}>
           <Crisis data={data} onBack={reset} />
         </Shell>
       );
     }
     if (result.kind === RESULT.OK) {
       return (
-        <Shell onAbout={() => setShowAbout(true)}>
+        <Shell
+          onAbout={() => setShowAbout(true)}
+          onRestart={reset}
+          reducedMotion={reducedMotion}
+        >
           <Result result={result} data={data} onBack={reset} />
         </Shell>
       );
@@ -527,7 +532,20 @@ function SelectMode({ selectedCategory, setSelectedCategory, setMode, onChoose }
   );
 }
 
-function Shell({ children, onAbout }) {
+/**
+ * 셸 — 모든 화면의 바깥틀.
+ *
+ * [떠 있는 버튼은 **여기서만** 그린다 — 2026-08-19]
+ *   FloatingRestart는 position: fixed인데, 화면 내용은 전부 `.rise` 안에 있고
+ *   `.rise`의 transform이 fixed 자손의 containing block을 만든다(HANDOFF 4.8).
+ *   그래서 화면 컴포넌트 안에서 그리면 뷰포트가 아니라 그 div에 붙어
+ *   문서와 함께 흘러가 버린다 — 실제로 그렇게 넣었다가 되돌렸다.
+ *
+ *   셸은 `{children}` **바깥**이고 조상 어디에도 transform이 없다.
+ *   이 자리를 고정해 두면 호출부가 실수할 여지가 없다.
+ *   ⚠ 화면 컴포넌트 안으로 옮기지 말 것.
+ */
+function Shell({ children, onAbout, onRestart, reducedMotion }) {
   return (
     <div style={styles.shell}>
       <style>{`
@@ -549,6 +567,9 @@ function Shell({ children, onAbout }) {
         input:focus{ outline:none; border-bottom-color:${T.jade} !important }
       `}</style>
       <div style={styles.inner}>{children}</div>
+      {onRestart ? (
+        <FloatingRestart onClick={onRestart} reducedMotion={reducedMotion} />
+      ) : null}
       {onAbout ? (
         <button type="button" onClick={onAbout} style={styles.about}>
           이 앱에 대해
