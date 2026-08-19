@@ -22,6 +22,13 @@ from pathlib import Path
 from typing import Any
 
 from lib.filters import FilterStats
+from lib.tagging import SERMON, WORSHIP
+from lib.themes import (
+    FALLBACK_HEAVY_RATIO,
+    SUBCATEGORY_MIN_VIDEOS,
+    THEME_MAX_VIDEOS,
+    THEME_MIN_VIDEOS,
+)
 from lib.results import (
     BuildContext,
     CrisisResult,
@@ -74,8 +81,11 @@ def write_outputs(
             "videos": crisis.videos,
         }
 
+    diagnostics = build_diagnostics(version, subcategories, themes, tagging, ctx)
+
     report_json = {
         "version": version,
+        "diagnostics": diagnostics,
         "dry_run": dry_run,
         "partial": partial,
         "only": only,
@@ -135,6 +145,7 @@ def write_outputs(
     if partial:
         atomic_write(out_dir / "videos.partial.json", videos_json)
         atomic_write(out_dir / "build_report.partial.json", report_json)
+        atomic_write(out_dir / "diagnostics.partial.json", diagnostics)
         logger.warning(
             "부분 실행 산출물 — %s/videos.partial.json (version.json 미생성, 배포 대상 아님)",
             out_dir,
@@ -143,6 +154,10 @@ def write_outputs(
 
     suffix = ".dry-run" if dry_run else ""
     atomic_write(out_dir / f"videos{suffix}.json", videos_json)
+    # 진단 스냅샷은 **배포한다**. 다음 실행이 직전 배포본에서 읽어 악화를 판정한다
+    # (워크플로의 주간 진단 요약). build_report.json 전체를 공개하지 않는 이유는
+    # 경보 본문·채널별 표까지 들어 있어 성격이 다르기 때문이다.
+    atomic_write(out_dir / f"diagnostics{suffix}.json", diagnostics)
     atomic_write(
         out_dir / f"version{suffix}.json",
         {
@@ -193,6 +208,52 @@ def load_previous(path: Path | None) -> dict[str, Any]:
         len((data.get("crisis") or {}).get("videos", [])),
     )
     return data
+
+
+def build_diagnostics(
+    version: str,
+    subcategories: Sequence[SubcategoryResult],
+    themes: Sequence[ThemeResult],
+    tagging: dict[str, Any],
+    ctx: BuildContext,
+) -> dict[str, Any]:
+    """진단 스냅샷 — **주 단위 악화 판정에 쓰는 비교 가능한 최소 집합.**
+
+    build_report.json은 경보 본문·채널 표까지 들고 있어 크고, 공개 배포 대상도
+    아니다(FYM 판단 승계). 그래서 비교에 필요한 숫자만 따로 뽑아 gh-pages에
+    올린다 — 다음 실행이 `_previous/data/diagnostics.json`으로 이 파일을 읽는다.
+
+    "지금 나쁘다"는 이미 안다. 알아야 할 것은 **지난주보다 나빠졌는가**이고,
+    그 판정에 필요한 것은 목록과 개수뿐이다.
+    """
+    fallback_heavy = [s.id for s in subcategories if s.fallback_ratio > FALLBACK_HEAVY_RATIO]
+    return {
+        "version": version,
+        "untagged_ratio": tagging.get("untagged_ratio", 0.0),
+        "kept": tagging.get("kept", 0),
+        "themes_empty": sorted(t.id for t in themes if not t.picked),
+        "themes_low_yield": sorted(
+            t.id for t in themes if 0 < len(t.picked) < THEME_MIN_VIDEOS
+        ),
+        "media_type_gaps": sorted(
+            t.id
+            for t in themes
+            if t.picked and 0 in (t.visible[SERMON], t.visible[WORSHIP])
+        ),
+        "fallback_heavy": sorted(fallback_heavy),
+        "screens_below_target": sorted(
+            s.id for s in subcategories if s.count < THEME_MAX_VIDEOS
+        ),
+        "screens_below_min": sorted(
+            s.id for s in subcategories if s.count < SUBCATEGORY_MIN_VIDEOS
+        ),
+        "total_exposed": sum(s.count for s in subcategories),
+        "from_fallback": sum(len(s.fallback_videos) for s in subcategories),
+        "channels_zero_yield": sorted(
+            y.name for y in ctx.yields.values() if y.collected and y.kept == 0
+        ),
+        "allowlist_size": ctx.allowlist.size,
+    }
 
 
 def write_title_dump(

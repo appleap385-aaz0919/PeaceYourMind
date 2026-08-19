@@ -202,18 +202,23 @@ jobs:
           )
           PY
 
-      - name: 쿼터 소모 요약
+      - name: 실행 요약 (쿼터 · 진단)
         if: always()
+        # [진단은 여기에만 남긴다 — Issue로 내지 않는다]
+        #   theme_low_yield · media_type_gap · theme_fallback_heavy · untagged_high은
+        #   "지금 데이터가 이렇다"이지 "무엇을 하라"가 아니다. 매일 같은 값이 뜨므로
+        #   Issue로 내면 하루에 30건씩 쌓여 auto 라벨 자체가 무시된다.
+        #   대신 실행마다 표로 남겨 **추이**를 보게 하고, 악화될 때만 주간 요약
+        #   Issue를 낸다(아래 단계). 판정 기준은 scripts/lib/alerts.py에 있다.
+        #
         # 러너는 매번 초기화되므로 .quota_log.json이 다음 실행까지 남지 않는다.
-        # 그래서 두 곳에 남긴다 — Job Summary(사람이 즉시 보는 곳)와 아티팩트.
-        # **실패한 실행도 쿼터를 쓴다.** build_videos.py는 중단되더라도 finally에서
-        # 소모량을 기록하므로, 리포트가 없어도 .quota_log.json에는 남는다.
+        # 그래서 쿼터도 여기(사람이 즉시 보는 곳)와 아티팩트 두 곳에 남긴다.
+        # **실패한 실행도 쿼터를 쓴다** — build_videos.py는 중단되더라도 finally에서
+        # 기록하므로, 리포트가 없어도 .quota_log.json에는 남는다.
         run: |
-          # 러너는 매 실행 초기화되므로 로그에 날짜가 하나뿐이지만, popitem()의
-          # "마지막 삽입 항목"에 기대지 않고 최신 날짜를 명시적으로 고른다.
-          spent=$(python -c "import json;d=json.load(open('.quota_log.json',encoding='utf-8'));print(d[max(d)]['spent'])" 2>/dev/null || echo "?")
+          spent=$(python -c "import json;d=json.load(open('.quota_log.json',encoding='utf-8'));print(d[max(d)]['spent'])" 2>/dev/null || echo "0 (드라이런)")
           {
-            echo "### 쿼터 소모"
+            echo "### 쿼터"
             echo ""
             echo "| 항목 | 값 |"
             echo "|---|---:|"
@@ -221,10 +226,57 @@ jobs:
             echo "| 일일 한도 | 10,000 units (PT 자정 리셋) |"
             echo "| 드라이런 | ${DRY_RUN} |"
             echo ""
-            echo "이 실행은 로컬 \`.quota_log.json\`에 잡히지 않습니다."
-            echo "같은 날 로컬에서 도구를 돌릴 때는 위 소모량을 감안하세요"
-            echo "(로컬 기본값은 Actions 몫 200을 미리 빼둡니다)."
           } >> "$GITHUB_STEP_SUMMARY"
+
+          python - >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json, os
+          from pathlib import Path
+
+          suffix = ".dry-run" if os.environ.get("DRY_RUN") == "true" else ""
+          report = Path(f"dist/build_report{suffix}.json")
+          if not report.exists():
+              print("### 진단\n\n리포트가 없습니다 (배치가 산출 전에 중단됨).")
+              raise SystemExit(0)
+
+          data = json.loads(report.read_text(encoding="utf-8"))
+          d = data.get("diagnostics", {})
+          subs = data.get("subcategories", [])
+          diag_alerts = [a for a in data.get("alerts", []) if a.get("route") == "summary"]
+
+          def row(label, value, note=""):
+              print(f"| {label} | {value} | {note} |")
+
+          print("### 진단 (Issue로 내지 않는 상태 지표)")
+          print()
+          print("| 지표 | 값 | 비고 |")
+          print("|---|---:|---|")
+          row("노출 합계", d.get("total_exposed", 0), f"폴백 {d.get('from_fallback', 0)}건")
+          row("미태깅 비율", f"{d.get('untagged_ratio', 0):.0%}", f"필터 통과 {d.get('kept', 0)}건")
+          row("목표(20건) 미달 화면", len(d.get("screens_below_target", [])), "/ 24")
+          row("최소(8건) 미달 화면", len(d.get("screens_below_min", [])), "0이어야 한다")
+          row("폴백 과다 화면", len(d.get("fallback_heavy", [])), "폴백 > 50%")
+          row("빈 주제", len(d.get("themes_empty", [])), ", ".join(d.get("themes_empty", [])) or "-")
+          row("얇은 주제", len(d.get("themes_low_yield", [])), "확보량 < 15")
+          row("형식 편중 주제", len(d.get("media_type_gaps", [])), "한쪽 토글이 빈다")
+          row("잔존 0 채널", len(d.get("channels_zero_yield", [])), ", ".join(d.get("channels_zero_yield", [])) or "-")
+          row("승인 채널", d.get("allowlist_size", 0), "최소 15")
+          print()
+
+          if subs:
+              print("<details><summary>세분류별 노출 (24개)</summary>")
+              print()
+              print("| 세분류 | 형식 | 주제분 | 폴백 | 합계 | 폴백% |")
+              print("|---|---|---:|---:|---:|---:|")
+              for x in sorted(subs, key=lambda x: -x["fallback_ratio"]):
+                  print(
+                      f"| {x['id']} | {x['media_default']} | {x['from_theme']} | "
+                      f"{x['from_fallback']} | {x['count']} | {x['fallback_ratio']:.0%} |"
+                  )
+              print()
+              print("</details>")
+              print()
+          print(f"진단 경보 {len(diag_alerts)}건은 Issue로 만들지 않았습니다 (정책: 2026-08-19).")
+          PY
 
       - name: 진단용 산출물 보관
         if: always()
@@ -233,10 +285,11 @@ jobs:
           name: build-report-${{ github.run_number }}
           path: |
             dist/build_report*.json
+            dist/diagnostics*.json
             dist/titles*.json
             .quota_log.json
           if-no-files-found: warn
-          retention-days: 30
+          retention-days: 90
 
       - name: 경보를 GitHub Issue로 올리기
         # 드라이런에서는 만들지 않는다. DryRunClient가 채널 몇 개를 일부러
@@ -251,15 +304,23 @@ jobs:
               core.info('리포트가 없어 경보를 올리지 않는다 (배치가 산출 전에 중단됨)');
               return;
             }
-            let alerts = [];
+            let all = [];
             try {
-              alerts = JSON.parse(fs.readFileSync(file, 'utf8')).alerts || [];
+              all = JSON.parse(fs.readFileSync(file, 'utf8')).alerts || [];
             } catch (e) {
               core.warning(`${file} 파싱 실패: ${e.message}`);
               return;
             }
+
+            // [2026-08-19 정책] Issue는 **조치가 필요한 사건**만 만든다.
+            // 진단(route === 'summary')은 Job Summary 표로 가고, 악화될 때만
+            // 주간 요약 Issue가 뜬다. 판정은 scripts/lib/alerts.py가 끝냈고
+            // 여기서는 옮겨 적기만 한다 — 정책이 두 곳에 흩어지면 반드시 어긋난다.
+            const alerts = all.filter(a => (a.route || 'issue') === 'issue');
+            const skipped = all.length - alerts.length;
+            if (skipped) core.info(`진단 ${skipped}건은 Summary로 보냄 (Issue 미생성)`);
             if (alerts.length === 0) {
-              core.info('경보 없음');
+              core.info('Issue로 낼 경보 없음');
               return;
             }
             // 같은 제목이 두 번 담기는 경우를 막는다 (FYM에서 Issue가 중복 생성된 이력).
@@ -305,11 +366,105 @@ jobs:
               core.info(`기존 Issue에 코멘트 (#${existing.number}): ${alert.title}`);
             }
 
+      - name: 주간 진단 요약 (월요일 · 악화 시에만)
+        if: success() && env.DRY_RUN != 'true'
+        # [왜 주 1회인가]
+        #   진단은 매일 같은 값이 뜬다. 매일 알리면 소음이고, 아예 안 알리면
+        #   나빠지는 것을 놓친다. 그래서 **악화됐을 때만** 주 1회 알린다.
+        #
+        # [무엇과 비교하는가]
+        #   지난주 월요일의 스냅샷(gh-pages의 data/diagnostics.weekly.json)이다.
+        #   전날과 비교하면 하루 변동에 흔들려 "추세"가 안 보인다.
+        #   비교가 끝나면 이번 값을 새 기준선으로 배포한다(아래 cp).
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (new Date().getUTCDay() !== 1) {
+              core.info('월요일 실행이 아니므로 주간 요약을 건너뜁니다.');
+              return;
+            }
+            const curPath = 'dist/diagnostics.json';
+            const basePath = '_previous/data/diagnostics.weekly.json';
+            if (!fs.existsSync(curPath)) { core.info('진단 스냅샷 없음'); return; }
+            const cur = JSON.parse(fs.readFileSync(curPath, 'utf8'));
+            if (!fs.existsSync(basePath)) {
+              core.info('지난주 기준선이 없습니다 — 이번 값을 기준선으로 삼습니다.');
+              return;
+            }
+            const base = JSON.parse(fs.readFileSync(basePath, 'utf8'));
+
+            const grew = (a, b) => (b || []).filter(x => !(a || []).includes(x));
+            const worse = [];
+            const newEmpty = grew(base.themes_empty, cur.themes_empty);
+            if (newEmpty.length) worse.push(`빈 주제가 늘었습니다: ${newEmpty.join(', ')}`);
+            const newHeavy = grew(base.fallback_heavy, cur.fallback_heavy);
+            if (newHeavy.length) worse.push(`폴백 과다 화면이 늘었습니다: ${newHeavy.join(', ')}`);
+            const newBelowMin = grew(base.screens_below_min, cur.screens_below_min);
+            if (newBelowMin.length) worse.push(`최소 건수 미달 화면이 생겼습니다: ${newBelowMin.join(', ')}`);
+            const newZero = grew(base.channels_zero_yield, cur.channels_zero_yield);
+            if (newZero.length) worse.push(`잔존 0 채널이 늘었습니다: ${newZero.join(', ')}`);
+            if ((cur.untagged_ratio || 0) - (base.untagged_ratio || 0) >= 0.02) {
+              worse.push(`미태깅 비율 ${(base.untagged_ratio*100).toFixed(0)}% → ${(cur.untagged_ratio*100).toFixed(0)}%`);
+            }
+            if ((cur.allowlist_size || 0) < (base.allowlist_size || 0)) {
+              worse.push(`승인 채널 ${base.allowlist_size} → ${cur.allowlist_size}`);
+            }
+            if ((cur.total_exposed || 0) < (base.total_exposed || 0) * 0.9) {
+              worse.push(`총 노출 ${base.total_exposed} → ${cur.total_exposed} (10% 이상 감소)`);
+            }
+
+            if (worse.length === 0) {
+              core.info('지난주 대비 악화 없음 — 요약 Issue를 만들지 않습니다.');
+              return;
+            }
+            const { owner, repo } = context.repo;
+            const date = new Date().toISOString().slice(0, 10);
+            await github.rest.issues.create({
+              owner, repo,
+              title: `[배치] 주간 진단 — 지난주보다 나빠졌습니다 (${date})`,
+              body: [
+                '진단 지표가 지난주 기준선보다 악화됐습니다.',
+                '',
+                ...worse.map(w => `- ${w}`),
+                '',
+                '---',
+                '',
+                `| 지표 | 지난주 | 이번 |`,
+                `|---|---:|---:|`,
+                `| 미태깅 비율 | ${(base.untagged_ratio*100).toFixed(0)}% | ${(cur.untagged_ratio*100).toFixed(0)}% |`,
+                `| 총 노출 | ${base.total_exposed} | ${cur.total_exposed} |`,
+                `| 폴백 | ${base.from_fallback} | ${cur.from_fallback} |`,
+                `| 빈 주제 | ${(base.themes_empty||[]).length} | ${(cur.themes_empty||[]).length} |`,
+                `| 폴백 과다 화면 | ${(base.fallback_heavy||[]).length} | ${(cur.fallback_heavy||[]).length} |`,
+                `| 승인 채널 | ${base.allowlist_size} | ${cur.allowlist_size} |`,
+                '',
+                '매 실행의 상세 표는 각 실행의 Job Summary에 있습니다.',
+                `[이번 실행 로그](${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId})`,
+              ].join('\n'),
+              labels: ['batch', 'auto'],
+            });
+            core.info(`주간 진단 요약 Issue 생성 (악화 ${worse.length}건)`);
+
+      - name: 주간 기준선 갱신 (월요일)
+        if: success() && env.DRY_RUN != 'true'
+        # 월요일에만 기준선을 새로 쓴다. 다른 날은 쓰지 않으므로 gh-pages의
+        # 기존 파일이 keep_files: true로 그대로 남는다.
+        run: |
+          if [ "$(date -u +%u)" = "1" ]; then
+            cp dist/diagnostics.json dist/diagnostics.weekly.json
+            echo "주간 기준선 갱신"
+          else
+            echo "월요일이 아니므로 기준선을 유지합니다"
+          fi
+
       - name: 공개 배포 대상만 남기기
         if: env.DRY_RUN != 'true'
         # publish_dir 전체가 배포되므로, 공개되면 안 되는 것을 여기서 지운다.
         #   build_report.json  진단용. 채널별 기여·경보 본문이 들어 있다
         #   titles.json        원자료(수백 KB). 아티팩트로만 보관한다
+        # **diagnostics.json은 지운다** — 배포한다. 다음 주 월요일 실행이
+        # 이 파일(과 weekly 기준선)을 읽어 악화를 판정한다.
         #   *.partial.json     --only 부분 실행 산출물 (CI는 쓰지 않지만 경로를 막는다)
         #   *.dry-run.json     합성 데이터. 섞이면 앱이 그걸 진짜로 받는다
         run: rm -f dist/build_report*.json dist/titles*.json dist/*.partial.json dist/*.dry-run.json

@@ -24,6 +24,36 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 Severity = Literal["critical", "warning", "info"]
+Route = Literal["issue", "summary"]
+
+# 경보를 어디로 보낼 것인가 — 2026-08-19 개정.
+#
+# [왜 갈랐는가]
+#   첫 실행에서 Issue가 44건 생겼다. 경보 1건 = Issue 1건이라는 FYM 방식을
+#   그대로 썼는데, PYM은 주제 23개마다 진단 경보가 붙어 수가 근본적으로 다르다.
+#   그중 32건은 "지금 데이터가 이렇다"이지 "무엇을 하라"가 아니었다.
+#   그런 것이 매일 쌓이면 auto 라벨 자체를 아무도 보지 않게 된다.
+#
+#   ISSUE    조치가 필요한 사건. 사람이 무언가 해야 끝난다
+#   SUMMARY  지금 상태. 매 실행 Job Summary 표로 남고, 악화될 때만 주간 요약 Issue가 뜬다
+ROUTE_ISSUE: Route = "issue"
+ROUTE_SUMMARY: Route = "summary"
+
+# Job Summary에만 남기는 진단 경보.
+#   theme_low_yield       주제 풀이 얇다 — 채널 구성의 현재 상태다
+#   media_type_gap        주제에 한쪽 형식이 없다 — 같은 이유
+#   theme_fallback_heavy  폴백 비율이 높다 — 매일 같은 값이 뜬다
+#   untagged_high         미태깅 비율 — 제목 관행이 바뀌지 않는 한 그대로다
+# 이것들이 나쁘다는 사실은 이미 안다. 알아야 할 것은 **악화되는가**이고,
+# 그 판정은 주간 비교로 한다 (워크플로의 진단 요약 단계).
+SUMMARY_ONLY_TYPES = frozenset(
+    {"theme_low_yield", "media_type_gap", "theme_fallback_heavy", "untagged_high"}
+)
+
+
+def route_for(alert_type: str) -> Route:
+    """이 경보를 Issue로 낼 것인가, Summary에만 남길 것인가."""
+    return ROUTE_SUMMARY if alert_type in SUMMARY_ONLY_TYPES else ROUTE_ISSUE
 
 DEFAULT_RENOTIFY_DAYS = 7
 # 안전 관련은 더 자주 찌른다 — 감지 주기보다 알림 주기가 길면 경보의 의미가 없다.
@@ -41,6 +71,10 @@ class Alert:
     labels: tuple[str, ...] = ()
     renotify_days: int = DEFAULT_RENOTIFY_DAYS
 
+    @property
+    def route(self) -> Route:
+        return route_for(self.type)
+
     def to_json(self) -> dict[str, Any]:
         return {
             "type": self.type,
@@ -49,6 +83,9 @@ class Alert:
             "body": self.body,
             "labels": list(self.labels),
             "renotify_days": self.renotify_days,
+            # 워크플로가 이 값으로 Issue 생성 여부를 가른다. 판정은 여기서 끝내고
+            # 워크플로는 옮겨 적기만 한다 — 정책이 두 곳에 흩어지지 않게.
+            "route": self.route,
         }
 
 
@@ -86,6 +123,16 @@ class AlertCollector:
     @property
     def has_critical(self) -> bool:
         return any(a.severity == "critical" for a in self.alerts)
+
+    @property
+    def issues(self) -> list[Alert]:
+        """Issue로 낼 경보만."""
+        return [a for a in self.alerts if a.route == ROUTE_ISSUE]
+
+    @property
+    def diagnostics(self) -> list[Alert]:
+        """Job Summary에만 남길 진단."""
+        return [a for a in self.alerts if a.route == ROUTE_SUMMARY]
 
 
 # --- 화이트리스트 ------------------------------------------------------------

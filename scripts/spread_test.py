@@ -17,10 +17,12 @@
   6. 승인이 취소된 채널의 영상이 직전 결과를 타고 살아남지 않는다
   7. 무결성 단언(상호 배타 · media_type)이 실제로 배포를 막는다
   8. 폴백이 미태깅·기본 형식·상한·채널 분산을 전부 지킨다
+  9. 경보가 Issue/Summary로 올바르게 갈린다 (2026-08-19 정책)
 """
 
 from __future__ import annotations
 
+import inspect
 import sys
 from collections import Counter
 from dataclasses import replace
@@ -52,6 +54,8 @@ from lib.selection import (
     select_theme_videos,
 )
 
+from lib import alerts as alert_specs
+from lib.alerts import ROUTE_ISSUE, ROUTE_SUMMARY, AlertCollector, route_for
 from lib.allowlist import load_allowlist
 from lib.filters import Video
 from lib.quota import QuotaBudget
@@ -479,6 +483,80 @@ def main() -> int:
         "태깅된영상" in caught,
         "폴백에 태깅분이 섞이면 배포를 막는다",
         caught.splitlines()[0][:56] if caught else "예외 없음",
+    )
+
+    # --- 9. 경보 라우팅 (2026-08-19 정책) ------------------------------------
+    print("\n9. 경보 라우팅 — 사건은 Issue로, 상태는 Summary로")
+    print("-" * 76)
+
+    ISSUE_EXPECTED = [
+        "crisis_empty",
+        "crisis_carried_over",
+        "crisis_stale",
+        "crisis_no_channels",
+        "theme_empty",
+        "theme_too_few",
+        "channel_zero_yield",
+        "channel_dead",
+        "allowlist_undersized",
+        "allowlist_empty",
+        "allowlist_placeholders",
+        "channel_review_overdue",
+    ]
+    SUMMARY_EXPECTED = [
+        "theme_low_yield",
+        "media_type_gap",
+        "theme_fallback_heavy",
+        "untagged_high",
+    ]
+    for alert_type in ISSUE_EXPECTED:
+        _check(
+            failures,
+            route_for(alert_type) == ROUTE_ISSUE,
+            f"Issue로 간다: {alert_type}",
+            route_for(alert_type),
+        )
+    for alert_type in SUMMARY_EXPECTED:
+        _check(
+            failures,
+            route_for(alert_type) == ROUTE_SUMMARY,
+            f"Summary에만 남는다: {alert_type}",
+            route_for(alert_type),
+        )
+
+    # 경보 정의와 라우팅표가 어긋나면 조용히 Issue가 새거나 사라진다.
+    # alerts.py에 있는 모든 생성기가 둘 중 한쪽에 반드시 분류되는지 본다.
+    generators = [
+        name
+        for name in dir(alert_specs)
+        if not name.startswith("_")
+        and inspect.isfunction(getattr(alert_specs, name))
+        and getattr(alert_specs, name).__module__ == alert_specs.__name__
+        and name != "route_for"
+    ]
+    unclassified = [
+        g for g in generators if g not in ISSUE_EXPECTED and g not in SUMMARY_EXPECTED
+    ]
+    _check(
+        failures,
+        not unclassified,
+        "모든 경보 생성기가 라우팅표에 있다",
+        ", ".join(unclassified) or "-",
+    )
+
+    collector = AlertCollector()
+    collector.add(**alert_specs.crisis_empty())
+    collector.add(**alert_specs.theme_low_yield("comfort", 3, 15))
+    _check(
+        failures,
+        len(collector.issues) == 1 and len(collector.diagnostics) == 1,
+        "수집기가 두 갈래를 나눠 준다",
+        f"issue {len(collector.issues)} / summary {len(collector.diagnostics)}",
+    )
+    _check(
+        failures,
+        all("route" in a.to_json() for a in collector.alerts),
+        "리포트 JSON에 route가 실린다 (워크플로가 이 값으로 가른다)",
     )
 
     print("\n" + "=" * 76)
