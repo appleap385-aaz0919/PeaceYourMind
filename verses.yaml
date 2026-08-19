@@ -230,6 +230,41 @@ verses:
     verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
     verified_at: "2026-08-18"
 
+  - id: luk.12.7
+    ref: 누가복음 12:7
+    text: >
+      너희에게는 오히려 머리털까지도 다 세신바 되었나니 두려워하지 말라 너희는
+      많은 참새보다 귀하니라
+    emotion_tags: [anxiety.worry]
+    theme: love
+    note: >
+      2026-08-19 추가. 이 화면은 trust(맡기라)가 10/13으로 몰려 있어 축을 넓혔다 —
+      맡기라고 요구하지 않고 "이미 세밀히 알려져 있다"고 말한다. 걱정이 "내가
+      놓치고 있는 게 있다"는 감각이라 방향이 정확히 반대다.
+      절 경계는 깨끗하다(앞 12:6이 이어지고 뒤 12:8은 화제 전환).
+      ⚠ 다만 2~3절 위(12:4-5)가 박해·심판 맥락이다. 7절만 떼어 쓰는 것이
+      proof-texting인지 검토했고, 개역한글 문장이 독립 격언으로 완결되며
+      6절과 이어지는 참새 비유가 그 자체로 위로라 허용 범위로 봤다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: psa.68.19
+    ref: 시편 68:19
+    text: >
+      날마다 우리 짐을 지시는 주 곧 우리의 구원이신 하나님을 찬송할찌로다
+    emotion_tags: [anxiety.worry]
+    theme: trust
+    note: >
+      2026-08-19 추가. 같은 trust 축이지만 **문법이 다르다** — 기존 10개는
+      "네가 맡겨라"(시 55:22·37:5, 벧전 5:7, 잠 3:5-6)인데 이것은 "이미 날마다
+      지고 계신다"다. 요구 없이 같은 자리를 받친다.
+      38자로 짧아 이 화면의 짧은 구절 잔량을 5→6으로 올린다.
+      앞 18절 개선가·뒤 20절 구원 — 책망도 조건절도 붙지 않는다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
   - id: psa.55.22
     ref: 시편 55:22
     text: >
