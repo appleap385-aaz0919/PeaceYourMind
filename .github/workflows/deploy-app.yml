@@ -1,0 +1,183 @@
+name: 앱 배포 (PWA)
+
+# 앱은 gh-pages 루트에, 데이터는 같은 브랜치의 data/ 하위에 배포된다.
+# 두 워크플로가 같은 브랜치에 쓰므로 **반드시 지켜야 하는 두 가지**가 있다.
+#
+#   1. concurrency 그룹을 데이터 워크플로(build.yml)와 공유한다.
+#      바꾸면 동시 배포 방지가 풀리고, 두 워크플로가 같은 시각에 gh-pages를
+#      밀면 한쪽 커밋이 통째로 사라진다.
+#   2. keep_files: true — 이게 없으면 **앱 배포가 data/를 지운다.**
+#      배치는 하루 한 번만 돌므로, 지워진 데이터는 다음 배치까지 돌아오지 않는다.
+#      그 사이 앱은 번들 시드로만 산다(화면은 뜨지만 영상이 낡는다).
+#
+# 이 두 줄이 이 파일에서 가장 중요하다. 리뷰에서 먼저 볼 것.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "taxonomy.yaml"
+      - "verses.yaml"
+      - "themes.yaml"
+      - "scripts/gen_taxonomy_json.py"
+      - "scripts/gen_verses_json.py"
+      - ".github/workflows/deploy-app.yml"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "빌드·테스트만 하고 배포하지 않는다"
+        type: boolean
+        default: false
+
+concurrency:
+  # build.yml과 같은 그룹명이어야 한다. 바꾸면 동시 배포 방지가 풀린다.
+  group: gh-pages-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 준비 (YAML → 앱 번들 JSON)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: PyYAML 설치
+        run: pip install "PyYAML>=6.0.1"
+
+      - name: Node 준비
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: 의존성 설치
+        working-directory: app
+        run: npm ci
+
+      # --- 배포 게이트 -------------------------------------------------------
+      # 앱과 데이터가 같은 규칙을 쓰는지, 구절이 원문과 일치하는지 여기서 본다.
+      # 하나라도 실패하면 배포하지 않는다 — 잘못된 본문이나 어긋난 사전이
+      # 배포되면 되돌리는 데 다음 배포까지 걸린다.
+      - name: 파이썬 게이트 (API 호출 0)
+        run: |
+          python scripts/verify_verses.py --check > /dev/null && echo "구절 원문 대조 통과 (250건)"
+          python scripts/messages_test.py > /dev/null && echo "문구 원칙 통과 (485건)"
+          python scripts/tagging_test.py > /dev/null && echo "태깅·판별 통과"
+          python scripts/spread_test.py > /dev/null && echo "선정·폴백 통과"
+
+      - name: 앱 번들 생성 (taxonomy.json · verses.json)
+        working-directory: app
+        # 두 생성기가 각자 게이트를 들고 있다 — 세분류 24개, 문구 존재,
+        # 위기 키워드 비어있지 않음, 로딩 1000ms, verified: false 잔존 금지 등.
+        run: npm run gen:data
+
+      - name: 앱 테스트
+        working-directory: app
+        # 위기 경로(상담 안내 최상단·토글/폴백 미사용)와 층 분리가 여기서 지켜진다.
+        run: npm test
+
+      - name: 앱 빌드
+        working-directory: app
+        run: npm run build
+
+      - name: 빌드 산출물 검증
+        # 번들에 데이터가 실제로 들어갔는지 본다. 빌드는 성공했는데 JSON이
+        # 비어 있으면 화면은 뜨고 내용만 없는 상태로 배포된다.
+        run: |
+          python - <<'PY'
+          import json, sys
+          from pathlib import Path
+
+          dist = Path("app/dist")
+          index = dist / "index.html"
+          if not index.exists():
+              sys.exit("index.html이 없다")
+          if "/PeaceYourMind/" not in index.read_text(encoding="utf-8"):
+              sys.exit("base 경로가 /PeaceYourMind/가 아니다 — 자산이 전부 404가 난다")
+
+          for name in ("manifest.webmanifest", "sw.js"):
+              if not (dist / name).exists():
+                  sys.exit(f"{name}이 없다 — PWA 설치·오프라인이 깨진다")
+
+          verses = json.loads(Path("app/src/data/verses.json").read_text(encoding="utf-8"))
+          taxonomy = json.loads(Path("app/src/data/taxonomy.json").read_text(encoding="utf-8"))
+          subs = [s for c in taxonomy["categories"] for s in c["subcategories"]]
+          if len(subs) != 24:
+              sys.exit(f"세분류가 {len(subs)}개다")
+          if len(verses["verses"]) < 200 or not verses["crisis"]:
+              sys.exit("구절 데이터가 비었다")
+          if verses.get("attribution") != "성경전서 개역한글판, 대한성서공회":
+              sys.exit("출처 표기가 없거나 다르다 — 성명표시권 요건")
+
+          bundle = next(dist.glob("assets/*.js"))
+          size = bundle.stat().st_size
+          print(
+              f"검증 통과 — 세분류 {len(subs)} · 구절 {len(verses['verses'])}"
+              f"(위기 {len(verses['crisis'])}) · 번들 {size // 1024}KB"
+          )
+          PY
+
+      - name: gh-pages 배포 (루트)
+        if: env.DRY_RUN != 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./app/dist
+          # 루트에 배포한다. destination_dir을 지정하지 않는 것이 루트다.
+          #
+          # ⚠ keep_files: true가 없으면 data/ 하위의 videos.json·version.json·
+          #   diagnostics.json이 이 배포로 전부 지워진다. 배치는 하루 한 번이므로
+          #   다음 실행 전까지 앱은 번들 시드로만 살게 된다.
+          keep_files: true
+          commit_message: "app: 배포 (run ${{ github.run_number }})"
+
+      - name: 배포 요약
+        if: always()
+        run: |
+          {
+            echo "### 앱 배포"
+            echo ""
+            echo "| 항목 | 값 |"
+            echo "|---|---|"
+            echo "| 드라이런 | ${DRY_RUN} |"
+            echo "| 배포 경로 | gh-pages 루트 (데이터는 data/ 하위 유지) |"
+            echo "| URL | https://appleap385-aaz0919.github.io/PeaceYourMind/ |"
+            echo ""
+            echo "데이터(videos.json)는 build.yml이 따로 배포합니다."
+            echo "두 워크플로는 concurrency 그룹 \`gh-pages-deploy\`를 공유해 동시 배포를 막습니다."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 배포 실패 알림
+        if: failure() && env.DRY_RUN != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            await github.rest.issues.create({
+              owner, repo,
+              title: `[앱] 배포 실패 (${new Date().toISOString().slice(0, 10)})`,
+              body: [
+                '앱 배포가 실패했습니다. **직전 배포본이 그대로 유지됩니다.**',
+                '',
+                '게이트에서 멈췄다면 데이터·문구·구절 중 하나가 원칙을 어긴 것입니다.',
+                '빌드에서 멈췄다면 앱 코드 문제입니다.',
+                '',
+                `[실행 로그](${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId})`,
+              ].join('\n'),
+              labels: ['app', 'auto'],
+            });
