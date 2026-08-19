@@ -83,7 +83,7 @@ from lib.quota_log import (
     record as record_quota,
     table as quota_table,
 )
-from lib.report import iso, load_previous, write_outputs
+from lib.report import iso, load_previous, write_outputs, write_title_dump
 from lib.results import BuildContext, CrisisResult, TaggedVideo, ThemeResult
 from lib.selection import select_theme_videos
 from lib.tagging import SERMON, UNKNOWN, WORSHIP, classify_media_type, tag_themes
@@ -460,6 +460,15 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         "--dry-run", action="store_true", help="API를 호출하지 않고 전 과정을 검증한다"
     )
     parser.add_argument(
+        "--dump-titles",
+        action="store_true",
+        help=(
+            "필터를 통과한 영상 전량의 제목·채널·길이를 titles.json으로 떨군다 "
+            "(태깅 성공 여부 무관). 태깅 전략을 분석할 때 이 파일이 있으면 "
+            "API를 다시 쓰지 않아도 된다. 커밋 대상이 아니다."
+        ),
+    )
+    parser.add_argument(
         "--quota-log",
         type=Path,
         default=root / DEFAULT_LOG,
@@ -598,6 +607,8 @@ def run(args: argparse.Namespace, spent_box: dict[str, Any] | None = None) -> in
     _record_channel_yields(ctx, by_channel, tagged)
     tagging_report = summarize_tagging(ctx, tagged)
     tagging_report["dropped_off_allowlist"] = off_allowlist
+    if args.dump_titles:
+        write_title_dump(args.out_dir, iso(now), tagged, dry_run=args.dry_run)
 
     # 4) 위기 풀 먼저 확정 — 그 videoId를 주제 후보에서 뺀다
     crisis = build_crisis(ctx, tagged, now, day_of_year) if run_crisis else None

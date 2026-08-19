@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from lib.filters import FilterStats
-from lib.results import BuildContext, CrisisResult, ThemeResult
+from lib.results import BuildContext, CrisisResult, TaggedVideo, ThemeResult
 
 logger = logging.getLogger("build_videos")
 
@@ -165,3 +165,53 @@ def load_previous(path: Path | None) -> dict[str, Any]:
         len((data.get("crisis") or {}).get("videos", [])),
     )
     return data
+
+
+def write_title_dump(
+    out_dir: Path,
+    version: str,
+    tagged: Sequence[TaggedVideo],
+    *,
+    dry_run: bool,
+) -> Path:
+    """필터를 통과한 영상 **전량**의 제목·채널·길이를 떨군다 (--dump-titles).
+
+    태깅 성공 여부와 무관하게 전건을 담는다. 미태깅 영상의 제목이야말로
+    보려는 대상이기 때문이다 — 배치 리포트의 `untagged_sample`은 채널당 5건이라
+    사전의 구멍을 세는 데는 못 쓴다.
+
+    **이 파일이 있으면 이후 태깅 전략 분석이 전부 API 0으로 된다.**
+    2026-08-19 첫 실측에서 미태깅 822건의 제목이 어디에도 남지 않아,
+    "장절이 몇 건에 있는가" 같은 기본적인 질문에 답하려면 61 units를 다시
+    써야 했다. 그 왕복을 없애려고 만든 옵션이다.
+
+    산출물은 커밋하지 않는다(.gitignore `titles*.json`) — 원자료이고 매 실행
+    바뀌며, 배포에 나가는 파일이 아니다.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    suffix = ".dry-run" if dry_run else ""
+    path = out_dir / f"titles{suffix}.json"
+    payload = {
+        "version": version,
+        "count": len(tagged),
+        "note": "필터 통과 전량. themes가 빈 배열이면 미태깅이다.",
+        "videos": [
+            {
+                "videoId": t.video.video_id,
+                "title": t.video.title,
+                "channel": t.video.channel,
+                "channelId": t.video.channel_id,
+                "publishedAt": t.video.published_at,
+                "duration": t.video.duration,
+                "durationSeconds": t.video.duration_seconds,
+                "themes": list(t.themes),
+                "hits": list(t.hits),
+                "mediaType": t.media.media_type,
+                "mediaReason": t.media.reason,
+            }
+            for t in tagged
+        ],
+    }
+    atomic_write(path, payload)
+    logger.info("제목 덤프 %d건 기록 — %s (커밋 대상 아님)", len(tagged), path)
+    return path
