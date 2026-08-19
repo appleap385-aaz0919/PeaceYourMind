@@ -79,7 +79,8 @@ CRISIS_APP_FIELDS = ("id", "ref", "text")
 # 최종값에서 다시 고정된다.
 #   240  Phase 1 완료 시점
 #   242  anxiety.worry +2 (눅 12:7 · 시 68:19)
-EXPECT_VERSES = 242
+#   245  anxiety.tension +2 (출 14:14 · 마 10:19) · restless +1 (전 3:1)
+EXPECT_VERSES = 245
 EXPECT_CRISIS = 10
 
 EXIT_OK = 0
