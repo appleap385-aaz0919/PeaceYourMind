@@ -1,0 +1,379 @@
+#!/usr/bin/env python
+"""선정 로직 검증 — 채널 분산 · 형식 균형 · 완화 사다리 · 위기 유지. 네트워크 없음.
+
+    python scripts/spread_test.py
+
+**드라이런으로는 검증되지 않는다.** DryRunClient의 합성 데이터는 채널마다
+영상 수가 비슷해서 편중 상황 자체를 만들지 않는다. 여기서는 편중된 풀을
+일부러 만들어 억제되는지 본다 (FYM spread_test.py와 같은 이유).
+
+고정해 두는 것
+  1. 채널당 상한이 **주제 단위로** 지켜진다 — 형식별로 두 번 순회해도
+     한 채널이 3+3=6건을 가져가지 못한다
+  2. 형식 균형이 실제로 한쪽을 살린다 — 균형이 없으면 사라졌을 찬양이 남는다
+  3. 완화 사다리(3→4→5)와 상한 해제가 정해진 조건에서만 작동한다
+  4. 채널 회전이 매일 다른 채널에 두 번째 슬롯을 준다
+  5. 위기 풀 12건 미달이면 직전 결과를 유지하고, 그 과정에 API를 쓰지 않는다
+  6. 승인이 취소된 채널의 영상이 직전 결과를 타고 살아남지 않는다
+  7. 무결성 단언(상호 배타 · media_type)이 실제로 배포를 막는다
+"""
+
+from __future__ import annotations
+
+import sys
+from collections import Counter
+from dataclasses import replace
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from datetime import datetime, timezone
+
+from build_videos import IntegrityError, assert_disjoint, assert_media_type_filled
+from lib.collect import enforce_allowlist
+from lib.crisis import _carry_over_crisis
+from lib.results import BuildContext, CrisisResult, TaggedVideo, ThemeResult
+from lib.selection import fill_balanced, select_crisis_videos, select_theme_videos
+
+from lib.allowlist import load_allowlist
+from lib.filters import Video
+from lib.quota import QuotaBudget
+from lib.tagging import SERMON, UNKNOWN, WORSHIP, MediaVerdict
+from lib.themes import (
+    CRISIS_MIN_VIDEOS,
+    THEME_MAX_PER_CHANNEL,
+    THEME_MAX_VIDEOS,
+    load_themes,
+)
+
+ROOT = Path(__file__).resolve().parents[1]
+EXIT_OK, EXIT_FAIL = 0, 1
+
+
+def _tagged(video_id: str, channel: str, media_type: str) -> TaggedVideo:
+    video = Video(
+        video_id=video_id,
+        title=f"{channel} 영상 {video_id}",
+        channel=channel,
+        channel_id=f"UC_{channel}",
+        published_at="2026-08-18T00:00:00Z",
+        duration="PT20M",
+        duration_seconds=1200,
+        description="",
+        tags=(),
+        comments_disabled=False,
+    )
+    return TaggedVideo(
+        video=video, themes=("comfort",), hits=("위로",), media=MediaVerdict(media_type, "title")
+    )
+
+
+def _pool(spec: list[tuple[str, int, str]]) -> list[TaggedVideo]:
+    """(채널, 건수, 형식) 목록을 그 순서 그대로 후보 풀로 만든다.
+
+    앞에 적은 채널이 목록 앞쪽(=최신)이다. 편중은 한 채널이 앞을 쓸어담아
+    생기므로 그 형태를 그대로 만든다.
+    """
+    pool: list[TaggedVideo] = []
+    for channel, count, media_type in spec:
+        for i in range(count):
+            pool.append(_tagged(f"{channel}-{media_type}-{i}", channel, media_type))
+    return pool
+
+
+def _spread(picked: list[TaggedVideo]) -> Counter:
+    return Counter(t.video.channel for t in picked)
+
+
+def _media(picked: list[TaggedVideo]) -> Counter:
+    return Counter(t.media.media_type for t in picked)
+
+
+def _check(failures: list[str], ok: bool, label: str, detail: str = "") -> None:
+    print(f"{'   ' if ok else 'X  '}{label}{('  ' + detail) if detail else ''}")
+    if not ok:
+        failures.append(label)
+
+
+def main() -> int:
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
+    failures: list[str] = []
+    cap0 = THEME_MAX_PER_CHANNEL
+    print(f"주제당 상한 {THEME_MAX_VIDEOS}건 / 채널당 상한 사다리 {cap0}→{cap0+1}→{cap0+2}")
+
+    # --- 1. 채널당 상한이 주제 단위로 지켜지는가 -----------------------------
+    print("\n1. 채널 편중 억제 — 형식별로 두 번 순회해도 상한은 한 번만 센다")
+    print("-" * 76)
+    hog = _pool([("독식채널", 15, SERMON), ("독식채널", 15, WORSHIP)])
+    others = _pool([(f"채널{i}", 2, SERMON) for i in range(10)])
+    pool = hog + others
+
+    naive = pool[:THEME_MAX_VIDEOS]
+    _check(
+        failures,
+        _spread(naive)["독식채널"] == THEME_MAX_VIDEOS,
+        "상한이 없으면 한 채널이 20건을 전부 가져간다 (전제 재현)",
+        f"{_spread(naive)['독식채널']}건",
+    )
+
+    picked, cap, unlocked = select_theme_videos(pool, day_of_year=0)
+    spread = _spread(picked)
+    _check(
+        failures,
+        spread["독식채널"] <= cap0,
+        f"독식 채널이 상한 {cap0} 이하로 억제된다",
+        f"{spread['독식채널']}건 (상한 {cap})",
+    )
+    _check(
+        failures,
+        len(picked) == THEME_MAX_VIDEOS and not unlocked,
+        "20건을 채우면서 상한을 풀지 않는다",
+        f"{len(picked)}건",
+    )
+
+    # --- 2. 형식 균형 --------------------------------------------------------
+    print("\n2. 형식 균형 — 소수 형식이 20슬롯 밖으로 밀리지 않는가")
+    print("-" * 76)
+    # 말씀이 목록 앞을 전부 차지하고 찬양이 뒤로 밀린 풀.
+    lopsided = _pool([(f"말씀채널{i}", 5, SERMON) for i in range(6)]) + _pool(
+        [(f"찬양채널{i}", 3, WORSHIP) for i in range(2)]
+    )
+    naive = lopsided[:THEME_MAX_VIDEOS]
+    _check(
+        failures,
+        _media(naive)[WORSHIP] == 0,
+        "균형이 없으면 찬양이 0건이 된다 (전제 재현)",
+        f"말씀 {_media(naive)[SERMON]} / 찬양 {_media(naive)[WORSHIP]}",
+    )
+    picked, _, _ = select_theme_videos(lopsided, day_of_year=0)
+    media = _media(picked)
+    _check(
+        failures,
+        media[WORSHIP] == 6,
+        "풀에 있던 찬양 6건이 전부 살아남는다",
+        f"말씀 {media[SERMON]} / 찬양 {media[WORSHIP]}",
+    )
+    _check(failures, len(picked) == THEME_MAX_VIDEOS, "그러면서 20건을 채운다", f"{len(picked)}건")
+
+    balanced = _pool([(f"채널{i}", 6, SERMON) for i in range(5)]) + _pool(
+        [(f"채널{i}", 6, WORSHIP) for i in range(5)]
+    )
+    picked, _, _ = select_theme_videos(balanced, day_of_year=0)
+    media = _media(picked)
+    _check(
+        failures,
+        media[SERMON] == 10 and media[WORSHIP] == 10,
+        "양쪽이 넉넉하면 10:10으로 나눈다",
+        f"말씀 {media[SERMON]} / 찬양 {media[WORSHIP]}",
+    )
+
+    only_sermon = _pool([(f"채널{i}", 8, SERMON) for i in range(5)])
+    picked, _, _ = select_theme_videos(only_sermon, day_of_year=0)
+    _check(
+        failures,
+        len(picked) == THEME_MAX_VIDEOS,
+        "한쪽 형식뿐이어도 20건을 채운다 (균형이 상한이 되지 않는다)",
+        f"{len(picked)}건",
+    )
+
+    unknown_pool = _pool([(f"채널{i}", 8, UNKNOWN) for i in range(5)])
+    picked, _, _ = select_theme_videos(unknown_pool, day_of_year=0)
+    _check(
+        failures,
+        len(picked) == THEME_MAX_VIDEOS,
+        "미판별만 있어도 20건을 채운다 (양쪽 토글에 노출되므로 버리지 않는다)",
+        f"{len(picked)}건",
+    )
+
+    # --- 3. 완화 사다리와 상한 해제 -----------------------------------------
+    print("\n3. 완화 사다리 · 상한 해제")
+    print("-" * 76)
+    five_channels = _pool([(f"채널{i}", 10, SERMON) for i in range(5)])
+    picked, cap, unlocked = select_theme_videos(five_channels, day_of_year=0)
+    _check(
+        failures,
+        cap == cap0 + 1 and len(picked) == THEME_MAX_VIDEOS and not unlocked,
+        f"5채널이면 상한 {cap0}로 15건뿐 → {cap0+1}로 올려 20건",
+        f"상한 {cap}, {len(picked)}건",
+    )
+
+    single = _pool([("단일채널", 30, SERMON)])
+    picked, cap, unlocked = select_theme_videos(single, day_of_year=0)
+    _check(
+        failures,
+        unlocked and len(picked) == THEME_MAX_VIDEOS,
+        "한 채널뿐이고 하한도 못 채우면 상한을 해제한다",
+        f"{len(picked)}건, 해제 {unlocked}",
+    )
+
+    shallow = _pool([("단일채널", 4, SERMON)])
+    picked, cap, unlocked = select_theme_videos(shallow, day_of_year=0)
+    _check(
+        failures,
+        not unlocked,
+        "풀 자체가 얕으면 해제하지 않는다 (해제해도 늘지 않는다)",
+        f"{len(picked)}건, 해제 {unlocked}",
+    )
+
+    # --- 4. 채널 회전 --------------------------------------------------------
+    print("\n4. 채널 회전 — 두 번째 슬롯이 매일 다른 채널로 간다")
+    print("-" * 76)
+    # 15채널 × 2건. 상한 3이면 1바퀴(15) + 2바퀴 앞쪽 5개 = 20건이라
+    # "두 번 뽑히는 채널 5개"가 날마다 달라져야 한다.
+    fifteen = _pool([(f"채널{i:02d}", 2, SERMON) for i in range(15)])
+    day0 = {c for c, n in _spread(fill_balanced(fifteen, cap0, 0)).items() if n == 2}
+    day5 = {c for c, n in _spread(fill_balanced(fifteen, cap0, 5)).items() if n == 2}
+    _check(failures, len(day0) == 5, "하루에 5채널만 2건을 갖는다", str(sorted(day0)))
+    _check(failures, day0 != day5, "day가 바뀌면 그 5채널이 달라진다", str(sorted(day5)))
+    union = day0 | day5
+    _check(failures, len(union) > 5, "여러 날에 걸쳐 더 많은 채널이 두 번째 슬롯을 받는다",
+           f"{len(union)}채널")
+
+    # --- 5. 위기 풀 ----------------------------------------------------------
+    print("\n5. 위기 풀 — 미달 시 직전 결과 유지 (API 소모 0)")
+    print("-" * 76)
+    crisis_pool = _pool([(f"위기채널{i}", 5, SERMON) for i in range(6)])
+    picked, cap, unlocked = select_crisis_videos(crisis_pool, day_of_year=0)
+    _check(
+        failures,
+        len(picked) == 20 and max(_spread(picked).values()) <= cap0 + 1,
+        "위기 풀도 채널 분산으로 20건을 채운다",
+        f"{len(picked)}건, 최다 {max(_spread(picked).values())}건, 상한 {cap}",
+    )
+
+    budget = QuotaBudget()
+    previous_ids = [f"이전{i}" for i in range(14)]
+    survivors = [_tagged(vid, "위기채널0", SERMON) for vid in previous_ids[:12]]
+    ctx = BuildContext(
+        themes=load_themes(ROOT / "themes.yaml"),
+        client=None,  # 유지 경로는 API를 부르지 않는다 — 부르면 여기서 터진다
+        budget=budget,
+        previous={
+            "crisis": {
+                "updated_at": "2026-08-17T00:00:00Z",
+                "source": "allowlist_crisis_eligible",
+                "videos": [{"videoId": vid} for vid in previous_ids],
+            }
+        },
+        allowlist=load_allowlist(ROOT / "channel_allowlist.yaml"),
+    )
+    result = _carry_over_crisis(ctx, survivors, kept=3, pool_size=3, now=datetime.now(timezone.utc))
+    _check(
+        failures,
+        result.carried_over and len(result.videos) == 12,
+        f"{CRISIS_MIN_VIDEOS}건 미달이면 직전 결과 중 생존분을 유지한다",
+        f"{len(result.videos)}건",
+    )
+    _check(
+        failures,
+        result.updated_at == "2026-08-17T00:00:00Z",
+        "updated_at을 갱신하지 않는다 (신선도 경보가 이어져야 한다)",
+        result.updated_at,
+    )
+    _check(failures, budget.spent == 0, "유지 경로에서 쿼터를 쓰지 않는다", f"{budget.spent} units")
+    types = {a.type for a in ctx.collector.alerts}
+    _check(failures, "crisis_carried_over" in types, "경보를 남긴다", str(sorted(types)))
+
+    empty_ctx = BuildContext(
+        themes=ctx.themes,
+        client=None,
+        budget=QuotaBudget(),
+        previous={},
+        allowlist=ctx.allowlist,
+    )
+    empty = _carry_over_crisis(empty_ctx, [], kept=0, pool_size=0, now=datetime.now(timezone.utc))
+    _check(
+        failures,
+        empty.videos == [] and "crisis_empty" in {a.type for a in empty_ctx.collector.alerts},
+        "유지할 직전 결과도 없으면 0건 + crisis_empty 경보",
+    )
+
+    # --- 6. 승인 목록 밖 채널 배제 ------------------------------------------
+    print("\n6. 승인이 취소된 채널의 영상은 직전 결과를 타고 살아남지 못한다")
+    print("-" * 76)
+    approved = ctx.allowlist.channels[0]
+    # 하나는 실제 승인 채널 ID로, 하나는 목록에 없는 ID로 둔다.
+    # 둘 다 필터를 통과한 상태 — 여기서 갈리는 것은 승인 여부뿐이다.
+    survivor = replace(
+        _tagged("살아남을영상", approved.channel_name, SERMON).video,
+        channel_id=approved.channel_id,
+    )
+    removed = _tagged("사라질영상", "승인취소된채널", SERMON).video
+    survivors, dropped = enforce_allowlist(ctx, [survivor, removed])
+    _check(
+        failures,
+        dropped == 1 and [v.video_id for v in survivors] == ["살아남을영상"],
+        "allowlist에서 빠진 채널의 영상이 제외된다",
+        f"생존 {len(survivors)}건 / 제외 {dropped}건",
+    )
+
+    # --- 7. 배포 전 무결성 단언 ---------------------------------------------
+    print("\n7. 무결성 단언 — 고장을 주입해 실제로 배포를 막는지 본다")
+    print("-" * 76)
+    shared = _tagged("겹치는영상", "채널A", SERMON)
+    theme = ThemeResult(
+        id="comfort",
+        label="위로",
+        picked=[shared],
+        pool_size=1,
+        max_per_channel=cap0,
+        per_channel_unlocked=False,
+    )
+    crisis = CrisisResult(
+        videos=[shared.to_json()],
+        updated_at="2026-08-19T00:00:00Z",
+        source="test",
+        carried_over=False,
+    )
+    try:
+        assert_disjoint([theme], crisis)
+        caught = ""
+    except IntegrityError as exc:
+        caught = str(exc)
+    _check(failures, "겹치는영상" in caught, "crisis와 주제가 같은 영상을 가지면 배포를 막는다",
+           caught.splitlines()[0][:60] if caught else "예외 없음")
+
+    broken = ThemeResult(
+        id="comfort",
+        label="위로",
+        picked=[
+            TaggedVideo(
+                video=shared.video,
+                themes=("comfort",),
+                hits=(),
+                media=MediaVerdict("podcast", "title"),  # 사전에 없는 형식
+            )
+        ],
+        pool_size=1,
+        max_per_channel=cap0,
+        per_channel_unlocked=False,
+    )
+    try:
+        assert_media_type_filled([broken])
+        caught = ""
+    except IntegrityError as exc:
+        caught = str(exc)
+    _check(
+        failures,
+        "media_type" in caught,
+        "media_type이 sermon/worship/unknown이 아니면 배포를 막는다",
+        caught.splitlines()[0][:60] if caught else "예외 없음",
+    )
+    assert_media_type_filled([theme])  # 정상 경로는 통과해야 한다
+    _check(failures, True, "정상 목록은 그대로 통과한다")
+
+    print("\n" + "=" * 76)
+    if failures:
+        print(f"실패 {len(failures)}건:")
+        for f in failures:
+            print(f"  - {f}")
+        return EXIT_FAIL
+    print("전부 통과")
+    return EXIT_OK
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

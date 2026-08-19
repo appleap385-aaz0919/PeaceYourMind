@@ -1,6 +1,6 @@
 # HANDOFF — 세션 인수인계
 
-작성 2026-08-18 (KST) · 개정 2026-08-18 (Phase 0 완료 — 채널 승인 15건) · 최신 상태는 `git log`로 확인할 것
+작성 2026-08-18 (KST) · 개정 2026-08-19 (Phase 2 배치 본체 `build_videos.py` 완성 — 드라이런까지, 실 API 미실행) · 최신 상태는 `git log`로 확인할 것
 
 > 이 문서는 **다음 세션이 바로 일을 이어받기 위한 것**이다.
 > 정책·구조는 `PLAN.md`, 주제 체계는 `themes.yaml`, 원문 출처는 `data/krv/SOURCE.md`에 있고
@@ -24,7 +24,7 @@
 | 0 정책·채널 | **완료** — 승인 15건 등록. 1c 대조 완료, 제외 1건 기록 |
 | 1 구절 큐레이션 | **완료** — 250구절 (감정 240 + 위기 10). 24개 세분류 전부 10건 이상 |
 | 1.5 검증·추출 파이프라인 | **완료** — 이번 세션 산출물 (`verify_verses.py` + `fill_verses.py`) |
-| 2 배치 개작 | **진행 중** — 도구·lib 이식 완료. 채널 승인이 끝나 `build_videos.py` 착수 가능 |
+| 2 배치 개작 | **코드 완료 · 실행 미착수** — `build_videos.py` + 태깅/선정 테스트 2종. 드라이런 전 과정 통과, **실제 API로는 아직 한 번도 안 돌렸다** |
 | 3 PWA 조립 | 미착수 |
 
 **규모**
@@ -41,9 +41,14 @@
             15는 MIN_ALLOWLIST_SIZE와 **같다** — 한 건만 빠져도 경보가 뜬다
 ```
 
-**게이트** — `python scripts/verify_verses.py --check` → 종료 코드 0.
-250건 전건 원문 일치 + `verified: true` + 위기/감정 풀 분리 단언 통과.
-`python scripts/fill_verses.py --verify` → 추출 경로 250/250 재현. API 소모 0.
+**게이트** — 넷 다 종료 코드 0 (2026-08-19 확인). API 소모 0.
+
+```
+python scripts/verify_verses.py --check   250건 원문 일치 + verified + 위기/감정 분리
+python scripts/fill_verses.py --verify    추출 경로 250/250 재현
+python scripts/tagging_test.py            주제·형식 판별 + themes.yaml 게이트 6종 고장 테스트
+python scripts/spread_test.py             채널 분산·형식 균형·위기 유지 + 무결성 단언 고장 테스트
+```
 
 ---
 
@@ -485,24 +490,176 @@ PYM이 그 채널의 영상을 수집하는 이상 그 행사 영상이 풀에 �
 잘못된 `content_type` / ID 중복. 전부 차단됐다. 특히 첫 번째는 2.8절에서 고친
 `_is_blank()`가 실제로 작동하는지를 본 것이다(FYM에는 아직 이 결함이 있다 — 4.3절).
 
+### 2.12 Phase 2 배치 본체 — build_videos.py (2026-08-19)
+
+**수집 구조가 FYM과 근본적으로 다르다.** FYM은 카테고리마다 검색이 달라
+`videos.list`를 카테고리별로 불렀다. PYM의 후보는 채널 업로드 하나뿐이고
+주제는 그 **뒤에** 제목으로 갈린다. 그래서 검증은 전체 후보에 대해 한 번만 돌고
+태깅은 API 없이 그 결과 위에서 한다.
+
+```
+채널 15개 → channels.list 1회 → uploads 재생목록 → playlistItems 채널당 2페이지
+          → videos.list (전체 후보 1회 통과) → 필터 → 제목 태깅 → 주제별 선정
+드라이런 실측  후보 1,138 → 확보 770 → 태깅 633 / 미태깅 137(18%) → 주제 23개 448건
+쿼터          예상 61 / 실측 50 units  (예상은 응답 없는 채널을 모르므로 보수적 상한)
+```
+
+**`playlistItems.list`에 페이지네이션을 넣었다** (`lib/youtube.py`). 없던 기능이다.
+채널당 100건(2페이지)을 기본으로 잡은 이유는 쇼츠다 — CTS·CBSJOY·극동방송·
+ANOINTING은 발굴 표본 10건 중 절반 이상이 3분 미만이었고, 50건만 읽으면 그런
+채널의 잔존이 한 자릿수로 떨어져 "목록에 있으나 실질적으로 없는 채널"이 된다.
+**채널당 1 unit을 더 쓰는 쪽이 길이 필터를 푸는 것보다 옳다** (기준 4 개정 2.9절과 같은 판단).
+
+**회전(rotation) 판단이 FYM 일반 카테고리와 반대다.** FYM은 넣었다가 되돌렸고
+PYM은 넣었다. 어휘가 아니라 **채널 목록의 성격이 다르기 때문**이다.
+
+```
+FYM 일반  검색 관련성 순으로 늘어선 50~80채널, 슬롯 20
+          → 회전은 "관련성 상위 채널을 통째로 건너뛰기"가 된다
+PYM       사람이 승인한 15채널, 슬롯 20. 전원이 동등한 자격이다
+          → 슬롯 > 채널이라 회전은 "전원이 돌아가며 들어온다"가 된다
+          그런데 상한 3 × 15채널 = 45 > 20이라 뒤쪽 채널은 2바퀴에 못 든다
+```
+즉 FYM **위기 카테고리**와 같은 상황이고, 거기서 회전이 하던 일을 여기서 한다.
+
+**테스트가 라운드로빈의 공평성 결함을 잡았다.** 형식 균형 때문에 한 주제에서
+라운드로빈을 여러 번 부르는데, 앞선 호출에서 1건씩 받은 채널이 다음 호출에서도
+앞자리를 지켜 **뒤쪽 채널이 0건이 됐다.**
+
+```
+15채널 × 2건(말씀만) 실측   고치기 전  앞 10채널이 2건씩 20슬롯을 다 가져감, 뒤 5채널 0건
+                            고친 뒤    5채널 2건 + 10채널 1건
+```
+매 바퀴 "지금까지 적게 뽑힌 채널부터"로 정렬해 고쳤다. **한 호출 안에서만
+공평한 것으로는 부족하다** — 회전을 넣은 이유가 승인 채널 전원을 목록에
+넣는 것이기 때문이다. 드라이런에서도 주제당 채널 수가 10~11 → 12~13으로 늘었다.
+
+**형식 균형은 요구사항을 한 걸음 넘겼다.** HANDOFF 3절이 배치에 요구한 것은
+"리포트에 주제 × media_type 분포를 남기는 것"이었다. 그런데 리포트만 남기면
+풀에 찬양이 있는데도 상한·순서 때문에 20슬롯 밖으로 밀려 **매일 "찬양 0"을
+보고만 하게 된다.** 그래서 선정 자체를 형식별로 나눴다(말씀 10 / 찬양 10 →
+남는 쪽이 나머지). 한쪽뿐인 주제는 그대로 20건을 채우므로 균형이 상한이 되지 않는다.
+
+`unknown`에는 별도 몫을 두지 않았다. **양쪽 토글 모두에 노출되므로 어느 쪽의
+빈 화면도 만들지 않기 때문**이다. 경보(`media_type_gap`)도 원자료가 아니라
+토글 기준으로 판정한다 — sermon 0건이어도 unknown이 있으면 화면은 비지 않는다.
+
+**드라이런의 역할이 FYM과 달라져서 DryRunClient를 손봤다.** FYM 드라이런은
+필터·쿼터만 보면 됐지만 PYM은 **제목으로 주제와 형식을 가른다.** 제목이 전부
+"[dry-run] 잔잔한 영상"이면 태깅·판별 경로가 한 줄도 실행되지 않고 전건이
+untagged로 떨어져, 리포트가 배치의 실제 동작을 보여주지 못한다. 셋을 고쳤다.
+
+- `title_pool` — 주제 사전에서 합성한 제목 + 어느 주제에도 안 걸리는 제목 4종
+- `playlist_items`가 만든 videoId → 그 채널로 귀속 (실제 API의 uploads 재생목록과
+  같은 성질). 없으면 채널별 잔존 건수 리포트를 검증할 수 없다
+- 길이·업로드 시각 분산 — 30분↑/10분↓/중간 세 구간이 다 나와야 길이 신호가 실행된다
+
+⚠ **이것은 판별 규칙의 검증이 아니다.** 사전에서 만든 제목이라 당연히 걸린다.
+규칙의 정오는 `tagging_test.py`가 손으로 쓴 제목으로 본다. 드라이런이 보는 것은
+파이프라인이다.
+
+⚠ **드라이런에서 채널 2개가 "접근 불가"로 뜨는 것은 합성이다.** DryRunClient가
+채널 ID 해시 끝자리로 삭제 채널을 흉내 내는 것이고(경보 경로 검증용),
+실제 CTS·CBSJOY에 문제가 있는 것이 아니다.
+
+**제목 장절 패턴에 방어를 두 겹 넣었다.** `BOOK_KEYS`에는 1음절 약어가 많아
+(행·요·사·시…) 그대로 쓰면 일상어에 걸린다.
+
+```
+(?<![가-힣])  앞 글자가 한글이면 매칭 안 함   "여행 12장" → 사도행전으로 잡히던 것
+숫자 뒤 표지 필수 (: · 장 · 편 · 범위)       "감사 3가지 이유" → 이사야로 잡히던 것
+```
+
+**영문 키워드는 단어 경계로만 맞춘다.** themes.yaml이 `QT`에 명시적으로 요구한
+규칙이다. 대신 **"Q.T." 표기는 놓친다** — 점이 경계가 되어 갈린다. 오탐과 미탐 중
+미탐을 고른 것이고, 그것이 themes.yaml의 요구다.
+
+**`--only`는 쿼터를 줄이지 않는다.** FYM에서는 카테고리별 검색이라 줄었지만
+PYM은 수집이 채널 단위라 어느 주제를 고르든 같은 영상을 받아온다.
+태깅·선정 결과만 좁혀 보는 옵션이다 (도움말에 적어 뒀다).
+
+**제목 용어 blocklist는 비어 있다 — 알고 비운 것이다.** `apply_filters`에 인자
+자리는 뒀지만 PYM은 넘기지 않는다. 전면 화이트리스트에서는 제목 필터의 역할이
+작고 사전을 급히 만들면 정상 영상을 떨어뜨리는 쪽이 더 큰 위험이라는 판단이
+`suggest_channels.py`(성격 신호어) 때와 같다. **배치가 매 실행 로그로 이 사실을
+말한다.** Phase 3에서 FYM taxonomy.yaml을 이식하면 그 사전이 그대로 들어올 자리다.
+
+**본체는 오케스트레이션만 남겼다.** 한 파일에 다 쓰니 1,443줄이 됐고(FYM은 1,214),
+단계별 로직을 `lib/`으로 갈랐다 — `collect` · `selection` · `crisis` · `report` ·
+`results`(자료형). 파일당 120~340줄이고 본체는 767줄이다. `results.py`를 따로 둔 것은
+순환 의존 때문이다 — 네 모듈이 같은 자료형을 주고받는다.
+**`selection.py`가 특히 독립 모듈일 값이 있다** — 채널 분산·형식 균형 규칙이
+한 곳에 모여 있고, `spread_test.py`가 그 파일만 상대로 편중된 풀을 던진다.
+
+**themes.yaml 빌드 검증 6종을 로더에서 한다.** 호출을 잊는 실패 모드를 없애려고
+`load_themes()` 안에 넣었고, 6종 전부 고장을 주입해 실제로 막히는지 확인했다.
+검증 1(mapping ↔ taxonomy 대조)만 **건너뛴다** — taxonomy.yaml이 Phase 3에서
+들어오기 때문이고, 건너뛴 사실을 로그로 남긴다.
+
 ---
 
-## 3. 다음 세션 할 일 — Phase 2 배치 개작
+## 3. 다음 세션 할 일 — 배치 첫 실행과 워크플로
 
 ### 순서
 
 ```
-1. (c) 이단 규정 목록 대조        완료 (2026-08-18) — 시트 channel_criterion_c.20260818.md
-2. 승인 채널 등록                 완료 (2026-08-18) — allowlist 15개 · reviewed_out 1건 추가
-3. Phase 2 배치 개작              build_videos.py — ★ 여기서 시작한다
+1. (c) 이단 규정 목록 대조     완료 (2026-08-18) — channel_criterion_c.20260818.md
+2. 승인 채널 등록              완료 (2026-08-18) — allowlist 15개 · reviewed_out 1건
+3. build_videos.py 작성        완료 (2026-08-19) — 드라이런 전 과정 통과, 테스트 2종
+4. **실제 API 첫 실행**        ★ 여기서 시작한다 (약 60 units, 사용자 승인 필요)
+5. GitHub Actions 워크플로     build.yml / deploy-app.yml (FYM 2종 이식)
+6. Phase 3 PWA 조립           taxonomy.yaml 이식이 여기서 들어온다
 ```
 
-**막고 있던 것이 풀렸다.** 화이트리스트가 15개로 채워져 배치가 수집할 대상이 생겼다.
-다음 세션은 3번부터 시작하면 된다.
+### 4. 실제 API 첫 실행 — 무엇을 보려고 도는가
 
-**다만 15는 하한선과 같다** (`MIN_ALLOWLIST_SIZE = 15`). 한 건이라도 빠지면
-`allowlist_undersized` 경보가 뜬다. 배치를 돌리다 채널이 빠질 사유(폐쇄·성격 변화)가
-생기면 즉시 걸리므로, 3차 발굴로 여유를 만드는 것을 배치 안정화 이후 과제로 둔다.
+드라이런은 합성 데이터라 **파이프라인이 도는지**만 봤다. 실제 실행에서만
+알 수 있는 것이 셋이다.
+
+```
+① 채널별 필터 후 잔존 건수   쇼츠 비중이 높은 4채널(CTS·CBSJOY·극동방송·ANOINTING)이
+                            100건을 읽어도 몇 건이 남는가. 0이면 그 채널은 목록에만 있다
+② 주제별 확보량             23개 주제 중 몇 개가 하한 15건에 닿는가.
+                            themes.yaml title_keywords가 실제 제목과 맞는지가 여기서 갈린다
+③ 미태깅 비율과 그 분포      어느 채널에 몰려 있는가. 특정 채널에 쏠리면 사전이 아니라
+                            그 채널의 승인 근거를 다시 봐야 한다 (themes.yaml 원칙)
+```
+
+**명령과 예상 쿼터** (승인 후 실행)
+
+```bash
+$env:YOUTUBE_API_KEY="..."          # Actions Secret은 러너 전용이라 로컬에 안 잡힌다
+python scripts/build_videos.py --out-dir dist
+#   channels.list       1회 ×  1 =  1
+#   playlistItems.list 30회 ×  1 = 30   (15채널 × 2페이지)
+#   videos.list        30회 ×  1 = 30   (1,500건 ÷ 50, 보수적 상한)
+#   ------------------------------------
+#   예상 61 units / 일일 상한 9,500
+```
+
+첫 실행은 `--previous` 없이 돈다(직전 결과가 없다). 두 번째 실행부터
+`--previous dist/videos.json`을 붙이면 업로드 창 밖으로 밀려난 영상이 풀에 남는다.
+
+**실행 후 반드시 볼 것** — `dist/build_report.json`의 `channels`(채널별 수집→잔존→
+태깅→선정)과 `themes[].visible_by_toggle`. 리포트는 사람이 읽으라고 만든 것이고,
+위 ①②③이 그 두 곳에 그대로 들어 있다.
+
+**결과가 나쁠 때 고칠 순서** — 사전이 먼저가 아니다.
+1. 채널별 잔존이 낮다 → `--uploads-per-channel`을 올린다 (채널당 1 unit)
+2. 특정 주제만 얇다 → 그 주제의 `title_keywords`를 실제 제목과 대조한다
+3. 전반적으로 얇다 → 3차 발굴로 채널을 늘린다 (아래)
+
+### 5. GitHub Actions 워크플로 2종
+
+FYM `build.yml` / `deploy-app.yml`을 이식한다. PYM에서 달라지는 것.
+
+- cron은 **PT 자정 직후** (쿼터 리셋 기준). 예약값 200은 이미 `quota_log`에 반영돼 있다
+- 배포 전 게이트에 `verify_verses.py --check`를 건다 — `verified: false`가 하나라도
+  있으면 배포되지 않는다
+- 테스트 2종(`tagging_test.py`·`spread_test.py`)도 같은 단계에 넣는다. 네트워크를
+  쓰지 않으므로 러너에서 그대로 돈다
+- 배치 실패 시 배포 단계를 건너뛴다 → 직전 `videos.json`이 그대로 유지된다
+  (원자성은 배치가 이미 보장하지만, 워크플로도 같은 방향이어야 한다)
 
 ### 실행 환경 — 로컬 셸에 API 키가 필요하다
 
@@ -510,20 +667,17 @@ PYM이 그 채널의 영상을 수집하는 이상 그 행사 영상이 풀에 �
 export YOUTUBE_API_KEY="..."        # PowerShell: $env:YOUTUBE_API_KEY="..."
 ```
 
-**Actions Secret은 러너 전용이라 로컬 실행에는 잡히지 않는다.** 키는 발급·등록
-완료 상태이고, 로컬에서 `suggest_channels.py`를 돌릴 때만 환경변수가 필요하다.
-`gen_verses_json.py`·`verify_verses.py`·`fill_verses.py`는 API를 쓰지 않으므로
-키 없이 돈다.
+**Actions Secret은 러너 전용이라 로컬 실행에는 잡히지 않는다.**
+`gen_verses_json.py`·`verify_verses.py`·`fill_verses.py`·테스트 2종은 API를
+쓰지 않으므로 키 없이 돈다.
 
-**오늘(PT 2026-08-18) API 누적 1,324 units** — 1차 발굴 661 + 2차 발굴 661 +
-채널 설명 확인 2(`quota_log` 미기록분). 일일 상한 9,500 대비 여유 8,176.
-**쿼터는 태평양 자정에 리셋되므로 다음 날에는 0에서 시작한다.**
-`.quota_log.json`은 커밋하지 않는다(기기마다 다름).
+**API 누적** — 2026-08-18(PT) 1,324 units(발굴 2회 + 채널 확인).
+**2026-08-19 세션은 소모 0** — 전부 드라이런이었다.
+쿼터는 태평양 자정에 리셋된다. `.quota_log.json`은 커밋하지 않는다(기기마다 다름).
 
 ### 1·2. 채널 승인 — 완료 (2026-08-18)
 
-기준 1c 대조와 등록을 이 세션에서 끝냈다. 경위는 2.11절, 사실과 출처는
-`channel_criterion_c.20260818.md`에 있고 여기서 반복하지 않는다.
+기준 1c 대조와 등록은 2.11절, 사실과 출처는 `channel_criterion_c.20260818.md`에 있다.
 
 **등록 15건** — `channel_allowlist.yaml`
 
@@ -535,8 +689,16 @@ export YOUTUBE_API_KEY="..."        # PowerShell: $env:YOUTUBE_API_KEY="..."
          극동방송 · 광주극동방송
 
 content_type     sermon 6 · mixed 5 · devotion 2 · worship 2
+                 → media_type 판별 1순위다. sermon/worship/devotion 채널은
+                   제목을 보지 않고 확정되므로, 실제 판별 대상은 mixed 5개다
 crisis_eligible  전건 false — 위기 풀은 정신건강·상담 사역 중심의 별도 기준이다(PLAN 7절)
+                 → 배치가 매 실행 crisis_no_channels + crisis_empty 경보를 낸다.
+                   **결함이 아니라 의도된 안전 동작이다.** 위기 화면은 상담 안내만 뜬다
 ```
+
+**15는 하한선과 같다** (`MIN_ALLOWLIST_SIZE = 15`). 한 건이라도 빠지면
+`allowlist_undersized` 경보가 뜬다. 배치를 돌리다 채널이 빠질 사유(폐쇄·성격 변화)가
+생기면 즉시 걸리므로, 3차 발굴로 여유를 만드는 것을 배치 안정화 이후 과제로 둔다.
 
 **제외 1건** — `channel_reviewed_out.yaml`, 연세중앙교회, `criterion: "1c"`,
 `recheckable: true`. 재검토 조건은 **예장합신 제85회(2000) 결의 원문 확인**이다.
@@ -552,48 +714,15 @@ crisis_eligible  전건 false — 위기 풀은 정신건강·상담 사역 중�
 - `affiliation` / `affiliation_verified`가 비면 로더가 실패한다. 근거 없는 승인을
   구조로 막아 둔 것이고, 고장 테스트로 실제 차단을 확인했다(2.11절).
 - `affiliation_verified`에는 a·b·c를 무엇으로 확인했는지 **URL을 포함해** 적는다.
-  등록된 15건이 그 형식의 실제 예시다.
 - **`channel_id`는 이름이 아니라 채널 설명의 고유 표지로 대조한다.** 동명 채널이
   실재하고, 그중에는 아예 다른 교회도 있다. 금지 ID 3건은 allowlist 헤더에 있다.
-
-### 3. 배치 본체 — build_videos.py
-
-`PLAN.md` 8절의 Phase 2. FYM `build_videos.py` 골격을 가져와 search를 제거하고
-재생목록 수집 + 주제 태깅으로 교체한다. **화이트리스트 15개가 채워져 착수 조건이 갖춰졌다.**
-
-수집 대상은 아래 15개다. `content_type`이 리포트 분류축이 된다.
-
-```
-sermon   6  오륜교회 · 꿈의교회 · 낮은담교회 · 우리들교회 · 베이직교회 · CBS설교
-mixed    5  CTS기독교TV · CGN · CBSJOY · 극동방송 · 광주극동방송
-devotion 2  CGN 생명의 삶 · CGN 성경통독
-worship  2  ANOINTING · 옹기장이선교단
-```
-
-> **쇼츠 비중이 높은 채널이 섞여 있다** — CTS·CBSJOY·극동방송·ANOINTING은
-> 발굴 표본 10건 중 절반 이상이 3분 미만이었다. 기준 4 개정(2.9절)에 따라
-> 채널은 통과시키되 **영상 단위 길이 하한 필터로 거른다**는 전제이므로,
-> 첫 드라이런에서 **채널별 수집 후 잔존 건수**를 반드시 리포트에 남길 것.
-> 어떤 채널이 필터 후 0건이 되면 그 채널은 실질적으로 목록에 없는 것과 같고,
-> 유효 채널 수가 15 아래로 떨어지는 것과 같은 의미다.
-
-**media_type 판별도 여기서 구현한다.**
-
-```
-설계   완료 (2.10절 · PLAN 3.4 · themes.yaml media_types/media_defaults)
-구현   미착수 — Phase 2 배치가 videos.json에 media_type을 채워 넣는다
-UI     Phase 3 — [말씀]/[찬양] 토글은 앱 기능이다
-```
-
-판별 신호·사전·기본값은 전부 `themes.yaml`에 있고 쿼터는 늘지 않는다.
-배치가 추가로 할 일은 **리포트에 주제 × media_type 분포를 남기는 것**이다 —
-한쪽이 0이면 토글을 눌러도 빈 화면이 나온다.
 
 ### 3차 발굴이 필요하면
 
 **지금 당장은 필요 없다** — 15개로 하한을 채웠다. 다만 하한선과 같아 여유가 없으니,
 배치가 안정된 뒤 20~30개(PLAN 목표 규모)로 올리는 작업이 남아 있다.
-위 드라이런에서 필터 후 0건인 채널이 나오면 그때가 3차 발굴 시점이다.
+**첫 실제 실행의 채널별 잔존 표에서 0건인 채널이 나오면 그때가 3차 발굴 시점이다**
+— 드라이런 숫자로는 판단할 수 없다(합성 데이터라 채널마다 고르게 남는다).
 
 `--query-set`으로 세트를 고른다. 1·2차 검색어는 보존돼 있다.
 3차를 짤 때는 **1·2차와 다른 갈래**여야 한다 — 2차에서 중복이 3건뿐이었던 것은
@@ -619,6 +748,10 @@ UI     Phase 3 — [말씀]/[찬양] 토글은 앱 기능이다
 **`suggest_channels.py`** — FYM 이식 + PYM 고유 변경.
 `lib/`에 quota · quota_log · youtube · actions_status · normalize ·
 channel_blocklist를 이식했고 allowlist는 PYM 필드로 새로 썼다.
+
+**`build_videos.py` + `lib/themes.py`·`tagging.py`·`filters.py`·`alerts.py`**
+(2026-08-19). 일일 배치 본체와 그 부품이다. 드라이런 전 과정 통과,
+테스트 2종(`tagging_test.py`·`spread_test.py`) 통과. 경위는 2.12절.
 
 ### 변함없는 원칙
 
@@ -720,17 +853,25 @@ FYM도 `suggest_channels.py`로 후보를 계속 추가하는 구조라 언제�
 
 ## 5. 하지 않은 것 (범위 밖이었음을 명시)
 
-- YouTube API 관련 일체 — 이번 세션 API 소모 **0** (채널 확인도 공개 페이지로 했다)
-- 배치·앱 코드 — `scripts/`에는 아직 검증·발굴 스크립트만 있다
+- **실제 API 실행 — 이번 세션도 소모 0이다.** `build_videos.py`는 드라이런으로만
+  돌렸다. 합성 데이터라 채널별 잔존·주제별 확보량·미태깅 분포는 **아무것도 모른다**.
+  3절 4번이 그 실행이고, 승인을 받아야 돈다
+- **제목 용어 blocklist** — `apply_filters`에 자리만 뒀고 비워 뒀다(2.12절).
+  Phase 3에서 FYM taxonomy.yaml을 이식하면 들어온다
+- **taxonomy.yaml(감정 체계) 이식** — Phase 3 몫이다. 그래서 themes.yaml 빌드
+  검증 1번(mapping ↔ 세분류 대조)이 아직 건너뛰기 상태다
+- 앱 코드 — `app/`에는 `verses.json`만 있다
 - `verses.yaml`의 `note`·선정 판단 변경 — 본문 `text`만 고쳤다
-- `build_videos.py` — 일일 배치 본체 (FYM 골격 + 재생목록 수집 + 주제 태깅)
 - **1c 대조의 미완 부분** — 합동·합신·기감·기침의 이단 규정 목록을 1차 자료로
   전수 대조하지 못했다. 공개된 통합 목록을 찾지 못해서다. 승인 15건은 그 한계를
   전제로 한 판단이고, 시트 1절이 경계를 명시한다
 - **연세중앙교회 재검토** — 합신 85회 결의 원문 확인은 웹으로 풀리지 않았다.
   총회에 직접 조회해야 한다
-- GitHub Actions 워크플로 2종 (build / deploy-app)
-- `themes.yaml` 수정 — 개별 구절 채택에서 intent와 어긋난 판단을 여러 번
+- GitHub Actions 워크플로 2종 (build / deploy-app) — 3절 5번
+- `themes.yaml` 수정 — 이번 세션도 **읽기만 했다.** 태깅·판별 상수(주제당 15~20건,
+  채널당 3, 미태깅 경보 임계)는 코드에 뒀다. themes.yaml은 큐레이션 문서라
+  배치 튜닝 값을 섞으면 두 종류의 변경이 한 파일에서 뒤엉킨다 (lib/themes.py 주석)
+- `themes.yaml` 주제 정의 수정 — 개별 구절 채택에서 intent와 어긋난 판단을 여러 번
   했지만(빌 4:13 제외, `self_control`을 "쏟아냄"으로 해석, 잠언 분노 구절
   대부분 제외) 주제 정의는 건드리지 않았다. 근거는 각 `note`에 있다
 
@@ -754,12 +895,25 @@ data/krv/
   SOURCE.md                  출처·채택 근거·갱신 절차
 
 scripts/
+  build_videos.py            **일일 배치 진입점** — 오케스트레이션 + CLI (단계별 로직은 lib)
   verify_verses.py           본문 대조 + verified 갱신 + --check 게이트
   fill_verses.py             빈 text를 원문에서 추출해 채움 + --verify 경로 검증
   gen_verses_json.py         verses.yaml -> verses.json (앱 번들, crisis 최상위 분리)
   suggest_channels.py        채널 후보 발굴 — search를 쓰는 유일한 스크립트 (월 1회)
+  tagging_test.py            주제·형식 판별 + themes.yaml 게이트 6종 (고장 주입)
+  spread_test.py             채널 분산·형식 균형·위기 유지·무결성 단언 (고장 주입)
   requirements.txt           PyYAML · requests
+  lib/themes.py              themes.yaml 로더 + 빌드 검증 6종 + 선정 정책 상수
+  lib/tagging.py             제목 → 주제 / media_type 판별 (API 0)
+  lib/collect.py             승인 채널 → uploads → 후보 + 승인 목록 밖 배제
+  lib/selection.py           채널 분산 + 형식 균형 선정 (spread_test.py가 검증)
+  lib/crisis.py              위기 풀 — 먼저 확정, 미달 시 직전 결과 유지
+  lib/report.py              videos.json · version.json · build_report.json 기록
+  lib/results.py             위 모듈들이 주고받는 자료형 (순환 의존 방지)
+  lib/filters.py             videos.list 응답 필터 (이용불가·지역·길이·쇼츠·차단채널)
+  lib/alerts.py              자동 경보 정의 (FYM 이식 + PYM 고유 5종)
   lib/krv_source.py          원문 로더 · 책 이름 매핑 · ref 파서 · 절 합본 방어
+                             → BOOK_KEYS를 tagging.py가 장절 패턴에 재사용한다
   lib/verses_io.py           verses.yaml 라인 단위 in-place 편집 (주석 보존)
   lib/allowlist.py           channel_allowlist.yaml 로더 (PYM 필드 확장)
   lib/channel_blocklist.py   channel_blocklist.yaml 로더
@@ -767,8 +921,14 @@ scripts/
   lib/quota.py               쿼터 회계 · 비용표 · 배치 예상량
   lib/quota_log.py           일일 누적 기록 (PT 기준, PYM 예약값 200)
   lib/youtube.py             API 클라이언트 + 드라이런 클라이언트
+                             (playlistItems 페이지네이션 · 드라이런 제목/채널 귀속)
   lib/actions_status.py      Actions 배치 실행 여부 조회 (gh, 쿼터 0)
-  lib/normalize.py           문자열 정규화 (신호어 매칭용)
+  lib/normalize.py           문자열 정규화 (한글 키워드 매칭용)
+
+dist/                        배치 산출물 (커밋 대상 아님)
+  videos.json                앱이 받는 파일 — 주제별 목록 + crisis 최상위
+  version.json               앱이 "새 데이터가 있나"만 확인하는 경량 파일
+  build_report.json          **사람이 읽는 리포트** — 채널별 기여·주제별 분포·경보
 ```
 
 **쓰는 법**
@@ -781,10 +941,19 @@ python scripts/verify_verses.py --check   # 검사만. CI 빌드 게이트용 (�
 python scripts/gen_verses_json.py         # 앱 번들 생성 (API 0)
 python scripts/suggest_channels.py --query-set institution --dry-run
                                           # 채널 발굴 (실행 시 661 units)
+
+python scripts/build_videos.py --dry-run  # 배치 전 과정 검증 (API 0)
+python scripts/build_videos.py            # 실제 배치 (약 60 units)
+python scripts/tagging_test.py            # 판별 규칙 (API 0)
+python scripts/spread_test.py             # 선정 로직 (API 0)
 ```
 
 큐레이션 흐름은 `fill_verses.py` -> `verify_verses.py` 순이다.
 앞이 본문을 만들고 뒤가 안전망으로 받는다.
 
-Phase 2에서 CI에 넣을 때는 `--check`를 배포 전 단계에 건다.
+배치 흐름은 `build_videos.py --dry-run` -> (승인) -> `build_videos.py`다.
+드라이런과 실제 실행은 **산출물 이름이 갈린다**(`videos.dry-run.json`) —
+드라이런이 실제 파일을 덮지 않는다.
+
+워크플로에 넣을 때는 배포 전 단계에 `verify_verses.py --check`와 테스트 2종을 건다.
 `verified: false`가 하나라도 있으면 배포되지 않는다.

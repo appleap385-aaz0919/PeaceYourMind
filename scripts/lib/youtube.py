@@ -125,21 +125,41 @@ class YouTubeClient:
         return items
 
     def playlist_items(self, playlist_id: str, limit: int) -> list[str]:
-        """uploads 재생목록에서 최신 videoId를 읽는다 (채널당 1 unit)."""
-        self._budget.charge("playlistItems.list")
-        payload = self._get(
-            "playlistItems",
-            {
+        """uploads 재생목록에서 최신 videoId를 limit건까지 읽는다 (**페이지당 1 unit**).
+
+        한 페이지는 50건이라 limit이 그보다 크면 pageToken으로 이어 받는다.
+        PLAN.md 6절의 "채널별 업로드 1~2페이지"가 이 경로다 — 배치 기본값은
+        채널당 100건(2페이지)이고, 그래도 채널당 2 units다.
+
+        [왜 페이지를 이어 받아야 하는가]
+          쇼츠 비중이 높은 채널이 승인 목록에 있다(CTS·CBSJOY·극동방송·ANOINTING).
+          한 페이지 50건 중 40건이 3분 미만이면 잔존이 10건뿐이라, 그 채널은
+          목록에 있으나 실질적으로 없는 상태가 된다. 페이지를 늘리는 것이
+          길이 필터를 푸는 것보다 옳은 해법이다 (기준 4 개정, HANDOFF 2.9절).
+
+        limit을 넘겨 받은 항목은 잘라낸다 — 마지막 페이지가 넘칠 수 있다.
+        """
+        collected: list[str] = []
+        page_token: str | None = None
+        while len(collected) < limit:
+            self._budget.charge("playlistItems.list")
+            params: dict[str, Any] = {
                 "part": "contentDetails",
                 "playlistId": playlist_id,
-                "maxResults": min(limit, BATCH_SIZE),
-            },
-        )
-        return [
-            item["contentDetails"]["videoId"]
-            for item in payload.get("items", [])
-            if item.get("contentDetails", {}).get("videoId")
-        ]
+                "maxResults": min(limit - len(collected), BATCH_SIZE),
+            }
+            if page_token:
+                params["pageToken"] = page_token
+            payload = self._get("playlistItems", params)
+            collected.extend(
+                item["contentDetails"]["videoId"]
+                for item in payload.get("items", [])
+                if item.get("contentDetails", {}).get("videoId")
+            )
+            page_token = payload.get("nextPageToken")
+            if not page_token:
+                break
+        return collected[:limit]
 
     # --- HTTP ---------------------------------------------------------------
     def _get(self, endpoint: str, params: dict[str, Any]) -> dict[str, Any]:
@@ -301,9 +321,28 @@ class DryRunClient:
     (중복 제거 로직 검증용).
     """
 
-    def __init__(self, budget: QuotaBudget, blocklist_pool: Sequence[str]) -> None:
+    def __init__(
+        self,
+        budget: QuotaBudget,
+        blocklist_pool: Sequence[str],
+        title_pool: Sequence[str] | None = None,
+    ) -> None:
         self._budget = budget
         self._pool = list(blocklist_pool) or ["자살"]
+        # 정상 영상의 제목 풀. 비워두면 예전처럼 무의미한 제목을 쓴다.
+        #
+        # build_videos.py가 여기에 실제와 비슷한 제목을 넣는다. 이유는 PYM에서
+        # 드라이런의 역할이 달라졌기 때문이다 — FYM 드라이런은 필터·쿼터만 보면
+        # 됐지만, PYM은 **제목으로 주제와 형식을 가른다.** 제목이 전부
+        # "[dry-run] 잔잔한 영상"이면 태깅·media_type 경로가 한 줄도 실행되지 않고
+        # 모든 영상이 untagged로 떨어져, 리포트가 배치의 실제 동작을 보여주지 못한다.
+        # (판정 규칙 자체의 정오는 드라이런이 아니라 tagging_test.py가 본다.)
+        self._titles = list(title_pool or [])
+        # playlistItems로 만든 videoId가 어느 채널에서 나왔는지 기억한다.
+        # 실제 API는 uploads 재생목록이 그 채널 영상만 담으므로 snippet.channelId가
+        # 항상 그 채널이다. 드라이런이 무작위 채널을 주면 채널별 잔존 건수 리포트가
+        # 검증 불가능해진다 — 그 리포트가 이번 Phase의 요구사항이라 맞춰 둔다.
+        self._source_channel: dict[str, str] = {}
 
     def search_items(self, query: str) -> list[dict[str, Any]]:
         self._budget.charge("search.list")
@@ -363,8 +402,17 @@ class DryRunClient:
         return items
 
     def playlist_items(self, playlist_id: str, limit: int) -> list[str]:
-        self._budget.charge("playlistItems.list")
-        return [self._video_id(playlist_id, i) for i in range(limit)]
+        # 실제 클라이언트와 같은 페이지 회계 — 50건마다 1 unit.
+        pages = max(1, -(-limit // BATCH_SIZE))
+        self._budget.charge("playlistItems.list", pages)
+        ids = [self._video_id(playlist_id, i) for i in range(limit)]
+        # uploads 재생목록 UUxxxx → 채널 UCxxxx (YouTube 규약이자 이 모듈의
+        # channels()가 만드는 형식이다).
+        if playlist_id.startswith("UU"):
+            channel_id = "UC" + playlist_id[2:]
+            for vid in ids:
+                self._source_channel[vid] = channel_id
+        return ids
 
     # --- 생성기 -------------------------------------------------------------
     @staticmethod
@@ -378,9 +426,9 @@ class DryRunClient:
         if 30 <= bucket <= 33:
             return None  # 삭제됨
 
-        title = f"[dry-run] 잔잔한 영상 {video_id[:5]}"
+        title = self._normal_title(video_id)
         privacy = "public"
-        duration = "PT12M34S"
+        duration = _fake_duration(video_id)
         region: dict[str, Any] = {}
 
         if bucket < 20:
@@ -399,14 +447,22 @@ class DryRunClient:
         if bucket % 3 != 0:  # 3의 배수는 댓글 사용 중지로 둔다
             statistics["commentCount"] = str(bucket)
 
+        # 재생목록에서 나온 영상이면 그 채널을, 검색에서 나온 영상이면 가짜 풀을 쓴다.
+        channel_id = self._source_channel.get(video_id) or _fake_channel_id(video_id)
+        channel_title = (
+            f"[dry-run] {channel_id[:10]}"
+            if video_id in self._source_channel
+            else _fake_channel_title(video_id)
+        )
+
         return {
             "id": video_id,
             "snippet": {
                 "title": title,
                 "description": "드라이런 생성 데이터입니다.",
-                "channelTitle": _fake_channel_title(video_id),
-                "channelId": _fake_channel_id(video_id),
-                "publishedAt": "2026-08-01T00:00:00Z",
+                "channelTitle": channel_title,
+                "channelId": channel_id,
+                "publishedAt": _fake_published_at(video_id),
                 "tags": ["dryrun"],
             },
             "contentDetails": {"duration": duration, **region},
@@ -415,8 +471,39 @@ class DryRunClient:
         }
 
 
+    def _normal_title(self, video_id: str) -> str:
+        """정상 영상의 제목. title_pool이 있으면 거기서 결정적으로 고른다."""
+        if not self._titles:
+            return f"[dry-run] 잔잔한 영상 {video_id[:5]}"
+        # _bucket과 다른 해시를 쓴다 — 같은 값을 쓰면 정상 영상이 차지하는
+        # 버킷 구간(42~99)만 제목 풀에 사상되어 앞쪽 제목에 영원히 닿지 않는다.
+        index = _hash(f"{video_id}:title") % len(self._titles)
+        return f"[dry-run] {self._titles[index]}"
+
+
 def _bucket(value: str) -> int:
-    return int(hashlib.sha256(value.encode("utf-8")).hexdigest(), 16) % 100
+    return _hash(value) % 100
+
+
+def _hash(value: str) -> int:
+    return int(hashlib.sha256(value.encode("utf-8")).hexdigest(), 16)
+
+
+# 정상 영상의 길이 — 세 구간을 골고루 만든다.
+# themes.yaml duration_signal이 30분 이상을 sermon, 10분 이하를 worship으로 보므로
+# 그 둘과 "어느 쪽도 아닌" 구간이 모두 나와야 판별 경로가 전부 실행된다.
+_FAKE_DURATIONS = ("PT41M18S", "PT8M5S", "PT12M34S")
+
+
+def _fake_duration(video_id: str) -> str:
+    return _FAKE_DURATIONS[_hash(f"{video_id}:dur") % len(_FAKE_DURATIONS)]
+
+
+def _fake_published_at(video_id: str) -> str:
+    """업로드 시각을 흩뿌린다 — 최신순 정렬이 실제로 작동하는지 보려면 필요하다."""
+    day = 1 + _hash(f"{video_id}:pub") % 28
+    hour = _hash(f"{video_id}:hour") % 24
+    return f"2026-08-{day:02d}T{hour:02d}:00:00Z"
 
 
 # 드라이런에서 영상이 소수의 채널에 몰리도록 채널 풀을 좁게 잡는다.
