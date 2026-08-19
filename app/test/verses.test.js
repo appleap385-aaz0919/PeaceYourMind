@@ -15,11 +15,15 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import {
+  CRISIS_POOL_KEY,
+  __test__ as versesTest,
   attributionOf,
   crisisVerses,
   isUsableVerses,
+  lastVerseId,
   nextVerse,
   pickVerse,
+  rememberVerse,
   versesFor,
 } from "../src/lib/verses.js";
 
@@ -153,6 +157,85 @@ test("직전 구절은 다시 뽑히지 않는다", () => {
   for (let i = 0; i < 50; i += 1) {
     assert.notEqual(pickVerse(pool, "a").id, "a");
   }
+});
+
+/**
+ * [2026-08-19 — 배선이 빠져 있던 자리를 고정한다]
+ *   pickVerse는 처음부터 previousId를 받게 돼 있었고 KEYS.VERSE_INDEXES도
+ *   정의돼 있었는데 **호출부가 아무것도 넘기지 않았다.** 그래서 위의
+ *   "직전 구절은 다시 뽑히지 않는다" 테스트는 통과하는데 실제 앱에서는
+ *   재방문 시 같은 구절이 1/10 확률로 다시 나왔다 — 함수는 옳고
+ *   부르는 쪽이 틀린 유형이라 함수 테스트만으로는 잡히지 않는다.
+ *   그래서 아래는 **호출부를 검사한다.**
+ */
+test("직전 구절 기억이 왕복한다 (인덱스가 아니라 id를 저장한다)", () => {
+  versesTest.reset();
+  assert.equal(lastVerseId("anxiety.worry"), null, "기록이 없으면 제외할 것도 없다");
+
+  rememberVerse("anxiety.worry", "b");
+  assert.equal(lastVerseId("anxiety.worry"), "b");
+  assert.deepEqual(versesTest.snapshot(), { "anxiety.worry": "b" });
+
+  // 풀에 구절이 추가돼 순서가 밀려도 같은 구절을 가리켜야 한다.
+  // 인덱스를 저장했다면 여기서 다른 구절을 가리키게 된다.
+  const grown = [{ id: "z", ref: "r", text: "t" }, ...pool];
+  for (let i = 0; i < 30; i += 1) {
+    assert.notEqual(pickVerse(grown, lastVerseId("anxiety.worry")).id, "b");
+  }
+
+  // 세분류마다 따로 기억한다 — 한 화면의 기록이 다른 화면을 막으면 안 된다.
+  rememberVerse("joy.proud", "c");
+  assert.equal(lastVerseId("anxiety.worry"), "b");
+  assert.equal(lastVerseId("joy.proud"), "c");
+  versesTest.reset();
+});
+
+test("잘못된 입력은 기억하지 않는다 (기록이 오염되면 회전이 멈춘다)", () => {
+  versesTest.reset();
+  rememberVerse("anxiety.worry", null);
+  rememberVerse("anxiety.worry", undefined);
+  rememberVerse("", "b");
+  assert.deepEqual(versesTest.snapshot(), {});
+  versesTest.reset();
+});
+
+test("App이 직전 구절을 실제로 넘긴다 (함수만 옳고 호출부가 빠졌던 결함)", () => {
+  // 감정 화면과 위기 화면 **양쪽** — 위기 풀도 10건이라 반복이 눈에 띈다.
+  assert.match(
+    appSrc,
+    /pickVerse\(\s*pool,\s*lastVerseId\(subcategory\.id\)/,
+    "감정 화면이 직전 구절을 제외하지 않는다",
+  );
+  assert.match(
+    appSrc,
+    /pickVerse\(\s*crisisVerses\(versesData\),\s*lastVerseId\(CRISIS_POOL_KEY\)/,
+    "위기 화면이 직전 구절을 제외하지 않는다",
+  );
+  assert.ok(
+    appSrc.includes("rememberVerse(subcategory.id, verse.id)"),
+    "보여준 구절을 기억하지 않으면 다음 방문에서 제외할 수 없다",
+  );
+  assert.ok(
+    appSrc.includes("rememberVerse(CRISIS_POOL_KEY, verse.id)"),
+    "위기 화면이 보여준 구절을 기억하지 않는다",
+  );
+  assert.ok(
+    appSrc.includes("loadVerseHistory()"),
+    "시작 시 기록을 읽지 않으면 첫 선택에 반영되지 않는다",
+  );
+});
+
+test("공감 문구는 구절을 넘겨도 바뀌지 않는다 (버튼이 약속한 것만 바꾼다)", () => {
+  // empathy가 verse에 의존하면 "다른 구절"이 화면 전체를 다시 뽑는 버튼이 된다.
+  // 근거는 App.jsx의 VerseCard 위 주석에 있다.
+  const empathyMemo = appSrc.match(
+    /const empathy = useMemo\([\s\S]{0,200}?\);/,
+  );
+  assert.ok(empathyMemo, "공감 문구 선택부를 찾지 못했다");
+  assert.ok(
+    !/verse/.test(empathyMemo[0]),
+    "공감 문구가 구절에 의존한다 — 구절을 넘길 때마다 문장이 바뀐다",
+  );
 });
 
 test("구절이 하나뿐이면 그것을 돌려준다", () => {

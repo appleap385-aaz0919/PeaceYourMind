@@ -33,11 +33,15 @@ import {
 } from "./lib/messages.js";
 import { loadInitialData, shouldCheck, syncInBackground } from "./lib/sync.js";
 import {
+  CRISIS_POOL_KEY,
   attributionOf,
   crisisVerses,
   isUsableVerses,
+  lastVerseId,
+  loadVerseHistory,
   nextVerse,
   pickVerse,
+  rememberVerse,
   versesFor,
 } from "./lib/verses.js";
 import {
@@ -108,7 +112,7 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      await loadMessageIndexes();
+      await Promise.all([loadMessageIndexes(), loadVerseHistory()]);
       const [{ data: initial }, visit] = await Promise.all([
         loadInitialData(),
         recordVisit(),
@@ -271,10 +275,18 @@ export default function App() {
 function Result({ result, data, onBack }) {
   const subcategory = result.subcategory;
   const pool = useMemo(() => versesFor(versesData, subcategory.id), [subcategory.id]);
-  const [verse, setVerse] = useState(() => pickVerse(pool));
+  const [verse, setVerse] = useState(() =>
+    pickVerse(pool, lastVerseId(subcategory.id)),
+  );
   const [mediaType, setMediaType] = useState(
     () => taxonomy.media_defaults[subcategory.id] || MEDIA.WORSHIP,
   );
+
+  // 지금 보여준 구절을 기억한다 — 다음 방문에서 이것만 빼고 뽑는다.
+  // 첫 선택과 "다른 구절" 양쪽이 verse를 바꾸므로 effect 하나로 둘 다 덮는다.
+  useEffect(() => {
+    if (verse?.id) rememberVerse(subcategory.id, verse.id);
+  }, [subcategory.id, verse?.id]);
 
   // 마지막으로 고른 형식을 기억한다 — 기본값이 안 맞는 사용자가 매번 누르지 않게.
   useEffect(() => {
@@ -316,7 +328,20 @@ function Result({ result, data, onBack }) {
     <div className="rise">
       {/* 구절이 먼저다. 공감 문구는 구절과 영상 사이의 다리 역할을 한다 —
           화면의 첫 인상을 말씀이 갖고, 그다음 문장이 그것을 지금 감정에
-          이어 붙인 뒤, 영상으로 넘어간다. */}
+          이어 붙인 뒤, 영상으로 넘어간다.
+
+          [“다른 구절”은 구절만 바꾼다 — 공감 문구는 그대로다. 2026-08-19 확정]
+            empathy가 [subcategory.id]에만 memo돼 있어 구절을 넘겨도 문장이
+            유지된다. 우연이 아니라 이대로 두는 것이 맞다.
+              1. 공감 문구는 **감정**에 답한 문장이지 구절에 딸린 문장이 아니다.
+                 구절을 넘겼다고 다시 뽑으면 "앱이 내 마음을 다시 읽었다"는
+                 신호가 되는데, 사용자의 감정은 그대로다.
+              2. 버튼이 약속한 것은 "다른 구절"이지 "다시 뽑기"가 아니다.
+                 이름이 말하지 않은 것까지 바꾸면 버튼을 믿을 수 없게 된다.
+              3. 구절 바로 아래 문장이라, 같이 바뀌면 화면이 리셋된 것처럼
+                 읽혀 "같은 자리에서 구절만 넘긴다"는 감각이 깨진다.
+            ⚠ 크기는 연동된다(empathyFontSize) — 그건 위계를 지키는 장치이지
+              내용 연동이 아니다. 둘을 같은 것으로 보고 묶지 말 것. */}
       <VerseCard
         verse={verse}
         canRotate={pool.length > 1}
@@ -344,8 +369,16 @@ function Result({ result, data, onBack }) {
 /** 위기 화면 — 구절도 영상도 별도 풀에서 온다 */
 function Crisis({ data, onBack }) {
   const response = taxonomy.safety.crisis_response;
-  const verse = useMemo(() => pickVerse(crisisVerses(versesData)), []);
+  const verse = useMemo(
+    () => pickVerse(crisisVerses(versesData), lastVerseId(CRISIS_POOL_KEY)),
+    [],
+  );
   const videos = useMemo(() => getCrisisVideos(data), [data]);
+
+  // 위기 풀도 10건이라 반복이 눈에 띈다. 감정 화면과 같은 규칙을 쓴다.
+  useEffect(() => {
+    if (verse?.id) rememberVerse(CRISIS_POOL_KEY, verse.id);
+  }, [verse?.id]);
   const closing = useMemo(
     () => pickMessage("closing:crisis", response.closing_messages),
     [response.closing_messages],

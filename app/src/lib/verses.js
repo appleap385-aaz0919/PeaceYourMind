@@ -15,7 +15,73 @@
  *   attribution 필드는 verses.json이 들고 온다. 화면에 하드코딩하지 않는 이유는
  *   저작인격권(성명표시권) 요구가 데이터와 함께 움직여야 하기 때문이다 —
  *   나중에 번역본을 바꾸면 표기도 같이 바뀌어야 한다.
+ *
+ * [직전 구절 기억 — 2026-08-19 배선 완료]
+ *   `pickVerse`는 처음부터 previousId를 받게 돼 있었고 `KEYS.VERSE_INDEXES`도
+ *   db.js에 정의돼 있었는데, **호출부가 아무것도 넘기지 않아 둘 다 죽어 있었다.**
+ *   그래서 문구는 재방문해도 직전 것이 안 나오는데 구절만 1/10 확률로 또 나왔다.
+ *   설계가 없었던 게 아니라 배선이 빠진 것이라, 있는 자리를 잇기만 했다.
+ *
+ *   ⚠ **인덱스가 아니라 id를 저장한다** (문구 쪽과 다른 점이다).
+ *     문구 풀은 taxonomy.yaml에 고정돼 순서가 안 변하지만, 구절 풀은
+ *     세분류에 구절을 더하면 순서가 밀린다. 인덱스를 저장하면 그때 저장된
+ *     숫자가 **다른 구절**을 가리키게 되어 "직전 것 제외"가 조용히 어긋난다.
+ *     id는 구절이 추가돼도 같은 구절을 가리킨다.
  */
+
+import { KEYS, getSetting, setSetting } from "./db.js";
+
+// 위기 풀의 기억 키. 세분류 id와 같은 이름공간을 쓰지만 점(.)이 없어 겹치지 않는다.
+export const CRISIS_POOL_KEY = "crisis";
+
+// 세션 동안의 캐시. 매 표시마다 IndexedDB를 기다릴 이유가 없고,
+// 저장은 뒤에서 비동기로 따라간다 (messages.js와 같은 구조).
+let lastShown = {};
+let loaded = false;
+
+/** 앱 시작 시 한 번. 화면이 그려지기 전에 끝나야 첫 선택부터 반영된다. */
+export async function loadVerseHistory() {
+  if (loaded) return;
+  const stored = await getSetting(KEYS.VERSE_INDEXES, {});
+  lastShown = stored && typeof stored === "object" ? stored : {};
+  loaded = true;
+}
+
+/** 이 풀에서 직전에 보여준 구절 id. 기록이 없으면 null(=제외할 것 없음). */
+export function lastVerseId(poolKey) {
+  const id = lastShown[poolKey];
+  return typeof id === "string" ? id : null;
+}
+
+/** 방금 보여준 구절을 기억한다. 첫 선택과 "다른 구절" 양쪽에서 부른다. */
+export function rememberVerse(poolKey, verseId) {
+  if (!poolKey || typeof verseId !== "string") return;
+  lastShown[poolKey] = verseId;
+  void persist();
+}
+
+let pending = null;
+function persist() {
+  // 연속 호출을 한 번의 쓰기로 묶는다 (messages.js persist와 같은 이유).
+  if (pending) return pending;
+  pending = Promise.resolve().then(async () => {
+    pending = null;
+    await setSetting(KEYS.VERSE_INDEXES, lastShown);
+  });
+  return pending;
+}
+
+export const __test__ = {
+  reset() {
+    lastShown = {};
+    loaded = false;
+  },
+  snapshot: () => ({ ...lastShown }),
+  seed(map) {
+    lastShown = { ...map };
+    loaded = true;
+  },
+};
 
 /** 감정 세분류에 붙은 구절들. 위기 배열에는 접근하지 않는다. */
 export function versesFor(data, subcategoryId) {
