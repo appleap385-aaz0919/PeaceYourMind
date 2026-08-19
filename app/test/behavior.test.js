@@ -41,14 +41,23 @@ const crisisSrcRaw = readFileSync(join(here, "..", "src", "components", "CrisisS
 /**
  * 주석을 걷어낸 소스.
  *
- * 이 파일의 주석에는 "MediaToggle을 import하지 않는다", "추천 표현 없음" 같은
+ * 소스 주석에는 "MediaToggle을 import하지 않는다", "추천 표현 없음" 같은
  * 문장이 있다. 원문 그대로 검사하면 **설명이 위반으로 잡힌다** — 첫 실행에서
  * 실제로 그렇게 걸렸다. 검사 대상은 실행되는 코드지 그것을 설명한 문장이 아니다.
+ *
+ * ⚠ 2026-08-19에 같은 함정에 두 번째로 걸렸다. 토글 밑줄 검사가 "전에는
+ *   borderBottom 단축을 썼다"고 적은 주석을 위반으로 잡았다. 그래서 이걸
+ *   crisisSrc 전용이 아니라 **함수로 빼 둔다** — 소스를 검사하는 새 테스트는
+ *   전부 이걸 통과시켜서 읽는다.
  */
-const crisisSrc = crisisSrcRaw
-  .replace(/\/\*[\s\S]*?\*\//g, "")
-  .replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, "")
-  .replace(/^\s*\/\/.*$/gm, "");
+export function stripComments(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+}
+
+const crisisSrc = stripComments(crisisSrcRaw);
 
 // =============================================================================
 // 위기 경로 — 분류보다 먼저, 화면에서는 상담 안내가 최상단
@@ -410,4 +419,40 @@ test("정규화가 위기 우회를 막는 규칙 그대로다", () => {
   // (Python lib/normalize.py와 문자 단위로 같은 결과여야 한다 — 배치와 앱이
   //  같은 규칙을 써야 위기 키워드 우회 방어가 한쪽에서만 작동하지 않는다)
   assert.equal(normalize("짜증나아아아"), "짜증나아아");
+});
+
+// --- 토글 밑줄 / 결과 화면 되돌아가기 ----------------------------------------
+
+test("토글 밑줄은 개별 속성으로만 지정한다 (단축과 섞으면 비활성에 검은 선이 남는다)", () => {
+  // [2026-08-19 회귀 방지]
+  //   base가 `borderBottom: "1px solid transparent"` 단축이고 active만
+  //   borderBottomColor를 얹으면, 선택이 옮겨갈 때 React가 이전 버튼에서
+  //   개별 속성만 지운다. 그 자리가 transparent로 돌아가지 않고 불투명
+  //   검정으로 해석돼 **비활성 탭에 검은 밑줄**이 남았고, 활성 탭의
+  //   jade 60%보다 진하게 보여 "밑줄이 반대"로 읽혔다.
+  //   양쪽 상태가 항상 같은 개별 속성을 지정해야 값이 교체되기만 한다.
+  const src = stripComments(
+    readFileSync(join(here, "..", "src", "components", "MediaToggle.jsx"), "utf8"),
+  );
+  const styles = src.slice(src.indexOf("const styles"));
+  assert.ok(
+    !/borderBottom:\s*"/.test(styles),
+    "borderBottom 단축이 돌아왔다 — 비활성 탭에 검은 밑줄이 다시 생긴다",
+  );
+  assert.ok(
+    /borderBottomColor:\s*"transparent"/.test(styles),
+    "기본 상태가 borderBottomColor를 지정하지 않는다",
+  );
+  assert.ok(
+    /active:\s*\{[^}]*borderBottomColor/.test(styles),
+    "선택된 탭에 밑줄 색이 없다",
+  );
+});
+
+test("결과 화면에 스크롤 후 돌아갈 길이 있다", () => {
+  // 실측(360×640, 말씀 14건): 문서 1,686px에 하단 "다시 적어보기"가 1,573px —
+  // 2.5화면을 내려야 닿는다. 그 사이 화면에는 돌아갈 길이 없었다.
+  const src = readFileSync(join(here, "..", "src", "App.jsx"), "utf8");
+  assert.ok(src.includes("<FloatingRestart"), "결과 화면에 FloatingRestart가 없다");
+  assert.ok(src.includes("<Closing"), "하단 마무리 문구·되돌아가기가 없다");
 });

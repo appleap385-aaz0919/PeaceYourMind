@@ -68,7 +68,18 @@ const styles = {
     padding: "2px 0 6px",
     background: "none",
     border: "none",
-    borderBottom: "1px solid transparent",
+    // ⚠ 단축 속성(borderBottom)을 쓰지 않는다 — 2026-08-19 결함 수정.
+    //   전에는 base가 `borderBottom: "1px solid transparent"`이고 active만
+    //   borderBottomColor를 얹었다. 그러면 선택이 옮겨갈 때 React가 이전 버튼에서
+    //   **개별 속성만 지우는데**, 단축으로 깔아 둔 색이 그 자리에서 되살아나지
+    //   않고 불투명 검정(rgb(0,0,0))으로 해석됐다.
+    //   결과: 비활성 탭에 검은 밑줄이 남아, 활성 탭의 흐린 jade(60%)보다
+    //   오히려 진하게 보였다 — "밑줄이 반대"로 읽히던 것이 이것이다.
+    //   양쪽 상태가 항상 같은 개별 속성을 지정하면 React가 값을 교체할 뿐이라
+    //   이 현상이 생기지 않는다.
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: "transparent",
     color: T.muted,
     fontSize: 14,
     fontFamily: "inherit",

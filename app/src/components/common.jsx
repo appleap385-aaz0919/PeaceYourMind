@@ -14,7 +14,13 @@ export function Closing({ text, onBack }) {
           marginTop: 26,
           background: "none",
           border: "none",
-          color: "#ffffff40",
+          // #ffffff40 → #ffffff66 (2026-08-19). 근거는 취향이 아니라 대비다 —
+          // 배경 #141E24에 대해 2.27:1이었고, 상호작용 요소의 최소선으로 보는
+          // 3:1에 못 미쳤다. #ffffff66은 3.78:1로 그 선을 넘는다.
+          // 더 올리지 않은 것은 바로 위 마무리 문구(T.muted, 6.28:1)보다
+          // 조용해야 하기 때문이다 — 문장이 먼저 읽히고 버튼이 뒤따라야 한다.
+          // ⚠ FYM의 같은 버튼도 #ffffff40이다. 두 앱 공통 과제로 남겼다.
+          color: "#ffffff66",
           fontSize: 12.5,
         }}
       >
