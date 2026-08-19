@@ -62,7 +62,7 @@ function EmptySide({ mediaType, otherCount }) {
 
 function Section({ title, videos, quiet }) {
   return (
-    <section style={{ marginBottom: 26 }}>
+    <section style={{ marginBottom: 30 }}>
       <h2 style={{ ...styles.heading, ...(quiet ? styles.headingQuiet : null) }}>
         {title}
       </h2>
@@ -99,36 +99,40 @@ function Section({ title, videos, quiet }) {
 }
 
 const styles = {
+  // 층 헤더는 FYM의 라벨 언어를 그대로 쓴다 — 11.5px에 자간을 넓힌 캡션.
+  // 구분선을 두지 않고 자간과 색으로만 층을 가른다.
   heading: {
-    margin: "0 0 12px",
-    fontFamily: SERIF,
-    fontSize: 14,
+    margin: "0 0 14px",
+    fontSize: 11.5,
     fontWeight: 400,
-    color: T.mist,
-    letterSpacing: "0.01em",
+    color: T.muted,
+    letterSpacing: "0.2em",
   },
-  headingQuiet: { color: T.muted, fontSize: 13 },
-  list: { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 },
+  headingQuiet: { color: "#ffffff3d", letterSpacing: "0.14em" },
+  list: { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 16 },
   item: { margin: 0 },
   link: {
     display: "flex",
-    gap: 12,
+    gap: 13,
     alignItems: "center",
     textDecoration: "none",
     color: "inherit",
   },
+  // 카드 테두리를 두지 않는다. 썸네일 자체가 이미 시각적 블록이라
+  // 테두리를 더하면 면이 겹친다 — 항목 사이는 여백(16px)이 가른다.
+  // 크기·라운드는 FYM 카드(76x46, radius 2)의 언어를 따른다.
   thumb: {
-    width: 108,
-    height: 61,
+    width: 92,
+    height: 52,
     objectFit: "cover",
-    borderRadius: 8,
+    borderRadius: 3,
     background: "#ffffff0d",
     flex: "0 0 auto",
   },
   meta: { display: "flex", flexDirection: "column", gap: 4, minWidth: 0 },
   title: {
-    fontSize: 13.5,
-    lineHeight: 1.45,
+    fontSize: 14,
+    lineHeight: 1.5,
     color: T.mist,
     display: "-webkit-box",
     WebkitLineClamp: 2,
@@ -136,11 +140,11 @@ const styles = {
     overflow: "hidden",
     wordBreak: "keep-all",
   },
-  sub: { fontSize: 11.5, color: T.muted },
+  sub: { fontSize: 11, color: T.muted, letterSpacing: "0.01em" },
   empty: {
-    margin: "6px 0 0",
+    margin: "2px 0 0",
     fontSize: 13.5,
-    lineHeight: 1.7,
+    lineHeight: 1.8,
     color: T.muted,
   },
 };

@@ -287,8 +287,9 @@ function Result({ result, data, onBack }) {
 
   return (
     <div className="rise">
-      <p style={styles.empathy}>{empathy}</p>
-
+      {/* 구절이 먼저다. 공감 문구는 구절과 영상 사이의 다리 역할을 한다 —
+          화면의 첫 인상을 말씀이 갖고, 그다음 문장이 그것을 지금 감정에
+          이어 붙인 뒤, 영상으로 넘어간다. */}
       <VerseCard
         verse={verse}
         attribution={attributionOf(versesData)}
@@ -296,6 +297,8 @@ function Result({ result, data, onBack }) {
         canRotate={pool.length > 1}
         onNext={() => setVerse(nextVerse(pool, verse?.id))}
       />
+
+      <p style={styles.empathy}>{empathy}</p>
 
       <MediaToggle value={mediaType} counts={counts} onChange={chooseMedia} />
       <VideoList
@@ -453,7 +456,7 @@ function pickGreeting(visit) {
 const styles = {
   shell: {
     minHeight: "100%",
-    background: `linear-gradient(160deg, ${T.inkDeep} 0%, ${T.ink} 45%, ${T.plum} 100%)`,
+    background: `radial-gradient(120% 90% at 50% 0%, ${T.plum} 0%, ${T.ink} 45%, ${T.inkDeep} 100%)`,
     color: T.mist,
     fontFamily: "'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif",
     padding: "34px 20px 40px",
@@ -466,28 +469,31 @@ const styles = {
     color: T.mist,
     margin: "6px 0 22px",
   },
+  // 상자가 아니라 밑줄 하나. FYM 입력과 같은 언어다 —
+  // 테두리를 두르면 화면에 면이 하나 더 생긴다.
   textarea: {
     width: "100%",
-    background: "#ffffff0a",
-    border: "1px solid #ffffff1a",
-    borderRadius: 12,
+    background: "transparent",
+    border: "none",
+    borderBottom: "1px solid #ffffff26",
     color: T.mist,
-    fontSize: 15,
+    fontSize: 16,
     lineHeight: 1.7,
-    padding: 14,
+    padding: "13px 2px",
     fontFamily: "inherit",
     boxSizing: "border-box",
     resize: "none",
   },
   submit: {
-    marginTop: 14,
+    marginTop: 26,
     width: "100%",
-    padding: "13px 0",
-    borderRadius: 10,
-    border: "none",
-    background: T.jade,
-    color: "#07110E",
-    fontSize: 15,
+    padding: "14px 0",
+    borderRadius: 3,
+    border: `1px solid ${T.jade}59`,
+    background: `${T.jade}14`,
+    color: T.jade,
+    fontSize: 14,
+    letterSpacing: "0.04em",
     fontFamily: "inherit",
     cursor: "pointer",
   },
@@ -504,20 +510,22 @@ const styles = {
   grid: { display: "flex", flexWrap: "wrap", gap: 9 },
   chip: {
     padding: "11px 16px",
-    borderRadius: 999,
+    borderRadius: 3,
     border: "1px solid #ffffff1a",
-    background: "#ffffff08",
+    background: "none",
     color: T.mist,
     fontSize: 14,
     fontFamily: "inherit",
     cursor: "pointer",
   },
+  // 구절과 영상 사이의 다리. 구절보다 작고 조용해야 한다 —
+  // 같은 크기면 두 문장이 서로 자리를 다툰다.
   empathy: {
     fontFamily: SERIF,
-    fontSize: 17,
-    lineHeight: 1.8,
-    color: T.mist,
-    margin: "6px 0 0",
+    fontSize: 15.5,
+    lineHeight: 1.85,
+    color: T.muted,
+    margin: "0 0 30px",
     wordBreak: "keep-all",
   },
   loadingWrap: {
