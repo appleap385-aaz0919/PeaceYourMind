@@ -16,6 +16,7 @@
   5. 위기 풀 12건 미달이면 직전 결과를 유지하고, 그 과정에 API를 쓰지 않는다
   6. 승인이 취소된 채널의 영상이 직전 결과를 타고 살아남지 않는다
   7. 무결성 단언(상호 배타 · media_type)이 실제로 배포를 막는다
+  8. 폴백이 미태깅·기본 형식·상한·채널 분산을 전부 지킨다
 """
 
 from __future__ import annotations
@@ -29,11 +30,27 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from datetime import datetime, timezone
 
-from build_videos import IntegrityError, assert_disjoint, assert_media_type_filled
+from build_videos import (
+    IntegrityError,
+    assert_disjoint,
+    assert_fallback_untagged,
+    assert_media_type_filled,
+)
 from lib.collect import enforce_allowlist
 from lib.crisis import _carry_over_crisis
-from lib.results import BuildContext, CrisisResult, TaggedVideo, ThemeResult
-from lib.selection import fill_balanced, select_crisis_videos, select_theme_videos
+from lib.results import (
+    BuildContext,
+    CrisisResult,
+    SubcategoryResult,
+    TaggedVideo,
+    ThemeResult,
+)
+from lib.selection import (
+    fill_balanced,
+    select_crisis_videos,
+    select_fallback_videos,
+    select_theme_videos,
+)
 
 from lib.allowlist import load_allowlist
 from lib.filters import Video
@@ -364,6 +381,105 @@ def main() -> int:
     )
     assert_media_type_filled([theme])  # 정상 경로는 통과해야 한다
     _check(failures, True, "정상 목록은 그대로 통과한다")
+
+    # --- 8. 폴백 (주제 태깅 실패분으로 화면 채우기) --------------------------
+    print("\n8. 폴백 — 미태깅 영상만, 기본 형식만, 상한 안에서")
+    print("-" * 76)
+
+    def _untagged(video_id, channel, media_type):
+        t = _tagged(video_id, channel, media_type)
+        return TaggedVideo(video=t.video, themes=(), hits=(), media=t.media)
+
+    fb_pool = (
+        [_untagged(f"w{c}-{i}", f"찬양채널{c}", WORSHIP) for c in range(6) for i in range(4)]
+        + [_untagged(f"s{i}", "말씀채널", SERMON) for i in range(10)]
+        + [_untagged(f"u{i}", "미판별채널", UNKNOWN) for i in range(4)]
+    )
+    picked = select_fallback_videos(fb_pool, WORSHIP, 12, day_of_year=0)
+    _check(failures, len(picked) == 12, "요청한 만큼만 채운다", f"{len(picked)}건")
+    _check(
+        failures,
+        all(t.media.media_type in (WORSHIP, UNKNOWN) for t in picked),
+        "기본 형식과 unknown만 들어간다 (반대 형식은 제외)",
+        str(sorted({t.media.media_type for t in picked})),
+    )
+    _check(
+        failures,
+        max(_spread(picked).values()) <= cap0,
+        f"폴백에도 채널당 상한 {cap0}이 걸린다",
+        f"최다 {max(_spread(picked).values())}건",
+    )
+    _check(
+        failures,
+        all(t.is_untagged for t in picked),
+        "태깅된 영상은 절대 폴백으로 들어가지 않는다",
+    )
+
+    tagged_in_pool = fb_pool + [_tagged("태깅됨", "찬양채널0", WORSHIP)]
+    picked2 = select_fallback_videos(tagged_in_pool, WORSHIP, 12, day_of_year=0)
+    _check(
+        failures,
+        "태깅됨" not in {t.video_id for t in picked2},
+        "풀에 태깅분이 섞여 있어도 걸러낸다",
+    )
+
+    excluded = select_fallback_videos(
+        fb_pool, WORSHIP, 12, day_of_year=0, exclude={t.video_id for t in picked}
+    )
+    _check(
+        failures,
+        not ({t.video_id for t in excluded} & {t.video_id for t in picked}),
+        "exclude에 넣은 영상은 다시 나오지 않는다 (위기 풀·주제분 중복 방지)",
+    )
+    _check(failures, not select_fallback_videos(fb_pool, WORSHIP, 0, 0), "need가 0이면 빈 목록")
+
+    sub = SubcategoryResult(
+        id="anger.irritation",
+        themes=("self_control", "quiet_worship"),
+        media_default=WORSHIP,
+        theme_videos=[_tagged("주제1", "채널A", WORSHIP)],
+        fallback_videos=picked[:11],
+    )
+    _check(failures, sub.count == 12, "주제분 + 폴백이 화면 건수다", f"{sub.count}건")
+    _check(
+        failures,
+        abs(sub.fallback_ratio - 11 / 12) < 1e-9,
+        "폴백 비율이 경보 판정 기준이다",
+        f"{sub.fallback_ratio:.0%}",
+    )
+    videos = sub.videos
+    _check(
+        failures,
+        videos[0]["source"] == "theme" and videos[-1]["source"] == "fallback",
+        "출력 순서는 주제분 먼저, 폴백 뒤 (근거의 강도 순)",
+    )
+    _check(
+        failures,
+        all("source" in v for v in videos),
+        "모든 영상에 source가 붙는다 — 앱이 두 층을 섞지 않기 위한 근거다",
+    )
+
+    try:
+        assert_fallback_untagged(
+            [
+                SubcategoryResult(
+                    id="x",
+                    themes=("a",),
+                    media_default=WORSHIP,
+                    theme_videos=[],
+                    fallback_videos=[_tagged("태깅된영상", "채널A", WORSHIP)],
+                )
+            ]
+        )
+        caught = ""
+    except IntegrityError as exc:
+        caught = str(exc)
+    _check(
+        failures,
+        "태깅된영상" in caught,
+        "폴백에 태깅분이 섞이면 배포를 막는다",
+        caught.splitlines()[0][:56] if caught else "예외 없음",
+    )
 
     print("\n" + "=" * 76)
     if failures:

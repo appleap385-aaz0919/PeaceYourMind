@@ -22,7 +22,13 @@ from pathlib import Path
 from typing import Any
 
 from lib.filters import FilterStats
-from lib.results import BuildContext, CrisisResult, TaggedVideo, ThemeResult
+from lib.results import (
+    BuildContext,
+    CrisisResult,
+    SubcategoryResult,
+    TaggedVideo,
+    ThemeResult,
+)
 
 logger = logging.getLogger("build_videos")
 
@@ -31,6 +37,7 @@ def write_outputs(
     out_dir: Path,
     version: str,
     themes: Sequence[ThemeResult],
+    subcategories: Sequence[SubcategoryResult],
     crisis: CrisisResult | None,
     ctx: BuildContext,
     *,
@@ -53,7 +60,13 @@ def write_outputs(
     if partial:
         videos_json["partial"] = True
         videos_json["only"] = only
-    videos_json["themes"] = [t.to_json() for t in themes]
+    # 앱이 받는 단위는 **세분류 화면**이다 (PLAN.md 4.2, 2026-08-19 개정).
+    #
+    # 개정 전에는 주제(theme)별 목록을 내보내고 세분류→주제 조합을 앱에 맡겼다.
+    # 폴백이 들어오면서 그 구조로는 안 된다 — 폴백은 세분류의 media_defaults에
+    # 달려 있고, 화면이 몇 건 나가는지도 세분류 단위로만 정해진다.
+    # 주제별 집계는 build_report.json에 남긴다(진단용이지 앱이 쓰는 값이 아니다).
+    videos_json["subcategories"] = [s.to_json() for s in subcategories]
     if crisis is not None:
         videos_json["crisis"] = {
             "updated_at": crisis.updated_at,
@@ -85,6 +98,21 @@ def write_outputs(
             "per_channel_unlocked": crisis.per_channel_unlocked,
             "channel_spread": crisis.channel_spread,
         },
+        "subcategories": [
+            {
+                "id": s.id,
+                "themes": list(s.themes),
+                "media_default": s.media_default,
+                "count": s.count,
+                "from_theme": len(s.theme_videos),
+                "from_fallback": len(s.fallback_videos),
+                "fallback_ratio": round(s.fallback_ratio, 3),
+                "media_types": s.media_counts,
+                "visible_by_toggle": s.visible,
+                "channel_spread": s.channel_spread,
+            }
+            for s in subcategories
+        ],
         "themes": [
             {
                 "id": t.id,

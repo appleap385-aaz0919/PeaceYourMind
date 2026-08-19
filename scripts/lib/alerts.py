@@ -307,3 +307,42 @@ def untagged_high(ratio: float, untagged: int, kept: int) -> dict[str, Any]:
         ),
         "labels": ("batch", "auto"),
     }
+
+
+def theme_fallback_heavy(
+    subcategory: str, ratio: float, fallback: int, total: int
+) -> dict[str, Any]:
+    return {
+        "type": "theme_fallback_heavy",
+        "severity": "warning",
+        "title": f"[배치] 폴백 과다: {subcategory}",
+        "body": (
+            f"`{subcategory}` 화면 {total}건 중 {fallback}건({ratio:.0%})이 폴백입니다 "
+            "(기준 50%).\n\n"
+            "**주제 사전이나 채널 구성이 그 감정을 못 받치고 있다는 신호입니다.** "
+            "폴백은 형식(말씀/찬양)과 채널만 보고 채운 것이라, 이 비율이 높을수록 "
+            "그 화면은 '이 감정에 맞춰 고른 목록'이 아니라 '채널 최신 목록'에 가까워집니다.\n\n"
+            "조치: 이 세분류에 매핑된 주제의 `title_keywords`를 실제 제목과 대조하거나, "
+            "그 주제를 다루는 채널을 보충하세요."
+        ),
+        "labels": ("batch", "auto"),
+    }
+
+
+def theme_too_few(subcategory: str, count: int, minimum: int) -> dict[str, Any]:
+    return {
+        "type": "theme_too_few",
+        "severity": "critical",
+        "title": f"[배치] 화면 성립 불가: {subcategory} ({count}건)",
+        "body": (
+            f"`{subcategory}` 화면에 나갈 영상이 {count}건으로 최소 {minimum}건에 "
+            "미달합니다.\n\n"
+            "폴백까지 동원하고도 이 수준이면 그 감정에 내놓을 것이 실질적으로 "
+            "없다는 뜻입니다. 20건을 못 채우는 것은 허용된 상태지만(폴백 상한 정책), "
+            f"{minimum}건 미만은 목록으로서 성립하지 않습니다.\n\n"
+            "조치: 채널 보충이 가장 직접적입니다. 그 전에 이 세분류의 기본 형식"
+            "(media_defaults)이 실제 풀과 맞는지 먼저 확인하세요."
+        ),
+        "labels": ("batch", "auto"),
+        "renotify_days": SAFETY_RENOTIFY_DAYS,
+    }

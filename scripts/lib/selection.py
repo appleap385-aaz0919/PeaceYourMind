@@ -19,7 +19,7 @@ from collections import Counter
 from collections.abc import Sequence
 
 from lib.results import TaggedVideo
-from lib.tagging import SERMON, WORSHIP
+from lib.tagging import SERMON, UNKNOWN, WORSHIP
 from lib.themes import (
     CRISIS_MAX_VIDEOS,
     CRISIS_MIN_VIDEOS,
@@ -200,3 +200,42 @@ def select_crisis_videos(
         )
         return list(pool[:CRISIS_MAX_VIDEOS]), last, True
     return picked, last, False
+
+
+def select_fallback_videos(
+    untagged: Sequence[TaggedVideo],
+    media_default: str,
+    need: int,
+    day_of_year: int,
+    *,
+    exclude: set[str] | None = None,
+) -> list[TaggedVideo]:
+    """주제 태깅이 안 된 영상으로 화면의 남은 슬롯을 채운다 (PLAN.md 3.3 개정).
+
+    [무엇을 담는가]
+      그 세분류의 기본 형식(media_defaults) + unknown. unknown을 넣는 것은
+      **양쪽 토글 모두에 노출되는 값**이라 어느 쪽에서도 빈 화면을 만들지 않기
+      때문이다(주제 태깅의 untagged와 다르다).
+
+    [정렬은 주제분과 같은 규칙이다 — 최신순 + 채널 라운드로빈]
+      채널 간 우열을 두지 않는다. 승인 채널은 전원 동등한 자격으로 목록에 있고
+      (channel_allowlist.yaml), "태깅률이 낮은 채널"은 콘텐츠가 나빠서가 아니라
+      제목 관행이 다를 뿐이다 — CGN 성경통독은 태깅률 0%지만 성경 통독 방송이다.
+      순위를 매기면 그 관행 차이가 노출 차별이 된다.
+
+    [상한은 호출부가 정한다]
+      need = min(빈 슬롯, FALLBACK_MAX_PER_SUBCATEGORY). 폴백이 화면을 다 덮지
+      못하게 막는 것은 정책이고(20슬롯 중 최대 12), 그 판단은 세분류를 아는
+      호출부에 있다.
+    """
+    if need <= 0:
+        return []
+    exclude = exclude or set()
+    pool = [
+        t
+        for t in untagged
+        if t.video_id not in exclude and t.media.media_type in (media_default, UNKNOWN)
+    ]
+    order = _channel_order(pool, day_of_year)
+    used: Counter[str] = Counter()
+    return _round_robin(pool, THEME_MAX_PER_CHANNEL, need, order, used)

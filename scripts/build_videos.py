@@ -84,10 +84,25 @@ from lib.quota_log import (
     table as quota_table,
 )
 from lib.report import iso, load_previous, write_outputs, write_title_dump
-from lib.results import BuildContext, CrisisResult, TaggedVideo, ThemeResult
-from lib.selection import select_theme_videos
+from lib.results import (
+    BuildContext,
+    CrisisResult,
+    SubcategoryResult,
+    TaggedVideo,
+    ThemeResult,
+)
+from lib.selection import select_fallback_videos, select_theme_videos
 from lib.tagging import SERMON, UNKNOWN, WORSHIP, classify_media_type, tag_themes
-from lib.themes import MIN_DURATION_SECONDS, THEME_MIN_VIDEOS, Themes, load_themes
+from lib.themes import (
+    FALLBACK_HEAVY_RATIO,
+    FALLBACK_MAX_PER_SUBCATEGORY,
+    MIN_DURATION_SECONDS,
+    SUBCATEGORY_MIN_VIDEOS,
+    THEME_MAX_VIDEOS,
+    THEME_MIN_VIDEOS,
+    Themes,
+    load_themes,
+)
 from lib.youtube import Client, DryRunClient, YouTubeClient
 
 logger = logging.getLogger("build_videos")
@@ -307,6 +322,122 @@ def _evaluate_theme(ctx: BuildContext, result: ThemeResult) -> None:
 
 
 # =============================================================================
+# 세분류 화면 — 주제분 + 폴백 2층 (PLAN.md 3.3 개정)
+# =============================================================================
+
+
+def build_subcategories(
+    ctx: BuildContext,
+    tagged: Sequence[TaggedVideo],
+    exclude: set[str],
+    day_of_year: int,
+) -> list[SubcategoryResult]:
+    """감정 세분류마다 실제 화면에 나갈 목록을 만든다.
+
+    [왜 주제별 목록만으로는 부족한가]
+      주제(theme)는 화면을 채우는 재료이고 화면은 세분류에 붙는다. 조합을 앱에
+      맡기면 배치가 "이 화면이 몇 건 나가는가"를 모른다 — 화면 성립 여부
+      (SUBCATEGORY_MIN_VIDEOS)와 폴백 비율을 판정할 수 없다. 그래서 배치가
+      세분류 단위까지 조립한다.
+
+    [2층 구조]
+      1층 주제 태깅분  매핑 주제에 걸린 영상. 근거가 분명하다
+      2층 폴백        어느 주제에도 안 걸린 영상을 형식(media_defaults)으로 채운다
+                     상한 12/20 — 화면 전체가 폴백으로 덮이지 않게 한다
+
+      실측(2026-08-19): 1,069건 중 제목이 주제를 말하는 것은 CGN 생명의 삶
+      100건뿐이었다. 나머지는 설교 문장·곡목·프로그램 브랜드다. 미태깅을 버리면
+      24개 화면 중 20개가 목표 미달이고 1개는 0건이 된다. 폴백은 그것을 메운다.
+    """
+    results: list[SubcategoryResult] = []
+    untagged = [t for t in tagged if t.is_untagged]
+
+    for sub, theme_ids in ctx.themes.mapping.items():
+        pool = [
+            t
+            for t in tagged
+            if t.video_id not in exclude and any(x in t.themes for x in theme_ids)
+        ]
+        picked, _, _ = select_theme_videos(pool, day_of_year)
+
+        media_default = ctx.themes.media_default(sub) or SERMON
+        need = min(THEME_MAX_VIDEOS - len(picked), FALLBACK_MAX_PER_SUBCATEGORY)
+        fallback = select_fallback_videos(
+            untagged,
+            media_default,
+            need,
+            day_of_year,
+            exclude=exclude | {t.video_id for t in picked},
+        )
+
+        result = SubcategoryResult(
+            id=sub,
+            themes=tuple(theme_ids),
+            media_default=media_default,
+            theme_videos=picked,
+            fallback_videos=fallback,
+        )
+        _log_subcategory(result)
+        _evaluate_subcategory(ctx, result)
+        results.append(result)
+
+    filled = sum(1 for r in results if r.count == THEME_MAX_VIDEOS)
+    logger.info(
+        "세분류 %d개 — 목표 달성 %d개 / 총 노출 %d건 (주제분 %d + 폴백 %d)",
+        len(results),
+        filled,
+        sum(r.count for r in results),
+        sum(len(r.theme_videos) for r in results),
+        sum(len(r.fallback_videos) for r in results),
+    )
+    return results
+
+
+def _log_subcategory(r: SubcategoryResult) -> None:
+    logger.info(
+        "%-22s %-7s 주제 %2d + 폴백 %2d = %2d건 (폴백 %3.0f%%) | 말씀 %2d 찬양 %2d 미판별 %2d",
+        r.id,
+        r.media_default,
+        len(r.theme_videos),
+        len(r.fallback_videos),
+        r.count,
+        r.fallback_ratio * 100,
+        r.media_counts[SERMON],
+        r.media_counts[WORSHIP],
+        r.media_counts[UNKNOWN],
+    )
+
+
+def _evaluate_subcategory(ctx: BuildContext, r: SubcategoryResult) -> None:
+    """화면 단위 경보 2종. 주제 단위 경보(theme_*)와 층이 다르다.
+
+    주제 경보  "이 주제 풀이 얇다"          → 사전·채널 진단용
+    화면 경보  "이 화면이 성립하지 않는다"    → 사용자가 실제로 겪는 상태
+    """
+    if r.count < SUBCATEGORY_MIN_VIDEOS:
+        logger.error(
+            "%s 화면 %d건 < 최소 %d건 — 목록으로 성립하지 않는다",
+            r.id,
+            r.count,
+            SUBCATEGORY_MIN_VIDEOS,
+        )
+        ctx.collector.add(
+            **alert_specs.theme_too_few(r.id, r.count, SUBCATEGORY_MIN_VIDEOS)
+        )
+    if r.fallback_ratio > FALLBACK_HEAVY_RATIO:
+        logger.warning(
+            "%s 폴백 %.0f%% — 주제 사전·채널 구성이 이 감정을 못 받치고 있다",
+            r.id,
+            r.fallback_ratio * 100,
+        )
+        ctx.collector.add(
+            **alert_specs.theme_fallback_heavy(
+                r.id, r.fallback_ratio, len(r.fallback_videos), r.count
+            )
+        )
+
+
+# =============================================================================
 # 무결성 검증 — 통과해야만 기록한다
 # =============================================================================
 
@@ -348,6 +479,29 @@ def assert_media_type_filled(themes: Sequence[ThemeResult]) -> None:
                     f"{theme.id}의 {video.get('videoId')}에 media_type이 없다 "
                     f"({video.get('media_type')!r}). 앱 토글에서 사라지므로 배포하지 않는다."
                 )
+
+
+def assert_fallback_untagged(subcategories: Sequence[SubcategoryResult]) -> None:
+    """폴백에 주제 태깅분이 섞이지 않았는지 단언한다.
+
+    두 층은 근거의 강도가 다르다. 폴백에 태깅된 영상이 섞이면 `source` 필드가
+    거짓말을 하게 되고, 앱이 "이 감정에 맞춰 고른 영상 / 이 채널의 최근 영상"으로
+    나눠 보여줄 수 없다. 그 구분이 무너지는 순간 사용자는 화면 전체를 의심한다.
+    """
+    for sub in subcategories:
+        tainted = [t.video_id for t in sub.fallback_videos if not t.is_untagged]
+        if tainted:
+            raise IntegrityError(
+                f"{sub.id}의 폴백에 주제 태깅분이 섞였다: {sorted(tainted)}. "
+                "source 구분이 무너지므로 배포하지 않는다."
+            )
+        overlap = {t.video_id for t in sub.theme_videos} & {
+            t.video_id for t in sub.fallback_videos
+        }
+        if overlap:
+            raise IntegrityError(
+                f"{sub.id}에서 같은 영상이 두 층에 모두 있다: {sorted(overlap)}"
+            )
 
 
 # =============================================================================
@@ -614,19 +768,23 @@ def run(args: argparse.Namespace, spent_box: dict[str, Any] | None = None) -> in
     crisis = build_crisis(ctx, tagged, now, day_of_year) if run_crisis else None
     crisis_age = check_crisis_freshness(ctx, crisis, now) if crisis else -1
 
-    # 5) 주제별 선정
-    theme_results = build_themes(
-        ctx, tagged, crisis.video_ids if crisis else set(), day_of_year, selected
-    )
-    _record_selected(ctx, theme_results)
+    # 5) 주제별 선정 — 진단 단위다 (사전·채널이 어느 주제를 못 받치는지 본다)
+    exclude = crisis.video_ids if crisis else set()
+    theme_results = build_themes(ctx, tagged, exclude, day_of_year, selected)
 
-    # 6) 무결성 검증 후에만 기록한다
+    # 6) 세분류 화면 조립 — 사용자가 실제로 보는 단위 (주제분 + 폴백)
+    subcategories = build_subcategories(ctx, tagged, exclude, day_of_year)
+    _record_selected(ctx, theme_results, subcategories)
+
+    # 7) 무결성 검증 후에만 기록한다
     assert_disjoint(theme_results, crisis)
     assert_media_type_filled(theme_results)
+    assert_fallback_untagged(subcategories)
     write_outputs(
         args.out_dir,
         iso(now),
         theme_results,
+        subcategories,
         crisis,
         ctx,
         dry_run=args.dry_run,
@@ -667,20 +825,28 @@ def _record_channel_yields(
             )
 
 
-def _record_selected(ctx: BuildContext, themes: Sequence[ThemeResult]) -> None:
-    """최종 목록에 실린 영상 수를 채널별로 센다 (중복 주제는 한 번만).
+def _record_selected(
+    ctx: BuildContext,
+    themes: Sequence[ThemeResult],
+    subcategories: Sequence[SubcategoryResult] = (),
+) -> None:
+    """최종 목록에 실린 영상 수를 채널별로 센다 (중복은 한 번만).
 
-    복수 주제에 태깅된 영상이 있으므로 videoId로 먼저 접는다 — 접지 않으면
-    "20건 수집한 채널이 35건 선정됐다"는 읽을 수 없는 표가 된다.
+    한 영상이 여러 주제·여러 세분류에 실리므로 videoId로 먼저 접는다 — 접지
+    않으면 "100건 수집한 채널이 300건 선정됐다"는 읽을 수 없는 표가 된다.
+    폴백으로만 나간 영상도 화면에 노출되므로 함께 센다.
     """
     seen: set[str] = set()
     counts: Counter[str] = Counter()
-    for theme in themes:
-        for tagged in theme.picked:
-            if tagged.video_id in seen:
-                continue
-            seen.add(tagged.video_id)
-            counts[tagged.video.channel_id] += 1
+    picked_all = [t for theme in themes for t in theme.picked]
+    picked_all += [
+        t for sub in subcategories for t in (*sub.theme_videos, *sub.fallback_videos)
+    ]
+    for tagged in picked_all:
+        if tagged.video_id in seen:
+            continue
+        seen.add(tagged.video_id)
+        counts[tagged.video.channel_id] += 1
     for channel_id, count in counts.items():
         entry = ctx.yields.get(channel_id)
         if entry is not None:

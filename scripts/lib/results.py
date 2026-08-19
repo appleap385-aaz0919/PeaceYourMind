@@ -16,7 +16,7 @@ from lib.alerts import AlertCollector
 from lib.filters import Video
 from lib.quota import QuotaBudget
 from lib.tagging import SERMON, UNKNOWN, WORSHIP, MediaVerdict, visible_counts
-from lib.themes import Themes
+from lib.themes import SOURCE_FALLBACK, SOURCE_THEME, Themes
 from lib.youtube import Client
 
 
@@ -67,8 +67,18 @@ class TaggedVideo:
     def is_untagged(self) -> bool:
         return not self.themes
 
-    def to_json(self) -> dict[str, str]:
-        return self.video.to_json(media_type=self.media.media_type)
+    def to_json(self, source: str | None = None) -> dict[str, str]:
+        """videos.json에 실릴 형태. source는 이 영상이 화면에 온 경로다.
+
+        **앱이 두 층을 섞지 않게 하려고 데이터에 남긴다** (PLAN.md 3.3).
+        주제 태깅분과 폴백은 근거의 강도가 다르다 — 섞어서 한 목록으로 내면
+        사용자가 "이게 왜 내 감정에 맞지?"라고 느끼는 순간 화면 전체의 신뢰가
+        떨어진다. 나눠서 보여주면 그 위험이 없다.
+        """
+        payload = self.video.to_json(media_type=self.media.media_type)
+        if source is not None:
+            payload["source"] = source
+        return payload
 
 
 @dataclass
@@ -102,6 +112,67 @@ class ThemeResult:
 
     def to_json(self) -> dict[str, Any]:
         return {"id": self.id, "label": self.label, "videos": self.videos}
+
+
+@dataclass
+class SubcategoryResult:
+    """감정 세분류 화면 하나에 실제로 나가는 목록 (주제분 + 폴백).
+
+    **이것이 사용자가 보는 단위다.** 주제(theme)는 그 화면을 채우는 재료이고,
+    화면 자체는 세분류(anxiety.worry 등)에 붙는다. 2026-08-19 폴백 도입 전에는
+    주제별 목록만 내보내고 조합을 앱에 맡겼는데, 그러면 배치가 "이 화면이 몇 건
+    나가는가"를 모른다 — 화면 성립 여부(SUBCATEGORY_MIN_VIDEOS)를 판정할 수 없다.
+    """
+
+    id: str
+    themes: tuple[str, ...]
+    media_default: str
+    theme_videos: list[TaggedVideo]
+    fallback_videos: list[TaggedVideo]
+
+    @property
+    def count(self) -> int:
+        return len(self.theme_videos) + len(self.fallback_videos)
+
+    @property
+    def fallback_ratio(self) -> float:
+        return len(self.fallback_videos) / self.count if self.count else 0.0
+
+    @property
+    def videos(self) -> list[dict[str, str]]:
+        """주제분 먼저, 폴백 뒤. 순서 자체가 근거의 강도 순이다."""
+        return [t.to_json(source=SOURCE_THEME) for t in self.theme_videos] + [
+            t.to_json(source=SOURCE_FALLBACK) for t in self.fallback_videos
+        ]
+
+    @property
+    def media_counts(self) -> dict[str, int]:
+        counts = Counter(
+            t.media.media_type for t in (*self.theme_videos, *self.fallback_videos)
+        )
+        return {k: counts.get(k, 0) for k in (SERMON, WORSHIP, UNKNOWN)}
+
+    @property
+    def visible(self) -> dict[str, int]:
+        return visible_counts(
+            [t.media.media_type for t in (*self.theme_videos, *self.fallback_videos)]
+        )
+
+    @property
+    def channel_spread(self) -> dict[str, int]:
+        return dict(
+            Counter(
+                t.video.channel for t in (*self.theme_videos, *self.fallback_videos)
+            ).most_common()
+        )
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "themes": list(self.themes),
+            "media_default": self.media_default,
+            "videos": self.videos,
+        }
 
 
 @dataclass

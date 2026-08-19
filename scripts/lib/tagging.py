@@ -147,25 +147,37 @@ def classify_media_type(
     channel_content_type: str | None,
     themes: Themes,
 ) -> MediaVerdict:
-    """말씀/찬양을 가린다 (themes.yaml 판별 우선순위 1~4 그대로).
+    """말씀/찬양을 가린다 (themes.yaml 판별 우선순위).
 
-        1. 채널 content_type이 sermon·worship·devotion이면 거기서 끝난다.
-        2. mixed(또는 알 수 없음)면 제목 — 본문 장절이 있으면 sermon.
-        3. 없으면 title_keywords로, **한쪽만 걸릴 때만** 확정한다.
-        4. 양쪽 다 걸리거나 아무것도 안 걸리면 길이로 가린다.
-        5. 그래도 못 가리면 unknown.
+        1. 제목 어휘 — **한쪽만** 걸릴 때 확정한다
+        2. 본문 장절 — 있으면 sermon
+        3. 채널 content_type — sermon·worship·devotion이면 그대로
+        4. 길이 — 30분↑ sermon / 10분↓ worship
+        5. 그래도 못 가리면 unknown
+
+    [2026-08-19 개정 — 제목이 채널보다 앞이다. 실측으로 뒤집혔다.]
+      개정 전에는 채널 content_type이 1순위였고, 전용 채널은 거기서 끝났다.
+      설계 의도는 "전용 채널은 제목을 볼 필요가 없다"였는데, 실제 데이터에서
+      **전용 채널이 반대 형식의 영상을 대량으로 올린다.**
+
+        오륜교회(sermon)   주일 각 부 예배 찬양 콘티 55건을 올린다
+        우리들교회(sermon)  찬양 26건
+        꿈의교회(sermon)    찬양 14건
+        → 1,069건 중 81건이 찬양인데 sermon으로 판정됐다. 앱에서 [찬양] 토글을
+          누르면 이 81건이 통째로 사라진다.
+
+      채널 성격은 "그 채널이 주로 무엇을 올리는가"이지 "이 영상이 무엇인가"가
+      아니다. 제목이 형식을 직접 말할 때는 그쪽이 더 구체적인 증거다.
+
+    [장절보다도 제목이 앞인 이유 — 3건이지만 방향이 분명하다]
+      "시편 92편 + 주 이름 찬양 + 나의 기도하는 것보다 | 주일 2부예배 찬양 헤세드"
+      찬양 콘티의 **곡명이 시편**인 경우다. 장절을 먼저 보면 설교가 된다.
+      제목에 형식 어휘("찬양")가 명시된 이상 그것이 우선한다.
 
     unknown은 버리는 값이 아니다. 앱은 unknown을 **양쪽 토글 모두에 노출한다**
     (PLAN.md 3.4) — 판별 실패로 영상이 사라지는 것보다 낫고, unknown 비율이
     사전을 고칠 근거가 된다. 주제 태깅의 untagged와는 성격이 다르다.
     """
-    direct = CHANNEL_CONTENT_TYPE_MAP.get(str(channel_content_type or "").strip())
-    if direct:
-        return MediaVerdict(direct, REASON_CHANNEL)
-
-    if themes.scripture_reference_signal and has_scripture_reference(title):
-        return MediaVerdict(SERMON, REASON_SCRIPTURE)
-
     hit_ids = [
         media.id
         for media in themes.media_types
@@ -173,6 +185,13 @@ def classify_media_type(
     ]
     if len(hit_ids) == 1:
         return MediaVerdict(hit_ids[0], REASON_TITLE)
+
+    if themes.scripture_reference_signal and has_scripture_reference(title):
+        return MediaVerdict(SERMON, REASON_SCRIPTURE)
+
+    direct = CHANNEL_CONTENT_TYPE_MAP.get(str(channel_content_type or "").strip())
+    if direct:
+        return MediaVerdict(direct, REASON_CHANNEL)
 
     signal = themes.duration_signal
     if duration_seconds >= signal.sermon_min_seconds:

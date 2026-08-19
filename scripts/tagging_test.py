@@ -11,7 +11,8 @@
   1. 본문 장절 패턴이 실제 설교 제목을 잡고, 일상어를 잡지 않는다
      — 1음절 약어("행"·"사")가 "여행 12장"·"감사 3가지"에 걸리던 유형
   2. 영문 키워드가 단어 경계로만 걸린다 (themes.yaml이 QT에 요구한 것)
-  3. media_type 판별이 themes.yaml의 우선순위 1~4를 그 순서대로 따른다
+  3. media_type 판별이 themes.yaml 우선순위(제목 → 장절 → 채널 → 길이)를 따른다
+     — 채널이 1순위였을 때 찬양 81건이 sermon으로 판정되던 회귀 방지
   4. themes.yaml 게이트 6종이 실제로 빌드를 세운다 (고장을 주입해 확인)
   5. 실제 themes.yaml이 전역 금지어를 태깅 사전에 쓰지 않는다
 """
@@ -86,23 +87,35 @@ SCRIPTURE_NO = [
 
 # --- 3. media_type 판별 -----------------------------------------------------
 #   (제목, 길이(초), 채널 content_type, 기대 media_type, 기대 근거)
+#
+# 2026-08-19 개정된 우선순위를 고정한다: 제목 → 장절 → 채널 → 길이.
+# 개정 전에는 채널이 1순위였고, 그 탓에 sermon 채널이 올린 찬양 81건이
+# sermon으로 판정됐다(실측). 아래 첫 두 건이 그 회귀를 막는 자리다.
 MEDIA_CASES = [
-    # 1순위 — 채널 content_type에서 끝난다. 제목이 반대여도 뒤집지 않는다.
-    ("찬양 메들리 1시간", 3600, "sermon", SERMON, "channel"),
-    ("요한복음 3:16 강해", 2400, "worship", WORSHIP, "channel"),
-    ("오늘의 묵상", 600, "devotion", SERMON, "channel"),  # devotion은 sermon으로 본다
-    # 2순위 — mixed는 본문 장절이 가장 강한 신호
-    ("[주일] 요한복음 3:16 - 사랑", 300, "mixed", SERMON, "scripture"),
-    # 3순위 — 한쪽 사전만 걸릴 때만 확정
-    ("수요예배 말씀", 1200, "mixed", SERMON, "title"),
-    ("잔잔한 피아노 찬양 모음", 1200, "mixed", WORSHIP, "title"),
-    # 양쪽 다 걸리면 제목으로 정하지 않고 길이로 넘어간다
+    # 1순위 — 제목이 형식을 말하면 채널 성격을 이긴다
+    ("찬양 메들리 1시간", 3600, "sermon", WORSHIP, "title"),
+    ("주일예배 설교 - 잃어버린 아들", 3600, "worship", SERMON, "title"),
+    # 실측 사례: 찬양 콘티의 곡명이 시편이다. 장절보다 제목이 앞이라 찬양으로 남는다
+    (
+        "시편 92편 + 주 이름 찬양 + 나의 기도하는 것보다 | 주일 2부예배 찬양 헤세드",
+        1200,
+        "sermon",
+        WORSHIP,
+        "title",
+    ),
+    # 2순위 — 제목이 형식을 말하지 않으면 본문 장절이 sermon 신호다
+    ("[주일] 요한복음 3:16 - 하나님이 세상을 이처럼", 300, "mixed", SERMON, "scripture"),
+    # 3순위 — 제목도 장절도 없으면 채널 성격이 기본값이다
+    ("교회 소식", 1200, "sermon", SERMON, "channel"),
+    ("이번 주 안내", 1200, "worship", WORSHIP, "channel"),
+    ("오늘 하루", 1200, "devotion", SERMON, "channel"),  # devotion은 sermon으로 본다
+    # 4순위 — 양쪽 다 걸리면 제목으로 정하지 않고 길이로 넘어간다
     ("설교와 찬양이 함께하는 시간", 2400, "mixed", SERMON, "duration"),
     ("설교 후 찬양", 300, "mixed", WORSHIP, "duration"),
-    # 4순위 — 아무것도 안 걸리고 길이도 애매하면 unknown
+    # 5순위 — 아무것도 안 걸리고 길이도 애매하면 unknown
     ("교회 소식 브리핑", 900, "mixed", UNKNOWN, "none"),
-    # 승인 목록에 없는 채널(content_type 미상)도 mixed와 같은 경로를 탄다
-    ("성경통독 창세기 1장", 1200, None, SERMON, "scripture"),
+    # 승인 목록에 없는 채널(content_type 미상)도 같은 경로를 탄다
+    ("성경통독 창세기 1장", 1200, None, SERMON, "title"),
 ]
 
 

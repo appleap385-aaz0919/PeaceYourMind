@@ -55,6 +55,17 @@ CRISIS_MIN_VIDEOS = 12  # 미달이면 필터를 완화하지 않고 직전 결�
 CRISIS_MAX_VIDEOS = 20
 CRISIS_STALE_DAYS = 3  # crisis.updated_at이 이보다 오래되면 경보
 
+# --- 폴백 정책 (2026-08-19 신설, PLAN.md 3.3 개정) ---------------------------
+# 주제 태깅이 안 된 영상을 형식(media_type)으로 세분류 화면에 채워 넣는다.
+# 근거와 실측은 PLAN.md 3.3 / HANDOFF 2.14에 있다.
+FALLBACK_MAX_PER_SUBCATEGORY = 12  # 20슬롯 중 폴백이 가져갈 수 있는 최대치 (60%)
+SUBCATEGORY_MIN_VIDEOS = 8  # 이보다 적으면 화면으로 성립하지 않는다 → 경보
+FALLBACK_HEAVY_RATIO = 0.5  # 폴백이 이 비율을 넘으면 그 감정을 못 받치고 있다는 신호
+
+# 영상이 그 화면에 온 경로. **데이터에 남긴다** — 앱이 두 층을 섞지 않기 위해서다.
+SOURCE_THEME = "theme"  # 주제 태깅으로 붙은 영상 (정밀)
+SOURCE_FALLBACK = "fallback"  # 형식·채널로 채운 영상
+
 MIN_DURATION_SECONDS = 180  # 3분 미만 제외 (쇼츠가 여기에 포함되어 걸러진다)
 # 상한은 두지 않는다 — 설교는 30분 이상이 흔하다 (PLAN.md 10절 확정).
 
