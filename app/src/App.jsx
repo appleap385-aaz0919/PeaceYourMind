@@ -361,6 +361,28 @@ function Crisis({ data, onBack }) {
   );
 }
 
+/**
+ * 입력 화면 — 텍스트 모드와 선택 모드가 **같은 헤더를 공유한다.**
+ *
+ * [2026-08-19] 배치를 FYM 구조로 맞췄다. 색·문구가 아니라 배치 문제였다.
+ *   ① 배경  헤드라인 뒤 radial glow(orb). 균일한 어둠에는 시선이 모이는 지점이
+ *            없다. 이 glow가 후광 역할을 해서 첫 문장을 붙든다
+ *   ② 정렬  헤더는 중앙 정렬. 좌측 정렬이면 인사가 질문이 아니라 **입력 필드
+ *            라벨**처럼 읽힌다 — 실제로 "지금은 어떤 마음인가요?"는 라벨이 아니라
+ *            재방문 인사 풀(same_day)의 한 문장이다
+ *   ③ 수직  height 150의 헤더 블록이 위 여백을 만든다
+ *   ④ 캡션  자간 넓은 작은 글씨가 헤드라인 위에 있어야 헤드라인이 무거워진다
+ *
+ * [헤더가 모드 분기 **바깥**에 있는 것이 핵심이다 — 2026-08-19 [A]]
+ *   처음에는 선택 모드가 헤더 없이 질문만 그렸다. 그러면 "골라서 찾을래요"를
+ *   누른 순간 캡션·인사·glow가 통째로 사라져 **다른 화면으로 넘어간 것처럼**
+ *   보인다. 실제로는 같은 화면에서 입력 방식만 바꾼 것인데도 그렇다.
+ *   FYM은 헤더를 ternary 밖에 두어 이 문제가 없다. 같은 구조로 맞췄다.
+ *
+ *   React가 같은 위치의 같은 엘리먼트로 조정하므로 헤더 DOM이 유지되고,
+ *   .rise 애니메이션도 다시 돌지 않는다 — 전환이 "바뀌는" 것이 아니라
+ *   "아래쪽만 갈리는" 것으로 보이는 이유다. **분기 안으로 옮기지 말 것.**
+ */
 function Input({
   mode,
   setMode,
@@ -373,68 +395,8 @@ function Input({
   onSubmit,
   onChoose,
 }) {
-  if (mode === "select") {
-    if (!selectedCategory) {
-      return (
-        <div className="rise">
-          <p style={styles.selectLead}>{taxonomy.ui.select_mode.step1}</p>
-          <div style={styles.grid}>
-            {taxonomy.categories.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setSelectedCategory(c)}
-                style={styles.chip}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-          <button type="button" onClick={() => setMode("text")} style={styles.switch}>
-            {taxonomy.ui.select_mode.switch_to_text}
-          </button>
-        </div>
-      );
-    }
-    return (
-      <div className="rise">
-        <p style={styles.selectLead}>{taxonomy.ui.select_mode.step2}</p>
-        <div style={styles.grid}>
-          {subcategoriesOf(taxonomy, selectedCategory.id).map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => onChoose(s.id)}
-              style={styles.chip}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={() => setSelectedCategory(null)}
-          style={styles.switch}
-        >
-          ← 다시 고르기
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="rise">
-      {/* [2026-08-19] 입력 화면 배치를 FYM 구조로 맞췄다. 색·문구가 아니라 배치 문제였다.
-          고친 것 넷 — 전부 "시선이 어디로 모이는가"에 관한 것이다.
-            ① 배경  헤드라인 뒤 radial glow(orb). 균일한 어둠에는 시선이 모이는
-                     지점이 없다. 이 glow가 후광 역할을 해서 첫 문장을 붙든다
-            ② 정렬  중앙 정렬. 좌측 정렬이면 "지금은 어떤 마음인가요?"가 질문이
-                     아니라 **입력 필드 라벨**처럼 읽힌다 — 실제로 그 문장은
-                     라벨이 아니라 재방문 인사 풀(same_day)의 한 문장이다
-            ③ 수직  height 150의 헤더 블록이 위 여백을 만든다. 위에서부터 쌓으면
-                     아래가 비어 미완성으로 읽힌다
-            ④ 캡션  자간 넓은 작은 글씨가 헤드라인 위에 있어야 헤드라인이 무거워진다
-          문구는 PYM 것을 유지했다. 바뀐 것은 배치와 배경이다. */}
       <div style={styles.hero}>
         <div className="orb" style={styles.heroGlow} />
         <div style={styles.heroText}>
@@ -443,6 +405,29 @@ function Input({
         </div>
       </div>
 
+      {mode === "select" ? (
+        <SelectMode
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          setMode={setMode}
+          onChoose={onChoose}
+        />
+      ) : (
+        <TextMode
+          text={text}
+          setText={setText}
+          placeholder={placeholder}
+          setMode={setMode}
+          onSubmit={onSubmit}
+        />
+      )}
+    </div>
+  );
+}
+
+function TextMode({ text, setText, placeholder, setMode, onSubmit }) {
+  return (
+    <div style={styles.modeBlock}>
       {/* 한 줄 입력이다. textarea 4줄 상자였던 것을 바꿨다 —
           placeholder가 "한 줄로 적어봐요"라고 말하는데 4줄 상자를 내밀면
           말과 화면이 어긋나고, 큰 상자는 "길게 써야 하나" 하는 부담을 준다.
@@ -460,6 +445,50 @@ function Input({
       </button>
       <button type="button" onClick={() => setMode("select")} style={styles.switch}>
         {taxonomy.ui.select_mode.switch_to_select}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * 선택 모드 — 대분류 한 단계, 세분류 한 단계.
+ *
+ * 되돌아가는 버튼이 두 단계에서 같은 자리·같은 스타일이다(FYM과 같다).
+ * 1단계에서는 텍스트 입력으로, 2단계에서는 대분류 목록으로 돌아간다 —
+ * 사용자 입장에서는 "한 걸음 뒤로"라는 같은 동작이라 자리가 같아야 한다.
+ */
+function SelectMode({ selectedCategory, setSelectedCategory, setMode, onChoose }) {
+  const items = selectedCategory
+    ? subcategoriesOf(taxonomy, selectedCategory.id)
+    : taxonomy.categories;
+
+  return (
+    <div style={styles.modeBlock}>
+      <p style={styles.selectLead}>
+        {selectedCategory
+          ? taxonomy.ui.select_mode.step2
+          : taxonomy.ui.select_mode.step1}
+      </p>
+      <div style={styles.grid}>
+        {items.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() =>
+              selectedCategory ? onChoose(item.id) : setSelectedCategory(item)
+            }
+            style={styles.chip}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => (selectedCategory ? setSelectedCategory(null) : setMode("text"))}
+        style={styles.back}
+      >
+        {selectedCategory ? "← 다시 고르기" : taxonomy.ui.select_mode.switch_to_text}
       </button>
     </div>
   );
@@ -583,6 +612,7 @@ const styles = {
     fontFamily: "inherit",
     cursor: "pointer",
   },
+  // 텍스트 모드의 전환 링크 — 주 버튼 바로 아래라 폭을 맞춰 가운데 정렬한다.
   switch: {
     display: "block",
     margin: "18px auto 0",
@@ -592,7 +622,28 @@ const styles = {
     fontSize: 12.5,
     cursor: "pointer",
   },
-  selectLead: { fontFamily: SERIF, fontSize: 16.5, margin: "6px 0 20px" },
+
+  // 선택 모드의 되돌아가기 링크 — **좌측 정렬이다** (FYM과 같다).
+  // 위에 있는 것이 좌측 정렬된 칩 그리드라 그 왼쪽 끝에 맞춰야 줄이 선다.
+  // 텍스트 모드처럼 가운데 두면 칩 어디에도 걸리지 않는 자리에 뜬다.
+  back: {
+    marginTop: 26,
+    padding: 0,
+    background: "none",
+    border: "none",
+    color: T.muted,
+    fontSize: 13,
+    cursor: "pointer",
+  },
+  // 헤더 아래 본문 블록. 두 모드가 같은 값을 쓴다 — 모드를 바꿔도 아래 내용이
+  // 시작하는 높이가 같아야 헤더만 남고 아래만 갈리는 것으로 보인다.
+  modeBlock: { marginTop: 30 },
+
+  // 선택 모드의 질문. **헤더와 달리 좌측 정렬이고 작다** (FYM과 같다).
+  // 헤더는 말을 거는 자리라 중앙·명조·25px이고, 이쪽은 목록을 안내하는
+  // 라벨이라 좌측·고딕·13px이다. 둘을 같은 격으로 그리면 인사와 안내가
+  // 서로 자리를 다툰다 — 앞서 SERIF 16.5px이었던 것을 FYM 값으로 되돌렸다.
+  selectLead: { fontSize: 13, color: T.muted, margin: "0 0 16px" },
   grid: { display: "flex", flexWrap: "wrap", gap: 8 },
 
   // [라운드 언어는 요소마다 다르다 — 2026-08-19]
