@@ -3797,6 +3797,23 @@ verses:
     verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
     verified_at: "2026-08-18"
 
+  - id: mic.7.7
+    ref: 미가 7:7
+    text: >
+      오직 나는 여호와를 우러러보며 나를 구원하시는 하나님을 바라보나니 나의
+      하나님이 나를 들으시리로다
+    emotion_tags: [flutter.anticipation]
+    theme: hope
+    note: >
+      2026-08-19 추가. 이 화면은 번영신학 위험이 가장 강한 세분류다 —
+      설렘은 "잘 될 것"과 바로 붙어 있다.
+      "여호와를 우러러보며 …**나의 하나님이 나를 들으시리로다**" —
+      약속이 **"들으신다"까지만**이고 무엇을 주신다고 하지 않는다.
+      기대의 대상을 결과가 아니라 들으심에 둔다. 미가서 신규.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
   # ═══════════════════════════════════════════════════════════
   # flutter.thrill (들뜸·짜릿함) — 주제: joy_praise, new_thing
   # 방향: joy.delight와 매핑 주제가 겹치므로 구절로 성격을 가른다
@@ -3935,6 +3952,22 @@ verses:
     verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
     verified_at: "2026-08-18"
 
+  - id: psa.81.1
+    ref: 시편 81:1
+    text: >
+      우리 능력 되신 하나님께 높이 노래하며 야곱의 하나님께 즐거이
+      소리할찌어다
+    emotion_tags: [flutter.thrill]
+    theme: joy_praise
+    note: >
+      2026-08-19 추가. 확정 규칙 3이 이 화면을 joy.delight와 가르는 기준은
+      지배 어휘의 **강도·볼륨**이다(소리를 발하여 · 소리를 높여 · 힘을 다하여).
+      "**높이 노래하며** …**즐거이 소리할찌어다**" — 볼륨 어휘 둘이 한 절에
+      있어 그 구분선에 그대로 합류한다. 시편 81 신규.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
   # ═══════════════════════════════════════════════════════════
   # calm.ease (여유·편안) — 주제: quiet_worship, creation
   # 방향: 여유를 유지하라고 요구하지 않는다. 지금 있는 자리에 대한
@@ -4124,6 +4157,23 @@ verses:
     note: >
       2026-08-19 추가. "여호와의 행사가 크시니 **이를 즐거워하는 자가** 다
       연구하는도다" — 즐거움이 관찰로 이어지는 결이다. 33자로 짧다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: job.12.7
+    ref: 욥기 12:7
+    text: >
+      이제 모든 짐승에게 물어 보라 그것들이 네게 가르치리라 공중의 새에게
+      물어 보라 그것들이 또한 네게 고하리라
+    emotion_tags: [calm.ease]
+    theme: creation
+    note: >
+      2026-08-19 추가. 이 화면 헤더가 "욥기 12장까지 후보가 넉넉하다"고 직접
+      지목한 곳이다.
+      "모든 짐승에게 **물어 보라** …공중의 새에게 **물어 보라**" —
+      명령형이지만 요구가 아니라 **초대**다. 여유를 유지하라고 요구하지 않는
+      이 화면의 방향과 맞는다.
 
     verified: true
     verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
@@ -4415,6 +4465,42 @@ verses:
     verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
     verified_at: "2026-08-18"
 
+  - id: act.17.11
+    ref: 사도행전 17:11
+    text: >
+      베뢰아 사람은 데살로니가에 있는 사람보다 더 신사적이어서 간절한 마음으로
+      말씀을 받고 이것이 그러한가 하여 날마다 성경을 상고하므로
+    emotion_tags: [boredom.novelty]
+    theme: bible_story
+    note: >
+      2026-08-19 추가. "간절한 마음으로 말씀을 받고 **이것이 그러한가 하여
+      날마다 성경을 상고하므로**" — 새것을 찾는 상태를 **탐구로 긍정한다.**
+      헤더 방향("새 자극을 찾는 상태를 산만함으로 취급하지 않는다") 그대로다.
+      ⚠ 같은 장 17:21("가장 새로운 것을 말하고 듣는 이외에 달리 시간을 쓰지
+        않음이더라")은 새것 추구를 부정적으로 그린다 — **의도적으로 피했다.**
+        같은 장에서 방향이 정반대인 절이 붙어 있는 사례라 기록해 둔다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: dan.2.22
+    ref: 다니엘 2:22
+    text: >
+      그는 깊고 은밀한 일을 나타내시고 어두운데 있는 것을 아시며 또 빛이
+      그와 함께 있도다
+    emotion_tags: [boredom.novelty]
+    theme: daily_word
+    note: >
+      2026-08-19 추가. "그는 **깊고 은밀한 일을 나타내시고** 어두운데 있는 것을
+      아시며" — 아직 안 본 것이 남아 있다는 것 자체가 이 화면의 초대다.
+      다니엘서 신규.
+      [제외 기록] 잠 25:11("경우에 합당한 말은 아로새긴 은쟁반에 금사과니라")을
+      검토하고 뺐다 — 26자로 짧아 매력적이나 "합당한 말"이 새 자극과 직접
+      연결이 약하고, 잠 25:2가 이미 이 화면에 있다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
   # ═══════════════════════════════════════════════════════════
   # calm.stable (안정감) — 주제: quiet_worship, daily_word
   # 방향: 안정을 유지하라고 요구하지 않는다. 흔들림을 실패로 만들지 않는

@@ -23,7 +23,7 @@
 | Phase | 상태 |
 |---|---|
 | 0 정책·채널 | **완료** — 승인 15건 등록. 1c 대조 완료, 제외 1건 기록 |
-| 1 구절 큐레이션 | **완료** — 250구절 (감정 240 + 위기 10). 24개 세분류 전부 10건 이상 |
+| 1 구절 큐레이션 | **완료** — 303구절 (감정 293 + 위기 10). 2026-08-19 확장으로 세분류당 10~15로 넓혔다 (2.24절) |
 | 1.5 검증·추출 파이프라인 | **완료** — 이번 세션 산출물 (`verify_verses.py` + `fill_verses.py`) |
 | 2 배치 개작 | **완료** — 파이프라인 정상(61 units) + 태깅 전략 확정(2.14절) + 사전 보강(2.17절). 폴백 33.3%, 24화면 중 19개가 20건 달성, 최소 12건 |
 | 3 PWA 조립 | **완료** — 앱 61개 테스트 통과, gh-pages 배포·실동작 확인 (2.16절) |
@@ -32,7 +32,9 @@
 **규모**
 
 ```
-구절        250 / 목표 약 250  ← 달성. 24개 세분류 전부 커버
+구절        303 (감정 293 + 위기 10)  ← 2026-08-19 확장 완료 (250 → 303)
+            세분류당 10~15로 불균일하다. 개수가 아니라 "확실히 맞는 구절이
+            몇 개까지 있는가"로 정했다 (PLAN.md 3.2 · HANDOFF 2.24)
             1차분 anxiety.* 30 · 2차분 sadness.*+exhaustion.* 60
             3차분 anger.*+frustration.* 60 · 4차분 긍정 계열 80
             + crisis 전용 10 (최상위 crisis 키, 감정 매핑 미적용)
@@ -1347,14 +1349,84 @@ anxiety.restless  peace 9/10    "잠잠하라"는 상태 요구뿐, 근거가 �
 이미 수록, 시 37:7은 후반부가 책망조, 눅 10:42는 "마리아는 이 좋은 편을
 택하였으니"가 비교·판정을 들여온다). 억지로 채우지 않는 것이 기준이다.
 
-**진행 상황**
+**완료 — 250 → 303건 (감정 293 + 위기 10), 태그 연결 253 → 306**
 
 ```
-① anxiety.worry     13 → 15  눅 12:7(love) · 시 68:19(trust)
-② anxiety.tension   13 → 15  출 14:14(trust) · 마 10:19(guidance)
-  anxiety.restless  10 → 11  전 3:1(patience)  ← 목표 13에서 낮춤
-③ sadness 3개 (진행 예정) — 위기 인접이 둘(sorrow · lonely)이라 특히 보수적으로
+세분류                전 → 후   세분류                전 → 후
+anxiety.worry        13 → 15   joy.grateful         10 → 15
+anxiety.tension      13 → 15   joy.delight          10 → 13
+anxiety.restless     10 → 11   joy.proud            10 → 11
+sadness.sorrow       10 → 15   flutter.anticipation 10 → 11
+sadness.lonely       13 → 15   flutter.thrill       10 → 11
+sadness.loss         10 → 14   calm.ease            10 → 11
+exhaustion.burnout   10 → 14   calm.stable          11 → 11
+exhaustion.tired     10 → 13   boredom.novelty      10 → 12
+exhaustion.listless  10 → 11   boredom.dull         10 → 10
+anger.unfair         10 → 15   frustration.stuck    12 → 14
+anger.irritation     10 → 12   frustration.blocked  11 → 13
+anger.rage           10 → 12   frustration.suppressed 10 → 12
 ```
+
+**목표에 못 미친 채로 멈춘 곳이 7개다. 그게 이 작업의 결과다.**
+
+```
+calm.stable  11 (목표 12)  후보가 이미 있는 문장과 겹쳤다 — 시 62:2
+                           "요동치 아니하리로다"가 시 16:8과 같은 끝맺음이다
+boredom.dull 10 (유지)     성경에 권태를 위로하는 본문이 사실상 없다
+joy.proud    11 (목표 12)  시 128:2가 "복되고 형통하리로다"로 끝난다
+restless     11 (목표 13)  후보 6건이 전부 중복·책망·판정에 걸렸다
+listless     11 (목표 13)  후보가 마른 게 아니라 이미 채워져 있었다
+loss         14 · blocked 13 · frus.stuck 14
+```
+
+**축 편중을 푸는 것이 개수보다 먼저였다** — 실제로 대부분의 화면에서
+새 축이 0에서 시작했다.
+
+```
+anxiety.worry     trust 10/13     → love·요구 없는 trust를 넣었다
+anxiety.tension   courage 10/13   → 그중 넷이 "두려워 말라" 명령형이었다
+anxiety.restless  peace 9/10      → patience 0
+sadness.loss      comfort·renewal 두 축뿐 → lament·presence·hope 각 0
+exhaustion.burnout rest·renewal 두 축뿐  → lament 0
+                  "쉬어도 된다"는 허가는 "내가 소진됐다"는 말이 먼저 있어야 한다
+joy 3개           gratitude·joy_praise 두 축뿐 → creation 0
+```
+
+**제외 목록에 유형 두 개를 새로 세웠다** (verses.yaml 말미)
+
+```
+되돌아오는 조건  앞부분은 모범인데 끝에서 조건으로 돌아온다
+                 사 30:18("여호와께서 기다리시나니" → "그를 기다리는 자는 복이")
+                 사 49:23 · 시 37:34
+                 ⚠ 앞부분에 감동해서 채택하기 쉽다. 끝까지 읽을 것
+형통 약속        4차분 위험(번영신학)의 재발. note로 관리할 수 없다 —
+                 화면에 뜨는 것은 본문이다. 시 128:2가 이 기준으로 빠졌다
+```
+
+**한 책·한 편 편중 — 다음 차수의 과제**
+
+```
+시편 171/303건 (56%) · 82편 사용 · 이사야 28건(9%) · 나머지 36책이 34%
+3회 이상 쓴 편   시 119(9) · 103(7) · 23(5) · 145(5) · 27(4) · 34(4) · 42(4)
+한 화면에 2회 이상  시 119→boredom.dull 4회 · 시 103→anger.irritation 3회
+                    시 31·42→sadness.sorrow · 시 145→joy.grateful
+                    시 98→flutter.thrill · 시 16→calm.ease · 시 119→novelty
+```
+
+시편 56%는 감정 언어가 시편에 몰려 있는 결과라 자체로 결함은 아니다. 다만
+**한 화면 안에서 같은 편이 3~4회 나오는 곳**(시 119→boredom.dull, 시 103→
+anger.irritation)은 "다른 구절 보기"를 눌렀을 때 같은 편이 연달아 나올 수 있다.
+회전이 id 기반 순환이라 순서상 인접하기도 한다. **다음에 손볼 곳은 여기다.**
+
+**크기 영향은 작다**
+
+```
+verses.json  60,614B → 73,003B   gzip 16,436 → 19,348B (+2,912B)
+앱 번들 gzip  94,423B → 98,113B  (+3,690B, +3.9%)
+```
+
+**짧은 구절(≤45자)은 107 → 129건(44%)**으로 늘었지만 비율은 45% → 44%로
+거의 같다. 긴 구절만 골라 채우지 않았다는 뜻이다.
 
 ### 2.23 배치 관찰 — 첫 cron 실행 (기록 대기)
 
