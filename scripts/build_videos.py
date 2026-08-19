@@ -145,6 +145,24 @@ def tag_pool(ctx: BuildContext, kept: Sequence[Video]) -> list[TaggedVideo]:
     return tagged
 
 
+def _untagged_sample(untagged: Sequence[TaggedVideo], per_channel: int = 5) -> list[str]:
+    """미태깅 제목 표본 — **채널마다 골고루** 뽑는다.
+
+    앞에서부터 15건을 자르면 첫 채널의 제목만 담긴다(2026-08-19 첫 실측이
+    정확히 그랬다 — 822건 중 표본 15건이 전부 오륜교회였다). 사전의 구멍을
+    보려면 채널마다 어떤 제목이 안 걸리는지를 봐야 하므로 채널별로 잘라 담는다.
+    """
+    picked: list[str] = []
+    seen: Counter[str] = Counter()
+    for item in untagged:
+        channel = item.video.channel
+        if seen[channel] >= per_channel:
+            continue
+        seen[channel] += 1
+        picked.append(f"[{channel}] {item.video.title}")
+    return picked
+
+
 def summarize_tagging(ctx: BuildContext, tagged: Sequence[TaggedVideo]) -> dict[str, Any]:
     """태깅 결과를 리포트용으로 집계하고, 필요하면 경보를 낸다.
 
@@ -187,7 +205,7 @@ def summarize_tagging(ctx: BuildContext, tagged: Sequence[TaggedVideo]) -> dict[
         "untagged_ratio": round(ratio, 3),
         "multi_theme": multi,
         "untagged_by_channel": dict(by_channel.most_common()),
-        "untagged_sample": [t.video.title for t in untagged[:15]],
+        "untagged_sample": _untagged_sample(untagged),
         "media_types": {k: media_counts.get(k, 0) for k in (SERMON, WORSHIP, UNKNOWN)},
         "media_reasons": dict(sorted(reason_counts.items())),
     }
