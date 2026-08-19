@@ -153,6 +153,38 @@ def main() -> int:
     multi = {m.theme_id for m in tag_themes("절망 속에 임하는 위로", themes)}
     _check(failures, {"hope", "comfort"} <= multi, "복수 태깅 허용", str(sorted(multi)))
     _check(failures, not tag_themes("청년부 수련회 하이라이트", themes), "미태깅은 빈 결과")
+
+    # 2026-08-19 사전 보강에서 내린 판단을 고정한다 (HANDOFF 2.17).
+    # love는 "사랑받음"이지 "사랑함"이 아니다. 어간을 "사랑하"까지 줄이면
+    # 방향이 반대인 곡("우리가 주를 더욱 사랑하고")까지 들어온다 — 실측 9건 중
+    # 4건이 그랬다. 그래서 **주어를 하나님으로 묶는 표지**만 키워드로 둔다.
+    # 나중에 "활용형을 줄이면 더 많이 잡힌다"며 되돌리는 것을 여기서 막는다.
+    for title, want in (
+        ("예수 사랑하심을 + 위대하신 주", True),
+        ("끝까지 사랑하셨어요 (요한복음 13:1)", True),
+        ("주의 인자하신 그 사랑이", True),
+        ("사랑한다 말하시네", True),
+        ("우리가 주를 더욱 사랑하고 / 주님의 선하심", False),
+        ("그러므로 사랑하자 | 새노래배우기", False),
+    ):
+        hit = "love" in {m.theme_id for m in tag_themes(title, themes)}
+        _check(
+            failures,
+            hit is want,
+            f"love {'태깅' if want else '비태깅'}: {title[:34]}",
+        )
+
+    # 어미가 갈려 빗나가던 활용형 — 어간으로 줄여 잡기로 한 것들이다.
+    for title, theme_id in (
+        ("보라 너희는 두려워 말고", "peace"),
+        ("주 안에서 기뻐해", "joy_praise"),
+        ("송축해 내 영혼", "joy_praise"),
+        ("구원으로 인도하는", "guidance"),
+        ("주 신실하심 놀라워", "trust"),
+        ("주님의 선하심", "gratitude"),
+    ):
+        hit = theme_id in {m.theme_id for m in tag_themes(title, themes)}
+        _check(failures, hit, f"{theme_id} 활용형 태깅: {title}")
     crisis_tagged = tag_themes("위기 상담 안내", themes)
     _check(
         failures,
