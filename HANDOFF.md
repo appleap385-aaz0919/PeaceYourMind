@@ -1,6 +1,7 @@
 # HANDOFF — 세션 인수인계
 
-작성 2026-08-18 (KST) · 개정 2026-08-19 (Phase 3 앱 배포 완료 — https://appleap385-aaz0919.github.io/PeaceYourMind/) · 최신 상태는 `git log`로 확인할 것
+작성 2026-08-18 (KST) · 개정 2026-08-19 (Phase 0~3 완료 · 서비스 가동 중 — https://appleap385-aaz0919.github.io/PeaceYourMind/)
+다음 세션은 **만드는 일이 아니라 관찰하고 고치는 일**이다 (3절) · 최신 상태는 `git log`로 확인할 것
 
 > 이 문서는 **다음 세션이 바로 일을 이어받기 위한 것**이다.
 > 정책·구조는 `PLAN.md`, 주제 체계는 `themes.yaml`, 원문 출처는 `data/krv/SOURCE.md`에 있고
@@ -26,6 +27,7 @@
 | 1.5 검증·추출 파이프라인 | **완료** — 이번 세션 산출물 (`verify_verses.py` + `fill_verses.py`) |
 | 2 배치 개작 | **완료** — 파이프라인 정상(61 units) + 태깅 전략 확정(2.14절). 폴백 도입으로 24화면 중 17개가 20건 달성, 최소 12건. 실 API 재실행은 아직 (코드 검증은 실측 데이터로 완료) |
 | 3 PWA 조립 | **완료** — 앱 61개 테스트 통과, gh-pages 배포·실동작 확인 (2.16절) |
+| 4 운영·확장 | **미착수** — 자동 cron 첫 실행 관찰이 시작점 (3절) |
 
 **규모**
 
@@ -953,58 +955,95 @@ IndexedDB     캐시됨 version=2026-08-19T02:53:24Z · 세분류 24 · 영상 4
 
 ---
 
-## 3. 다음 세션 할 일 — 폴백 반영 배치 재실행과 워크플로
+## 3. 다음 세션 할 일 — Phase 4 운영과 남은 과제
 
-### 순서
-
-```
-1. (c) 이단 규정 목록 대조     완료 (2026-08-18) — channel_criterion_c.20260818.md
-2. 승인 채널 등록              완료 (2026-08-18) — allowlist 15개 · reviewed_out 1건
-3. build_videos.py 작성        완료 (2026-08-19) — 드라이런 통과, 테스트 2종
-4. 실제 API 첫 실행            완료 (2026-08-19) — 61 units. 결과는 2.13절
-5. 태깅 전략 확정             완료 (2026-08-19) — 주제 + 폴백 2층. 2.14절
-6. 폴백 반영 배치 재실행        완료 (2026-08-19) — 452건, 예측과 일치
-7. Actions 워크플로 build.yml   완료 (2026-08-19) — 드라이런·실행·배포 확인. 2.15절
-8. **경보 Issue 정책 조정**     ★ 여기서 시작한다 — 첫 실행에서 Issue 44건이 생겼다
-9. Phase 3 PWA 조립           taxonomy.yaml 이식 · [말씀]/[찬양] 토글 · 2층 구분 노출
-```
-
-### 6. 폴백을 반영한 배치 재실행
-
-코드는 확정됐고 실측 데이터로 검증까지 마쳤다(2.14절). 남은 것은 **새 코드로
-실제 배치를 한 번 돌려 산출물을 만드는 것**이다. 직전 실행분(`dist/`)은 폴백
-도입 이전 구조라 `themes` 키를 쓰고 있어 앱이 쓸 수 없다.
-
-돌린 뒤 확인할 것 — 예측치와 맞는지만 보면 된다.
+### 지금까지 (전부 완료)
 
 ```
-총 노출 452건 (주제분 283 + 폴백 169) · 20건 달성 17/24 · 최소 12건
-경보 theme_fallback_heavy 9 · theme_too_few 0
-말씀 732 / 찬양 265 (media_type 우선순위 개정 반영분)
+Phase 0  채널 승인 15개 · 이단 규정 1c 대조            2026-08-18
+Phase 1  구절 250건 (감정 240 + 위기 10)               2026-08-18
+Phase 2  배치 본체 · 태깅/폴백 전략 · Actions 워크플로   2026-08-19
+Phase 3  앱 구현 · 배포                                2026-08-19
+         https://appleap385-aaz0919.github.io/PeaceYourMind/
 ```
 
-⚠ **채널을 늘려서 풀 문제가 아니다.** 미태깅 비율이 그대로면 채널을 늘려도
-미태깅만 늘어난다. 3차 발굴은 폴백 비율이 안정된 뒤다.
+**서비스는 지금 돌아간다.** 매일 09:30 UTC에 배치가 돌아 `data/videos.json`을
+갱신하고, 앱은 `version.json` 비교로 그것을 받아 쓴다. 그래서 다음 세션의 성격이
+바뀐다 — 만드는 일이 아니라 **관찰하고 고치는 일**이다.
 
-**실행 명령**
+### ★ 여기서 시작한다 — 1. 며칠치 배치 관찰
 
-```bash
-$env:YOUTUBE_API_KEY="..."
-python scripts/build_videos.py --previous dist/videos.json --dump-titles --out-dir dist
-#   61 units. --dump-titles를 켜두면 이후 분석이 전부 API 0으로 된다
+첫 자동 실행(cron)이 아직 없다. 지금까지는 전부 수동 실행이었다.
+
+```
+확인할 것   Actions에서 build.yml이 매일 도는가 (09:30 UTC = 18:30 KST)
+            Job Summary의 진단 표 — 미태깅 비율·폴백 과다 화면·잔존 0 채널이
+            며칠에 걸쳐 어떻게 움직이는가
+            월요일 실행에서 주간 진단 요약이 뜨는가 (악화됐을 때만 뜬다)
+            열려 있는 Issue 5건이 늘어나는지
 ```
 
-### 7. GitHub Actions 워크플로 2종
+**숫자 하나가 아니라 추이를 봐야 한다.** 첫 실측(미태깅 77%, 폴백 169건)이
+정상 범위인지 나빠지는 중인지는 며칠 치가 쌓여야 안다.
 
-FYM `build.yml` / `deploy-app.yml`을 이식한다. PYM에서 달라지는 것.
+### 2. 주제 사전 어간 보강 — 폴백 비율을 낮추는 유일한 실효 수단
 
-- cron은 **PT 자정 직후** (쿼터 리셋 기준). 예약값 200은 이미 `quota_log`에 반영돼 있다
-- 배포 전 게이트에 `verify_verses.py --check`를 건다 — `verified: false`가 하나라도
-  있으면 배포되지 않는다
-- 테스트 2종(`tagging_test.py`·`spread_test.py`)도 같은 단계에 넣는다. 네트워크를
-  쓰지 않으므로 러너에서 그대로 돈다
-- 배치 실패 시 배포 단계를 건너뛴다 → 직전 `videos.json`이 그대로 유지된다
-  (원자성은 배치가 이미 보장하지만, 워크플로도 같은 방향이어야 한다)
+곡명 258개 중 현재 사전에 걸리는 것은 20개(7.8%)다. **어미만 다른 근접 미스가
+29개(11.2%)** 있고, 어간 수준으로 다듬으면 19%까지 오른다(2.14절).
+
+```
+love 계열에 11개가 몰려 있다   사랑하시 → 사랑하심을 · 사랑한다 · 그 사랑
+그 외                        인도하시 → 구원으로 인도하는
+                             기뻐하   → 주 안에서 기뻐해
+                             두려워하지/두려워말라 → 보라 너희는 두려워 말고
+```
+
+⚠ **themes.yaml 원칙을 지킬 것** — 어간을 줄일 때마다 오탐을 실측한다.
+"한글은 음절 단위다. 어간을 줄일 때마다 활용형을 실측한다"가 그 파일의
+키워드 설계 원칙 3이고, `dist/titles.json`(1,067건)이 그 실측 자료다.
+사전을 고친 뒤 `python scripts/build_videos.py --dry-run`이 아니라
+**titles.json으로 재태깅해 보는 것**이 맞다 — API를 쓰지 않고 오탐을 셀 수 있다.
+
+### 3. crisis_eligible 채널 승인 — 위기 화면이 비어 있다
+
+승인 15개는 전부 `crisis_eligible: false`다. 위기 화면은 상담 안내만 표시하고
+있고, 배치는 매일 `crisis_no_channels` + `crisis_empty` 경보를 낸다.
+**의도된 안전 동작이지 결함이 아니다.** 다만 계속 이 상태로 둘지는 판단이 필요하다.
+
+기준은 일반 승인보다 엄격하다 — 정신건강 전문 사역·상담 사역 중심(PLAN.md 7절).
+지금 목록에는 그런 채널이 없다.
+
+### 4. 3차 채널 발굴 — 폴백이 안정된 뒤
+
+15개는 `MIN_ALLOWLIST_SIZE`와 같아 여유가 없다. 다만 **지금 늘리면 안 된다** —
+미태깅 77%인 상태에서 채널을 늘리면 미태깅만 늘어난다. 2번(사전 보강)이
+끝나고 폴백 비율이 내려온 뒤가 순서다.
+
+`--query-set`으로 세트를 고르고, 3차는 1·2차와 다른 갈래로 짠다(`C채널`이 후보).
+기검토 제외 11건은 `channel_reviewed_out.yaml`이 자동으로 상위 N에서 뺀다.
+
+### 5. 미뤄둔 판단 3건
+
+```
+blocklist_tiers 연결      taxonomy.yaml에 이식만 해두고 배치에 넘기지 않았다.
+                         켤지는 "어떤 제목이 걸리는지" 실측을 보고 정한다
+channel_zero_yield 조건   지금은 "필터 후 잔존 0"만 잡는다. 잔존 100건인데 태깅
+                         0인 채널(CGN 성경통독)이 서비스 기여로는 똑같이 0인데
+                         경보가 안 뜬다. 다만 폴백 도입으로 그 채널도 화면에
+                         나가게 됐으므로 "기여 0"의 정의부터 다시 세워야 한다
+폴백 중복 노출            worship 기본값 세분류가 17개라 그 화면들의 폴백 앞부분이
+                         겹친다. 사용자는 한 번에 한 화면만 보므로 당장 문제는
+                         아니고, 세분류별 오프셋으로 해소된다. 실사용 로그를 본 뒤
+```
+
+### 6. FYM 저장소에서 할 일 2건 (PYM에서는 못 고친다)
+
+```
+4.3절  lib/allowlist.py · lib/channel_blocklist.py의 _is_blank 결함
+       (YAML에서 값을 비운 키가 None이라 빈 필드가 검사를 통과한다)
+4.4절  normalize 반복 축약 예시가 실제 동작과 다르다
+       scripts/lib/normalize.py:19 · taxonomy.yaml:240
+```
 
 ### 실행 환경 — 로컬 셸에 API 키가 필요하다
 
@@ -1013,11 +1052,18 @@ export YOUTUBE_API_KEY="..."        # PowerShell: $env:YOUTUBE_API_KEY="..."
 ```
 
 **Actions Secret은 러너 전용이라 로컬 실행에는 잡히지 않는다.**
-`gen_verses_json.py`·`verify_verses.py`·`fill_verses.py`·테스트 2종은 API를
-쓰지 않으므로 키 없이 돈다.
+`gen_*.py`·`verify_verses.py`·`messages_test.py`·테스트 3종은 API를 쓰지 않는다.
 
-**API 누적** — 2026-08-18(PT) 1,324 units(발굴 2회 + 채널 확인).
-**2026-08-19 세션은 소모 0** — 전부 드라이런이었다.
+```bash
+# 배치 (약 61 units) — --dump-titles를 켜두면 이후 분석이 전부 API 0으로 된다
+python scripts/build_videos.py --previous dist/videos.json --dump-titles --out-dir dist
+
+# 앱 (로컬 확인)
+cd app && npm run dev        # http://localhost:5173/PeaceYourMind/
+cd app && npm test           # 61개
+```
+
+**API 누적** — 2026-08-18(PT) 1,506 units(발굴 2회 + 배치 3회). 상한 9,500.
 쿼터는 태평양 자정에 리셋된다. `.quota_log.json`은 커밋하지 않는다(기기마다 다름).
 
 ### 1·2. 채널 승인 — 완료 (2026-08-18)
@@ -1034,16 +1080,14 @@ export YOUTUBE_API_KEY="..."        # PowerShell: $env:YOUTUBE_API_KEY="..."
          극동방송 · 광주극동방송
 
 content_type     sermon 6 · mixed 5 · devotion 2 · worship 2
-                 → media_type 판별 1순위다. sermon/worship/devotion 채널은
-                   제목을 보지 않고 확정되므로, 실제 판별 대상은 mixed 5개다
-crisis_eligible  전건 false — 위기 풀은 정신건강·상담 사역 중심의 별도 기준이다(PLAN 7절)
-                 → 배치가 매 실행 crisis_no_channels + crisis_empty 경보를 낸다.
-                   **결함이 아니라 의도된 안전 동작이다.** 위기 화면은 상담 안내만 뜬다
+                 → media_type 판별에서 3순위다(제목 → 장절 → 채널 → 길이).
+                   2026-08-19 개정 전에는 1순위여서 찬양 81건이 sermon으로 잘못
+                   판정됐다 (2.14절)
+crisis_eligible  전건 false — 위 3번 참조
 ```
 
 **15는 하한선과 같다** (`MIN_ALLOWLIST_SIZE = 15`). 한 건이라도 빠지면
-`allowlist_undersized` 경보가 뜬다. 배치를 돌리다 채널이 빠질 사유(폐쇄·성격 변화)가
-생기면 즉시 걸리므로, 3차 발굴로 여유를 만드는 것을 배치 안정화 이후 과제로 둔다.
+`allowlist_undersized` 경보가 뜬다.
 
 **제외 1건** — `channel_reviewed_out.yaml`, 연세중앙교회, `criterion: "1c"`,
 `recheckable: true`. 재검토 조건은 **예장합신 제85회(2000) 결의 원문 확인**이다.
@@ -1062,15 +1106,7 @@ crisis_eligible  전건 false — 위기 풀은 정신건강·상담 사역 중�
 - **`channel_id`는 이름이 아니라 채널 설명의 고유 표지로 대조한다.** 동명 채널이
   실재하고, 그중에는 아예 다른 교회도 있다. 금지 ID 3건은 allowlist 헤더에 있다.
 
-### 3차 발굴이 필요하면
-
-**지금은 하면 안 된다** — 미태깅 77%인 상태에서 채널을 늘리면 미태깅만 늘어난다
-(2.13절). 태깅 전략이 정해진 뒤에 본다. 아래는 그때를 위한 메모다.
-
-15개로 하한은 채웠다. 다만 하한선과 같아 여유가 없으니,
-배치가 안정된 뒤 20~30개(PLAN 목표 규모)로 올리는 작업이 남아 있다.
-**첫 실제 실행의 채널별 잔존 표에서 0건인 채널이 나오면 그때가 3차 발굴 시점이다**
-— 드라이런 숫자로는 판단할 수 없다(합성 데이터라 채널마다 고르게 남는다).
+### 3차 발굴 메모 (위 4번의 상세)
 
 `--query-set`으로 세트를 고른다. 1·2차 검색어는 보존돼 있다.
 3차를 짤 때는 **1·2차와 다른 갈래**여야 한다 — 2차에서 중복이 3건뿐이었던 것은
@@ -1321,6 +1357,22 @@ scripts/
                              (playlistItems 페이지네이션 · 드라이런 제목/채널 귀속)
   lib/actions_status.py      Actions 배치 실행 여부 조회 (gh, 쿼터 0)
   lib/normalize.py           문자열 정규화 (한글 키워드 매칭용)
+
+app/                         PWA (Phase 3) — gh-pages 루트에 배포된다
+  src/App.jsx                화면 흐름 (입력 → 로딩 1000ms → 결과/위기)
+  src/components/            VerseCard(구절·길이별 크기) · MediaToggle(비활성화 금지)
+                             VideoList(주제분/폴백 층 분리) · CrisisScreen(토글·폴백 없음)
+                             About(출처 표기)
+  src/lib/verses.js          감정 구절 / 위기 구절 격리 · 구절 회전
+  src/lib/videos.js          토글·층 분리 · crisis 격리
+  src/lib/payload.js         캐시 교체 관문 (옛 스키마 categories 거부)
+  src/data/                  taxonomy.json · verses.json (생성물, 커밋 안 함)
+                             seed-videos.json (최초 실행용 시드, 커밋함)
+  test/                      61개 — 위기 경로는 데이터·소스 양쪽을 본다
+
+.github/workflows/
+  build.yml                  일일 배치 (09:30 UTC) → gh-pages data/
+  deploy-app.yml             앱 배포 → gh-pages 루트 (keep_files: true 필수)
 
 dist/                        배치 산출물 (커밋 대상 아님)
   videos.json                앱이 받는 파일 — **세분류별 목록**(source 표기) + crisis 최상위
