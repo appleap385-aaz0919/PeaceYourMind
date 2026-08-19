@@ -1370,6 +1370,75 @@ verses:
     verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
     verified_at: "2026-08-18"
 
+  - id: psa.6.2
+    ref: 시편 6:2
+    text: >
+      여호와여 내가 수척하였사오니 긍휼히 여기소서 여호와여 나의 뼈가 떨리오니
+      나를 고치소서
+    emotion_tags: [exhaustion.burnout]
+    theme: lament
+    note: >
+      2026-08-19 추가. 이 화면은 rest 6 · renewal 4의 두 축뿐이었고 lament가 0이었다.
+      **"쉬어도 된다"는 허가는 "내가 소진됐다"는 말이 먼저 있어야 성립하는데
+      그 말을 할 자리가 없었다.**
+      "내가 수척하였사오니 …나의 뼈가 떨리오니" — 소진의 신체 언어다.
+      ⚠ "나를 고치소서"는 치유 요청이다. themes.yaml 전역 금지어 "치유"는
+        **영상 제목 태깅 사전**에 적용되는 규칙이지 구절 본문에는 적용되지 않는다
+        (themes.yaml 헤더 [채널 승인과 콘텐츠 태깅은 별개다]와 같은 층 구분).
+      ⚠ 시 6:6이 frustration.suppressed에 있으나 다른 절·다른 화면이다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: psa.119.28
+    ref: 시편 119:28
+    text: >
+      나의 영혼이 눌림을 인하여 녹사오니 주의 말씀대로 나를 세우소서
+    emotion_tags: [exhaustion.burnout]
+    theme: lament
+    note: >
+      2026-08-19 추가. "나의 영혼이 눌림을 인하여 녹사오니" — 35자로 짧아
+      이 화면의 짧은 구절 잔량을 4 → 5로 올린다.
+      "나를 세우소서"는 요청이지 요구가 아니다 — 화자가 사용자 자신이라
+      번아웃 화면 방향(분발 요구 금지)에 걸리지 않는다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: psa.57.1
+    ref: 시편 57:1
+    text: >
+      하나님이여 나를 긍휼히 여기시고 나를 긍휼히 여기소서 내 영혼이 주께로
+      피하되 주의 날개 그늘 아래서 이 재앙이 지나기까지 피하리이다
+    emotion_tags: [exhaustion.burnout]
+    theme: presence
+    note: >
+      2026-08-19 추가. presence 축이 0이었다.
+      "주의 날개 그늘 아래서 **이 재앙이 지나기까지** 피하리이다" —
+      끝을 약속하지 않고 **피할 자리만** 준다. 번아웃 화면에서 회복 약속을
+      피하면서 곁을 놓는 방법이다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: psa.40.17
+    ref: 시편 40:17
+    text: >
+      나는 가난하고 궁핍하오나 주께서는 나를 생각하시오니 주는 나의 도움이시요
+      건지시는 자시라 나의 하나님이여 지체하지 마소서
+    emotion_tags: [exhaustion.burnout]
+    theme: comfort
+    note: >
+      2026-08-19 추가. "나는 가난하고 궁핍하오나 주께서는 나를 생각하시오니" —
+      소진해서 아무것도 내놓지 못하는 상태를 그대로 두고 받는다.
+      ⚠ 시 40:1-2가 exhaustion.listless에 있으나 절이 멀고 내용이 다르다
+        (건져냄 vs 생각하심).
+      [제외 기록] 같은 슬롯에서 뺀 것 —
+        왕상 19:5  19:7과 같은 서사이고 "천사가 어루만지며"가 거의 같은 문장이다
+        시 143:7   "무덤에 내려가는 자 같을까" — 이 화면은 위기 인접 목록에
+                   없지만 그 표현은 넣지 않는다
+        시 142:3   후반 "저희가 나를 잡으려고 올무를 숨겼나이다"가 적대 맥락이다
+
   # ═══════════════════════════════════════════════════════════
   # exhaustion.tired (피곤·지침) — 주제: rest, quiet_worship
   # 방향: burnout보다 가벼운 일상적 피로를 받는다. 회복을 약속하기보다
@@ -1382,6 +1451,9 @@ verses:
   #   시험해 볼 수 있는 풀이 여기서 만들어진다
   # ═══════════════════════════════════════════════════════════
 
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
   - id: psa.3.5
     ref: 시편 3:5
     text: >
@@ -1509,6 +1581,59 @@ verses:
     verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
     verified_at: "2026-08-18"
 
+  - id: psa.121.3-4
+    ref: 시편 121:3-4
+    text: >
+      여호와께서 너로 실족지 않게 하시며 너를 지키시는 자가 졸지
+      아니하시리로다 이스라엘을 지키시는 자는 졸지도 아니하고 주무시지도
+      아니하시리로다
+    emotion_tags: [exhaustion.tired]
+    theme: presence
+    note: >
+      2026-08-19 추가. 이 화면은 rest 5 · quiet_worship 5의 두 축뿐이었고
+      presence가 0이었다.
+      "너를 지키시는 자가 졸지 아니하시리로다" — 잠드는 사람 곁에서 깨어 있는
+      이미지라, 이 풀의 특징인 시간대 어휘(잠들기 전·밤중·아침)와 맞물린다.
+      ⚠ 시 121:1-2가 anxiety.worry에 있으나 범위도 내용도 다르다
+        (도움의 출처 vs 지키심).
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: gen.2.2
+    ref: 창세기 2:2
+    text: >
+      하나님의 지으시던 일이 일곱째 날이 이를 때에 마치니 그 지으시던 일이
+      다하므로 일곱째 날에 안식하시니라
+    emotion_tags: [exhaustion.tired]
+    theme: rest
+    note: >
+      2026-08-19 추가. rest가 이미 5개지만 **결이 다르다** — 나머지는
+      "쉬어라 / 쉬게 하신다"인데 이것은 **안식의 근거**다. 하나님도 쉬셨다는
+      사실이 허가의 바탕이 된다.
+      창세기가 신규 책이라 이 풀의 시편 편중(7/10)도 함께 완화된다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: ecc.5.12
+    ref: 전도서 5:12
+    text: >
+      노동자는 먹는 것이 많든지 적든지 잠을 달게 자거니와 부자는 배부름으로
+      자지 못하느니라
+    emotion_tags: [exhaustion.tired]
+    theme: rest
+    note: >
+      2026-08-19 추가. "노동자는 …잠을 달게 자거니와" — 이 화면이 받는 것이
+      번아웃이 아니라 **일상적 피로**라 그 관찰이 맞는다.
+      ⚠ 후반 "부자는 배부름으로 자지 못하느니라"가 대비를 만든다. 판정처럼
+        읽힐 여지가 있으나 피곤한 쪽 편을 드는 방향이라 허용 범위로 봤다.
+      [제외 기록] 같은 슬롯에서 뺀 것 —
+        사 40:28  사 40:29 · 40:30-31이 listless에 있어 같은 단락 세 번째이고,
+                  "너는 알지 못하였느냐 듣지 못하였느냐"가 반문·책망조다
+        막 4:38   "우리의 죽게 된것을 돌아보지 아니하시나이까"가 원망이다
+        시 127:1  "수고가 헛되며"가 피곤한 사람에게 무력감으로 도착한다
+
   # ═══════════════════════════════════════════════════════════
   # exhaustion.listless (무기력) — 주제: strength, hope
   # 방향: 의욕 없음을 질책하지 않고 힘의 출처를 바꾼다.
@@ -1517,6 +1642,9 @@ verses:
   #      요구로 도착한다. 제외 사례는 psa.40.1 아래 note 참조
   # ═══════════════════════════════════════════════════════════
 
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
   - id: isa.40.29
     ref: 이사야 40:29
     text: >
@@ -1731,6 +1859,26 @@ verses:
 #   같은 어휘를 사용자에 대한 요구에서 하나님에 대한 서술로 뒤집은 것이다.
 # =====================================================================
 
+  - id: psa.102.4
+    ref: 시편 102:4
+    text: >
+      내가 음식 먹기도 잊었음으로 내 마음이 풀 같이 쇠잔하였사오며
+    emotion_tags: [exhaustion.listless]
+    theme: lament
+    note: >
+      2026-08-19 추가. "음식 먹기도 잊었음으로 내 마음이 풀 같이 쇠잔하였사오며" —
+      무기력의 신체 감각(식욕 상실)을 그대로 적었다. lament 0 → 1이고
+      34자로 짧아 잔량이 6 → 7이 된다.
+      ⚠ 이 화면은 **+1에서 멈췄다.** 후보가 마른 것이 아니라 이미 채워져
+        있기 때문이다 — strength 5 · hope 5로 균형이고 짧은 구절도 상위였다.
+        위기 인접이라 걸러야 할 것도 많다. 억지로 채우면 이 화면이 지키는 것
+        (의욕 없음을 질책하지 않는다)이 흔들린다.
+      [제외 기록] 시 143:7("무덤에 내려가는 자 같을까" — 위기 인접 부적합) ·
+        시 42:11("어찌하여 낙망하며"가 자책 유도, "너는 하나님을 바라라"는 요구) ·
+        마 12:20(사 42:3 "상한 갈대"와 같은 이미지가 이미 이 화면에 있다) ·
+        사 57:15("통회하고 마음이 겸손한 자와 함께"가 조건절) ·
+        롬 8:26(frustration.suppressed에 이미 수록)
+
   # ═══════════════════════════════════════════════════════════
   # anger.irritation (짜증) — 주제: self_control, quiet_worship
   # 방향: 화를 낸 것을 탓하지 않고 가라앉을 자리를 준다.
@@ -1738,6 +1886,9 @@ verses:
   #      가라앉히는 말이 아니라 하나 더 얹는 말이 된다
   # ═══════════════════════════════════════════════════════════
 
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
   - id: psa.103.8
     ref: 시편 103:8
     text: >
