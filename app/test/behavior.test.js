@@ -372,6 +372,38 @@ test("횟수를 말하는 인사는 2회차에서만 쓴다", () => {
   assert.equal(visitNumberOf({ visitCountToday: 1 }), 2);
 });
 
+test("반복 축약은 문자 단위다 (어절 반복은 대상이 아니다)", () => {
+  // 2026-08-19 — FYM 주석의 예시("짜증나아아아 → 짜증나아")가 실제 동작과 달랐다.
+  // 규칙(3회 이상 → 2회)이 맞고 예시가 틀렸다는 판단으로 예시를 고쳤고,
+  // 다시 어긋나지 않게 실제 사용자가 칠 법한 입력으로 못을 박는다.
+  assert.equal(normalize("ㅋㅋㅋㅋㅋ"), "ㅋㅋ");
+  assert.equal(normalize("짜증나아"), "짜증나아", "2회는 그대로 둔다");
+  assert.equal(normalize("짜증나아아"), "짜증나아아", "아 2개 — 축약 대상이 아니다");
+  assert.equal(normalize("짜증나아아아"), "짜증나아아", "아 3개 → 2개");
+  assert.equal(normalize("너무너무너무"), "너무너무너무", "어절 반복은 줄이지 않는다");
+  assert.equal(normalize("괜찮아아아!!!"), "괜찮아아", "문장부호는 제거된다");
+});
+
+test("반복 입력이 분류 결과를 바꾸지 않는다", () => {
+  // 축약의 목적은 "짜증나"와 "짜증나아아아"가 같은 화면으로 가게 하는 것이다.
+  const pairs = [
+    ["짜증나", "짜증나아아아"],
+    ["외로워", "외로워어어어"],
+    ["너무 힘들어", "너무너무너무 힘들어"],
+  ];
+  for (const [plain, repeated] of pairs) {
+    const a = classify(plain, taxonomy);
+    const b = classify(repeated, taxonomy);
+    assert.equal(a.kind, b.kind, `${plain} vs ${repeated}`);
+    if (a.kind === RESULT.OK) {
+      assert.equal(a.subcategory.id, b.subcategory.id, `${plain} vs ${repeated}`);
+    }
+  }
+  // 위기 키워드는 반복이 붙어도 위기다 (검사 순서가 먼저이므로 항상 성립한다)
+  assert.equal(classify("죽고싶", taxonomy).kind, RESULT.CRISIS);
+  assert.equal(classify("죽고싶ㅠㅠㅠㅠ", taxonomy).kind, RESULT.CRISIS);
+});
+
 test("정규화가 위기 우회를 막는 규칙 그대로다", () => {
   assert.equal(normalize("죽 고 싶"), normalize("죽고싶"));
   // 3회 이상 반복을 2회로 접는다. "나"는 별개 음절이므로 "짜증나" + "아아"다.
