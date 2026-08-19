@@ -240,7 +240,7 @@ test("배포 데이터에서 주제분이 폴백보다 앞에 온다", () => {
 test("VideoList가 두 층에 다른 제목을 붙인다", () => {
   const src = readFileSync(join(here, "..", "src", "components", "VideoList.jsx"), "utf8");
   assert.ok(src.includes("이 마음에 맞춰 고른 영상"));
-  assert.ok(src.includes("주제까지는 못 맞췄지만"));
+  assert.ok(src.includes("딱 맞는 건 아니지만"), "폴백 헤더가 못 맞췄다는 사실을 먼저 말해야 한다");
 });
 
 // =============================================================================

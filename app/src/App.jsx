@@ -51,13 +51,38 @@ import {
 import { Closing, Msg } from "./components/common.jsx";
 import { CrisisScreen } from "./components/CrisisScreen.jsx";
 import { MediaToggle } from "./components/MediaToggle.jsx";
-import { VerseCard } from "./components/VerseCard.jsx";
+import { VerseCard, verseFontSize } from "./components/VerseCard.jsx";
 import { VideoList } from "./components/VideoList.jsx";
 import { About } from "./components/About.jsx";
 import { T, SERIF } from "./theme.js";
 
 const MIN_DURATION_MS = taxonomy.ui.loading.min_duration_ms;
 const VERSE_LEAD = "지금 마음에 닿을 구절 하나";
+
+/**
+ * 공감 문구 크기 — **구절보다 항상 작다.**
+ *
+ * 15.5px은 PC에서 작아 보였다. 실측(360·420·1280px)에서 15.5~18px은 줄 수가
+ * 전부 같아 — 공감 문구는 짧아서 크기를 키워도 레이아웃이 흔들리지 않는다.
+ * 즉 이 값은 레이아웃 제약이 아니라 **위계**로 정한다.
+ *
+ * 그런데 구절 본문이 길이에 따라 20 / 18 / 16.5px로 변한다(VerseCard).
+ * 공감 문구를 17.5px로 고정하면 100자 넘는 구절(16.5px)에서 **공감 문구가
+ * 구절보다 커진다** — 구절이 주인공이라는 위계가 뒤집힌다.
+ * 그래서 상한 17.5를 두되 구절 크기에 연동시킨다.
+ *
+ *   구절 20px  (66%) → 공감 17.5px
+ *   구절 18px  (28%) → 공감 17.5px
+ *   구절 16.5px (6%) → 공감 16px
+ *
+ * 구절 18px일 때 크기 차이는 0.5px로 작다. 그래도 위계가 유지되는 것은 크기만이
+ * 근거가 아니기 때문이다 — 구절은 mist(밝은 색)에 화면 위쪽이고, 공감 문구는
+ * muted(흐린 색)에 그 아래다. 세 신호가 같은 방향을 가리킨다.
+ */
+const EMPATHY_MAX = 17.5;
+function empathyFontSize(verseText) {
+  return Math.min(EMPATHY_MAX, verseFontSize(verseText) - 0.5);
+}
 
 export default function App() {
   const [mode, setMode] = useState("text");
@@ -298,7 +323,9 @@ function Result({ result, data, onBack }) {
         onNext={() => setVerse(nextVerse(pool, verse?.id))}
       />
 
-      <p style={styles.empathy}>{empathy}</p>
+      <p style={{ ...styles.empathy, fontSize: empathyFontSize(verse?.text) }}>
+        {empathy}
+      </p>
 
       <MediaToggle value={mediaType} counts={counts} onChange={chooseMedia} />
       <VideoList
@@ -522,7 +549,7 @@ const styles = {
   // 같은 크기면 두 문장이 서로 자리를 다툰다.
   empathy: {
     fontFamily: SERIF,
-    fontSize: 15.5,
+    // fontSize는 구절 크기에 연동된다 — empathyFontSize() 참조
     lineHeight: 1.85,
     color: T.muted,
     margin: "0 0 30px",
