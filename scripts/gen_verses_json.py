@@ -85,8 +85,10 @@ CRISIS_APP_FIELDS = ("id", "ref", "text")
 #   275  anger.irritation +2 · unfair +5 · rage +2 · frustration.suppressed +2
 #   279  frustration.stuck +2 · blocked +2
 #   288  joy.grateful +5 · proud +1 · delight +3
-#   293  flutter 2 · calm.ease 1 · boredom.novelty 2  ← 확장 완료
-EXPECT_VERSES = 293
+#   293  flutter 2 · calm.ease 1 · boredom.novelty 2
+#   289  ★ 재검토로 4건 제외 — 마 10:19 · 요 11:6 · 전 5:12 · 시 103:10
+#        (채택하면서 note에 위험을 적어 두고 넘어간 유형. verses.yaml 제외 목록)
+EXPECT_VERSES = 289
 EXPECT_CRISIS = 10
 
 EXIT_OK = 0
