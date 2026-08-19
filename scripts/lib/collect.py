@@ -109,10 +109,17 @@ def previous_video_ids(previous: dict[str, Any]) -> list[str]:
 
     **재검증은 그대로 한다** — 후보에 넣는다는 것은 videos.list를 다시 탄다는
     뜻이고, 삭제·비공개가 되면 거기서 걸러진다. 필터 완화가 아니다.
+
+    [두 스키마를 모두 읽는다]
+      2026-08-19 폴백 도입으로 videos.json의 목록 키가 `themes`에서
+      `subcategories`로 바뀌었다(PLAN.md 4.2). 개정 직후 한 번은 **직전 파일이
+      옛 스키마**이므로, 새 키만 읽으면 그날 직전 결과가 통째로 유실된다.
+      한 줄 차이로 풀이 얕아지는 종류의 사고라 두 키를 다 본다.
     """
     ids: list[str] = []
-    for theme in previous.get("themes", []):
-        ids.extend(str(v["videoId"]) for v in theme.get("videos", []))
+    for group in ("subcategories", "themes"):
+        for entry in previous.get(group, []):
+            ids.extend(str(v["videoId"]) for v in entry.get("videos", []))
     ids.extend(str(v["videoId"]) for v in (previous.get("crisis") or {}).get("videos", []))
     return dedupe(ids)
 

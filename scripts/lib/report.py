@@ -187,9 +187,9 @@ def load_previous(path: Path | None) -> dict[str, Any]:
         logger.warning("직전 videos.json을 읽지 못했다 (%s) — 최초 실행으로 진행한다", exc)
         return {}
     logger.info(
-        "직전 결과 로드 — version=%s, 주제 %d개, 위기 %d건",
+        "직전 결과 로드 — version=%s, 목록 %d개, 위기 %d건",
         data.get("version"),
-        len(data.get("themes", [])),
+        len(data.get("subcategories") or data.get("themes", [])),
         len((data.get("crisis") or {}).get("videos", [])),
     )
     return data
