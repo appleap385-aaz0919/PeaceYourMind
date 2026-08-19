@@ -71,7 +71,29 @@ FYM의 키워드 사전(878개)과 정규화 규칙, 위기 우선 검사 순서
 
 ### 3.2 구절 계층 (신규 — 이 프로젝트의 핵심 큐레이션)
 
-- 세분류 24개 × 구절 8~12개 = **약 250구절**, verses.json으로 앱 번들 (API 0, 배치 불필요)
+- 세분류 24개 × 구절 **10~15개**, verses.json으로 앱 번들 (API 0, 배치 불필요)
+
+  > **개수는 세분류마다 다르다. 맞추지 않는다.** (2026-08-19 개정, 원래 "8~12개")
+  > 1차에서 각 세분류의 가장 맞는 10개를 골랐고 실제로는 10~13으로 갈렸다.
+  > 확장 기준은 개수가 아니라 **"이 세분류에 확실히 맞는 구절이 몇 개까지
+  > 있는가"**다 — 감정마다 성경 본문의 두께가 다른데 일괄 숫자를 맞추면
+  > 얇은 쪽이 억지로 채워지고, 뒤로 갈수록 "그냥저냥 맞는" 구절이 섞인다.
+  >
+  > ```
+  > 두터움 15  anxiety.worry·tension · sadness.sorrow·lonely·loss
+  >            exhaustion.tired·burnout · anger.unfair · frustration.stuck
+  >            joy.grateful
+  > 중간 12~14 frustration.blocked 14 · listless·restless·joy.delight 13
+  >            calm.stable·boredom.novelty·anger.rage·irritation
+  >            frustration.suppressed·joy.proud 12
+  > 얇음 10~11 calm.ease·flutter.anticipation·flutter.thrill 11
+  >            boredom.dull 10 (유지 — 성경에 권태를 위로하는 본문이 사실상 없다)
+  > ```
+  >
+  > 근거는 넷이다 — 성경 본문의 두께 · 짧고 강한 구절(≤45자)의 잔량 ·
+  > 다른 세분류와의 공유 정도(전용이 적다는 신호) · 책 편중(한 책에서만 긁는가).
+  > 세분류별 판단은 HANDOFF 2.24에 남겼다.
+  > **개수 하한 게이트는 없다** — verses.test.js는 세분류당 > 0만 본다.
 - 각 구절은 `emotion_tags`(세분류 복수 가능)와 `theme`(주제) 를 갖는다
 - 주제는 20~30개로 시작: 위로, 소망, 평안, 감사, 인도, 회복, 기다림, 용기, 찬양 … (Phase 1에서 확정)
 - **매핑 근거를 주석으로 남긴다** (FYM taxonomy 방식). 감정-구절 연결은 신학적으로

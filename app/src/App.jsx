@@ -22,7 +22,7 @@ import versesData from "./data/verses.json";
 
 import { RESULT, classify, findSubcategory, subcategoriesOf } from "./lib/classify.js";
 import { KEYS, getSetting, setSetting } from "./lib/db.js";
-import { usePrefersReducedMotion, withMinDuration } from "./lib/offline.js";
+import { withMinDuration } from "./lib/offline.js";
 import {
   loadMessageIndexes,
   pickMessage,
@@ -52,7 +52,7 @@ import {
   toggleCounts,
 } from "./lib/videos.js";
 
-import { Closing, FloatingRestart, Msg } from "./components/common.jsx";
+import { Closing, Msg } from "./components/common.jsx";
 import { CrisisScreen } from "./components/CrisisScreen.jsx";
 import { MediaToggle } from "./components/MediaToggle.jsx";
 import { VerseCard, verseFontSize } from "./components/VerseCard.jsx";
@@ -311,7 +311,6 @@ function Result({ result, data, onBack }) {
     [subcategory.id],
   );
 
-  const reducedMotion = usePrefersReducedMotion();
   const screen = screenFor(data, subcategory.id);
   const videos = screen?.videos ?? [];
   const counts = toggleCounts(videos);
@@ -363,21 +362,6 @@ function Result({ result, data, onBack }) {
       />
 
       <Closing text={closing} onBack={onBack} />
-
-      {/* [스크롤 후에만 나타나는 "다시 적기" — 2026-08-19 배선]
-            결과가 길다. 실측(360×640, 말씀 14건 선택)에서 문서 1,686px에
-            "다시 적어보기"가 1,573px 지점이라 **2.5화면**을 내려야 닿았다.
-            그 사이에는 돌아갈 길이 화면에 없다.
-
-            이 컴포넌트는 FYM에서 이식돼 common.jsx에 **이미 있었는데 아무도
-            import하지 않아 죽어 있었다** — pickVerse의 previousId와 같은 유형이다.
-            FYM 결과 화면이 이 문제를 푸는 방식이 이것이라 그대로 이었다.
-
-            "조용함"은 이 컴포넌트가 이미 지키고 있다 — 최상단에서는 나타나지
-            않고(공감 문장이 처음 읽히는 자리에 무르기 동작을 두지 않는다),
-            100px 이상 내려간 뒤에만 페이드로 들어오며, 반투명·소형이다.
-          ⚠ 그래도 position:fixed다. 원치 않으면 이 한 줄만 지우면 된다. */}
-      <FloatingRestart onClick={onBack} reducedMotion={reducedMotion} />
     </div>
   );
 }

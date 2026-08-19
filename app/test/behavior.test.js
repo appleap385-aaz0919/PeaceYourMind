@@ -429,12 +429,15 @@ test("토글 밑줄은 개별 속성으로만 지정한다 (단축과 섞으면 
   );
 });
 
-test("결과 화면에 스크롤 후 돌아갈 길이 있다", () => {
-  // 실측(360×640, 말씀 14건): 문서 1,686px에 하단 "다시 적어보기"가 1,573px —
-  // 2.5화면을 내려야 닿는다. 그 사이 화면에는 돌아갈 길이 없었다.
+test("결과 화면의 되돌아가기는 하단 한 곳뿐이다 (떠 있는 버튼을 두지 않는다)", () => {
+  // [2026-08-19 결정] FloatingRestart를 뺐다. 근거는 HANDOFF 2.22.
+  //   결과 화면을 끝까지 읽고 나가는 것이 이 앱의 흐름이라, 중간에
+  //   되돌아가기를 급하게 만들 이유가 없다. 하단 "다시 적어보기"가 그 자리다.
+  //   되돌리려면 .rise **바깥**에 렌더해야 한다 — 안에 두면 transform이
+  //   containing block을 만들어 fixed가 문서에 붙는다 (HANDOFF 4.8).
   const src = readSource("App.jsx");
-  assert.ok(src.includes("<FloatingRestart"), "결과 화면에 FloatingRestart가 없다");
   assert.ok(src.includes("<Closing"), "하단 마무리 문구·되돌아가기가 없다");
+  assert.ok(!src.includes("FloatingRestart"), "떠 있는 버튼이 다시 들어왔다");
 });
 
 test("소스를 읽는 테스트는 전부 readSource()를 지난다 (같은 함정 4회차 방지)", () => {
