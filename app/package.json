@@ -1,0 +1,25 @@
+{
+  "name": "peaceyourmind",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "gen:data": "python ../scripts/gen_taxonomy_json.py && python ../scripts/gen_verses_json.py",
+    "predev": "npm run gen:data",
+    "dev": "vite",
+    "prebuild": "npm run gen:data",
+    "build": "vite build",
+    "preview": "vite preview",
+    "pretest": "npm run gen:data",
+    "test": "node --test test/behavior.test.js test/normalize.parity.test.js test/verses.test.js"
+  },
+  "dependencies": {
+    "idb": "^8.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.0"
+  }
+}

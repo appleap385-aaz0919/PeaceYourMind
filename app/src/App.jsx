@@ -1,0 +1,552 @@
+/**
+ * PYM 앱 — 감정 입력 → 구절 → 영상.
+ *
+ * FYM 앱의 흐름(입력·분류·로딩·결과)을 그대로 쓰되 결과 화면이 다르다.
+ * FYM은 감정 다음이 영상이지만 PYM은 **구절이 먼저**다.
+ *
+ *   공감 문구 → 구절 카드 → [말씀]/[찬양] 토글 → 영상(주제분 → 폴백) → 마무리
+ *
+ * 한 화면에 세로로 놓고 첫 화면에는 구절까지만 보이게 한다. 탭을 늘리지 않으면서
+ * 구절이 주인공인 구성이다.
+ *
+ * [바꾸지 않은 것 — FYM에서 검증된 값]
+ *   로딩 최소 노출 1000ms. 즉답은 기계적으로 느껴지고, 짧은 뜸이 "듣고 있다"는
+ *   감각을 만든다. 800ms와 비교해 1000ms가 더 차분하게 읽혀 확정된 값이며,
+ *   prefers-reduced-motion에서도 지연은 유지한다 — 끄는 건 애니메이션이지 뜸이 아니다.
+ */
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import taxonomy from "./data/taxonomy.json";
+import versesData from "./data/verses.json";
+
+import { RESULT, classify, findSubcategory, subcategoriesOf } from "./lib/classify.js";
+import { KEYS, getSetting, setSetting } from "./lib/db.js";
+import { withMinDuration } from "./lib/offline.js";
+import {
+  loadMessageIndexes,
+  pickMessage,
+  greetingSlot,
+  recordVisit,
+  revisitSlot,
+  sameDayGreetingPool,
+} from "./lib/messages.js";
+import { loadInitialData, shouldCheck, syncInBackground } from "./lib/sync.js";
+import {
+  attributionOf,
+  crisisVerses,
+  isUsableVerses,
+  nextVerse,
+  pickVerse,
+  versesFor,
+} from "./lib/verses.js";
+import {
+  MEDIA,
+  getCrisisVideos,
+  layersFor,
+  screenFor,
+  toggleCounts,
+} from "./lib/videos.js";
+
+import { Closing, Msg } from "./components/common.jsx";
+import { CrisisScreen } from "./components/CrisisScreen.jsx";
+import { MediaToggle } from "./components/MediaToggle.jsx";
+import { VerseCard } from "./components/VerseCard.jsx";
+import { VideoList } from "./components/VideoList.jsx";
+import { About } from "./components/About.jsx";
+import { T, SERIF } from "./theme.js";
+
+const MIN_DURATION_MS = taxonomy.ui.loading.min_duration_ms;
+const VERSE_LEAD = "지금 마음에 닿을 구절 하나";
+
+export default function App() {
+  const [mode, setMode] = useState("text");
+  const [text, setText] = useState("");
+  const [phase, setPhase] = useState("input");
+  const [result, setResult] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [loadingMessage, setLoadingMessage] = useState(taxonomy.ui.loading.messages[0]);
+  const [placeholder, setPlaceholder] = useState(taxonomy.ui.placeholders[0]);
+  const [greeting, setGreeting] = useState("");
+  const [showAbout, setShowAbout] = useState(false);
+
+  const [data, setData] = useState(null);
+  const dataRef = useRef(null);
+
+  // 화면이 바뀌면 항상 맨 위에서 시작한다 (FYM과 같은 이유).
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [phase, mode, selectedCategory, result, showAbout]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await loadMessageIndexes();
+      const [{ data: initial }, visit] = await Promise.all([
+        loadInitialData(),
+        recordVisit(),
+      ]);
+      if (cancelled) return;
+
+      dataRef.current = initial;
+      setData(initial);
+      setPlaceholder(pickMessage("placeholder", taxonomy.ui.placeholders));
+      setGreeting(pickGreeting(visit));
+
+      if (await shouldCheck()) {
+        // UI를 막지 않는다. 갱신이 끝나도 보고 있는 화면은 바꾸지 않는다.
+        syncInBackground(initial?.version ?? null).then((outcome) => {
+          if (!cancelled && outcome.updated && outcome.data) {
+            dataRef.current = outcome.data;
+          }
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const show = useCallback((outcome) => {
+    if (outcome.kind === RESULT.CATEGORY) {
+      const category = taxonomy.categories.find((c) => c.id === outcome.category.id);
+      setSelectedCategory(category);
+      setMode("select");
+      setPhase("input");
+      return;
+    }
+    setData(dataRef.current);
+    setResult(outcome);
+    setPhase("result");
+  }, []);
+
+  const run = useCallback(
+    async (input) => {
+      setPhase("loading");
+      setLoadingMessage(pickMessage("loading", taxonomy.ui.loading.messages));
+      // 분류는 수십 ms에 끝난다. 최소 노출 시간을 두는 것이 요점이다.
+      // withMinDuration은 **함수**를 받는다 (프라미스가 아니다) — 시작 시각을
+      // 자기가 재야 최소 노출을 정확히 계산할 수 있기 때문이다.
+      const outcome = await withMinDuration(
+        () => classify(input, taxonomy),
+        MIN_DURATION_MS,
+      );
+      show(outcome);
+    },
+    [show],
+  );
+
+  const chooseSubcategory = useCallback(
+    (subcategoryId) => {
+      const found = findSubcategory(taxonomy, subcategoryId);
+      if (!found) return;
+      void setSetting(KEYS.LAST_SUBCATEGORY_ID, subcategoryId);
+      show({ kind: RESULT.OK, ...found });
+    },
+    [show],
+  );
+
+  const reset = useCallback(() => {
+    setResult(null);
+    setSelectedCategory(null);
+    setText("");
+    setMode("text");
+    setPhase("input");
+    setPlaceholder(pickMessage("placeholder", taxonomy.ui.placeholders));
+  }, []);
+
+  if (showAbout) {
+    return (
+      <Shell>
+        <About
+          attribution={attributionOf(versesData)}
+          onBack={() => setShowAbout(false)}
+        />
+      </Shell>
+    );
+  }
+
+  if (phase === "loading") {
+    return (
+      <Shell>
+        <div style={styles.loadingWrap}>
+          {/* 호흡 애니메이션이 한 사이클 도는 동안 기다린다. reduced-motion에서는
+              애니메이션만 꺼지고 지연(1000ms)은 유지된다 — 뜸은 시간에서 나온다. */}
+          <div className="orb" style={styles.orb} />
+          <p style={styles.loadingText}>{loadingMessage}</p>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (phase === "result" && result) {
+    if (result.kind === RESULT.CRISIS) {
+      return (
+        <Shell>
+          <Crisis data={data} onBack={reset} />
+        </Shell>
+      );
+    }
+    if (result.kind === RESULT.OK) {
+      return (
+        <Shell onAbout={() => setShowAbout(true)}>
+          <Result result={result} data={data} onBack={reset} />
+        </Shell>
+      );
+    }
+    if (result.kind === RESULT.EMPTY) {
+      return (
+        <Shell>
+          <Msg
+            title={taxonomy.ui.empty_input[0]}
+            sub={taxonomy.ui.empty_input[1] || ""}
+            onBack={reset}
+            back="골라서 찾기"
+          />
+        </Shell>
+      );
+    }
+    return (
+      <Shell>
+        <Msg
+          title={taxonomy.ui.no_match}
+          sub=""
+          onBack={() => {
+            setResult(null);
+            setMode("select");
+            setPhase("input");
+          }}
+          back="골라서 찾기"
+        />
+      </Shell>
+    );
+  }
+
+  return (
+    <Shell onAbout={() => setShowAbout(true)}>
+      <Input
+        mode={mode}
+        setMode={setMode}
+        text={text}
+        setText={setText}
+        placeholder={placeholder}
+        greeting={greeting}
+        selectedCategory={selectedCategory}
+        setSelectedCategory={setSelectedCategory}
+        onSubmit={run}
+        onChoose={chooseSubcategory}
+      />
+    </Shell>
+  );
+}
+
+/** 결과 화면 — 공감 문구 → 구절 → 토글 → 영상(2층) → 마무리 */
+function Result({ result, data, onBack }) {
+  const subcategory = result.subcategory;
+  const pool = useMemo(() => versesFor(versesData, subcategory.id), [subcategory.id]);
+  const [verse, setVerse] = useState(() => pickVerse(pool));
+  const [mediaType, setMediaType] = useState(
+    () => taxonomy.media_defaults[subcategory.id] || MEDIA.WORSHIP,
+  );
+
+  // 마지막으로 고른 형식을 기억한다 — 기본값이 안 맞는 사용자가 매번 누르지 않게.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const stored = await getSetting(KEYS.MEDIA_TYPE, null);
+      if (!cancelled && stored && stored[subcategory.id]) {
+        setMediaType(stored[subcategory.id]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [subcategory.id]);
+
+  const empathy = useMemo(
+    () => pickMessage(`empathy:${subcategory.id}`, subcategory.empathy_messages),
+    [subcategory.id],
+  );
+  const closing = useMemo(
+    () => pickMessage(`closing:${subcategory.id}`, subcategory.closing_messages),
+    [subcategory.id],
+  );
+
+  const screen = screenFor(data, subcategory.id);
+  const videos = screen?.videos ?? [];
+  const counts = toggleCounts(videos);
+  const layers = layersFor(videos, mediaType);
+
+  const chooseMedia = (next) => {
+    setMediaType(next);
+    void (async () => {
+      const stored = (await getSetting(KEYS.MEDIA_TYPE, {})) || {};
+      await setSetting(KEYS.MEDIA_TYPE, { ...stored, [subcategory.id]: next });
+    })();
+  };
+
+  return (
+    <div className="rise">
+      <p style={styles.empathy}>{empathy}</p>
+
+      <VerseCard
+        verse={verse}
+        attribution={attributionOf(versesData)}
+        lead={VERSE_LEAD}
+        canRotate={pool.length > 1}
+        onNext={() => setVerse(nextVerse(pool, verse?.id))}
+      />
+
+      <MediaToggle value={mediaType} counts={counts} onChange={chooseMedia} />
+      <VideoList
+        layers={layers}
+        mediaType={mediaType}
+        otherCount={
+          mediaType === MEDIA.SERMON ? counts[MEDIA.WORSHIP] : counts[MEDIA.SERMON]
+        }
+      />
+
+      <Closing text={closing} onBack={onBack} />
+    </div>
+  );
+}
+
+/** 위기 화면 — 구절도 영상도 별도 풀에서 온다 */
+function Crisis({ data, onBack }) {
+  const response = taxonomy.safety.crisis_response;
+  const verse = useMemo(() => pickVerse(crisisVerses(versesData)), []);
+  const videos = useMemo(() => getCrisisVideos(data), [data]);
+  const closing = useMemo(
+    () => pickMessage("closing:crisis", response.closing_messages),
+    [response.closing_messages],
+  );
+  return (
+    <CrisisScreen
+      response={response}
+      verse={verse}
+      attribution={attributionOf(versesData)}
+      videos={videos}
+      closing={closing}
+      onBack={onBack}
+    />
+  );
+}
+
+function Input({
+  mode,
+  setMode,
+  text,
+  setText,
+  placeholder,
+  greeting,
+  selectedCategory,
+  setSelectedCategory,
+  onSubmit,
+  onChoose,
+}) {
+  if (mode === "select") {
+    if (!selectedCategory) {
+      return (
+        <div className="rise">
+          <p style={styles.selectLead}>{taxonomy.ui.select_mode.step1}</p>
+          <div style={styles.grid}>
+            {taxonomy.categories.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setSelectedCategory(c)}
+                style={styles.chip}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+          <button type="button" onClick={() => setMode("text")} style={styles.switch}>
+            {taxonomy.ui.select_mode.switch_to_text}
+          </button>
+        </div>
+      );
+    }
+    return (
+      <div className="rise">
+        <p style={styles.selectLead}>{taxonomy.ui.select_mode.step2}</p>
+        <div style={styles.grid}>
+          {subcategoriesOf(taxonomy, selectedCategory.id).map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => onChoose(s.id)}
+              style={styles.chip}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => setSelectedCategory(null)}
+          style={styles.switch}
+        >
+          ← 다시 고르기
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rise">
+      <p style={styles.greeting}>{greeting}</p>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={placeholder}
+        rows={3}
+        style={styles.textarea}
+      />
+      <button type="button" onClick={() => onSubmit(text)} style={styles.submit}>
+        확인
+      </button>
+      <button type="button" onClick={() => setMode("select")} style={styles.switch}>
+        {taxonomy.ui.select_mode.switch_to_select}
+      </button>
+    </div>
+  );
+}
+
+function Shell({ children, onAbout }) {
+  return (
+    <div style={styles.shell}>
+      <style>{`
+        @keyframes breathe { 0%,100%{transform:scale(1);opacity:.30} 45%{transform:scale(1.20);opacity:.55} }
+        @keyframes rise { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        .rise{animation:rise .7s ease both}
+        .orb{animation:breathe 10s ease-in-out infinite}
+        @media (prefers-reduced-motion: reduce){ .orb{animation:none} .rise{animation:none} }
+        button{ font-family:inherit; cursor:pointer }
+        a{ -webkit-tap-highlight-color: transparent }
+        textarea::placeholder{ color:#ffffff40 }
+      `}</style>
+      <div style={styles.inner}>{children}</div>
+      {onAbout ? (
+        <button type="button" onClick={onAbout} style={styles.about}>
+          이 앱에 대해
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function pickGreeting(visit) {
+  const slot = revisitSlot(visit);
+  if (slot === "first_visit" || slot === "recent" || slot === "long_absence") {
+    const pool = taxonomy.ui.revisit?.[slot];
+    if (Array.isArray(pool) && pool.length) return pickMessage(`revisit:${slot}`, pool);
+  }
+  if (slot === "same_day") {
+    const pool = sameDayGreetingPool(visit, taxonomy);
+    if (Array.isArray(pool) && pool.length) return pickMessage("revisit:same_day", pool);
+  }
+  const greetings = taxonomy.ui.entry_greetings?.[greetingSlot()] || [];
+  return greetings.length ? pickMessage("greeting", greetings) : "";
+}
+
+const styles = {
+  shell: {
+    minHeight: "100%",
+    background: `linear-gradient(160deg, ${T.inkDeep} 0%, ${T.ink} 45%, ${T.plum} 100%)`,
+    color: T.mist,
+    fontFamily: "'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif",
+    padding: "34px 20px 40px",
+    boxSizing: "border-box",
+  },
+  inner: { maxWidth: 520, margin: "0 auto" },
+  greeting: {
+    fontFamily: SERIF,
+    fontSize: 17,
+    color: T.mist,
+    margin: "6px 0 22px",
+  },
+  textarea: {
+    width: "100%",
+    background: "#ffffff0a",
+    border: "1px solid #ffffff1a",
+    borderRadius: 12,
+    color: T.mist,
+    fontSize: 15,
+    lineHeight: 1.7,
+    padding: 14,
+    fontFamily: "inherit",
+    boxSizing: "border-box",
+    resize: "none",
+  },
+  submit: {
+    marginTop: 14,
+    width: "100%",
+    padding: "13px 0",
+    borderRadius: 10,
+    border: "none",
+    background: T.jade,
+    color: "#07110E",
+    fontSize: 15,
+    fontFamily: "inherit",
+    cursor: "pointer",
+  },
+  switch: {
+    display: "block",
+    margin: "18px auto 0",
+    background: "none",
+    border: "none",
+    color: "#ffffff55",
+    fontSize: 12.5,
+    cursor: "pointer",
+  },
+  selectLead: { fontFamily: SERIF, fontSize: 16.5, margin: "6px 0 20px" },
+  grid: { display: "flex", flexWrap: "wrap", gap: 9 },
+  chip: {
+    padding: "11px 16px",
+    borderRadius: 999,
+    border: "1px solid #ffffff1a",
+    background: "#ffffff08",
+    color: T.mist,
+    fontSize: 14,
+    fontFamily: "inherit",
+    cursor: "pointer",
+  },
+  empathy: {
+    fontFamily: SERIF,
+    fontSize: 17,
+    lineHeight: 1.8,
+    color: T.mist,
+    margin: "6px 0 0",
+    wordBreak: "keep-all",
+  },
+  loadingWrap: {
+    height: 330,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  orb: {
+    width: 130,
+    height: 130,
+    borderRadius: "50%",
+    background: `radial-gradient(circle, ${T.jade}66 0%, ${T.jade}00 70%)`,
+    animationDuration: "2.6s",
+  },
+  loadingText: {
+    marginTop: 26,
+    fontSize: 14,
+    color: T.muted,
+    letterSpacing: "0.05em",
+  },
+  about: {
+    display: "block",
+    margin: "34px auto 0",
+    background: "none",
+    border: "none",
+    color: "#ffffff33",
+    fontSize: 11.5,
+    cursor: "pointer",
+  },
+};
