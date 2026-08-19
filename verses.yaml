@@ -1814,6 +1814,13 @@ verses:
 #   맥락 이탈           히 13:5(절 앞부분이 "돈을 사랑치 말고")
 #                       사 40:1(명령 대상이 위로하는 자들)
 #   조건절              시 34:19("의인은")
+#   형통 약속           4차분 주요 위험(번영신학 톤)의 계속. 화면에 뜨는 것은
+#                       본문이므로 note로 관리할 수 없다 — 아예 넣지 않는다.
+#                       수 1:8("네가 형통하리라") · 시 1:3("그 행사가 다
+#                       형통하리로다" → 렘 17:7-8로 대체) · 시 37:4 · 엡 3:20
+#                       시 128:2("복되고 형통하리로다" — 2026-08-19 joy.proud
+#                       후보로 올랐다가 같은 기준으로 뺐다. 앞부분
+#                       "네 손이 수고한대로 먹을 것이라"는 맞았다)
 #   ★ 되돌아오는 조건    **앞부분만 보면 모범인데 끝에서 조건으로 돌아오는** 유형.
 #                       사 30:18  앞 "여호와께서 기다리시나니"는 화자 전환의
 #                                 모범이다(기다리는 것이 사용자가 아니라 하나님).
@@ -3250,6 +3257,83 @@ verses:
     verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
     verified_at: "2026-08-18"
 
+  - id: psa.139.14
+    ref: 시편 139:14
+    text: >
+      내가 주께 감사하옴은 나를 지으심이 신묘막측하심이라 주의 행사가 기이함을
+      내 영혼이 잘 아나이다
+    emotion_tags: [joy.grateful]
+    theme: creation
+    note: >
+      2026-08-19 추가. 이 화면은 gratitude 6 · joy_praise 4의 두 축뿐이었다.
+      "**나를 지으심이** 신묘막측하심이라" — 받은 것이 아니라 **존재 자체**에
+      대한 감사라 거래가 될 수 없다. 헤더 방향("감사를 거래로 만들지 않는다")에
+      가장 정확한 형태다.
+      ⚠ 시편 139를 세 번째로 쓴다(139:1-2 suppressed · 139:7-8 lonely).
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: psa.65.11
+    ref: 시편 65:11
+    text: >
+      주의 은택으로 년사에 관 씌우시니 주의 길에는 기름이 떨어지며
+    emotion_tags: [joy.grateful]
+    theme: creation
+    note: >
+      2026-08-19 추가. "주의 은택으로 **년사에 관 씌우시니**" — 계절은 내가
+      얻어낸 것이 아니다. 34자로 짧아 잔량을 5 → 6으로 올린다. 시편 65 신규.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: psa.145.15-16
+    ref: 시편 145:15-16
+    text: >
+      중생의 눈이 주를 앙망하오니 주는 때를 따라 저희에게 식물을 주시며 손을
+      펴사 모든 생물의 소원을 만족케 하시나이다
+    emotion_tags: [joy.grateful]
+    theme: creation
+    note: >
+      2026-08-19 추가. "**모든 생물의** 소원을 만족케 하시나이다" — 나만이
+      아니라는 것이 감사를 거래에서 떼어 놓는다.
+      ⚠ 시편 145를 세 번째로 쓴다(145:1-2 이 화면 · 145:9 anger.irritation).
+        지금은 문제가 아니지만 마지막에 한 책·한 편 편중을 볼 때 자료가 된다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: deu.8.10
+    ref: 신명기 8:10
+    text: >
+      네가 먹어서 배불리고 네 하나님 여호와께서 옥토로 네게 주셨음을 인하여
+      그를 찬송하리라
+    emotion_tags: [joy.grateful]
+    theme: gratitude
+    note: >
+      2026-08-19 추가. "네가 먹어서 배불리고 …그를 찬송하리라" — 일상의 감사.
+      ⚠ 신 8:17("내 능과 내 손의 힘으로 내가 이 재물을 얻었다 할까 하노라")은
+        joy.proud에서 제외된 구절이다. **같은 장이지만 방향이 반대다** —
+        8:17은 경고이고 8:10은 감사다. 장이 같다는 이유로 묶지 않는다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: psa.4.7
+    ref: 시편 4:7
+    text: >
+      주께서 내 마음에 두신 기쁨은 저희의 곡식과 새 포도주의 풍성할 때보다
+      더하니이다
+    emotion_tags: [joy.grateful]
+    theme: joy_praise
+    note: >
+      2026-08-19 추가. "주께서 내 마음에 두신 기쁨은 **저희의 곡식과 새 포도주의
+      풍성할 때보다** 더하니이다" — 물질의 크기와 명시적으로 대비한다.
+      4차분이 감사 구절에서 경계한 번영 프레임을 본문 자체가 밀어낸다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
   # ═══════════════════════════════════════════════════════════
   # joy.proud (뿌듯함) — 주제: gratitude, joy_praise
   # 방향: 뿌듯함을 부정하지 않으면서 공을 돌린다.
@@ -3401,6 +3485,34 @@ verses:
     verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
     verified_at: "2026-08-18"
 
+  - id: psa.90.17
+    ref: 시편 90:17
+    text: >
+      주 우리 하나님의 은총을 우리에게 임하게 하사 우리 손의 행사를 우리에게
+      견고케 하소서 우리 손의 행사를 견고케 하소서
+    emotion_tags: [joy.proud]
+    theme: gratitude
+    note: >
+      2026-08-19 추가. "**우리 손의 행사를** 우리에게 견고케 하소서" —
+      손이 한 일을 인정한 채로 공을 돌린다. 이 화면 헤더가 제외한 유형
+      (요 15:5 "아무 것도 할 수 없음이라" · 시 127:1 "수고가 헛되며")의
+      **정반대 형태**이고 형통 어휘가 없다.
+      ⚠ 이 화면은 11에서 멈췄다 — 아래 제외 기록 참조.
+      [제외 기록] 같은 슬롯에서 뺀 것 —
+        시 128:2   "네가 네 손이 수고한대로 먹을 것이라"까지는 맞으나
+                   **"복되고 형통하리로다"가 붙는다.** 화면에 뜨는 것은 본문이라
+                   note로 관리할 문제가 아니다. 뿌듯한 사용자에게 형통 약속은
+                   정확히 번영신학 프레임이고, 4차분에서 수 1:8·시 1:3을
+                   같은 이유로 뺀 기준이 그대로 적용된다.
+        고전 15:58 뒷부분("너희 수고가 헛되지 않은 줄을 앎이니라")은 좋으나
+                   **앞부분이 "항상 주의 일에 더욱 힘쓰는 자들이 되라"는 분발
+                   요구**다. 사 30:18과 같은 구조이되 방향이 반대다 —
+                   요구가 앞에 오고 위로가 뒤에 온다. 절 단위로 자를 수 없다.
+        느 6:16    앞부분이 대적 서사("우리 모든 대적과 …두려워하여")다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
   # ═══════════════════════════════════════════════════════════
   # joy.delight (즐거움) — 주제: joy_praise, gratitude
   # 방향: 즐거움에 이유를 묻지 않는다. joy.* 세 세분류 중 신체 동작
@@ -3971,6 +4083,51 @@ verses:
     verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
     verified_at: "2026-08-18"
 
+  - id: isa.55.12
+    ref: 이사야 55:12
+    text: >
+      너희는 기쁨으로 나아가며 평안히 인도함을 받을 것이요 산들과 작은 산들이
+      너희 앞에서 노래를 발하고 들의 모든 나무가 손바닥을 칠 것이며
+    emotion_tags: [joy.delight]
+    theme: creation
+    note: >
+      2026-08-19 추가. 새 축(creation). "들의 모든 나무가 **손바닥을 칠 것이며**" —
+      이 풀의 특징인 신체 동작 어휘(뛰놀며 · 손바닥을 치고 · 춤 추며)에
+      그대로 합류한다. 확정 규칙 3이 말한 "구절로 성격을 가른다"의 실증이다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: psa.126.2
+    ref: 시편 126:2
+    text: >
+      그 때에 우리 입에는 웃음이 가득하고 우리 혀에는 찬양이 찼었도다 열방
+      중에서 말하기를 여호와께서 저희를 위하여 대사를 행하셨다 하였도다
+    emotion_tags: [joy.delight]
+    theme: joy_praise
+    note: >
+      2026-08-19 추가. "우리 입에는 **웃음이 가득하고**" — 웃음은 이 화면에
+      없던 어휘다.
+      ⚠ 시편 126을 세 번째로 쓴다(126:3 joy.proud · 126:5 sadness.sorrow).
+        한 시편이 기쁨과 슬픔 양쪽에 걸치는 것은 126편의 구조(눈물로 뿌리고
+        기쁨으로 거둔다) 때문이라 자연스럽지만, 편중 자료로 기록해 둔다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
+  - id: psa.111.2
+    ref: 시편 111:2
+    text: >
+      여호와의 행사가 크시니 이를 즐거워하는 자가 다 연구하는도다
+    emotion_tags: [joy.delight]
+    theme: joy_praise
+    note: >
+      2026-08-19 추가. "여호와의 행사가 크시니 **이를 즐거워하는 자가** 다
+      연구하는도다" — 즐거움이 관찰로 이어지는 결이다. 33자로 짧다.
+
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-19"
   # ═══════════════════════════════════════════════════════════
   # boredom.dull (지루함) — 주제: daily_word, bible_story
   # 방향: 다른 주제들은 감정에 응답하지만 이 둘은 진입점이다

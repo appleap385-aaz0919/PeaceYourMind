@@ -84,7 +84,8 @@ CRISIS_APP_FIELDS = ("id", "ref", "text")
 #   264  exhaustion.tired +3 · burnout +4 · listless +1
 #   275  anger.irritation +2 · unfair +5 · rage +2 · frustration.suppressed +2
 #   279  frustration.stuck +2 · blocked +2
-EXPECT_VERSES = 279
+#   288  joy.grateful +5 · proud +1 · delight +3
+EXPECT_VERSES = 288
 EXPECT_CRISIS = 10
 
 EXIT_OK = 0
