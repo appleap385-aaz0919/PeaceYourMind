@@ -80,7 +80,8 @@ CRISIS_APP_FIELDS = ("id", "ref", "text")
 #   240  Phase 1 완료 시점
 #   242  anxiety.worry +2 (눅 12:7 · 시 68:19)
 #   245  anxiety.tension +2 (출 14:14 · 마 10:19) · restless +1 (전 3:1)
-EXPECT_VERSES = 245
+#   256  sadness.sorrow +5 · lonely +2 · loss +4
+EXPECT_VERSES = 256
 EXPECT_CRISIS = 10
 
 EXIT_OK = 0
