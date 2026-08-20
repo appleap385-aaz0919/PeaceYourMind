@@ -218,6 +218,73 @@ def main() -> int:
         ", ".join(revived) or "-",
     )
 
+    # =========================================================================
+    # 2026-08-20 — 태깅 오탐 4유형 (HANDOFF 2.29). 유형마다 메커니즘이 다르다.
+    # =========================================================================
+    # 실측 제목을 그대로 고정한다. 방어를 끄거나 느슨하게 하면 여기서 깨진다.
+    print("\n3-2. 태깅 오탐 방어 4종")
+    print("-" * 76)
+    for title, theme_id, want, kind in (
+        # [어절 경계] 정규화가 띄어쓰기를 지워 짧은 키워드가 우연히 걸린다
+        ("인생의 지름길이 아닌 우회로는 견딜 수 없다면 l 원유경 목사", "trust", False, "어절경계"),
+        ("[아침예배] 하나님의 지독한 사랑 (겔 29:17-21)_베이직교회", "trust", False, "어절경계"),
+        ("[생명의 삶 큐티] 성령의 능력으로 전하는 하나님의 지혜", "trust", False, "어절경계"),
+        ("강남중앙침례교회 최병락 목사(TV강단 42회) - 복 있는 사람", "renewal", False, "어절경계"),
+        # [부정 문맥] 밝은 주제 + 방향을 뒤집는 어휘
+        ("[아침예배] 불행을 기뻐하는 죄 (겔 25:1-17)_베이직교회", "joy_praise", False, "부정문맥"),
+        ("[생명의 삶 큐티] 하나님 백성의 패망을 기뻐하는 죄", "joy_praise", False, "부정문맥"),
+        # [고유명사] 키워드가 기관 이름 안에서만 걸렸다
+        ("감사드림교회 차영아 목사(TV강단 32회) - 순종에 하늘의 문이 열립니다",
+         "gratitude", False, "고유명사"),
+        # [표면 일치] 사람이 지정한 (문맥어, 주제)
+        ("최일관 목사 낮은담교회 새벽만나 \u201c안식일의 주인\u201d 누가복음 6:1-5",
+         "rest", False, "표면일치"),
+        # ★ 정탐은 살아 있어야 한다 — 방어가 과하면 여기서 깨진다
+        ("[주일 BRANDNEW 찬양] 판교채플/ 말씀이 육신되어 / 주 나와 함께 하시니",
+         "presence", True, "정탐:4음절은 어절을 넘어도 된다"),
+        ("꿈의교회 저녁예배 설교 l 의지할 가족, 의지할 교회 l 김문겸 목사",
+         "trust", True, "정탐:한 어절 안이면 걸린다"),
+        ("나를 향한 주의 사랑 + 내 마음을 가득 채운 | 오륜교회", "love", True, "정탐:공백 키워드"),
+        ("우리의 예배는 + 새 힘 얻으리 + 예수 사랑하심은 | 오륜교회", "strength", True, "정탐:공백 키워드"),
+        ("감사와 관련된 기독교 명언 10가지 #감사 #말씀", "gratitude", True, "정탐:기관명이 아니다"),
+        ("[생명의 삶 큐티] 고난을 인내하고 죄를 이기는 부활 소망", "hope", True, "정탐:hope는 밝은 계열이 아니다"),
+    ):
+        hit = theme_id in {m.theme_id for m in tag_themes(title, themes)}
+        _check(failures, hit is want, f"[{kind}] {theme_id} {'있음' if want else '없음'}: {title[:34]}")
+
+    # 고장 주입 1 — 어절 경계를 끄면 오탐이 되살아난다
+    import lib.tagging as _tag
+
+    saved = _tag.SHORT_KEYWORD_SYLLABLES
+    try:
+        _tag.SHORT_KEYWORD_SYLLABLES = 0
+        back = "trust" in {m.theme_id for m in tag_themes("인생의 지름길이 아닌 우회로는", themes)}
+        _check(failures, back, "고장 주입: 경계를 끄면 '인생의 지'가 다시 의지로 걸린다")
+        # 고장 주입 2 — 전체 적용하면 정탐이 죽는다
+        _tag.SHORT_KEYWORD_SYLLABLES = 99
+        lost = "presence" not in {
+            m.theme_id for m in tag_themes("판교채플 / 주 나와 함께 하시니", themes)
+        }
+        _check(failures, lost, "고장 주입: 전체 적용하면 '함께 하시니' 정탐이 죽는다")
+    finally:
+        _tag.SHORT_KEYWORD_SYLLABLES = saved
+    _check(
+        failures,
+        "trust" not in {m.theme_id for m in tag_themes("인생의 지름길이 아닌 우회로는", themes)}
+        and "presence" in {m.theme_id for m in tag_themes("판교채플 / 주 나와 함께 하시니", themes)},
+        "고장을 되돌리면 둘 다 정상으로 돌아온다",
+    )
+    # 고장 주입 3 — hope를 밝은 계열에 넣으면 정상 콘텐츠를 잃는다
+    saved_bright = _tag.BRIGHT_THEMES
+    try:
+        _tag.BRIGHT_THEMES = saved_bright + ("hope",)
+        gone = "hope" not in {
+            m.theme_id for m in tag_themes("고난을 인내하고 죄를 이기는 부활 소망", themes)
+        }
+        _check(failures, gone, "고장 주입: hope를 밝은 계열에 넣으면 부활 소망 설교를 잃는다")
+    finally:
+        _tag.BRIGHT_THEMES = saved_bright
+
     crisis_tagged = tag_themes("위기 상담 안내", themes)
     _check(
         failures,

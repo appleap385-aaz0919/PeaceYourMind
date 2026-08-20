@@ -85,6 +85,108 @@ SCRIPTURE_RE = _scripture_pattern()
 # 영문 키워드용 — 영문·숫자에 둘러싸이지 않은 위치에서만 맞춘다.
 _ASCII_ONLY = re.compile(r"^[a-zA-Z0-9]+$")
 
+# =============================================================================
+# 오탐 방어 4종 (2026-08-20) — 유형마다 메커니즘이 다르다
+# =============================================================================
+# 실측(dist/titles.json 1,067건)에서 태깅 오탐이 네 유형으로 갈렸고, **전역 규칙
+# 하나로는 하나밖에 못 잡는다**는 것이 확인됐다. 그래서 넷을 따로 둔다.
+#
+#   어절 경계   "인생의 지름길" → 의지    아래 SHORT_KEYWORD_SYLLABLES
+#   부정 문맥   "불행을 기뻐하는 죄"      아래 NEGATIVE_CONTEXT + BRIGHT_THEMES
+#   고유명사    "감사드림교회"            아래 ORG_SUFFIXES
+#   표면 일치   "안식일의 주인" → rest    아래 SURFACE_EXCLUSIONS (사람이 지정)
+#
+# ⚠ **여기는 배치 전용이다.** app/src/lib/classify.js의 입력 분류와 섞지 말 것 —
+#   그쪽은 normalize가 scripts/lib/normalize.py와 문자 단위로 같아야 하는 제약이
+#   있어 비용이 완전히 다르다(HANDOFF 4.7이 둘을 한 덩어리로 묶어 뒀는데,
+#   2026-08-20에 갈랐다). 제목 태깅은 그 제약을 받지 않는다.
+
+# [어절 경계] 이 음절 수 이하의 한글 키워드는 어절을 넘어 매칭되지 않는다.
+#   정규화가 띄어쓰기를 지우므로 짧은 키워드가 어절 경계를 넘어 우연히 걸린다.
+#     "인생의 지름길"     → 인생의지름길   → `의지`  ✗
+#     "하나님의 지혜"      → 하나님의지혜   → `의지`  ✗
+#     "TV강단 42회 복 있는" → 42회복있는     → `회복`  ✗
+#   실측: 경계를 넘는 매칭 25건 중 **2음절 키워드가 만든 4건이 전부 오탐**이었다.
+#
+#   ⛔ 이 값을 3 이상으로 올리지 말 것. 4음절 `함께하시`가 "주 나와 함께 하시니"를
+#     잡는 것은 **정탐**이다(한국어 띄어쓰기 관행 차이). 전체 적용하면 25건 중
+#     19건이 `그 사랑`·`주의 사랑`·`새 힘` 같은 **공백 포함 키워드의 정탐**이라
+#     통째로 사라진다. 2음절에만 걸어야 오탐 4건만 정확히 걸러진다.
+SHORT_KEYWORD_SYLLABLES = 2
+
+# [부정 문맥] 방향을 뒤집는 어휘. 밝은 계열 주제에만 적용한다.
+#   HANDOFF 4.5가 "주제마다 exclude_keywords를 다는 것보다 전역 규칙 하나가
+#   단순하다"고 남긴 대안이다. 실측 2건을 잡고 정상 콘텐츠는 막지 않았다
+#   (밝은 주제 태깅 41건 중 2건만 막힌다).
+NEGATIVE_CONTEXT = (
+    "죄", "심판", "멸망", "패망", "저주", "진노", "재앙", "불행", "형벌", "징계",
+)
+# 이 주제만 막는다. hope·patience는 "고난을 인내하고 죄를 이기는 부활 소망"처럼
+# 부정 어휘와 함께 오는 것이 정상이라 뺐다 — 막으면 정상 콘텐츠를 잃는다.
+BRIGHT_THEMES = ("joy_praise", "gratitude")
+
+# [고유명사] 이 말로 끝나는 어절은 기관 이름이다. 그 안에서만 걸린 키워드는 버린다.
+#   "감사드림교회 차영아 목사 - 순종에 하늘의 문이 열립니다" → gratitude ✗
+#   내용은 순종 설교인데 교회 **이름**에서 `감사`가 걸렸다.
+ORG_SUFFIXES = (
+    "교회", "선교회", "선교단", "기도원", "방송", "센터", "교구", "신학교", "재단",
+)
+_TOKEN = re.compile(r"[^\s|｜│/+]+")
+
+# [표면 일치] 기계가 못 가르는 것 — **사람이 지정한다.**
+#   (문맥어, 주제) — 제목에 그 말이 있으면 그 주제를 붙이지 않는다.
+#   "안식일의 주인"(누가복음 6:1-5)은 안식일 **규례**를 다루는 신학 설교다.
+#   글자는 `안식`이 맞지만 지친 사람이 찾는 쉼이 아니다. 뜻을 봐야 갈리므로
+#   폴백 시리즈 지정(lib/selection.PROMO_SERIES)과 같은 방식으로 사람이 적는다.
+#   ⚠ 늘리기 전에 retag_titles.py --probe로 무엇이 걸리는지 눈으로 셀 것.
+SURFACE_EXCLUSIONS = (
+    ("안식일", "rest"),
+)
+
+
+def _syllables(keyword: str) -> int:
+    return len([c for c in keyword if not c.isspace()])
+
+
+def _normalized_with_gaps(text: str) -> tuple[str, list[bool]]:
+    """정규화 문자열과 "이 글자 앞에 원문 공백이 있었는가" 배열.
+
+    normalize()를 다시 구현하지 않는다 — 공백 위치만 따로 들고 다닌다.
+    반복 축약은 어절 **안에서** 일어나므로 경계 판정에 영향을 주지 않는다.
+    """
+    kept: list[str] = []
+    gap: list[bool] = []
+    pending = False
+    for ch in text.lower():
+        if ch.isspace():
+            pending = True
+            continue
+        if not (ch.isalnum() or ch == "_"):
+            continue  # 문장부호는 정규화가 지운다. 경계로도 보지 않는다
+        kept.append(ch)
+        gap.append(pending)
+        pending = False
+    return "".join(kept), gap
+
+
+def _crosses_word_gap(title: str, keyword: str) -> bool:
+    """이 키워드가 **어절 경계를 넘어야만** 걸리는가."""
+    haystack, gap = _normalized_with_gaps(title)
+    needle = normalize(keyword)
+    if not needle:
+        return False
+    start = 0
+    found = False
+    while True:
+        i = haystack.find(needle, start)
+        if i < 0:
+            break
+        found = True
+        if not any(gap[p] for p in range(i + 1, i + len(needle))):
+            return False  # 경계를 안 넘는 자리가 하나라도 있으면 정상 매칭이다
+        start = i + 1
+    return found
+
 
 @dataclass(frozen=True)
 class ThemeMatch:
@@ -112,7 +214,26 @@ def matches_keyword(title: str, keyword: str) -> bool:
         )
         return bool(pattern.search(title.lower()))
     needle = normalize(keyword)
-    return bool(needle) and needle in normalize(title)
+    if not needle or needle not in normalize(title):
+        return False
+    # 짧은 한글 키워드는 어절을 넘어 걸리지 않는다 (SHORT_KEYWORD_SYLLABLES 주석 참조)
+    if " " not in keyword and _syllables(keyword) <= SHORT_KEYWORD_SYLLABLES:
+        return not _crosses_word_gap(title, keyword)
+    return True
+
+
+def _only_inside_org_name(title: str, keyword: str) -> bool:
+    """이 키워드가 **기관 이름 안에서만** 걸렸는가 (ORG_SUFFIXES 주석 참조)."""
+    if " " in keyword:
+        return False
+    needle = normalize(keyword)
+    if not needle:
+        return False
+    holders = [t for t in _TOKEN.findall(title) if needle in normalize(t)]
+    if not holders:
+        return False
+    return all(t.endswith(s) for t in holders for s in [next(
+        (x for x in ORG_SUFFIXES if t.endswith(x)), "\x00")])
 
 
 def matched_keywords(title: str, keywords: Iterable[str]) -> tuple[str, ...]:
@@ -129,9 +250,19 @@ def tag_themes(title: str, themes: Themes) -> tuple[ThemeMatch, ...]:
 
     위기 전용 주제(crisis_fixed)는 대상에서 빠진다 — Themes.taggable 참조.
     """
+    negative = any(word in title for word in NEGATIVE_CONTEXT)
     matches: list[ThemeMatch] = []
     for theme in themes.taggable:
-        hits = matched_keywords(title, theme.title_keywords)
+        # [부정 문맥] "불행을 기뻐하는 죄"는 joy_praise가 아니다
+        if negative and theme.id in BRIGHT_THEMES:
+            continue
+        # [표면 일치] 사람이 지정한 (문맥어, 주제) 쌍
+        if any(w in title and theme.id == tid for w, tid in SURFACE_EXCLUSIONS):
+            continue
+        hits = tuple(
+            k for k in matched_keywords(title, theme.title_keywords)
+            if not _only_inside_org_name(title, k)  # [고유명사]
+        )
         if hits:
             matches.append(ThemeMatch(theme_id=theme.id, hits=hits))
     return tuple(matches)
