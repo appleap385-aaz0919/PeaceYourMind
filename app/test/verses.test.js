@@ -36,6 +36,7 @@ const taxonomy = JSON.parse(readFileSync(join(root, "src", "data", "taxonomy.jso
 const verseCardSrc = readSource("components", "VerseCard.jsx");
 const aboutSrc = readSource("components", "About.jsx");
 const crisisSrc = readSource("components", "CrisisScreen.jsx");
+const readerSrc = readSource("components", "ChapterReader.jsx");
 const appSrc = readSource("App.jsx");
 
 const ATTRIBUTION = "성경전서 개역한글판, 대한성서공회";
@@ -82,11 +83,45 @@ test("이 앱에 대해 화면으로 갈 길이 있다 (표기에 도달할 수 
   assert.ok(appSrc.includes("attributionOf(versesData)"), "정보 화면에 표기가 전달되지 않는다");
 });
 
-test("구절 카드·위기 화면은 출처를 그리지 않는다 (2026-08-19 정책)", () => {
+test("구절 카드·위기 화면·이어서 읽기는 출처를 그리지 않는다 (2026-08-19 정책)", () => {
   // 되돌리는 것 자체는 판단의 문제지만, **조용히** 되돌아가지는 않게 한다.
   // 이 검사가 깨지면 위 정책 주석을 함께 고쳤는지 확인할 것.
   assert.ok(!verseCardSrc.includes("styles.attribution"), "구절 카드에 표기가 다시 생겼다");
   assert.ok(!crisisSrc.includes("styles.attribution"), "위기 화면에 표기가 다시 생겼다");
+  assert.ok(!readerSrc.includes("styles.attribution"), "이어서 읽기에 표기가 다시 생겼다");
+});
+
+/**
+ * [2026-08-20 — 표기 한 곳의 무게가 늘었다]
+ *   "이어서 읽기"가 생기면서 앱이 노출하는 본문이 **구절 하나에서 장 단위로**
+ *   커졌다. 표기 자리는 여전히 "이 앱에 대해" 한 곳이므로, 그 한 곳이 이제
+ *   앱 전체의 본문을 커버하는 유일한 표기다.
+ *
+ *   위 검사(About에 표기가 있다 · 그 화면으로 갈 길이 있다)가 그대로 요건을
+ *   고정한다. 여기서 더하는 것은 **본문을 가공하지 않는다**는 쪽이다 —
+ *   장 단위로 그리면 "길면 자르자"는 유혹이 구절 하나일 때보다 크다.
+ */
+test("이어서 읽기가 본문을 가공하지 않는다 (동일성유지권)", () => {
+  const forbidden = [
+    "unit.text.slice",
+    "unit.text.substring",
+    "unit.text.replace",
+    "unit.text.trim",
+    "text.slice",
+  ];
+  for (const pattern of forbidden) {
+    assert.ok(!readerSrc.includes(pattern), `본문을 가공한다: ${pattern}`);
+  }
+  assert.ok(readerSrc.includes("{unit.text}"), "본문을 그대로 렌더링해야 한다");
+});
+
+test("이어서 읽기는 장 경계를 넘지 않는다 (다음 장을 부르지 않는다)", () => {
+  // 규칙은 chapters.js가 지키지만(chapters.test.js), 화면이 직접 다음 장을
+  // 계산해 부르기 시작하면 그 규칙을 우회한다.
+  assert.ok(
+    !/chapter\s*[+-]\s*1/.test(readerSrc),
+    "화면이 이웃 장을 계산한다 — 범위는 그 장이다",
+  );
 });
 
 test("구절 카드가 본문을 가공하지 않는다 (동일성유지권)", () => {

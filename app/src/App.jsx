@@ -52,9 +52,10 @@ import {
   toggleCounts,
 } from "./lib/videos.js";
 
+import { ChapterReader } from "./components/ChapterReader.jsx";
 import { Closing, FloatingRestart, Msg } from "./components/common.jsx";
 import { CrisisScreen } from "./components/CrisisScreen.jsx";
-import { MediaToggle } from "./components/MediaToggle.jsx";
+import { READING, ResultTabs } from "./components/ResultTabs.jsx";
 import { VerseCard, verseFontSize } from "./components/VerseCard.jsx";
 import { VideoList } from "./components/VideoList.jsx";
 import { About } from "./components/About.jsx";
@@ -286,6 +287,19 @@ function Result({ result, data, onBack }) {
   const [mediaType, setMediaType] = useState(
     () => taxonomy.media_defaults[subcategory.id] || MEDIA.WORSHIP,
   );
+  /**
+   * 지금 보고 있는 것 — 영상인가 본문인가.
+   *
+   * ★ **mediaType의 세 번째 값으로 만들지 않는다.** mediaType은 IndexedDB에
+   *   영속되므로(아래 effect), 이어서 읽기가 그 값이 되면 다음 방문에 결과
+   *   화면이 영상 없이 본문부터 열린다. 그리고 개인정보처리방침 문안이
+   *   전제하는 "마지막으로 고른 형식"의 뜻이 조용히 바뀐다.
+   *
+   *   그래서 상태를 둘로 둔다. 이어서 읽기를 눌러도 mediaType은 그대로이고,
+   *   말씀/찬양으로 돌아오면 원래 고르던 형식이 살아 있다.
+   *   pane은 저장하지 않는다 — **이 기능은 기기에 남기는 것을 늘리지 않는다.**
+   */
+  const [pane, setPane] = useState("videos");
 
   // 지금 보여준 구절을 기억한다 — 다음 방문에서 이것만 빼고 뽑는다.
   // 첫 선택과 "다른 구절" 양쪽이 verse를 바꾸므로 effect 하나로 둘 다 덮는다.
@@ -321,7 +335,16 @@ function Result({ result, data, onBack }) {
   const counts = toggleCounts(videos);
   const layers = layersFor(videos, mediaType);
 
-  const chooseMedia = (next) => {
+  /**
+   * 탭 하나가 두 가지 일을 한다 — 본문으로 가거나, 영상 형식을 고르거나.
+   * 형식을 고를 때만 기억한다. 본문 탭은 아무것도 남기지 않는다.
+   */
+  const chooseTab = (next) => {
+    if (next === READING) {
+      setPane("reading");
+      return;
+    }
+    setPane("videos");
     setMediaType(next);
     void (async () => {
       const stored = (await getSetting(KEYS.MEDIA_TYPE, {})) || {};
@@ -357,14 +380,37 @@ function Result({ result, data, onBack }) {
         {empathy}
       </p>
 
-      <MediaToggle value={mediaType} counts={counts} onChange={chooseMedia} />
-      <VideoList
-        layers={layers}
-        mediaType={mediaType}
-        otherCount={
-          mediaType === MEDIA.SERMON ? counts[MEDIA.WORSHIP] : counts[MEDIA.SERMON]
-        }
+      <ResultTabs
+        value={pane === "reading" ? READING : mediaType}
+        counts={counts}
+        onChange={chooseTab}
       />
+      {/* [완전 연동 — key 하나가 그 일을 전부 한다. 2026-08-20 결정 A]
+            "다른 구절"을 누르면 verse.id가 바뀌고, key가 바뀌면 React가
+            컴포넌트를 새로 마운트한다. 읽던 위치가 그 자리에서 사라지고
+            새 구절의 장이 열린다 — **연동을 위한 코드가 따로 없다.**
+            느슨한 연동(위치를 유지하는 쪽)은 검토하지 않았다. 상태가 둘로
+            갈려 "지금 보는 본문이 위 구절과 같은 장인가"를 화면이 늘
+            설명해야 하고, 그 비용이 얻는 것보다 크다.
+
+          ⚠ 탭 선택(pane)은 리셋하지 않는다. 본문을 보던 사람이 "다른 구절"을
+            누르면 같은 자리에 새 장 머리("시편 42편")가 뜨므로, 무엇이
+            바뀌었는지 화면이 스스로 설명한다.
+
+          ⚠ read가 없으면 그리지 않는다. 위기 구절에는 read가 없고(생성기가
+            붙이지 않는다), 이 화면은 위기 경로를 타지 않지만 — 데이터가
+            없을 때 조용히 비는 쪽이 옳다. */}
+      {pane === "reading" && verse?.read ? (
+        <ChapterReader key={verse.id} read={verse.read} />
+      ) : (
+        <VideoList
+          layers={layers}
+          mediaType={mediaType}
+          otherCount={
+            mediaType === MEDIA.SERMON ? counts[MEDIA.WORSHIP] : counts[MEDIA.SERMON]
+          }
+        />
+      )}
 
       <Closing text={closing} onBack={onBack} />
     </div>

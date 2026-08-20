@@ -50,6 +50,11 @@ app/src/data/taxonomy.json
 # note 등 큐레이션 메타가 제거된 파생물이라 소스가 아니다.
 app/src/data/verses.json
 
+# data/krv/ 원문에서 잘라낸 장 파일 174개 (gen_krv_chapters.py, "이어서 읽기").
+# 원문 전체가 이미 커밋돼 있으므로 이것은 순수한 파생물이다.
+# 커밋하면 174개 파일이 diff에 섞여 큐레이션 변경을 가린다.
+app/public/krv/
+
 # --- 커밋하는 것 (무시하지 않는다) ---
 #
 # data/krv/  개역한글 원문. 저작재산권 보호기간 만료로 자유 사용 가능하며

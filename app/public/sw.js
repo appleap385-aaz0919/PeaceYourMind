@@ -14,9 +14,13 @@
 const VERSION = "v1";
 const SHELL_CACHE = `pym-shell-${VERSION}`;
 const THUMB_CACHE = `pym-thumbs-${VERSION}`;
+const KRV_CACHE = `pym-krv-${VERSION}`;
 
 const THUMB_HOST = "img.youtube.com";
 const THUMB_LIMIT = 200; // 최근 200개 (PLAN.md)
+
+// 개역한글 장 본문("이어서 읽기"). 앱과 함께 배포되는 불변 자산이다.
+const KRV_PATH = "/krv/";
 
 self.addEventListener("install", (event) => {
   // 앱 셸은 fetch 시점에 채운다(빌드 산출물 파일명이 해시라 목록을 미리 못 박는다).
@@ -53,6 +57,24 @@ self.addEventListener("fetch", (event) => {
   // --- 데이터: service worker가 관여하지 않는다 -----------------------------
   if (url.pathname.includes("/data/")) return;
 
+  // --- 장 본문: cache-first ------------------------------------------------
+  //
+  // 앱 셸과 달리 network-first를 쓰지 않는다. 원문은 **절대 바뀌지 않기**
+  // 때문이다 — 개역한글(1961)이고, 이 앱은 한 글자도 고치지 않는다
+  // (동일성유지권). 배포마다 다시 받을 이유가 없다.
+  //
+  // 무효화는 위의 VERSION 하나로 끝난다. 활성화 때 접두사가 pym-이면서
+  // 버전이 다른 캐시를 전부 지우므로, 장 파일 구조가 바뀌면 VERSION만
+  // 올리면 된다.
+  //
+  // 이 분기 덕분에 **한 번 연 장은 오프라인에서도 열린다.** 첫 방문에서
+  // 못 받는 것은 그대로 남는 한계이고, 그때 화면이 하는 말은
+  // ChapterReader가 정한다 (앱을 실패로 말하지 않는다).
+  if (url.origin === self.location.origin && url.pathname.includes(KRV_PATH)) {
+    event.respondWith(chapterFirst(request));
+    return;
+  }
+
   // --- 앱 셸: 같은 오리진만 network-first, 실패 시 캐시 ----------------------
   if (url.origin === self.location.origin) {
     event.respondWith(shellWithFallback(request));
@@ -81,6 +103,31 @@ async function thumbnailFirst(request) {
     }
     return response;
   } catch (error) {
+    return new Response("", { status: 504, statusText: "offline" });
+  }
+}
+
+/**
+ * 장 본문 — 캐시가 있으면 네트워크를 아예 건드리지 않는다.
+ *
+ * 썸네일과 달리 LRU 상한을 두지 않는다. 장 파일은 174개가 전부이고 합쳐도
+ * 573KB(비압축)라, 다 받아도 썸네일 200개보다 가볍다. 상한을 두면 오히려
+ * 자주 읽는 장이 밀려나 오프라인에서 열리지 않는 일이 생긴다.
+ *
+ * 실패는 캐시하지 않는다 — 오프라인에서 한 번 실패한 장이 연결된 뒤에도
+ * 계속 실패하면 그건 캐시가 만든 고장이다 (chapters.js도 같은 규칙이다).
+ */
+async function chapterFirst(request) {
+  const cache = await caches.open(KRV_CACHE);
+  const hit = await cache.match(request);
+  if (hit) return hit;
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) await cache.put(request, response.clone());
+    return response;
+  } catch (error) {
+    // 앱이 null로 받아 문장으로 말한다. 여기서 던지면 콘솔만 시끄러워진다.
     return new Response("", { status: 504, statusText: "offline" });
   }
 }

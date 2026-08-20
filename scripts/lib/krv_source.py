@@ -183,6 +183,21 @@ class KrvBible:
         except KeyError as exc:
             raise RefError(f"원문에 없는 절: {book_key} {chapter}:{verse}") from exc
 
+    def chapter_verses(self, book_key: str, chapter: int) -> list[tuple[int, str]]:
+        """장 하나를 (절 번호, 본문) 목록으로 절 번호 순서대로 돌려준다.
+
+        verses_in_range와 달리 **합본 구간을 거부하지 않는다.** 그쪽은 ref가
+        가리키는 범위를 뽑는 경로라 같은 문장이 반복되면 수록하면 안 되지만,
+        이쪽은 "이어서 읽기"가 장 전체를 그대로 보여주는 경로다. 합본 구간을
+        여기서 막으면 시편 92편·이사야 30편이 통째로 열리지 않는다.
+        반복을 어떻게 보일지는 화면의 판단이고(절 번호를 묶어 한 번만 그린다),
+        데이터를 내주는 이 자리에서 할 일이 아니다.
+        """
+        verses = self._verses.get((book_key, chapter))
+        if verses is None:
+            raise RefError(f"원문에 없는 장: {book_key} {chapter}")
+        return [(number, verses[number]) for number in sorted(verses)]
+
     def verses_in_range(self, ref: VerseRef) -> list[tuple[int, int, str]]:
         """범위에 든 절을 (장, 절, 본문) 순서대로 돌려준다.
 

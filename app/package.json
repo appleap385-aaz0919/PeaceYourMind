@@ -4,14 +4,14 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "gen:data": "python ../scripts/gen_taxonomy_json.py && python ../scripts/gen_verses_json.py",
+    "gen:data": "python ../scripts/gen_taxonomy_json.py && python ../scripts/gen_verses_json.py && python ../scripts/gen_krv_chapters.py",
     "predev": "npm run gen:data",
     "dev": "vite",
     "prebuild": "npm run gen:data",
     "build": "vite build",
     "preview": "vite preview",
     "pretest": "npm run gen:data",
-    "test": "node --test test/behavior.test.js test/normalize.parity.test.js test/verses.test.js"
+    "test": "node --test test/behavior.test.js test/normalize.parity.test.js test/verses.test.js test/chapters.test.js"
   },
   "dependencies": {
     "idb": "^8.0.0",

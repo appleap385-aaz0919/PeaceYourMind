@@ -132,11 +132,25 @@ jobs:
           if verses.get("attribution") != "성경전서 개역한글판, 대한성서공회":
               sys.exit("출처 표기가 없거나 다르다 — 성명표시권 요건")
 
+          # 이어서 읽기 — 장 본문은 번들이 아니라 dist/krv/ 하위 정적 파일이다.
+          # 빌드는 성공했는데 이것이 없으면 탭을 열 때마다 "못 불러왔어요"만 뜬다.
+          # 구절 하나하나가 여는 장이 실제로 배포에 들어갔는지 전수로 본다.
+          chapters = {(v["read"]["book"], v["read"]["chapter"]) for v in verses["verses"]}
+          missing = [
+              f"{book}/{chapter}"
+              for book, chapter in sorted(chapters)
+              if not (dist / "krv" / book / f"{chapter}.json").exists()
+          ]
+          if missing:
+              sys.exit(f"장 본문이 배포에 없다 {len(missing)}건 — {missing[:5]}")
+          if any("read" in c for c in verses["crisis"]):
+              sys.exit("위기 구절에 이어서 읽기 시작점이 붙었다 — 그 화면에는 이 기능이 없다")
+
           bundle = next(dist.glob("assets/*.js"))
           size = bundle.stat().st_size
           print(
               f"검증 통과 — 세분류 {len(subs)} · 구절 {len(verses['verses'])}"
-              f"(위기 {len(verses['crisis'])}) · 번들 {size // 1024}KB"
+              f"(위기 {len(verses['crisis'])}) · 장 본문 {len(chapters)} · 번들 {size // 1024}KB"
           )
           PY
 

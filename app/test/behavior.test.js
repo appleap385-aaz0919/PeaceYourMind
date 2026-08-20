@@ -312,12 +312,18 @@ test("위기 화면에는 토글도 폴백도 없다 (데이터)", () => {
   assert.equal(r.fallback, false);
 });
 
-test("위기 화면 컴포넌트가 토글·폴백 컴포넌트를 import하지 않는다 (코드)", () => {
+test("위기 화면 컴포넌트가 토글·폴백·본문 컴포넌트를 import하지 않는다 (코드)", () => {
   // 데이터 플래그만으로는 부족하다. 컴포넌트가 직접 목록을 그리므로,
-  // 누가 MediaToggle이나 VideoList를 여기에 끌어오면 이 검사가 잡는다.
-  assert.ok(!crisisSrc.includes("MediaToggle"), "위기 화면에 토글이 들어왔다");
+  // 누가 ResultTabs나 VideoList를 여기에 끌어오면 이 검사가 잡는다.
+  assert.ok(!crisisSrc.includes("ResultTabs"), "위기 화면에 탭이 들어왔다");
+  assert.ok(!crisisSrc.includes("MediaToggle"), "위기 화면에 옛 토글이 들어왔다");
   assert.ok(!crisisSrc.includes("VideoList"), "위기 화면에 일반 목록 컴포넌트가 들어왔다");
   assert.ok(!crisisSrc.includes("layersFor"), "위기 화면에 층 분리 로직이 들어왔다");
+  // [2026-08-20] 위기 구절의 앞뒤에 무엇이 있는지 통제할 수 없다.
+  //   데이터 쪽은 이미 막혀 있지만(위기 풀에 read가 없다 — chapters.test.js),
+  //   화면 쪽도 함께 막는다. 두 겹 중 하나만 뚫려도 이 기능은 위기 화면에
+  //   닿지 못한다.
+  assert.ok(!crisisSrc.includes("ChapterReader"), "위기 화면에 이어서 읽기가 들어왔다");
 });
 
 test("위기 화면에서 상담 안내가 구절·영상보다 먼저 나온다", () => {
@@ -641,18 +647,33 @@ test("토글 밑줄은 개별 속성으로만 지정한다 (단축과 섞으면 
   //   검정으로 해석돼 **비활성 탭에 검은 밑줄**이 남았고, 활성 탭의
   //   jade 60%보다 진하게 보여 "밑줄이 반대"로 읽혔다.
   //   양쪽 상태가 항상 같은 개별 속성을 지정해야 값이 교체되기만 한다.
-  const src = readSource("components", "MediaToggle.jsx");
-  const styles = src.slice(src.indexOf("const styles"));
+  //
+  // [2026-08-20 — 검사 범위를 넓혔다]
+  //   ResultTabs(옛 MediaToggle)만 보던 검사다. 이어서 읽기의 [이전]/[다음]도
+  //   같은 구조로 밑줄을 켜고 끄므로 같은 함정에 걸릴 자리다. 실제로 초안이
+  //   그 실수를 그대로 반복했다 — 한 곳만 지키는 검사는 다음 컴포넌트를
+  //   막지 못한다.
+  for (const file of ["ResultTabs.jsx", "ChapterReader.jsx"]) {
+    const src = readSource("components", file);
+    const styles = src.slice(src.indexOf("const styles"));
+    assert.ok(
+      !/borderBottom:\s*"/.test(styles),
+      `${file}: borderBottom 단축이 돌아왔다 — 꺼진 쪽에 검은 밑줄이 다시 생긴다`,
+    );
+    assert.ok(
+      /borderBottomColor:/.test(styles),
+      `${file}: 밑줄 색을 개별 속성으로 지정하지 않는다`,
+    );
+  }
+
+  const tabs = readSource("components", "ResultTabs.jsx");
+  const tabStyles = tabs.slice(tabs.indexOf("const styles"));
   assert.ok(
-    !/borderBottom:\s*"/.test(styles),
-    "borderBottom 단축이 돌아왔다 — 비활성 탭에 검은 밑줄이 다시 생긴다",
-  );
-  assert.ok(
-    /borderBottomColor:\s*"transparent"/.test(styles),
+    /borderBottomColor:\s*"transparent"/.test(tabStyles),
     "기본 상태가 borderBottomColor를 지정하지 않는다",
   );
   assert.ok(
-    /active:\s*\{[^}]*borderBottomColor/.test(styles),
+    /active:\s*\{[^}]*borderBottomColor/.test(tabStyles),
     "선택된 탭에 밑줄 색이 없다",
   );
 });

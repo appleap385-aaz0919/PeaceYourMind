@@ -23,6 +23,11 @@ export default defineConfig({
     // 구절(verses.json)은 여기 없다 — 앱 번들에 들어간다. 매일 바뀌는 값이
     // 아니고, 네트워크가 없어도 구절 화면은 떠야 하기 때문이다.
     __DATA_BASE__: JSON.stringify(`${BASE}data/`),
+    // 개역한글 장 본문("이어서 읽기"). data/ 하위가 **아니다** —
+    // data/는 배치(build.yml)가 매일 덮어쓰는 영역이고, 원문은 바뀌지 않는
+    // 자산이라 앱과 함께 배포된다(app/public/krv/ → gh-pages 루트).
+    // 번들에 넣지 않는 이유는 chapters.js 상단의 실측 참조.
+    __KRV_BASE__: JSON.stringify(`${BASE}krv/`),
     __APP_VERSION__: JSON.stringify(version),
   },
   build: {

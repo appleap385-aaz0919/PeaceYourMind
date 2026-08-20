@@ -65,6 +65,27 @@ DEFAULT_OUT = ROOT / "app" / "src" / "data" / "verses.json"
 APP_FIELDS = ("id", "ref", "text", "emotion_tags", "theme")
 CRISIS_APP_FIELDS = ("id", "ref", "text")
 
+# verses.yaml에 없고 여기서 계산해 붙이는 필드.
+#
+# read = {"book": 영문책키, "chapter": 장, "from": 끝 절 + 1}
+#   "이어서 읽기" 탭이 열 장과 시작 절이다. app/public/krv/<book>/<chapter>.json이
+#   그 장의 본문이고, gen_krv_chapters.py가 같은 소스에서 함께 만든다.
+#
+# ★ 왜 앱에서 ref를 파싱하지 않고 여기서 붙이는가
+#   krv_source.parse_ref는 66권의 한글 정식명·약어 사전을 들고 있다. 그것을 JS로
+#   옮기면 그 순간 **두 번째 구현**이 되고, 두 구현이 어긋나면 화면이 엉뚱한 장을
+#   연다. 이 저장소는 그 비용을 이미 안다 — normalize가 앱(JS)과 배치(Python)에
+#   양쪽으로 있어서 normalize.parity.test.js가 문자 단위 일치를 지키고 있다.
+#   파싱을 빌드 타임에 끝내면 이식도 패리티 테스트도 필요 없다.
+#
+# ⚠ from은 **장의 끝을 넘을 수 있다.** 인용 구절이 그 장의 마지막 절인 경우가
+#   289건 중 20건이고(롬 8:38-39는 로마서 8장의 마지막이라 from=40이지만 39절이
+#   끝이다), 그 처리는 앱의 페이지 규칙이 맡는다(chapters.js pageFor).
+#   여기서 미리 자르지 않는 이유는 이 필드의 뜻이 "인용한 다음 절"이기 때문이다 —
+#   자르는 순간 뜻이 "시작 절"로 바뀌고, 그러면 페이지 크기(4절)라는 화면의
+#   판단이 데이터 생성기로 새어 들어온다.
+COMPUTED_FIELDS = ("read",)
+
 # 기대 개수 — 현재 큐레이션 규모.
 #
 # 이 값을 두는 이유는 "생성이 조용히 줄어드는 것"을 막기 위해서다.
@@ -198,20 +219,50 @@ def validate(
     return problems
 
 
+def read_pointer(ref: str) -> dict[str, Any]:
+    """구절 하나의 "이어서 읽기" 시작점을 계산한다.
+
+    범위형 ref(롬 8:38-39)는 **끝 절** 기준이다 — 인용한 마지막 절 다음부터
+    이어 읽는 것이 이 기능의 뜻이다. 장을 넘는 범위(시 42:5-43:1)는 시작 장을
+    쓴다. 이어서 읽기가 장 경계를 넘지 않으므로 열 수 있는 장은 시작 장뿐이고,
+    끝 장을 가리키면 사용자가 읽던 구절이 없는 장이 열린다.
+    """
+    parsed = parse_ref(ref)
+    return {
+        "book": parsed.book_key,
+        "chapter": parsed.start[0],
+        "from": parsed.end[1] + 1 if parsed.end[0] == parsed.start[0] else 1,
+    }
+
+
 def build(verses_file: VersesFile, theme_ids: set[str], now: datetime) -> dict[str, Any]:
     """앱 번들 구조를 만든다.
 
     themes는 실제로 쓰인 주제만 담는다 — 앱이 빈 주제 화면을 만들지 않도록.
     crisis_fixed는 감정 매핑을 타지 않으므로 여기 넣지 않는다.
+
+    ★ read는 감정 풀에만 붙인다 — 위기 풀에는 붙이지 않는다.
+      위기 화면에는 "이어서 읽기"가 없다. 위기 구절의 앞뒤에 무엇이 있는지
+      통제할 수 없기 때문이다. 그런데 데이터에 시작점이 들어 있으면 그 화면을
+      만드는 일이 **한 줄짜리 실수**로 가능해진다. 위기 풀을 최상위로 분리한
+      것과 같은 판단이다(PLAN.md 4.2) — 구조로 막으면 그 실수가 불가능해진다.
+      assert_no_loss가 위기 항목에 read가 섞이지 않았는지 다시 확인한다.
     """
     used_themes = sorted({v["theme"] for v in verses_file.verses})
+
+    verses = []
+    for verse in verses_file.verses:
+        entry = strip_entry(verse, APP_FIELDS)
+        entry["read"] = read_pointer(entry["ref"])
+        verses.append(entry)
+
     return {
         "translation": verses_file.translation,
         "source_version": verses_file.version,
         "generated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "attribution": "성경전서 개역한글판, 대한성서공회",
         "themes": used_themes,
-        "verses": [strip_entry(v, APP_FIELDS) for v in verses_file.verses],
+        "verses": verses,
         "crisis": [strip_entry(v, CRISIS_APP_FIELDS) for v in verses_file.crisis],
     }
 
@@ -231,20 +282,38 @@ def assert_no_loss(bundle: dict[str, Any], verses_file: VersesFile) -> None:
                 f"(원본 {len(source_ids)}건, 생성 {len(built_ids)}건)"
             )
 
-    leaked = sorted(
-        key
-        for entry in bundle["verses"] + bundle["crisis"]
-        for key in entry
-        if key not in set(APP_FIELDS)
-    )
-    if leaked:
-        raise BuildError(f"앱 번들에 큐레이션 메타가 남았다: {sorted(set(leaked))}")
+    # 감정 풀과 위기 풀을 **각자의 허용 목록으로** 본다.
+    #
+    # 전에는 둘 다 APP_FIELDS로 봤다. 위기 항목의 허용 필드가 더 좁은데도
+    # 넓은 목록으로 검사한 것이라, 위기 항목에 theme이 섞여도 이 자리에서는
+    # 걸리지 않았다(아래 별도 검사가 그것만 따로 잡고 있었다).
+    # read가 생기면서 그 느슨함이 실제 위험이 됐다 — 위기 항목에 read가 붙는
+    # 것이 정확히 막아야 할 일이다. 목록을 갈라 두면 앞으로 추가되는 필드도
+    # 자동으로 같은 보호를 받는다.
+    allowed = {
+        "verses": set(APP_FIELDS) | set(COMPUTED_FIELDS),
+        "crisis": set(CRISIS_APP_FIELDS),
+    }
+    for key, permitted in allowed.items():
+        leaked = sorted({field for entry in bundle[key] for field in entry} - permitted)
+        if leaked:
+            raise BuildError(f"{key}에 허용되지 않은 필드가 남았다: {leaked}")
 
     for entry in bundle["crisis"]:
         if not entry["id"].startswith(CRISIS_PREFIX):
             raise BuildError(f"crisis 배열에 일반 id가 있다: {entry['id']}")
         if "emotion_tags" in entry or "theme" in entry:
             raise BuildError(f"crisis 항목에 감정 매핑 필드가 남았다: {entry['id']}")
+        if "read" in entry:
+            raise BuildError(
+                f"crisis 항목에 이어서 읽기 시작점이 붙었다: {entry['id']} — "
+                "위기 구절의 앞뒤는 통제할 수 없어 그 화면에는 이 기능을 두지 않는다"
+            )
+
+    for entry in bundle["verses"]:
+        pointer = entry.get("read")
+        if not pointer or not all(k in pointer for k in ("book", "chapter", "from")):
+            raise BuildError(f"{entry['id']}: read 시작점이 없거나 불완전하다")
 
 
 def report(bundle: dict[str, Any], out: Path, payload: str, dry_run: bool) -> None:
