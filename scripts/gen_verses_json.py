@@ -122,7 +122,7 @@ READ_PAGE_SIZE = 4
 #        (채택하면서 note에 위험을 적어 두고 넘어간 유형. verses.yaml 제외 목록)
 #   286  ★ 장 문맥 재검토로 3건 제외 — 시 88:1-2 · 시 143:4 · 시 1:2
 #        (2026-08-20 '이어서 읽기' 신설 축. verses.yaml excluded 참조)
-EXPECT_VERSES = 291
+EXPECT_VERSES = 293
 EXPECT_CRISIS = 10
 
 EXIT_OK = 0
