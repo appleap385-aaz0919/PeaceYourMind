@@ -217,6 +217,80 @@ test("부정 표현이 긍정으로 새지 않는다", () => {
   assert.deepEqual(leaked, [], `긍정으로 샜다: ${leaked.join(" · ")}`);
 });
 
+// -----------------------------------------------------------------------------
+// 2026-08-20 — [7] 부정 표현. **긍정 계열에만** 건다
+// -----------------------------------------------------------------------------
+// "재미있는 게 하나도 없어요"가 joy.delight로 갔다. 방향이 정반대다.
+// ⛔ 부정 계열에까지 걸면 이중 부정이 된다 — "슬픔이 가시지 않아요"는 슬픔이
+//    **계속된다**는 뜻이다. 그 6건이 통째로 죽는 것을 실측으로 확인했다.
+// -----------------------------------------------------------------------------
+
+const NEGATED_POSITIVE = [
+  "재미있는 게 하나도 없어요", "즐거운 일이 없어요", "기쁜 일이 하나도 없어",
+  "행복하지 않아요", "설레지 않아요", "편안하지가 않아요", "여유가 없어요",
+];
+// ⛔ 이중 부정 — 부정 계열은 "않/없"이 붙어도 감정이 유지된다. 죽이면 안 된다
+const DOUBLE_NEGATION = [
+  ["슬픔이 가시지 않아요", "sadness"], ["외로움이 사라지지 않아요", "sadness"],
+  ["걱정이 떠나지 않아요", "anxiety"], ["짜증이 가시질 않아", "anger"],
+  // ⚠ "화가 가라앉지 않아요"는 여기 넣지 않았다 — sadness.sorrow로 간다.
+  //   `가라앉`이 sadness 키워드라 그렇고, **부정 처리와 무관한 별개 문제다**
+  //   (규칙을 끄면 결과가 같다). 감정 어휘 소속의 문제이지 [7]의 문제가 아니다.
+];
+
+test("부정된 긍정 표현은 긍정 계열로 가지 않는다", () => {
+  const leaked = NEGATED_POSITIVE.filter((s) => {
+    const r = classify(s, taxonomy);
+    const cat = r.kind === RESULT.OK ? r.category.id
+      : r.kind === RESULT.CATEGORY ? r.category.id : null;
+    return ["joy", "flutter", "calm"].includes(cat);
+  });
+  assert.deepEqual(leaked, [], `긍정으로 샜다: ${leaked.join(" · ")}`);
+});
+
+test("대분류 폴백에서도 부정이 되살아나지 않는다", () => {
+  // "설레지 않아요"가 flutter 세분류에서 걸러졌는데 대분류 폴백이 다시 집었다.
+  const r = classify("설레지 않아요", taxonomy);
+  assert.notEqual(r.kind === RESULT.CATEGORY ? r.category.id : null, "flutter");
+});
+
+test("이중 부정 — 부정 계열 감정어는 '않/없'이 붙어도 살아 있다", () => {
+  const lost = DOUBLE_NEGATION.filter(([s, cat]) => {
+    const r = classify(s, taxonomy);
+    const got = r.kind === RESULT.OK ? r.category.id
+      : r.kind === RESULT.CATEGORY ? r.category.id : null;
+    return got !== cat;
+  }).map(([s]) => s);
+  assert.deepEqual(lost, [], `감정을 잃었다: ${lost.join(" · ")}`);
+});
+
+test("같은 키워드가 두 번 나오면 부정 안 된 자리를 살린다", () => {
+  // "재미있는 건 없지만 그래도 재미있었어요" — 뒤쪽 자리는 부정이 아니다
+  const r = classify("재미있는 건 없지만 그래도 재미있었어요", taxonomy);
+  assert.equal(r.kind, RESULT.OK);
+  assert.equal(r.category.id, "joy");
+});
+
+test("⚠ 알려진 한계 — 창 안의 무관한 부정어를 가르지 못한다", () => {
+  // "재미있었고 후회도 없어요"에서 없는 것은 후회인데, 창(8글자) 안에 `없`이
+  // 있어 `재미있`이 무효화된다. 문법적으로 가르려면 파싱이 필요하다.
+  // 결과는 NO_MATCH → 선택 화면이라 **안전한 방향의 오탐**이고, 빈도가 낮아
+  // 감수한다. 이 검사는 그 한계를 **기록으로 고정**하는 것이다 —
+  // 나중에 고쳤다면 여기가 깨지고, 그때 이 주석을 지우면 된다.
+  assert.equal(classify("재미있었고 후회도 없어요", taxonomy).kind, RESULT.NO_MATCH);
+});
+
+test("같은 표현이 두 세분류에 갈리면 짧은 쪽이 죽는다 — 손에안잡 중복 정리", () => {
+  // `손에안잡`(anxiety.restless)과 `손에안잡혀`(exhaustion.listless)가 함께
+  // 있으면 길이 합에서 긴 쪽이 항상 이겨 짧은 쪽이 죽은 키워드가 된다.
+  const all = taxonomy.categories.flatMap((c) => c.subcategories);
+  const listless = all.find((s) => s.id === "exhaustion.listless");
+  assert.ok(!listless.keywords.includes("손에안잡혀"), "중복을 되돌리지 말 것");
+  const r = classify("계속 걱정이 돼서 아무것도 손에 안 잡혀요", taxonomy);
+  assert.equal(r.kind, RESULT.OK);
+  assert.equal(r.category.id, "anxiety");
+});
+
 test("좋아하는 사람 = 설렘이지 즐거움이 아니다", () => {
   const r = classify("좋아하는 사람이 생겼어요", taxonomy);
   assert.equal(r.kind, RESULT.OK);

@@ -62,6 +62,56 @@ export function classify(text, taxonomy) {
   return { kind: RESULT.NO_MATCH };
 }
 
+// =============================================================================
+// 부정 표현 (2026-08-20) — 긍정 계열에만 건다
+// =============================================================================
+// "재미있는 게 하나도 없어요"가 joy.delight로 갔다. `재미있`이 걸리고 뒤의
+// "하나도 없어요"를 아무도 보지 않는다. **방향이 정반대인 화면으로 간다.**
+// 실측 18건 중 8건이 이 유형이었다 —
+//   행복하지 않아요 → joy · 설레지 않아요 → flutter · 여유가 없어요 → calm
+//
+// [★ 왜 긍정 계열에만 거는가 — 이중 부정 때문이다]
+//   부정 계열 감정어에 "않/없"이 붙으면 뜻이 **뒤집히지 않는다. 오히려 지속된다.**
+//     "슬픔이 가시지 않아요"    슬픔이 계속된다는 뜻이다
+//     "걱정이 떠나지 않아요"    걱정이 계속된다는 뜻이다
+//     "짜증이 가시질 않아"      짜증이 계속된다는 뜻이다
+//   실측: 전체 계열에 걸면 위 6건이 **전부 무효화**된다. 가장 도움이 필요한
+//   상태의 입력을 통째로 잃는다.
+//   → lib/tagging.py의 BRIGHT_THEMES와 같은 구조다. 밝은 쪽에만 건다.
+//
+// ⚠ normalize()는 건드리지 않았다. 이 규칙은 **분류 전용**이고 앱에만 있다 —
+//   배치(Python)는 감정 키워드를 매칭하지 않으므로(lib/taxonomy.py는 세분류
+//   id만 읽는다) normalize.parity 제약을 받지 않는다. [3]의 어절 경계가
+//   배치 전용이라 자유로웠던 것과 방향만 반대다.
+
+// 이 대분류의 키워드에만 부정 무효화를 적용한다.
+const POSITIVE_CATEGORIES = new Set(["joy", "flutter", "calm"]);
+// 키워드 뒤 몇 글자까지 부정 표지를 찾을 것인가.
+//   "재미있"+"는게하나도없어요"  → 7글자째에 없
+//   "즐거"  +"운일이없어요"      → 5글자째에 없
+//   8이면 실측 8건을 전부 덮는다. 늘리면 무관한 문장의 "없/않"을 끌어온다.
+const NEGATION_WINDOW = 8;
+const NEGATION_MARK = /[않없]/;
+
+/**
+ * 이 키워드가 **부정된 채로만** 나타나는가.
+ *
+ * 걸리는 자리가 여럿이면 **하나라도 부정 없는 자리가 있을 때 유효**로 본다.
+ * ("재미있었고 후회도 없어요"처럼 긍정과 부정이 같이 있는 문장을 죽이지 않는다)
+ */
+function negatedEverywhere(input, keyword) {
+  const needle = normalize(keyword);
+  if (!needle) return false;
+  let at = input.indexOf(needle);
+  if (at < 0) return false;
+  while (at >= 0) {
+    const tail = input.slice(at + needle.length, at + needle.length + NEGATION_WINDOW);
+    if (!NEGATION_MARK.test(tail)) return false;
+    at = input.indexOf(needle, at + 1);
+  }
+  return true;
+}
+
 // 한글 자모만으로 된 문자(ㅠㅋㅎ…). 감정 표시일 뿐 뜻을 바꾸지 않는다.
 // ⚠ normalize()에서 지우지 않는다 — scripts/lib/normalize.py와 문자 단위로
 //   같아야 하고, 배치의 blocklist 매칭이 그 동일성에 걸려 있기 때문이다.
@@ -86,9 +136,14 @@ function isCrisisAlone(input, exactWords) {
 function matchCategory(input, taxonomy) {
   let best = null;
   for (const category of taxonomy.categories) {
+    // 세분류에서 무효화한 부정 표현이 여기서 되살아나면 안 된다.
+    // "설레지 않아요"가 flutter 세분류에서 걸러졌는데 대분류 폴백이 다시
+    // flutter를 집었다 — 같은 규칙을 두 층에 걸어야 한다.
+    const dropNegated = POSITIVE_CATEGORIES.has(category.id);
     const hits = (category.keywords || []).filter((k) => {
       const needle = normalize(k);
-      return needle && input.includes(needle);
+      if (!needle || !input.includes(needle)) return false;
+      return !(dropNegated && negatedEverywhere(input, k));
     });
     if (!hits.length) continue;
 
@@ -109,10 +164,13 @@ function matchCategory(input, taxonomy) {
 function scoreSubcategories(input, taxonomy) {
   let best = null;
   for (const category of taxonomy.categories) {
+    // 긍정 계열만 부정 무효화 대상이다 (POSITIVE_CATEGORIES 주석 참조).
+    const dropNegated = POSITIVE_CATEGORIES.has(category.id);
     for (const subcategory of category.subcategories) {
       const hits = subcategory.keywords.filter((k) => {
         const needle = normalize(k);
-        return needle && input.includes(needle);
+        if (!needle || !input.includes(needle)) return false;
+        return !(dropNegated && negatedEverywhere(input, k));
       });
       if (!hits.length) continue;
 
