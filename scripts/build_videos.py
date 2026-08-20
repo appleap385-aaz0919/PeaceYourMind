@@ -91,7 +91,11 @@ from lib.results import (
     TaggedVideo,
     ThemeResult,
 )
-from lib.selection import select_fallback_videos, select_theme_videos
+from lib.selection import (
+    drop_promotional,
+    select_fallback_videos,
+    select_theme_videos,
+)
 from lib.taxonomy import load_subcategory_ids
 from lib.tagging import SERMON, UNKNOWN, WORSHIP, classify_media_type, tag_themes
 from lib.themes import (
@@ -113,6 +117,9 @@ CRISIS_SELECTOR = "crisis"
 
 # 미태깅 비율이 이보다 높으면 경보. 주제 사전의 구멍이거나 채널 성격 불일치 신호다.
 UNTAGGED_ALERT_RATIO = 0.7
+
+# 폴백에서 뺀 공고·행사·홍보를 로그에 몇 건까지 보일 것인가.
+PROMO_LOG_SAMPLE = 8
 
 EXIT_OK = 0
 EXIT_RETRYABLE = 1
@@ -187,6 +194,7 @@ def summarize_tagging(ctx: BuildContext, tagged: Sequence[TaggedVideo]) -> dict[
     있으면 주제 사전이 아니라 그 채널의 승인 근거를 다시 봐야 한다.
     """
     untagged = [t for t in tagged if t.is_untagged]
+    _, promo_dropped = drop_promotional(untagged)
     by_channel = Counter(t.video.channel for t in untagged)
     ratio = len(untagged) / len(tagged) if tagged else 0.0
 
@@ -222,6 +230,13 @@ def summarize_tagging(ctx: BuildContext, tagged: Sequence[TaggedVideo]) -> dict[
         "multi_theme": multi,
         "untagged_by_channel": dict(by_channel.most_common()),
         "untagged_sample": _untagged_sample(untagged),
+        # 폴백 후보에서 뺀 것 — 미태깅 중 공고·행사·홍보
+        # (lib/selection.promo_reason). 매일 몇 건이 걸리는지 보이지 않으면
+        # 사전이 과하게 잡기 시작해도 알 수 없다.
+        "fallback_excluded": len(promo_dropped),
+        "fallback_excluded_sample": [
+            f"[{reason}] {item.video.title}" for reason, item in promo_dropped[:15]
+        ],
         "media_types": {k: media_counts.get(k, 0) for k in (SERMON, WORSHIP, UNKNOWN)},
         "media_reasons": dict(sorted(reason_counts.items())),
     }
@@ -351,7 +366,15 @@ def build_subcategories(
       24개 화면 중 20개가 목표 미달이고 1개는 0건이 된다. 폴백은 그것을 메운다.
     """
     results: list[SubcategoryResult] = []
-    untagged = [t for t in tagged if t.is_untagged]
+    untagged, promo_dropped = drop_promotional([t for t in tagged if t.is_untagged])
+    if promo_dropped:
+        logger.info(
+            "폴백 후보에서 공고·행사·홍보 %d건 제외 — 남은 후보 %d건",
+            len(promo_dropped),
+            len(untagged),
+        )
+        for reason, item in promo_dropped[:PROMO_LOG_SAMPLE]:
+            logger.info("  제외 [%s] %s", reason, item.video.title[:70])
 
     for sub, theme_ids in ctx.themes.mapping.items():
         pool = [
@@ -567,12 +590,17 @@ def dry_run_titles(themes: Themes) -> list[str]:
         titles.append(f"주일예배 | 요한복음 3:16 — {keyword}")
         titles.append(f"{keyword} | 잔잔한 피아노 찬양 모음")
         titles.append(f"{keyword}에 대하여")
+    # 이 넷은 어느 주제에도 안 걸려 폴백 후보로 떨어진다. 그중 **둘은 폴백
+    # 품질 필터에도 걸리게** 두었다 — 뒤의 둘(스케치·하이라이트)이 그것이다.
+    # 덕분에 드라이런이 필터의 양쪽 분기를 모두 태운다: 걸러지는 것과 남는 것.
+    # ⚠ 여기 제목을 바꿀 때 그 균형을 깨지 말 것. 넷이 전부 통과하면 필터가
+    #   꺼져 있어도 드라이런이 아무 말을 하지 않는다.
     titles.extend(
         [
-            "교회 소식 브리핑",
-            "성탄 축하 행사 스케치",
-            "선교 보고 영상",
-            "청년부 수련회 하이라이트",
+            "교회 소식 브리핑",  # 남는다
+            "성탄 축하 행사 스케치",  # 폴백 필터에 걸린다
+            "선교 보고 영상",  # 남는다
+            "청년부 수련회 하이라이트",  # 폴백 필터에 걸린다
         ]
     )
     return titles

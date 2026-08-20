@@ -18,6 +18,7 @@
   7. 무결성 단언(상호 배타 · media_type)이 실제로 배포를 막는다
   8. 폴백이 미태깅·기본 형식·상한·채널 분산을 전부 지킨다
   9. 경보가 Issue/Summary로 올바르게 갈린다 (2026-08-19 정책)
+ 10. 폴백 품질 필터가 공고·행사·홍보만 빼고 찬양 콘티는 남긴다 (2026-08-20)
 """
 
 from __future__ import annotations
@@ -34,6 +35,7 @@ from datetime import datetime, timezone
 
 from build_videos import (
     IntegrityError,
+    build_subcategories,
     assert_disjoint,
     assert_fallback_untagged,
     assert_media_type_filled,
@@ -48,7 +50,12 @@ from lib.results import (
     ThemeResult,
 )
 from lib.selection import (
+    PROMO_ANYWHERE,
+    PROMO_HEAD,
+    PROMO_SERIES,
+    drop_promotional,
     fill_balanced,
+    promo_reason,
     select_crisis_videos,
     select_fallback_videos,
     select_theme_videos,
@@ -86,6 +93,16 @@ def _tagged(video_id: str, channel: str, media_type: str) -> TaggedVideo:
     )
     return TaggedVideo(
         video=video, themes=("comfort",), hits=("위로",), media=MediaVerdict(media_type, "title")
+    )
+
+
+def _tagged_untagged(
+    video_id: str, channel: str, media_type: str, title: str
+) -> TaggedVideo:
+    """미태깅 영상 하나 — 폴백 후보다. 제목이 검사 대상이라 직접 받는다."""
+    base = _tagged(video_id, channel, media_type)
+    return replace(
+        base, video=replace(base.video, title=title), themes=(), hits=()
     )
 
 
@@ -557,6 +574,108 @@ def main() -> int:
         failures,
         all("route" in a.to_json() for a in collector.alerts),
         "리포트 JSON에 route가 실린다 (워크플로가 이 값으로 가른다)",
+    )
+
+    # =========================================================================
+    # 10. 폴백 품질 필터 — 공고·행사·홍보만 빼고 콘텐츠는 남기는가 (2026-08-20)
+    # =========================================================================
+    # 실측 제목을 그대로 고정한다. 사전을 손볼 때 여기서 먼저 깨져야 한다.
+    print("\n[10] 폴백 품질 필터")
+
+    MUST_DROP = [
+        ("광주극동방송 어린이합창단 신입단원 모집 '2026전도대회 호남권연합찬양'", "모집 공고"),
+        ("옹터뷰(28기 신입단원모집 특별인터뷰)", "모집 홍보"),
+        ("📍호남권 전도를 통해 이어진 구원의 순간들 | 전도대회 하이라이트", "홍보"),
+        ("구독자2만명돌파기념!! 옹기장이가 쏜다 생방송", "채널 이벤트"),
+        ("✔극동방송 70주년 기념 호남권 전도대회 | FEBC 호남권 전도대회 2부 LIVE", "행사 중계"),
+        ("[생방송] 2026 나라사랑축제 (익산)", "행사 중계"),
+        ("[LIVE] 2025 극동방송 총회 및 성탄 공개방송", "행사 중계"),
+        ("옹기장이 28기 향상음악회", "행사"),
+        (
+            "[CTS 추천픽] 독립유공자 26인 집안, 목회자 사모가 된 자녀들"
+            " | 🇰🇷 광복 81주년,믿음으로 지켜낸 대한민국의 독립 이야기",
+            "기념일 시리즈",
+        ),
+    ]
+    # ★ 여기가 이 검사의 핵심이다. 이 넷은 '주년'·'콘서트'·'기념'·'광복'을 품고
+    #   있지만 전부 실제 콘텐츠다. 어간을 넓히면 여기서 깨진다.
+    MUST_KEEP = [
+        ("주 여호와는 나의 힘 & 찬송할 수 있을 때 | 옹기장이 40주년 카운트다운 콘서트 2026", "찬양 곡"),
+        ("할렐루야 존귀하신 주 | 옹기장이 40주년 카운트다운콘서트 2026", "찬양 곡"),
+        ("[고난주간 3일] 나를 기념하라, 우리를 위해 흘리신 언약의 피 — 최후의 만찬", "고난주간 콘텐츠"),
+        ("한국중앙교회 임석순 목사 (CBS 주일강단 540회) - 영적 광복을 위한 오늘의 핍박", "설교"),
+    ]
+
+    missed = [(s, k) for s, k in MUST_DROP if not promo_reason(s)]
+    _check(
+        failures,
+        not missed,
+        f"공고·행사·홍보 {len(MUST_DROP)}종을 전부 뺀다",
+        "; ".join(k for _, k in missed) or "-",
+    )
+    lost = [(s, k) for s, k in MUST_KEEP if promo_reason(s)]
+    _check(
+        failures,
+        not lost,
+        f"행사장에서 찍힌 콘텐츠 {len(MUST_KEEP)}종은 남긴다",
+        "; ".join(f"{k}: {promo_reason(s)}" for s, k in lost) or "-",
+    )
+
+    # 머리/트레일러 구분이 실제로 작동하는가 — 같은 어휘, 다른 자리
+    _check(
+        failures,
+        promo_reason("극동방송 70주년 기념 대회 | FEBC LIVE") is not None
+        and promo_reason("할렐루야 | 옹기장이 40주년 콘서트") is None,
+        "같은 '주년'이라도 머리에 있을 때만 뺀다",
+    )
+
+    # 폴백 전용이다 — 주제분에는 걸지 않는다는 것을 호출 구조로 고정한다
+    src = inspect.getsource(build_subcategories)
+    body = "\n".join(
+        line for line in src.splitlines() if not line.lstrip().startswith("#")
+    )
+    _check(
+        failures,
+        body.count("drop_promotional") == 1 and "is_untagged" in body,
+        "미태깅(=폴백 후보)에만 적용한다",
+    )
+
+    # 되메우지 않는다 — 풀을 줄이면 결과도 줄어야 한다
+    promo_pool = [
+        _tagged_untagged(f"promo-{i}", "채널A", WORSHIP, "어린이합창단 신입단원 모집 안내")
+        for i in range(10)
+    ]
+    clean_pool = [
+        _tagged_untagged(f"ok-{i}", "채널A", WORSHIP, f"주 은혜라 {i}") for i in range(3)
+    ]
+    kept, dropped = drop_promotional(promo_pool + clean_pool)
+    picked = select_fallback_videos(kept, WORSHIP, 12, day_of_year=1)
+    _check(
+        failures,
+        len(dropped) == 10 and len(picked) == 3,
+        "뺀 자리를 되메우지 않는다 — 후보가 없으면 그만큼 적게 나간다",
+        f"제외 {len(dropped)} · 확보 {len(picked)}/12",
+    )
+
+    # 고장 주입 — 어휘를 넓히면 찬양 콘티가 걸리는 것을 실제로 확인한다
+    import lib.selection as _sel
+
+    saved = _sel.PROMO_ANYWHERE
+    try:
+        _sel.PROMO_ANYWHERE = saved + ("주년",)
+        broke = [s for s, _ in MUST_KEEP if _sel.promo_reason(s)]
+        _check(
+            failures,
+            len(broke) >= 2,
+            "고장 주입: '주년'을 위치 무관으로 옮기면 찬양 콘티가 걸린다",
+            f"{len(broke)}건 걸림",
+        )
+    finally:
+        _sel.PROMO_ANYWHERE = saved
+    _check(
+        failures,
+        not [s for s, _ in MUST_KEEP if promo_reason(s)],
+        "고장을 되돌리면 다시 통과한다",
     )
 
     print("\n" + "=" * 76)

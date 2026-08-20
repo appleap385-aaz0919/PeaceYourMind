@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from collections import Counter
 from collections.abc import Sequence
 
@@ -33,6 +34,95 @@ logger = logging.getLogger("build_videos")
 
 # 한 주제의 20슬롯을 형식별로 몇 건까지 먼저 확보할 것인가 (나머지는 남는 쪽이 채운다).
 MEDIA_BALANCE_TARGET = THEME_MAX_VIDEOS // 2
+
+
+# =============================================================================
+# 폴백 품질 — 폴백에도 넣지 않는 것 (2026-08-20)
+# =============================================================================
+# 폴백은 "감정에 딱 맞지는 않아도 그 채널의 최근 영상"을 허용한 층이다
+# (HANDOFF 2.14). 그런데 실측에서 그 범위 밖이 올라왔다 — 단원 모집 공고,
+# 기념행사 중계, 채널 구독자 이벤트. **감정에 안 맞는 것과 콘텐츠가 아닌 것은
+# 다르다.** 앞은 폴백이 감수하기로 한 것이고 뒤는 아니다.
+#
+# [왜 어휘 목록 하나로 하지 않았나 — 실측이 먼저 막았다]
+#   '주년'·'콘서트'를 통째로 걸면 이런 것이 함께 사라진다.
+#       "주 여호와는 나의 힘 & 찬송할 수 있을 때 | 옹기장이 40주년 카운트다운 콘서트"
+#       "할렐루야 존귀하신 주 | 옹기장이 40주년 카운트다운콘서트 2026"
+#   전부 실제 찬양 영상이고 40주년은 **어디서 찍었는가**일 뿐이다. 반대로
+#       "극동방송 70주년 기념 호남권 전도대회 | FEBC 호남권 전도대회 2부 LIVE"
+#   에서는 그것이 영상 자체다. 가르는 축은 어휘의 유무가 아니라 **머리가 무엇인가**다.
+#
+#   실측 (dist/titles.json 1,067건 · 미태깅 788건)
+#       머리 기준 + 시리즈   제외 20건 · 정상 콘텐츠 손실 0건   ← 채택
+#       전체 매칭            제외 28건 · 찬양 5건 + 설교 2건 손실
+#
+# ⚠ 이 사전을 늘릴 때는 `retag_titles.py --probe <어휘>`로 무엇이 걸리는지
+#   눈으로 세고 나서 넣는다. 제목 blocklist가 정상 영상을 떨어뜨리는 쪽이 더 큰
+#   위험이라는 판단은 HANDOFF 2.12절에서 이미 한 번 한 것이다.
+
+# (a) 위치 무관 — 이 말이 있으면 영상이 아니라 공고·홍보다
+PROMO_ANYWHERE = (
+    "모집", "신입단원", "공고", "접수", "채용", "지원자격", "선발",
+    "하이라이트", "예고편", "티저", "스케치", "홍보영상",
+    "돌파기념", "구독자",
+)
+# (b) 제목 머리에만 — 트레일러(세로줄 뒤)에 있으면 촬영 장소·행사명일 뿐이다
+PROMO_HEAD = (
+    "주년", "축제", "전도대회", "총회", "음악회",
+    "발대식", "페스티벌", "체육대회", "바자회", "헌당", "임직",
+)
+# (c) 시리즈 브랜드 — 트레일러에 있어도 뺀다. **사람이 지정한다.**
+#     머리만으로 못 가르는 구간이다. CTS 광복 시리즈의 머리는 "독립유공자 26인
+#     집안, 목회자 사모가 된 자녀들"이라 (b)에 안 걸리는데, 그렇다고 '광복'을
+#     통째로 넣으면 "영적 광복을 위한 오늘의 핍박"(CBS 설교)을 잃는다.
+#     ★ 이 경계는 [2] 곡명 사전이 생기면 자동으로 갈린다 — 머리가 곡명인지
+#       판정할 수 있게 되기 때문이다. 그때 이 목록을 다시 볼 것.
+PROMO_SERIES = ("광복 81주년",)
+
+# 세로줄 뒤는 채널·예배·행사 이름이다 (retag_titles._TRAILER와 같은 규칙).
+_TRAILER = re.compile(r"\s*[|｜│]\s*")
+
+
+def promo_reason(title: str) -> str | None:
+    """폴백에서 뺄 이유가 있으면 그 이유를, 없으면 None.
+
+    **폴백 전용이다. 주제분에는 걸지 않는다** — 주제어가 걸린 영상은 그 나름의
+    근거가 있고, 두 층은 판단 기준이 다르다. 실측에서도 제외 대상 20건은
+    전부 미태깅이었다.
+    """
+    for word in PROMO_ANYWHERE:
+        if word in title:
+            return f"공고/홍보:{word}"
+    head = _TRAILER.split(title)[0]
+    for word in PROMO_HEAD:
+        if word in head:
+            return f"행사:{word}"
+    for word in PROMO_SERIES:
+        if word in title:
+            return f"시리즈:{word}"
+    return None
+
+
+def drop_promotional(
+    untagged: Sequence[TaggedVideo],
+) -> tuple[list[TaggedVideo], list[tuple[str, TaggedVideo]]]:
+    """폴백 후보에서 공고·행사·홍보를 뺀다. (남은 후보, 뺀 것+이유)를 돌려준다.
+
+    ⚠ **뺀 자리를 되메우지 않는다.** 화면이 SUBCATEGORY_MIN_VIDEOS 미만이 되면
+      그대로 두고 theme_too_few(critical)가 뜬다 — 쓰레기로 채우는 것보다 얇은
+      편이 낫다는 판단이다(사용자 결정 2026-08-20). select_fallback_videos는
+      풀에서 need만큼 뽑고 모자라면 적게 돌려주므로 되메우는 경로 자체가 없다.
+      **여기서 뺀 것을 다시 넣는 코드를 만들지 말 것.**
+    """
+    kept: list[TaggedVideo] = []
+    dropped: list[tuple[str, TaggedVideo]] = []
+    for item in untagged:
+        reason = promo_reason(item.video.title)
+        if reason:
+            dropped.append((reason, item))
+        else:
+            kept.append(item)
+    return kept, dropped
 
 
 def per_channel_ladder() -> tuple[int, ...]:
