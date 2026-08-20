@@ -1,9 +1,9 @@
 {
-  "version": "2026-08-19T09:59:35Z",
-  "untagged_ratio": 0.74,
-  "kept": 1066,
+  "version": "2026-08-20T10:01:47Z",
+  "untagged_ratio": 0.736,
+  "kept": 1068,
   "themes_empty": [
-    "quiet_worship",
+    "rest",
     "self_control"
   ],
   "themes_low_yield": [
@@ -20,13 +20,11 @@
     "patience",
     "peace",
     "presence",
+    "quiet_worship",
     "renewal",
-    "rest",
     "strength"
   ],
   "media_type_gaps": [
-    "bible_story",
-    "creation",
     "daily_word",
     "forgiveness",
     "guidance",
@@ -34,26 +32,23 @@
     "lament",
     "new_thing",
     "presence",
-    "rest",
+    "quiet_worship",
     "strength"
   ],
   "fallback_heavy": [
-    "anger.irritation",
     "anger.unfair",
-    "calm.ease",
-    "exhaustion.tired",
+    "boredom.novelty",
+    "exhaustion.burnout",
     "frustration.suppressed"
   ],
   "screens_below_target": [
-    "anger.irritation",
     "anger.unfair",
-    "calm.ease",
-    "exhaustion.tired",
+    "boredom.novelty",
     "frustration.suppressed"
   ],
   "screens_below_min": [],
-  "total_exposed": 454,
-  "from_fallback": 151,
+  "total_exposed": 474,
+  "from_fallback": 148,
   "channels_zero_yield": [],
   "allowlist_size": 15
 }
