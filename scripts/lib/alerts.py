@@ -44,10 +44,30 @@ ROUTE_SUMMARY: Route = "summary"
 #   media_type_gap        주제에 한쪽 형식이 없다 — 같은 이유
 #   theme_fallback_heavy  폴백 비율이 높다 — 매일 같은 값이 뜬다
 #   untagged_high         미태깅 비율 — 제목 관행이 바뀌지 않는 한 그대로다
+#   crisis_no_channels    crisis_eligible 채널 0개 — 아래 참조 (2026-08-20)
 # 이것들이 나쁘다는 사실은 이미 안다. 알아야 할 것은 **악화되는가**이고,
 # 그 판정은 주간 비교로 한다 (워크플로의 진단 요약 단계).
+#
+# [2026-08-20] crisis_no_channels를 여기로 옮겼다.
+#   이 경보의 본문이 스스로 "의도된 안전 동작이며 결함이 아닙니다"라고 말한다.
+#   결함이 아닌 것을 매일 Issue로 내면 그것이 바로 2026-08-19에 막으려던
+#   상태다 — auto 라벨이 쌓여 아무도 안 보게 된다.
+#   조치(위기 전용 채널 승인)는 HANDOFF 3절 9번에 계획으로 있고, 사람이
+#   승인하기 전까지 이 값은 매일 똑같다. **매일 같은 값이면 상태 보고다.**
+#
+#   ⚠ 위기 경보 4종을 한 덩어리로 보지 말 것. 나머지 셋은 Issue로 남는다 —
+#     crisis_empty · crisis_carried_over  채널이 **있는데도** 비었다 = 사건
+#     crisis_stale                        시간이 갈수록 악화된다 = 사건
+#     채널이 0개인 동안에는 이 셋이 아예 발동하지 않는다(lib/crisis.py에서
+#     파생 경보를 접는다). 그래서 지금 상태에서 Issue는 0건이 된다.
 SUMMARY_ONLY_TYPES = frozenset(
-    {"theme_low_yield", "media_type_gap", "theme_fallback_heavy", "untagged_high"}
+    {
+        "theme_low_yield",
+        "media_type_gap",
+        "theme_fallback_heavy",
+        "untagged_high",
+        "crisis_no_channels",
+    }
 )
 
 

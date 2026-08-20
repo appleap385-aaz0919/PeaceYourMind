@@ -312,6 +312,53 @@ def main() -> int:
         result.updated_at,
     )
     _check(failures, budget.spent == 0, "유지 경로에서 쿼터를 쓰지 않는다", f"{budget.spent} units")
+
+    # 파생 경보 억제 (2026-08-20) — 채널이 0개면 풀이 비는 것은 필연이다.
+    # 그 사실은 crisis_no_channels가 이미 말했으므로 crisis_empty를 또 내지 않는다.
+    # 채널이 생긴 뒤에 비면 그때는 사건이므로 Issue로 나가야 한다 — 둘 다 본다.
+    def _crisis_alert_types(*, has_channels: bool, previous_videos: list) -> set[str]:
+        c = BuildContext(
+            themes=load_themes(ROOT / "themes.yaml"),
+            client=None,
+            budget=QuotaBudget(),
+            previous={"crisis": {"videos": previous_videos}} if previous_videos else {},
+            allowlist=load_allowlist(ROOT / "channel_allowlist.yaml"),
+        )
+        _carry_over_crisis(
+            c, [], kept=0, pool_size=0,
+            now=datetime.now(timezone.utc), has_channels=has_channels,
+        )
+        return {a.type for a in c.collector.alerts}
+
+    no_ch = _crisis_alert_types(has_channels=False, previous_videos=[])
+    _check(
+        failures,
+        "crisis_empty" not in no_ch,
+        "채널이 0개면 crisis_empty를 내지 않는다 (파생 경보)",
+        str(sorted(no_ch) or "경보 없음"),
+    )
+    with_ch = _crisis_alert_types(has_channels=True, previous_videos=[])
+    _check(
+        failures,
+        "crisis_empty" in with_ch,
+        "채널이 있는데 비면 crisis_empty를 낸다 (진짜 사건)",
+        str(sorted(with_ch)),
+    )
+    carried_no_ch = _crisis_alert_types(
+        has_channels=False, previous_videos=[{"videoId": "x"}]
+    )
+    _check(
+        failures,
+        "crisis_carried_over" not in carried_no_ch,
+        "채널이 0개면 crisis_carried_over도 내지 않는다",
+        str(sorted(carried_no_ch) or "경보 없음"),
+    )
+    _check(
+        failures,
+        route_for("crisis_no_channels") == ROUTE_SUMMARY
+        and route_for("crisis_empty") == ROUTE_ISSUE,
+        "위기 경보 4종이 한 덩어리가 아니다 — 상태는 Summary, 사건은 Issue",
+    )
     types = {a.type for a in ctx.collector.alerts}
     _check(failures, "crisis_carried_over" in types, "경보를 남긴다", str(sorted(types)))
 
@@ -506,11 +553,13 @@ def main() -> int:
     print("\n9. 경보 라우팅 — 사건은 Issue로, 상태는 Summary로")
     print("-" * 76)
 
+    # 위기 경보 4종이 한 덩어리가 아니다 (2026-08-20).
+    #   Issue    채널이 있는데도 비었다 / 시간이 갈수록 악화된다 = 사건
+    #   Summary  채널이 0개다 = 사람이 승인하기 전까지 매일 같은 값 = 상태
     ISSUE_EXPECTED = [
         "crisis_empty",
         "crisis_carried_over",
         "crisis_stale",
-        "crisis_no_channels",
         "theme_empty",
         "theme_too_few",
         "channel_zero_yield",
@@ -525,6 +574,7 @@ def main() -> int:
         "media_type_gap",
         "theme_fallback_heavy",
         "untagged_high",
+        "crisis_no_channels",
     ]
     for alert_type in ISSUE_EXPECTED:
         _check(

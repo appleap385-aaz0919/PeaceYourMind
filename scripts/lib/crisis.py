@@ -57,7 +57,9 @@ def build_crisis(
             max_per_channel=cap,
             per_channel_unlocked=unlocked,
         )
-    return _carry_over_crisis(ctx, tagged, len(picked), len(pool), now)
+    return _carry_over_crisis(
+        ctx, tagged, len(picked), len(pool), now, has_channels=bool(eligible)
+    )
 
 
 def _carry_over_crisis(
@@ -66,12 +68,21 @@ def _carry_over_crisis(
     kept: int,
     pool_size: int,
     now: datetime,
+    *,
+    has_channels: bool = True,
 ) -> CrisisResult:
     """12건 미달 — 필터를 완화하지 않고 직전 결과를 유지한다.
 
     유지하더라도 생존 검증은 한다. 직전 결과의 videoId는 이미 이번 후보에
     포함돼 videos.list를 탔으므로, 살아남은 것만 tagged에 남아 있다.
     추가 API 호출이 없다 (FYM은 여기서 한 번 더 불렀다 — 후보 구성이 달랐다).
+
+    [2026-08-20] has_channels=False면 경보를 내지 않는다 — **파생이기 때문이다.**
+      crisis_eligible 채널이 0개면 풀이 비는 것은 필연이다. 그 사실은
+      crisis_no_channels가 이미 말했고(Summary), 여기서 crisis_empty를 또 내면
+      같은 원인을 두 번 보고하면서 그중 하나가 Issue로 나간다.
+      **원인 경보 하나만 남기고 파생은 접는다.**
+      채널이 생긴 뒤에 풀이 비면 그때는 진짜 사건이므로 Issue로 나간다.
     """
     previous = ctx.previous.get("crisis") or {}
     previous_videos = previous.get("videos") or []
@@ -80,12 +91,13 @@ def _carry_over_crisis(
         kept,
         CRISIS_MIN_VIDEOS,
     )
-    if previous_videos:
+    if previous_videos and has_channels:
         ctx.collector.add(**alert_specs.crisis_carried_over(kept, CRISIS_MIN_VIDEOS))
 
     if not previous_videos:
         logger.error("유지할 직전 결과도 없다 — 위기 화면은 상담 안내만 노출한다")
-        ctx.collector.add(**alert_specs.crisis_empty())
+        if has_channels:
+            ctx.collector.add(**alert_specs.crisis_empty())
         return CrisisResult(
             videos=[],
             updated_at=str(previous.get("updated_at") or iso(now)),
@@ -100,7 +112,7 @@ def _carry_over_crisis(
     logger.warning(
         "직전 결과 %d건 중 %d건 생존 — updated_at은 갱신하지 않는다", len(order), len(alive)
     )
-    if not alive:
+    if not alive and has_channels:
         ctx.collector.add(**alert_specs.crisis_empty())
     return CrisisResult(
         videos=[t.to_json() for t in alive],
