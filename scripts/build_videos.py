@@ -93,6 +93,7 @@ from lib.results import (
 )
 from lib.selection import (
     drop_promotional,
+    rotate_for_subcategory,
     select_fallback_videos,
     select_theme_videos,
 )
@@ -376,13 +377,16 @@ def build_subcategories(
         for reason, item in promo_dropped[:PROMO_LOG_SAMPLE]:
             logger.info("  제외 [%s] %s", reason, item.video.title[:70])
 
-    for sub, theme_ids in ctx.themes.mapping.items():
+    for position, (sub, theme_ids) in enumerate(ctx.themes.mapping.items()):
         pool = [
             t
             for t in tagged
             if t.video_id not in exclude and any(x in t.themes for x in theme_ids)
         ]
         picked, _, _ = select_theme_videos(pool, day_of_year)
+        # 같은 주제 풀을 공유하는 화면들이 같은 순서를 내지 않게 한다.
+        # 구성은 그대로이고 시작점만 다르다 (lib/selection 주석 참조).
+        picked = rotate_for_subcategory(picked, position)
 
         media_default = ctx.themes.media_default(sub) or SERMON
         need = min(THEME_MAX_VIDEOS - len(picked), FALLBACK_MAX_PER_SUBCATEGORY)

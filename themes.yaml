@@ -293,7 +293,13 @@ themes:
   - id: bible_story
     label: 성경 이야기
     intent: 새로운 자극을 원하는 상태에 성경 인물·배경 강해로 응답. 지적 호기심 진입점.
-    title_keywords: [성경 인물, 성경의 인물, 강해, 성경 배경, 성경 이야기]
+    # 2026-08-20 — 5종 중 4종이 실측 0건이었다(검색어 유물). 살아 있는 것은
+    #   `강해` 하나뿐이고 그마저 꿈의교회 저녁예배 4건이 전부다.
+    #   `성경 속`을 넣어 6건이 됐다 — "임용한 박사의 성경 속 전쟁" 계열.
+    #   ⚠ `이야기`는 넣지 않았다. 14건이 걸리는데 대부분 CTS 광복 시리즈라
+    #     성경 이야기가 아니다. `인물`·`열전`·`일대기`·`다시 읽`은 전부 0건.
+    #   **키워드로는 여기까지다. 물량은 채널 발굴 대상이다** (HANDOFF 3절 10번).
+    title_keywords: [성경 인물, 성경의 인물, 강해, 성경 배경, 성경 이야기, 성경 속]
     caution: >
       FYM에서 "이야기"는 막장 서사를 불렀다. 여기서는 "성경 이야기" 결합형만
       쓰고 "이야기" 단독은 금지. 화이트리스트 전제라 위험은 낮지만 원칙 유지.
@@ -343,9 +349,19 @@ mapping:
   exhaustion.tired:      [rest, quiet_worship]
   exhaustion.listless:   [strength, hope]
 
+  # 2026-08-20 — joy 3종이 **같은 집합**이라 목록이 20건 전부 동일했다.
+  #   집합이 같으면 풀이 같고 선정이 결정적이라 결과가 같아진다.
+  #   ⚠ 구절 큐레이션의 축(감사 어휘 / 공을 돌림 / 신체 동작, 2.7절 확정 규칙 3)을
+  #     영상 주제로 옮기려 했으나 **재료가 없었다.** 실측(1,067건):
+  #       공을 돌림  주께 영광 0 · 영광 돌리 1 · 주가 하셨 0 · 주께 돌리 0
+  #       신체 동작  춤추 0 · 뛰놀 0 · 손뼉 0 · 손을 들 0 · 춤을 0
+  #     찬양 콘티 제목은 곡명 나열이라 그 축이 제목에 드러나지 않는다.
+  #     **새 주제를 만들 근거가 없어 기존 2주제로 갈랐다.**
+  #   joy.proud만 합집합을 갖는다 — 셋을 2주제로 가르면 하나는 겹칠 수밖에 없다.
+  #   부분 겹침은 남지만 100% 동일은 사라진다.
   joy.proud:             [gratitude, joy_praise]
-  joy.delight:           [joy_praise, gratitude]
-  joy.grateful:          [gratitude, joy_praise]
+  joy.delight:           [joy_praise]
+  joy.grateful:          [gratitude]
 
   flutter.anticipation:  [new_thing, hope]
   flutter.thrill:        [joy_praise, new_thing]
@@ -353,8 +369,13 @@ mapping:
   calm.ease:             [quiet_worship, creation]
   calm.stable:           [quiet_worship, daily_word]
 
-  boredom.dull:          [daily_word, bible_story]
-  boredom.novelty:       [bible_story, daily_word]
+  # 2026-08-20 — boredom 2종도 같은 집합이었다. 구절 축을 그대로 쓴다
+  #   (2.7절): dull = **다시 보게**, novelty = **모르는 것으로**.
+  #   ⚠ novelty가 얇다(bible_story 6 + new_thing 1 + creation 1 = 8건).
+  #     daily_word를 주면 15건으로 두꺼워지지만 dull과 겹침이 90%로 되돌아간다
+  #     (실측). 얇은 쪽을 택했다 — 겹치는 두꺼움보다 얇은 구분이 낫다.
+  boredom.dull:          [daily_word]
+  boredom.novelty:       [bible_story, new_thing, creation]
 
 # =====================================================================
 # media_type — 영상을 말씀/찬양으로 가르는 축 (Phase 2 배치에서 구현)
@@ -483,7 +504,13 @@ media_defaults:
   anxiety.tension:       worship
 
   anger.irritation:      worship
-  anger.unfair:          worship    # 조정 후보 — 위 주석 참조
+  # 2026-08-20 — worship → sermon. 조정 후보로 적어 뒀던 것을 실측으로 확정했다.
+  #   매핑 3주제(justice 2 · lament 2 · forgiveness 1)의 풀이 **전부 sermon**이라
+  #   기본값 worship에서는 주제분이 한 건도 보이지 않았다.
+  #     worship  보이는 12건 · 주제분 0     ← 개정 전
+  #     sermon   보이는  8건 · 주제분 5
+  #   보이는 건수는 줄지만 "이 마음에 맞춰 고른 영상"이 실제로 보인다.
+  anger.unfair:          sermon
   anger.rage:            worship
 
   frustration.stuck:     sermon

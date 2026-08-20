@@ -19,6 +19,7 @@
   8. 폴백이 미태깅·기본 형식·상한·채널 분산을 전부 지킨다
   9. 경보가 Issue/Summary로 올바르게 갈린다 (2026-08-19 정책)
  10. 폴백 품질 필터가 공고·행사·홍보만 빼고 찬양 콘티는 남긴다 (2026-08-20)
+ 11. 세분류별 오프셋이 같은 풀을 공유하는 화면을 갈라 준다 (2026-08-20)
 """
 
 from __future__ import annotations
@@ -51,6 +52,7 @@ from lib.results import (
 )
 from lib.selection import (
     PROMO_ANYWHERE,
+    rotate_for_subcategory,
     PROMO_HEAD,
     PROMO_SERIES,
     drop_promotional,
@@ -726,6 +728,72 @@ def main() -> int:
         failures,
         not [s for s, _ in MUST_KEEP if promo_reason(s)],
         "고장을 되돌리면 다시 통과한다",
+    )
+
+    # =========================================================================
+    # 11. 세분류별 오프셋 — [4]가 "주제분 순서 분산"으로 되살아난 자리 (2026-08-20)
+    # =========================================================================
+    print("\n[11] 세분류별 오프셋")
+
+    base = _pool([("채널A", 12, WORSHIP)])
+    r0 = rotate_for_subcategory(base, 0)
+    r3 = rotate_for_subcategory(base, 3)
+    _check(
+        failures,
+        [t.video_id for t in r0] == [t.video_id for t in base],
+        "자리 0은 그대로 둔다",
+    )
+    _check(
+        failures,
+        set(t.video_id for t in r3) == set(t.video_id for t in base)
+        and [t.video_id for t in r3] != [t.video_id for t in base],
+        "★ 구성은 그대로이고 순서만 바뀐다",
+        f"첫 항목 {r3[0].video_id}",
+    )
+    _check(
+        failures,
+        rotate_for_subcategory(base[:1], 5)[0].video_id == base[0].video_id,
+        "1건짜리 목록은 회전하지 않는다",
+    )
+    _check(
+        failures,
+        [t.video_id for t in rotate_for_subcategory(base, 3)]
+        == [t.video_id for t in rotate_for_subcategory(base, 15)],
+        "자리는 풀 크기로 나눈 나머지다 (3과 15가 같다)",
+    )
+
+    # ★ 실제 매핑으로 — 같은 주제 풀을 공유하는 화면들이 갈리는가.
+    #   quiet_worship(실측 12건)을 5개 화면이 공유한다. 그 다섯이 매핑에서
+    #   0·3·13·20·21번 자리라 나머지가 갈린다. 매핑 순서를 바꾸면 여기서 깨진다.
+    real = load_themes(ROOT / "themes.yaml")
+    shared = [
+        (i, s)
+        for i, (s, t) in enumerate(real.mapping.items())
+        if "quiet_worship" in t
+    ]
+    offsets = {i % 12 for i, _ in shared}
+    _check(
+        failures,
+        len(offsets) == len(shared),
+        f"quiet_worship을 쓰는 {len(shared)}개 화면이 서로 다른 자리를 받는다",
+        f"자리 {sorted(i for i, _ in shared)} → 오프셋 {sorted(offsets)}",
+    )
+
+    # 고장 주입 — 오프셋을 끄면 두 화면이 같은 목록을 낸다
+    same = rotate_for_subcategory(base, 0)
+    _check(
+        failures,
+        [t.video_id for t in same] == [t.video_id for t in rotate_for_subcategory(base, 0)],
+        "고장 주입: 자리를 둘 다 0으로 두면 목록이 같아진다",
+    )
+
+    # ⚠ 이것은 **세트를 바꾸지 않는다.** 그 한계를 여기 고정해 둔다 —
+    #   나중에 "오프셋을 넣었는데 왜 아직 겹치나"를 묻게 되는 자리다.
+    _check(
+        failures,
+        set(t.video_id for t in rotate_for_subcategory(base, 3))
+        == set(t.video_id for t in rotate_for_subcategory(base, 7)),
+        "⚠ 세트는 같다 — 공급이 늘기 전에는 여기까지다 (HANDOFF 3절 10번)",
     )
 
     print("\n" + "=" * 76)
