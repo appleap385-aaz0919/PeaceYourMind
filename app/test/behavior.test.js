@@ -157,6 +157,72 @@ test("단독 입력 위기어를 부분 문자열 목록으로 옮기지 않았�
   assert.deepEqual(overlap, []);
 });
 
+// -----------------------------------------------------------------------------
+// 2026-08-20 — 긍정 표현 커버리지 (긴급 수정)
+//
+// "기분이 좋아"가 미분류였다. `기분좋`은 있는데 조사 '이'가 끼면 깨진다 —
+// 위기 사전의 `죽어버리`/`죽어버릴까`와 같은 유형이다.
+//
+// ⚠ **NO_MATCH 화면이 정상 동작인 것과 분류가 정상인 것은 별개다.**
+//   "일이 너무 많아서 정신이 없었어요"는 감정어가 없어 NO_MATCH가 맞지만
+//   "기분이 좋아"는 감정을 직접 말한 입력이다. 화면이 안 깨진다고 결함이
+//   아닌 것이 아니다 — 그 구분을 놓쳐 발견이 늦었다.
+//
+// 아래 목록은 taxonomy를 참조하지 않고 손으로 적었다. 위기 목록과 같은 원칙이다.
+// -----------------------------------------------------------------------------
+
+const MUST_BE_POSITIVE = [
+  "기분이 좋아", "기분 좋아", "기분이 좋아요", "기분좋다",
+  "좋다", "너무 좋아", "참 좋다", "진짜 좋았어",
+  "오늘 하루 좋았어요", "좋은 하루였어요",
+  "행복해", "행복해요", "신나요", "재밌었어요", "웃음이 났어요",
+  "뿌듯해요", "감사해요",
+];
+const MUST_BE_CALM_OR_FLUTTER = [
+  ["설레요", "flutter"], ["두근거려요", "flutter"], ["기대돼요", "flutter"],
+  ["편안해요", "calm"], ["평온해요", "calm"], ["차분해요", "calm"],
+  ["여유로워요", "calm"], ["홀가분해요", "calm"], ["마음이 놓여요", "calm"],
+  ["마음이 가볍다", "calm"],
+];
+// ⛔ 긍정 어휘를 넓히다 여기를 깨뜨리기 쉽다. `좋아`를 통째로 넣으면 전부 걸린다.
+const MUST_NOT_BE_JOY = [
+  "기분이 안 좋아", "기분이 좋지 않아요", "안 좋은 일이 있었어요",
+  "마음이 안 좋아요", "하나도 안 좋아", "그다지 좋지 않다",
+];
+
+test("긍정 표현은 감정 계열로 분류된다", () => {
+  const missed = MUST_BE_POSITIVE.filter((s) => {
+    const r = classify(s, taxonomy);
+    if (r.kind === RESULT.OK) return r.category.id !== "joy";
+    return r.kind !== RESULT.CATEGORY || r.category.id !== "joy";
+  });
+  assert.deepEqual(missed, [], `긍정 표현을 놓쳤다: ${missed.join(" · ")}`);
+});
+
+test("설렘·평온 표현도 제 계열로 간다", () => {
+  const missed = MUST_BE_CALM_OR_FLUTTER.filter(([s, cat]) => {
+    const r = classify(s, taxonomy);
+    const got = r.kind === RESULT.OK ? r.category.id
+      : r.kind === RESULT.CATEGORY ? r.category.id : null;
+    return got !== cat;
+  }).map(([s]) => s);
+  assert.deepEqual(missed, [], `놓쳤다: ${missed.join(" · ")}`);
+});
+
+test("부정 표현이 긍정으로 새지 않는다", () => {
+  const leaked = MUST_NOT_BE_JOY.filter((s) => {
+    const r = classify(s, taxonomy);
+    return r.kind === RESULT.OK && r.category.id === "joy";
+  });
+  assert.deepEqual(leaked, [], `긍정으로 샜다: ${leaked.join(" · ")}`);
+});
+
+test("좋아하는 사람 = 설렘이지 즐거움이 아니다", () => {
+  const r = classify("좋아하는 사람이 생겼어요", taxonomy);
+  assert.equal(r.kind, RESULT.OK);
+  assert.equal(r.category.id, "flutter");
+});
+
 test("상담 안내 문구와 연락처가 있다", () => {
   const r = taxonomy.safety.crisis_response;
   assert.ok(r.message.length > 10);
