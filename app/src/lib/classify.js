@@ -33,6 +33,9 @@ export function classify(text, taxonomy) {
   if (!input) return { kind: RESULT.EMPTY };
 
   // --- 위기 검사: 무조건 먼저 ---------------------------------------------
+  // 두 층이다. 부분 문자열(crisis_keywords)과 단독 입력(crisis_exact).
+  // 층을 나눈 이유는 taxonomy.yaml [단독 입력]에 있다 — "죽어"는 문장 안에서는
+  // 사별일 수 있지만("할머니가 죽어서 슬퍼요") 그 말만 적혔으면 위기다.
   for (const keyword of taxonomy.safety.crisis_keywords) {
     const needle = normalize(keyword);
     if (needle && input.includes(needle)) {
@@ -40,6 +43,9 @@ export function classify(text, taxonomy) {
       // 로그로도 남기지 않는다 (입력은 기기 밖으로 나가지 않는다).
       return { kind: RESULT.CRISIS };
     }
+  }
+  if (isCrisisAlone(input, taxonomy.safety.crisis_exact)) {
+    return { kind: RESULT.CRISIS };
   }
 
   const best = scoreSubcategories(input, taxonomy);
@@ -54,6 +60,26 @@ export function classify(text, taxonomy) {
   if (category) return { kind: RESULT.CATEGORY, ...category };
 
   return { kind: RESULT.NO_MATCH };
+}
+
+// 한글 자모만으로 된 문자(ㅠㅋㅎ…). 감정 표시일 뿐 뜻을 바꾸지 않는다.
+// ⚠ normalize()에서 지우지 않는다 — scripts/lib/normalize.py와 문자 단위로
+//   같아야 하고, 배치의 blocklist 매칭이 그 동일성에 걸려 있기 때문이다.
+//   자모 제거는 이 검사 안에서만 한다.
+const JAMO_ONLY = /[\u3131-\u318e]/gu;
+
+/**
+ * 입력이 그 말 **하나뿐**인가 (crisis_exact).
+ *
+ * 정규화가 공백·문장부호를 이미 지우므로 "죽 어" · "죽어..." 도 여기 걸리고,
+ * 자모를 걷어내므로 "죽어ㅠㅠ" 도 걸린다. 반대로 "할머니가 죽어서 슬퍼요"는
+ * 남는 글자가 있어 걸리지 않는다 — 그 입력은 sadness.loss로 가야 한다.
+ */
+function isCrisisAlone(input, exactWords) {
+  if (!exactWords || !exactWords.length) return false;
+  const bare = input.replace(JAMO_ONLY, "");
+  if (!bare) return false;
+  return exactWords.some((word) => bare === normalize(word).replace(JAMO_ONLY, ""));
 }
 
 /** 대분류 keywords만 본다 (taxonomy.yaml categories[].keywords). */

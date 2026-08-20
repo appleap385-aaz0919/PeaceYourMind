@@ -79,6 +79,10 @@ def build(tax: dict[str, Any]) -> dict[str, Any]:
         "categories": categories,
         "safety": {
             "crisis_keywords": list(tax["safety"]["crisis_keywords"]),
+            # 단독 입력일 때만 위기인 말 — 부분 문자열로 쓰면 사별("할머니가
+            # 죽어서 슬퍼요")·관용구·타인 지향 분노를 통째로 빨아들인다.
+            # 근거는 taxonomy.yaml [단독 입력] 절에 있다.
+            "crisis_exact": list(tax["safety"].get("crisis_exact") or []),
             "crisis_response": {
                 "message": " ".join(str(crisis["message"]).split()),
                 "resources": [
@@ -165,6 +169,16 @@ def validate(data: dict[str, Any], mapping_ids: set[str]) -> None:
 
     if not data["safety"]["crisis_keywords"]:
         problems.append("위기 키워드가 비어 있다 — 위기 검사가 무력화된다")
+    if not data["safety"]["crisis_exact"]:
+        problems.append('단독 입력 위기어가 비어 있다 — "죽어"만 적은 입력을 놓친다')
+    overlap = set(data["safety"]["crisis_exact"]) & set(
+        data["safety"]["crisis_keywords"]
+    )
+    if overlap:
+        problems.append(
+            f"단독 입력 위기어가 부분 문자열 목록에도 있다: {sorted(overlap)} — "
+            "부분 문자열로 쓰이는 순간 사별·관용구가 위기로 간다"
+        )
     if not data["safety"]["crisis_response"]["resources"]:
         problems.append("상담 연락처가 비어 있다")
     if data["safety"]["crisis_response"]["media_type_toggle"]:
@@ -212,6 +226,7 @@ def main() -> int:
         f"{OUT.relative_to(ROOT)} 기록 — {len(payload):,}바이트 / "
         f"세분류 {len(subs)} · 키워드 {keywords} · 문구 {messages} · "
         f"위기 키워드 {len(data['safety']['crisis_keywords'])}"
+        f" (+단독 {len(data['safety']['crisis_exact'])})"
     )
     return EXIT_OK
 

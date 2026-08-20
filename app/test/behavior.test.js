@@ -69,6 +69,94 @@ test("위기 결과는 어떤 키워드에 걸렸는지 돌려주지 않는다",
   assert.equal(outcome.subcategory, undefined);
 });
 
+
+// -----------------------------------------------------------------------------
+// 2026-08-20 — ★ 여기서부터가 실제 회귀 검사다
+//
+// 위의 "위기 키워드가 모두 crisis로 분류된다"는 **사전을 사전으로 검사한다.**
+// 항상 통과하며, 사전에 없는 표현은 구조적으로 검사 대상이 되지 않는다.
+// 그래서 `자살`이 55종 어디에도 없는 채로 운영에 나갔다 (taxonomy.yaml 2026-08-20).
+//
+// 아래 목록은 **taxonomy를 참조하지 않고 손으로 적은 것**이다. 사전이 줄거나
+// 활용형이 어긋나면 여기서 깨진다. 표현을 지우지 말고 늘려 갈 것.
+// -----------------------------------------------------------------------------
+
+// 반드시 위기로 가야 하는 표현. 사전에서 유도하지 않았다.
+const MUST_BE_CRISIS = [
+  "자살", "자살하고 싶어", "자살할까", "자살 생각이 나요", "자살 충동이 들어요",
+  "자살하려고요", "자살밖에 답이 없어",
+  "죽어", "죽여", "죽음", "죽어버릴까", "죽어버리고 싶어", "죽어야겠다", "죽어야 하나",
+  "나 좀 죽여줘", "목숨을 끊고 싶어요", "목숨 끊는 생각",
+  "극단적인 생각이 들어요", "극단적인 선택을 생각해요",
+  "그냥 죽고 싶어요", "사라지고 싶어", "없어지고 싶어요", "자해했어요",
+  "더 이상 살고 싶지 않아요", "내가 없어야 다들 편할 것 같아",
+  "살 자격이 없는 것 같아요", "내일 눈 뜨고 싶지 않아", "희망이 하나도 없어요",
+];
+
+// 위기가 **아니어야** 하는 표현. 위기로 새면 그 사람이 받을 것을 못 받는다.
+const MUST_NOT_BE_CRISIS = [
+  // 사별 — 상실 구절을 받아야 할 사람이다. 위기로 채가면 안 된다
+  "할머니가 죽어서 너무 슬퍼요", "강아지가 죽어서 눈물이 나요",
+  // 관용구 — 강조 표현일 뿐이다
+  "배고파 죽겠다", "웃겨 죽겠어", "힘들어 죽겠어요", "짜증나 죽겠어",
+  "죽어라 일했어요", "좋아 죽겠어",
+  // 타인 지향 분노 — anger로 가야 한다
+  "저 인간 죽여버리고 싶다", "죽여버릴까 진짜",
+  // 사물·뉴스 어휘
+  "자살골 넣었어요", "자살률 기사 봤어요", "자살 예방 강의 들었어요",
+  "극단적인 디자인이 마음에 들어요", "그 사람은 극단적인 성격이야",
+  // 자책 — 경계선 원칙: 결과를 탓하는 것은 위기가 아니다
+  "내가 다 망쳤어", "나 때문이야", "자책하게 돼요",
+];
+
+test("위기 표현은 사전을 참조하지 않고도 전부 위기로 간다", () => {
+  const missed = MUST_BE_CRISIS.filter(
+    (s) => classify(s, taxonomy).kind !== RESULT.CRISIS
+  );
+  assert.deepEqual(missed, [], `위기를 놓쳤다: ${missed.join(" · ")}`);
+});
+
+test("사별·관용구·타인 지향 분노는 위기로 새지 않는다", () => {
+  const leaked = MUST_NOT_BE_CRISIS.filter(
+    (s) => classify(s, taxonomy).kind === RESULT.CRISIS
+  );
+  assert.deepEqual(leaked, [], `위기로 샜다: ${leaked.join(" · ")}`);
+});
+
+test("사별은 슬픔 계열로 간다 — 위기가 아닌 것으로는 부족하다", () => {
+  for (const input of ["할머니가 죽어서 너무 슬퍼요", "강아지가 죽어서 눈물이 나요"]) {
+    const r = classify(input, taxonomy);
+    assert.equal(r.kind, RESULT.OK, input);
+    assert.equal(r.category.id, "sadness", `${input} → ${r.subcategory?.id}`);
+  }
+});
+
+test("단독 입력 위기어는 단독일 때만 위기다", () => {
+  for (const word of taxonomy.safety.crisis_exact) {
+    assert.equal(classify(word, taxonomy).kind, RESULT.CRISIS, `단독: ${word}`);
+  }
+  // 같은 말이 문장 안에 있으면 단독 층은 작동하지 않는다
+  assert.notEqual(
+    classify("할머니가 죽어서 너무 슬퍼요", taxonomy).kind,
+    RESULT.CRISIS
+  );
+});
+
+test("단독 입력은 자모·문장부호·공백이 붙어도 단독으로 본다", () => {
+  for (const input of ["죽어ㅠㅠ", "죽어...", "죽 어", "죽어!!!", "자살ㅠㅠㅠ"]) {
+    assert.equal(classify(input, taxonomy).kind, RESULT.CRISIS, `입력: ${input}`);
+  }
+});
+
+test("단독 입력 위기어를 부분 문자열 목록으로 옮기지 않았다", () => {
+  // 옮기는 순간 사별·관용구가 전부 위기로 빨려 들어간다.
+  // 생성기도 막지만(gen_taxonomy_json.validate) 앱 쪽에서도 고정해 둔다.
+  const overlap = taxonomy.safety.crisis_exact.filter((w) =>
+    taxonomy.safety.crisis_keywords.includes(w)
+  );
+  assert.deepEqual(overlap, []);
+});
+
 test("상담 안내 문구와 연락처가 있다", () => {
   const r = taxonomy.safety.crisis_response;
   assert.ok(r.message.length > 10);
