@@ -914,6 +914,27 @@ verses:
     verified: true
     verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
     verified_at: "2026-08-19"
+
+  - id: co2.1.4
+    ref: 고린도후서 1:4
+    text: >
+      우리의 모든 환난 중에서 우리를 위로하사 우리로 하여금 하나님께 받는
+      위로로써 모든 환난 중에 있는 자들을 능히 위로하게 하시는 이시로다
+    emotion_tags: [sadness.sorrow]
+    theme: comfort
+    # [장 문맥] 이어서 읽기 시작 절을 지정한다 (2026-08-20).
+    #   ★ 절차 7번이 잡았다. 기본(5절부터)이면 8절 "힘에 지나도록 심한 고생을
+    #   받아 **살 소망까지** 끊어지고"가 첫 페이지에 온다 — 위기 인접이다.
+    #   3절부터 열면 3-6절이 전부 위로 문맥이고 8절을 피한다.
+    read_from: 3
+    note: >
+      "모든 환난 중에 있는 자들을 능히 위로하게 하시는 이시라" — 위로가
+      **받은 사람을 통해 흐른다**고 말한다. 슬픔 화면의 비시편 보강이고,
+      시 31장·42장이 각 2회인 밀도를 낮춘다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-20"
+
   - id: psa.25.16
     ref: 시편 25:16
     text: >
@@ -3216,6 +3237,27 @@ verses:
     verified: true
     verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
     verified_at: "2026-08-19"
+
+  - id: 1sa.1.15
+    ref: 사무엘상 1:15
+    text: >
+      한나가 대답하여 가로되 나의 주여 그렇지 아니하니이다 나는 마음이 슬픈
+      여자라 포도주나 독주를 마신 것이 아니요 여호와 앞에 나의 심정을 통한것
+      뿐이오니
+    emotion_tags: [frustration.suppressed]
+    theme: lament
+    note: >
+      한나가 오해를 받고 답하는 장면. "나는 마음이 슬픈 여자라… 여호와 앞에
+      나의 심정을 통한 것뿐이니이다" — **억눌린 것을 쏟아내는 것이 취한 것으로
+      오해받는** 자리다. 이 화면의 축과 정확히 맞는다.
+      ⚠ 장 문맥이 특히 좋다(절차 7번) — 16절 "나의 원통함과 격동됨이 많음을
+        인함이니이다", 18절 "가서 먹고 얼굴에 다시는 수색이 없으니라"로 이어져
+        쏟아낸 뒤 얼굴이 펴지는 서사가 첫 페이지에 담긴다.
+      시 88:1-2가 장 문맥으로 빠진 자리를 채운다. 욥기 2건 옆의 비시편 서사다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-20"
+
   - id: psa.100.4
     ref: 시편 100:4
     text: >
@@ -4424,6 +4466,61 @@ verses:
   #        novelty   아직 모르는 것으로 데려간다 (큰 광경 · 인물 나열 · 뜨겁지)
   #      매핑 주제가 같지만 구절은 한 건도 겹치지 않는다
   # ═══════════════════════════════════════════════════════════
+
+
+  - id: luk.10.23
+    ref: 누가복음 10:23
+    text: >
+      제자들을 돌아 보시며 종용히 이르시되 너희의 보는 것을 보는 눈은 복이
+      있도다
+    emotion_tags: [boredom.dull]
+    theme: daily_word
+    # [장 문맥 2층] 24절은 좋으나 25절부터 율법사 문답(영생·계명)으로 축이 옮겨간다.
+    #   차단 사유는 없어 수록한다. 다시 볼 조건: 그 화면에서 [다음] 제보.
+    note: >
+      "너희의 보는 것을 보는 눈은 복이 있도다" — 이 화면의 축을 가장 짧게
+      말한다. **같은 것을 보는데 그 눈이 복되다**는 것이라, 새 것을 요구하지
+      않고 보는 쪽을 바꾼다. 시 119:18("눈을 열어서")이 요청이라면 이것은 선언이다.
+      ⚠ 첫 20자가 "제자들을 돌아 보시며 종용히 이르시되"로 서사 도입이라 밋밋하다.
+      그래도 채택한 것은 뒤따르는 본문이 축에 정확하기 때문이다.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-20"
+
+  - id: isa.40.8
+    ref: 이사야 40:8
+    text: >
+      풀은 마르고 꽃은 시드나 우리 하나님의 말씀은 영영히 서리라 하라
+    emotion_tags: [boredom.dull]
+    theme: daily_word
+    note: >
+      "풀은 마르고 꽃은 시드나 우리 하나님의 말씀은 영영히 서리라" — 매일이
+      같아 보이는 사람에게 **변하지 않는 것이 있다**고 말한다. 32자로 짧다.
+      명령형("하라")으로 끝나지만 약속("영영히 서리라")이 앞에 있다(선정 원칙 3).
+      ⚠ 이사야 40장은 exhaustion.listless에도 2건 있다. 다른 화면이라 화면 안
+        반복은 아니지만, 이 책의 이 장이 세 번째다 — 더 늘리지 말 것.
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-20"
+
+  - id: deu.32.7
+    ref: 신명기 32:7
+    text: >
+      옛날을 기억하라 역대의 연대를 생각하라 네 아비에게 물으라 그가 네게
+      설명할 것이요 네 어른들에게 물으라 그들이 네게 이르리로다
+    emotion_tags: [boredom.dull]
+    theme: bible_story
+    # [장 문맥 2층] 8-11절은 좋다(11절 "독수리가… 날개를 펴서 새끼를 받으며").
+    #   다만 신명기 32장은 모세의 노래라 22절 이후가 진노다. [다음]을 여러 번
+    #   누르면 닿는다. 다시 볼 조건: 그 화면에서 [다음] 제보.
+    note: >
+      "옛날을 기억하라 역대의 연대를 생각하라 네 아비에게 물으라" — 이 화면의
+      또 다른 축(옛 이야기를 다시 듣기)에 정확하다. 렘 15:16·롬 15:4·시 78:4가
+      같은 축이고, 이것은 **묻는 쪽**을 말해 겹치지 않는다.
+      명령형이지만 "그가 네게 설명할 것이요"가 약속으로 따른다(선정 원칙 3).
+    verified: true
+    verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
+    verified_at: "2026-08-20"
 
   - id: exo.3.3
     ref: 출애굽기 3:3
