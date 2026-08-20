@@ -94,7 +94,41 @@ export function ResultTabs({ value, counts, onChange }) {
 }
 
 const styles = {
-  row: { display: "flex", alignItems: "center", margin: "0 0 20px" },
+  /**
+   * 탭 줄 위 1px 구분선 — **이 화면 위계를 만드는 것이 이것이다** (2026-08-20).
+   *
+   * [색과 여백으로 두 번 실패한 뒤에 넣었다 — HANDOFF 2.36]
+   *   공감 문구(읽는 글)가 탭 줄의 일부처럼 읽히는 문제였다.
+   *   탭 색을 85%로 내려도, 여백을 24/56으로 벌려도 해결되지 않았다.
+   *
+   *   빠져 있던 것은 색도 여백도 아니었다. **탭 줄에 컨트롤이라는 표시가
+   *   아무것도 없었다** — 배경도 테두리도 없이 글자만 나란히 있고, 선택된
+   *   것에만 1px 밑줄이 있을 뿐이다. 그러니 위의 문장과 같은 종류로 읽혔다.
+   *   필요한 것은 네 번째 밝기 층이 아니라 "여기서 읽는 구간이 끝난다"는
+   *   구조 신호였고, 그 일은 선이 한다.
+   *
+   * [선을 쓰는 것이 이 앱의 언어에 어긋나지 않는다]
+   *   VerseCard가 카드 상자를 걷어낸 이유는 "면"을 없애기 위해서였지 선을
+   *   금지한 것이 아니다. 그 주석이 인용하는 FYM의 규칙이 그대로다 —
+   *   "입력은 밑줄 하나, **구분은 1px 선 하나**".
+   *   색도 새로 만들지 않았다. `#ffffff1f`는 바로 아래 divider(탭 사이
+   *   세로 실선)가 이미 쓰는 값이라, 가로세로 두 선이 같은 굵기·같은 밝기다.
+   *
+   * ⚠ 이 선을 지우면 색·여백을 아무리 만져도 문제가 돌아온다. 지우자는
+   *   제안이 나오면 HANDOFF 2.36의 렌더 비교부터 다시 볼 것.
+   */
+  row: {
+    display: "flex",
+    alignItems: "center",
+    margin: "0 0 20px",
+    // 단축(borderTop)을 써도 안전한 자리다 — 상태에 따라 바뀌지 않는 정적
+    // 선이라 아래 button의 결함(React가 개별 속성만 지우는 문제)이 생기지
+    // 않는다. 그래도 같은 파일 안에서 표기를 섞지 않으려고 개별 속성을 쓴다.
+    borderTopWidth: 1,
+    borderTopStyle: "solid",
+    borderTopColor: "#ffffff1f",
+    paddingTop: 18,
+  },
   cell: { display: "inline-flex", alignItems: "center" },
   divider: {
     width: 1,
