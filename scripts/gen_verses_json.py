@@ -52,7 +52,13 @@ from verify_verses import (  # noqa: E402
     CRISIS_THEME,
     check_crisis_separation,
 )
-from lib.krv_source import KrvBible, normalize_ws, parse_ref  # noqa: E402
+from lib.krv_source import (  # noqa: E402
+    BOOK_KEYS,
+    KrvBible,
+    RefError,
+    normalize_ws,
+    parse_ref,
+)
 from lib.verses_io import VersesFile  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -63,6 +69,7 @@ DEFAULT_OUT = ROOT / "app" / "src" / "data" / "verses.json"
 
 # 앱 번들에 남기는 필드. 이 목록에 없는 것은 전부 제거된다.
 APP_FIELDS = ("id", "ref", "text", "emotion_tags", "theme")
+# read_from은 여기 없다 — 큐레이션 입력이고, 결과는 read.from에 이미 반영된다
 CRISIS_APP_FIELDS = ("id", "ref", "text")
 
 # verses.yaml에 없고 여기서 계산해 붙이는 필드.
@@ -85,6 +92,10 @@ CRISIS_APP_FIELDS = ("id", "ref", "text")
 #   자르는 순간 뜻이 "시작 절"로 바뀌고, 그러면 페이지 크기(4절)라는 화면의
 #   판단이 데이터 생성기로 새어 들어온다.
 COMPUTED_FIELDS = ("read",)
+
+# 이어서 읽기 한 페이지 절 수. app/src/lib/chapters.js의 PAGE_SIZE와 같아야 한다.
+# ⚠ 두 값이 어긋나면 아래 게이트가 검사하는 범위와 사용자가 보는 범위가 달라진다.
+READ_PAGE_SIZE = 4
 
 # 기대 개수 — 현재 큐레이션 규모.
 #
@@ -109,7 +120,9 @@ COMPUTED_FIELDS = ("read",)
 #   293  flutter 2 · calm.ease 1 · boredom.novelty 2
 #   289  ★ 재검토로 4건 제외 — 마 10:19 · 요 11:6 · 전 5:12 · 시 103:10
 #        (채택하면서 note에 위험을 적어 두고 넘어간 유형. verses.yaml 제외 목록)
-EXPECT_VERSES = 289
+#   286  ★ 장 문맥 재검토로 3건 제외 — 시 88:1-2 · 시 143:4 · 시 1:2
+#        (2026-08-20 '이어서 읽기' 신설 축. verses.yaml excluded 참조)
+EXPECT_VERSES = 286
 EXPECT_CRISIS = 10
 
 EXIT_OK = 0
@@ -219,20 +232,139 @@ def validate(
     return problems
 
 
-def read_pointer(ref: str) -> dict[str, Any]:
+def read_pointer(verse: dict[str, Any]) -> dict[str, Any]:
     """구절 하나의 "이어서 읽기" 시작점을 계산한다.
 
     범위형 ref(롬 8:38-39)는 **끝 절** 기준이다 — 인용한 마지막 절 다음부터
     이어 읽는 것이 이 기능의 뜻이다. 장을 넘는 범위(시 42:5-43:1)는 시작 장을
     쓴다. 이어서 읽기가 장 경계를 넘지 않으므로 열 수 있는 장은 시작 장뿐이고,
     끝 장을 가리키면 사용자가 읽던 구절이 없는 장이 열린다.
+
+    [read_from — 큐레이션이 시작 절을 지정한다 (2026-08-20)]
+      기본은 위 규칙이지만, 그렇게 열면 화면과 어긋나는 본문이 나오는 구절이
+      있다. 그때 verses.yaml에 read_from을 적어 **장 안의 다른 자리**로 연다.
+        계 21:5   기본이면 8절(불못 명단)이 첫 페이지에 온다 → 1절부터 연다
+        사 66:13  기본이면 16절("살륙 당할 자가 많으리니") → 10절부터 연다
+      앱은 이 값을 그대로 쓴다. 장 마지막 절이라 열 것이 없을 때 장 처음부터
+      여는 분기를 이미 갖고 있어(chapters.js initialCursor) **앱 변경이 없다.**
+
+    ⚠ read_from은 예외이지 기본이 아니다. 쓰는 곳마다 근거를 주석에 적는다 —
+      "인용한 다음 절부터"라는 약속을 깨는 값이라, 근거 없이 늘어나면
+      이어서 읽기가 무엇을 여는지 아무도 예측할 수 없게 된다.
     """
-    parsed = parse_ref(ref)
+    parsed = parse_ref(verse["ref"])
+    default = parsed.end[1] + 1 if parsed.end[0] == parsed.start[0] else 1
     return {
         "book": parsed.book_key,
         "chapter": parsed.start[0],
-        "from": parsed.end[1] + 1 if parsed.end[0] == parsed.start[0] else 1,
+        "from": int(verse.get("read_from") or default),
     }
+
+
+def first_page_verses(pointer: dict[str, Any], bible: KrvBible) -> list[int]:
+    """이어서 읽기 첫 페이지에 실제로 뜨는 절 번호.
+
+    **앱(chapters.js)의 규칙을 그대로 옮긴 것이다.** 두 곳이 어긋나면 이 게이트가
+    검사하는 화면과 사용자가 보는 화면이 달라진다.
+      · 인용이 장의 마지막이면 장 처음부터
+      · 남은 절이 한 페이지보다 적으면 장 끝에 맞춰 뒤로 당긴다
+    ⚠ 합본 구간(같은 본문이 연속 복제된 곳)은 앱이 한 단위로 묶어 그리므로
+      실제로는 더 뒤까지 보인다. 여기서는 절 번호로만 세어 **더 좁게** 본다 —
+      게이트가 놓치는 쪽이 아니라 조이는 쪽으로 틀리게 둔다.
+    """
+    verses = bible.chapter_verses(pointer["book"], pointer["chapter"])
+    total = len(verses)
+    start = pointer["from"]
+    if start > total:
+        start = 1
+    elif total - start + 1 < READ_PAGE_SIZE:
+        start = max(1, total - READ_PAGE_SIZE + 1)
+    return list(range(start, min(start + READ_PAGE_SIZE, total + 1)))
+
+
+def load_excluded(path: Path) -> list[dict[str, Any]]:
+    """verses.yaml의 구조화 제외 색인을 읽는다."""
+    with path.open(encoding="utf-8") as handle:
+        raw = yaml.safe_load(handle) or {}
+    return list(raw.get("excluded") or [])
+
+
+def check_exclusion_index(path: Path, excluded: list[dict[str, Any]]) -> list[str]:
+    """① 제외 색인의 모든 ref가 파일 어딘가의 주석에 언급되는가.
+
+    색인은 ref와 사유 분류만 갖는다. "왜 뺐는가"는 [제외 기록] 주석에 있고
+    그것이 이 저장소의 판단 자산이다. 근거 없는 제외가 색인에만 생기면
+    다음 사람이 이유를 알 수 없으므로 여기서 막는다.
+
+    ⚠ 역방향은 검사하지 않는다. 주석에서 ref를 기계로 뽑으면 오탐이 난다 —
+      실측에서 41건이 뽑혔는데 실제 제외는 13건이었다(제외 기록 산문이 수록
+      구절 자신을 자주 언급한다). 거짓 실패가 쌓이면 사람이 게이트를 끈다.
+    """
+    text = path.read_text(encoding="utf-8")
+    problems = []
+    for item in excluded:
+        ref = str(item.get("ref", "")).strip()
+        if not ref:
+            problems.append("excluded 항목에 ref가 없다")
+            continue
+        # 주석은 약어를 쓰고("시 1:3") 색인은 정식명을 쓴다("시편 1:3").
+        # 같은 절을 가리키는 모든 표기를 만들어 대조한다 — 표기 차이로 거짓
+        # 실패가 나면 사람이 게이트를 끄게 되고, 그러면 게이트가 없는 것과 같다.
+        try:
+            parsed = parse_ref(ref)
+        except RefError as exc:
+            problems.append(f"제외 색인의 ref를 해석할 수 없다: {ref!r} ({exc})")
+            continue
+        names = [k for k, v in BOOK_KEYS.items() if v == parsed.book_key]
+        tail = "%d:%d" % (parsed.start[0], parsed.start[1])
+        forms = ["%s %s" % (n, tail) for n in names] + ["%s%s" % (n, tail) for n in names]
+        # 색인 줄 자신이 1회 잡히므로, 주석에 있으려면 2회 이상이어야 한다
+        if sum(text.count(f) for f in forms) < 2:
+            problems.append(
+                f"제외 색인 {ref!r}의 근거 서술이 주석에 없다 — "
+                "[제외 기록]에 왜 뺐는지 적을 것"
+            )
+    return problems
+
+
+def check_reader_first_page(
+    bundle: dict[str, Any], excluded: list[dict[str, Any]], bible: KrvBible
+) -> list[str]:
+    """② 수록 구절의 "이어서 읽기 첫 페이지"에 제외한 절이 들어오는가.
+
+    ★ 이 게이트가 있는 이유는 실제 사고다 (2026-08-20).
+      시 1:3을 번영신학으로 빼고 렘 17:7-8로 대체했는데, 시 1:2를 수록한 탓에
+      이어서 읽기 **첫 페이지 첫 줄**에 시 1:3이 다시 떴다. 제외 작업 자체가
+      무효화된 것이다. 전수 조사에서 이런 재노출이 13건이었다.
+
+    첫 페이지만 본다. 그 자리는 탭을 열면 **무조건** 보이고 선택이 아니다.
+    장 뒤쪽은 사용자가 [다음]을 눌러 능동적으로 간 결과라 note에 기록만 한다
+    (판정 기준 2층 — HANDOFF 2.38).
+    """
+    blocked: set[tuple[str, int, int]] = set()
+    for item in excluded:
+        try:
+            ref = parse_ref(str(item["ref"]))
+        except RefError as exc:
+            return [f"제외 색인의 ref를 해석할 수 없다: {item.get('ref')!r} ({exc})"]
+        for chapter in range(ref.start[0], ref.end[0] + 1):
+            lo = ref.start[1] if chapter == ref.start[0] else 1
+            hi = ref.end[1] if chapter == ref.end[0] else 999
+            for number in range(lo, hi + 1):
+                blocked.add((ref.book_key, chapter, number))
+
+    problems = []
+    for entry in bundle["verses"]:
+        pointer = entry["read"]
+        for number in first_page_verses(pointer, bible):
+            key = (pointer["book"], pointer["chapter"], number)
+            if key in blocked:
+                problems.append(
+                    f"{entry['id']} ({entry['ref']}): 이어서 읽기 첫 페이지 "
+                    f"{number}절이 제외 구절이다 — read_from으로 다른 자리를 열거나 "
+                    "이 구절을 빼야 한다"
+                )
+    return problems
 
 
 def build(verses_file: VersesFile, theme_ids: set[str], now: datetime) -> dict[str, Any]:
@@ -253,7 +385,7 @@ def build(verses_file: VersesFile, theme_ids: set[str], now: datetime) -> dict[s
     verses = []
     for verse in verses_file.verses:
         entry = strip_entry(verse, APP_FIELDS)
-        entry["read"] = read_pointer(entry["ref"])
+        entry["read"] = read_pointer(verse)
         verses.append(entry)
 
     return {
@@ -330,6 +462,8 @@ def report(bundle: dict[str, Any], out: Path, payload: str, dry_run: bool) -> No
     print(f"  크기          {len(payload.encode('utf-8')):,} 바이트")
     print(f"  제거한 필드   note · verified · verified_by · verified_at")
     print(f"  본문          공백 정규화 후 원문 재대조 통과")
+    print(f"  이어서 읽기   시작 절 지정 {sum(1 for v in verses if v['read'])and sum(1 for v in verses)}건 중 "
+          f"{sum(1 for v in verses if v['read']['from'] == 1)}건이 장 처음부터 · 제외 색인 게이트 통과")
     print(f"  출력          {out}")
 
 
@@ -378,7 +512,18 @@ def main(argv: list[str] | None = None) -> int:
 
         bundle = build(verses_file, theme_ids, datetime.now(timezone.utc))
         assert_no_loss(bundle, verses_file)
-        assert_matches_source(bundle, KrvBible(args.krv))
+        bible = KrvBible(args.krv)
+        assert_matches_source(bundle, bible)
+
+        # 제외 색인 게이트 2종 (verses.yaml excluded 주석 참조)
+        excluded = load_excluded(args.verses)
+        gate = check_exclusion_index(args.verses, excluded)
+        gate += check_reader_first_page(bundle, excluded, bible)
+        if gate:
+            raise BuildError(
+                "제외 색인 게이트 {}건{}    ".format(len(gate), "\n")
+                + "{}    ".format("\n").join(gate)
+            )
 
         payload = json.dumps(
             bundle,
