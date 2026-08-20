@@ -185,6 +185,39 @@ def main() -> int:
     ):
         hit = theme_id in {m.theme_id for m in tag_themes(title, themes)}
         _check(failures, hit, f"{theme_id} 활용형 태깅: {title}")
+    # 2026-08-20 — quiet_worship 어휘 개정을 고정한다 (HANDOFF 2.28).
+    #   개정 전 6종(잔잔한 찬양·조용한 찬양·묵상 찬양·피아노 찬양·CCM 피아노·
+    #   새벽 찬양)은 실측 1,067건에 **한 건도 걸리지 않았다.** 검색창에 칠 말이지
+    #   교회가 제목에 쓰는 말이 아니었다. 실제 어휘로 갈아 12건을 잡는다.
+    for title, want in (
+        ("2026/08/16(주일) 꿈의교회, 희망의 찬양대_거룩하시다", True),
+        ("8-1. 내 삶의 이유라 | Anointing Instrumental Series Vol.8", True),
+        ("어노인팅 연주곡 시리즈 Vol.8 - 소망 (Hope) 전곡", True),
+        ("[CCM PIANO] 훈계로 다스려주소서 피아노ver.", True),
+        # ⛔ 여기부터가 이 검사의 핵심이다. 물량이 아쉽다고 `워십`·`찬양`을
+        #   넣으면 이 셋이 들어온다 — 전부 고조된 예배 찬양 콘티다.
+        #   intent가 "조용한 찬양·연주"인데 일반 찬양까지 받으면 joy_praise와
+        #   구분이 사라지고 주제 집합 분리 작업과 충돌한다.
+        ("주의 아름다움은 말로 다 | 오륜교회 금요기도회 찬양 하이프레이즈", False),
+        ("문들아 머리 들어라 + 날마다 | 오륜교회 주일 5부예배 찬양 램넌트워십", False),
+        ("[주일찬양] 휘문채플 / 주님 뜻대로 살기로 했네", False),
+    ):
+        hit = "quiet_worship" in {m.theme_id for m in tag_themes(title, themes)}
+        _check(
+            failures,
+            hit is want,
+            f"quiet_worship {'태깅' if want else '비태깅'}: {title[:38]}",
+        )
+    # 검색어를 되돌리지 않았는가 — 죽은 어휘가 다시 들어오면 여기서 걸린다
+    qw = next(t for t in themes.taggable if t.id == "quiet_worship")
+    revived = [k for k in ("잔잔한 찬양", "조용한 찬양", "CCM 피아노", "새벽 찬양") if k in qw.title_keywords]
+    _check(
+        failures,
+        not revived,
+        "검색어 유물을 되살리지 않았다",
+        ", ".join(revived) or "-",
+    )
+
     crisis_tagged = tag_themes("위기 상담 안내", themes)
     _check(
         failures,
