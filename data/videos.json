@@ -1,5 +1,5 @@
 {
-  "version": "2026-08-20T10:01:47Z",
+  "version": "2026-08-21T10:01:32Z",
   "subcategories": [
     {
       "id": "anxiety.restless",
@@ -471,6 +471,15 @@
           "source": "theme"
         },
         {
+          "videoId": "vdHaxrZk2hI",
+          "title": "예원교회 정은주 목사(TV강단 28회) - 담대할 이유!",
+          "channel": "CBS설교",
+          "publishedAt": "2026-08-21T00:11:56Z",
+          "duration": "PT25M1S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
           "videoId": "Z0__DbPYct0",
           "title": "✨ 듣기만 해도 마음이 편안해지는 성경구절 12가지 #성경 #말씀 #위로 #평안 #수험생 #기도 #극동방송",
           "channel": "광주극동방송",
@@ -498,38 +507,29 @@
           "source": "theme"
         },
         {
-          "videoId": "AmQgvjnvtmw",
-          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
-          "channel": "우리들교회",
-          "publishedAt": "2026-08-16T06:49:41Z",
-          "duration": "PT14M26S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "rUo6dDcV6V0",
-          "title": "[CTS 추천픽] 부교역자 구인난 | 한국성결신문 황승영 기자 출연 | 📰 우리 사회 이슈들을 기독교의 시선으로 전하는 「CTS 뉴스 W」",
+          "videoId": "vYbIg5GUdCg",
+          "title": "[Clip] 시련의 자리에서 피어난 또 다른 기회! | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T06:00:38Z",
-          "duration": "PT9M41S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
-          "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T06:00:05Z",
+          "duration": "PT19M48S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "Epeox_I9oKg",
-          "title": "어머니의 40년 기도가 가난한 막내아들에게 남긴 것 │김경필 대표 │새롭게 하소서",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
+          "channel": "CGN",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
+          "media_type": "unknown",
+          "source": "fallback"
+        },
+        {
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
           "channel": "CBSJOY",
-          "publishedAt": "2026-08-20T10:00:18Z",
-          "duration": "PT24M37S",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
           "source": "fallback"
         },
@@ -552,12 +552,12 @@
           "source": "fallback"
         },
         {
-          "videoId": "-Dy5dxz46Rw",
-          "title": "[경건생활 365] 8월 12일 - 진짜로 믿으십니까",
+          "videoId": "Mr6cn9xg0xo",
+          "title": "정구영 장로 (전북극동방송 전주운영위원장) | 만나고 싶은 사람, 듣고 싶은 이야기 1122회",
           "channel": "극동방송",
-          "publishedAt": "2026-08-11T20:00:33Z",
-          "duration": "PT3M",
-          "media_type": "worship",
+          "publishedAt": "2026-08-21T04:15:31Z",
+          "duration": "PT20M12S",
+          "media_type": "unknown",
           "source": "fallback"
         },
         {
@@ -670,38 +670,29 @@
           "source": "theme"
         },
         {
-          "videoId": "AmQgvjnvtmw",
-          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
-          "channel": "우리들교회",
-          "publishedAt": "2026-08-16T06:49:41Z",
-          "duration": "PT14M26S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "rUo6dDcV6V0",
-          "title": "[CTS 추천픽] 부교역자 구인난 | 한국성결신문 황승영 기자 출연 | 📰 우리 사회 이슈들을 기독교의 시선으로 전하는 「CTS 뉴스 W」",
+          "videoId": "vYbIg5GUdCg",
+          "title": "[Clip] 시련의 자리에서 피어난 또 다른 기회! | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T06:00:38Z",
-          "duration": "PT9M41S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
-          "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T06:00:05Z",
+          "duration": "PT19M48S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "Epeox_I9oKg",
-          "title": "어머니의 40년 기도가 가난한 막내아들에게 남긴 것 │김경필 대표 │새롭게 하소서",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
+          "channel": "CGN",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
+          "media_type": "unknown",
+          "source": "fallback"
+        },
+        {
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
           "channel": "CBSJOY",
-          "publishedAt": "2026-08-20T10:00:18Z",
-          "duration": "PT24M37S",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
           "source": "fallback"
         },
@@ -724,12 +715,12 @@
           "source": "fallback"
         },
         {
-          "videoId": "-Dy5dxz46Rw",
-          "title": "[경건생활 365] 8월 12일 - 진짜로 믿으십니까",
+          "videoId": "Mr6cn9xg0xo",
+          "title": "정구영 장로 (전북극동방송 전주운영위원장) | 만나고 싶은 사람, 듣고 싶은 이야기 1122회",
           "channel": "극동방송",
-          "publishedAt": "2026-08-11T20:00:33Z",
-          "duration": "PT3M",
-          "media_type": "worship",
+          "publishedAt": "2026-08-21T04:15:31Z",
+          "duration": "PT20M12S",
+          "media_type": "unknown",
           "source": "fallback"
         },
         {
@@ -756,6 +747,15 @@
           "channel": "김학중 목사_꿈의교회 미디어교회",
           "publishedAt": "2026-08-20T01:34:02Z",
           "duration": "PT4M3S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "AmQgvjnvtmw",
+          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
+          "channel": "우리들교회",
+          "publishedAt": "2026-08-16T06:49:41Z",
+          "duration": "PT14M26S",
           "media_type": "worship",
           "source": "fallback"
         }
@@ -816,65 +816,56 @@
           "source": "theme"
         },
         {
-          "videoId": "V4a1fnOgR0c",
-          "title": "[아침예배] 탑인가 제단인가? (겔 43:13-27)_베이직교회_조정민 목사_20260820",
-          "channel": "베이직교회",
-          "publishedAt": "2026-08-19T22:13:20Z",
-          "duration": "PT40M46S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "ec9pLj0LHnY",
-          "title": "감당하기 힘든 일을 이제 시작한다면 l 원유경 목사 l 에스라 8장 15-23절ㅣ메신저스",
+          "videoId": "HdcpmdkFdcE",
+          "title": "[Full] 신용불량자가 만두퀸이 되기까지 | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T08:00:06Z",
-          "duration": "PT25M59S",
+          "publishedAt": "2026-08-21T09:13:05Z",
+          "duration": "PT44M46S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
           "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "yJsDBg-P9N8",
-          "title": "[232일차] 예레미야 15~17장 (2026.8.20) | CGN과 함께 일-일 통독(우리말성경)",
+          "videoId": "4sGd4cgiA_g",
+          "title": "[233일차] 예레미야 18~21장 (2026.8.21) | CGN과 함께 일-일 통독(우리말성경)",
           "channel": "CGN 성경통독",
-          "publishedAt": "2026-08-19T20:00:03Z",
-          "duration": "PT15M3S",
+          "publishedAt": "2026-08-20T20:00:27Z",
+          "duration": "PT15M32S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "Epeox_I9oKg",
-          "title": "어머니의 40년 기도가 가난한 막내아들에게 남긴 것 │김경필 대표 │새롭게 하소서",
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
           "channel": "CBSJOY",
-          "publishedAt": "2026-08-20T10:00:18Z",
-          "duration": "PT24M37S",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "Y_-KVz-m5vM",
-          "title": "양천교회 김동인 목사(영혼의양식 412회) - 과거로의 시간 여행",
+          "videoId": "jO2QkQrhDlE",
+          "title": "나에게 주신 사명 (서초중앙교회 / 박동식 목사) 행복다이어리",
           "channel": "CBS설교",
-          "publishedAt": "2026-08-20T00:09:14Z",
-          "duration": "PT5M10S",
+          "publishedAt": "2026-08-21T09:00:01Z",
+          "duration": "PT5M26S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "x8u7NoZkPzk",
-          "title": "[성경의 무림고수를 찾아서 특별 세미나_2편] 로마서 1000독, 성경 100독, 누구나 할 수 있습니다! | 조상연 목사님 (레제나하우스)",
+          "videoId": "HGhHsacxUgs",
+          "title": "[성경의 무림고수를 찾아서 특별 세미나_3편] 말씀 한 구절로 사람이 근본적으로 변하는 “하가다의 비밀!” | 신대호 목사님 (인천광명교회)",
           "channel": "극동방송",
-          "publishedAt": "2026-08-14T08:58:06Z",
-          "duration": "PT53M6S",
+          "publishedAt": "2026-08-21T08:58:06Z",
+          "duration": "PT54M10S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -906,11 +897,11 @@
           "source": "fallback"
         },
         {
-          "videoId": "VkFB_P1BfKM",
-          "title": "김관성 목사  낮은담교회 새벽만나   2026. 8. 20 “무덤 사이에 앉으신 주” 누가복음 8:26-39",
+          "videoId": "ZaQ6vF7bxUM",
+          "title": "최일관 목사  낮은담교회 새벽만나   2026. 8. 21 “두사람 사이에서” 누가복음 8:40-56",
           "channel": "낮은담교회",
-          "publishedAt": "2026-08-19T21:35:42Z",
-          "duration": "PT38M50S",
+          "publishedAt": "2026-08-20T21:43:09Z",
+          "duration": "PT44M18S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -920,6 +911,15 @@
           "channel": "우리들교회",
           "publishedAt": "2026-08-20T00:11:44Z",
           "duration": "PT1H8M57S",
+          "media_type": "sermon",
+          "source": "fallback"
+        },
+        {
+          "videoId": "m-GGSHBibUE",
+          "title": "[아침예배] 제사장 신분 강등 (겔 44:1-14)_베이직교회_조정민 목사_20260821",
+          "channel": "베이직교회",
+          "publishedAt": "2026-08-20T22:11:22Z",
+          "duration": "PT42M6S",
           "media_type": "sermon",
           "source": "fallback"
         }
@@ -1024,38 +1024,29 @@
           "source": "theme"
         },
         {
-          "videoId": "AmQgvjnvtmw",
-          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
-          "channel": "우리들교회",
-          "publishedAt": "2026-08-16T06:49:41Z",
-          "duration": "PT14M26S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "rUo6dDcV6V0",
-          "title": "[CTS 추천픽] 부교역자 구인난 | 한국성결신문 황승영 기자 출연 | 📰 우리 사회 이슈들을 기독교의 시선으로 전하는 「CTS 뉴스 W」",
+          "videoId": "vYbIg5GUdCg",
+          "title": "[Clip] 시련의 자리에서 피어난 또 다른 기회! | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T06:00:38Z",
-          "duration": "PT9M41S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
-          "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T06:00:05Z",
+          "duration": "PT19M48S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "Epeox_I9oKg",
-          "title": "어머니의 40년 기도가 가난한 막내아들에게 남긴 것 │김경필 대표 │새롭게 하소서",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
+          "channel": "CGN",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
+          "media_type": "unknown",
+          "source": "fallback"
+        },
+        {
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
           "channel": "CBSJOY",
-          "publishedAt": "2026-08-20T10:00:18Z",
-          "duration": "PT24M37S",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
           "source": "fallback"
         },
@@ -1078,12 +1069,12 @@
           "source": "fallback"
         },
         {
-          "videoId": "-Dy5dxz46Rw",
-          "title": "[경건생활 365] 8월 12일 - 진짜로 믿으십니까",
+          "videoId": "Mr6cn9xg0xo",
+          "title": "정구영 장로 (전북극동방송 전주운영위원장) | 만나고 싶은 사람, 듣고 싶은 이야기 1122회",
           "channel": "극동방송",
-          "publishedAt": "2026-08-11T20:00:33Z",
-          "duration": "PT3M",
-          "media_type": "worship",
+          "publishedAt": "2026-08-21T04:15:31Z",
+          "duration": "PT20M12S",
+          "media_type": "unknown",
           "source": "fallback"
         },
         {
@@ -1112,6 +1103,15 @@
           "duration": "PT4M3S",
           "media_type": "worship",
           "source": "fallback"
+        },
+        {
+          "videoId": "AmQgvjnvtmw",
+          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
+          "channel": "우리들교회",
+          "publishedAt": "2026-08-16T06:49:41Z",
+          "duration": "PT14M26S",
+          "media_type": "worship",
+          "source": "fallback"
         }
       ]
     },
@@ -1123,6 +1123,15 @@
       ],
       "media_default": "sermon",
       "videos": [
+        {
+          "videoId": "SrWTQgbLAAU",
+          "title": "성남빛나는교회 서학복 목사(CBS TV강단 342회) - 왜 내 소망은 이루어지지 않을까",
+          "channel": "CBS설교",
+          "publishedAt": "2026-08-21T00:09:43Z",
+          "duration": "PT25M1S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
         {
           "videoId": "9buK09GIzlE",
           "title": "소망교회 김경진 목사(CBS 소망의 말씀 346회) - 세대를 넘어 함께하시는 하나님",
@@ -1232,65 +1241,56 @@
           "source": "theme"
         },
         {
-          "videoId": "V4a1fnOgR0c",
-          "title": "[아침예배] 탑인가 제단인가? (겔 43:13-27)_베이직교회_조정민 목사_20260820",
-          "channel": "베이직교회",
-          "publishedAt": "2026-08-19T22:13:20Z",
-          "duration": "PT40M46S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "ec9pLj0LHnY",
-          "title": "감당하기 힘든 일을 이제 시작한다면 l 원유경 목사 l 에스라 8장 15-23절ㅣ메신저스",
+          "videoId": "HdcpmdkFdcE",
+          "title": "[Full] 신용불량자가 만두퀸이 되기까지 | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T08:00:06Z",
-          "duration": "PT25M59S",
+          "publishedAt": "2026-08-21T09:13:05Z",
+          "duration": "PT44M46S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
           "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "yJsDBg-P9N8",
-          "title": "[232일차] 예레미야 15~17장 (2026.8.20) | CGN과 함께 일-일 통독(우리말성경)",
+          "videoId": "4sGd4cgiA_g",
+          "title": "[233일차] 예레미야 18~21장 (2026.8.21) | CGN과 함께 일-일 통독(우리말성경)",
           "channel": "CGN 성경통독",
-          "publishedAt": "2026-08-19T20:00:03Z",
-          "duration": "PT15M3S",
+          "publishedAt": "2026-08-20T20:00:27Z",
+          "duration": "PT15M32S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "Epeox_I9oKg",
-          "title": "어머니의 40년 기도가 가난한 막내아들에게 남긴 것 │김경필 대표 │새롭게 하소서",
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
           "channel": "CBSJOY",
-          "publishedAt": "2026-08-20T10:00:18Z",
-          "duration": "PT24M37S",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "Y_-KVz-m5vM",
-          "title": "양천교회 김동인 목사(영혼의양식 412회) - 과거로의 시간 여행",
+          "videoId": "jO2QkQrhDlE",
+          "title": "나에게 주신 사명 (서초중앙교회 / 박동식 목사) 행복다이어리",
           "channel": "CBS설교",
-          "publishedAt": "2026-08-20T00:09:14Z",
-          "duration": "PT5M10S",
+          "publishedAt": "2026-08-21T09:00:01Z",
+          "duration": "PT5M26S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "x8u7NoZkPzk",
-          "title": "[성경의 무림고수를 찾아서 특별 세미나_2편] 로마서 1000독, 성경 100독, 누구나 할 수 있습니다! | 조상연 목사님 (레제나하우스)",
+          "videoId": "HGhHsacxUgs",
+          "title": "[성경의 무림고수를 찾아서 특별 세미나_3편] 말씀 한 구절로 사람이 근본적으로 변하는 “하가다의 비밀!” | 신대호 목사님 (인천광명교회)",
           "channel": "극동방송",
-          "publishedAt": "2026-08-14T08:58:06Z",
-          "duration": "PT53M6S",
+          "publishedAt": "2026-08-21T08:58:06Z",
+          "duration": "PT54M10S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -1346,6 +1346,15 @@
           "channel": "CGN 생명의 삶",
           "publishedAt": "2026-06-14T15:00:00Z",
           "duration": "PT8M55S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "SrWTQgbLAAU",
+          "title": "성남빛나는교회 서학복 목사(CBS TV강단 342회) - 왜 내 소망은 이루어지지 않을까",
+          "channel": "CBS설교",
+          "publishedAt": "2026-08-21T00:09:43Z",
+          "duration": "PT25M1S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -1467,29 +1476,20 @@
           "source": "theme"
         },
         {
-          "videoId": "V4a1fnOgR0c",
-          "title": "[아침예배] 탑인가 제단인가? (겔 43:13-27)_베이직교회_조정민 목사_20260820",
-          "channel": "베이직교회",
-          "publishedAt": "2026-08-19T22:13:20Z",
-          "duration": "PT40M46S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "ec9pLj0LHnY",
-          "title": "감당하기 힘든 일을 이제 시작한다면 l 원유경 목사 l 에스라 8장 15-23절ㅣ메신저스",
+          "videoId": "HdcpmdkFdcE",
+          "title": "[Full] 신용불량자가 만두퀸이 되기까지 | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T08:00:06Z",
-          "duration": "PT25M59S",
+          "publishedAt": "2026-08-21T09:13:05Z",
+          "duration": "PT44M46S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
           "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
           "media_type": "unknown",
           "source": "fallback"
         }
@@ -1558,65 +1558,56 @@
           "source": "theme"
         },
         {
-          "videoId": "V4a1fnOgR0c",
-          "title": "[아침예배] 탑인가 제단인가? (겔 43:13-27)_베이직교회_조정민 목사_20260820",
-          "channel": "베이직교회",
-          "publishedAt": "2026-08-19T22:13:20Z",
-          "duration": "PT40M46S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "ec9pLj0LHnY",
-          "title": "감당하기 힘든 일을 이제 시작한다면 l 원유경 목사 l 에스라 8장 15-23절ㅣ메신저스",
+          "videoId": "HdcpmdkFdcE",
+          "title": "[Full] 신용불량자가 만두퀸이 되기까지 | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T08:00:06Z",
-          "duration": "PT25M59S",
+          "publishedAt": "2026-08-21T09:13:05Z",
+          "duration": "PT44M46S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
           "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "yJsDBg-P9N8",
-          "title": "[232일차] 예레미야 15~17장 (2026.8.20) | CGN과 함께 일-일 통독(우리말성경)",
+          "videoId": "4sGd4cgiA_g",
+          "title": "[233일차] 예레미야 18~21장 (2026.8.21) | CGN과 함께 일-일 통독(우리말성경)",
           "channel": "CGN 성경통독",
-          "publishedAt": "2026-08-19T20:00:03Z",
-          "duration": "PT15M3S",
+          "publishedAt": "2026-08-20T20:00:27Z",
+          "duration": "PT15M32S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "Epeox_I9oKg",
-          "title": "어머니의 40년 기도가 가난한 막내아들에게 남긴 것 │김경필 대표 │새롭게 하소서",
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
           "channel": "CBSJOY",
-          "publishedAt": "2026-08-20T10:00:18Z",
-          "duration": "PT24M37S",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "Y_-KVz-m5vM",
-          "title": "양천교회 김동인 목사(영혼의양식 412회) - 과거로의 시간 여행",
+          "videoId": "jO2QkQrhDlE",
+          "title": "나에게 주신 사명 (서초중앙교회 / 박동식 목사) 행복다이어리",
           "channel": "CBS설교",
-          "publishedAt": "2026-08-20T00:09:14Z",
-          "duration": "PT5M10S",
+          "publishedAt": "2026-08-21T09:00:01Z",
+          "duration": "PT5M26S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "x8u7NoZkPzk",
-          "title": "[성경의 무림고수를 찾아서 특별 세미나_2편] 로마서 1000독, 성경 100독, 누구나 할 수 있습니다! | 조상연 목사님 (레제나하우스)",
+          "videoId": "HGhHsacxUgs",
+          "title": "[성경의 무림고수를 찾아서 특별 세미나_3편] 말씀 한 구절로 사람이 근본적으로 변하는 “하가다의 비밀!” | 신대호 목사님 (인천광명교회)",
           "channel": "극동방송",
-          "publishedAt": "2026-08-14T08:58:06Z",
-          "duration": "PT53M6S",
+          "publishedAt": "2026-08-21T08:58:06Z",
+          "duration": "PT54M10S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -1648,11 +1639,11 @@
           "source": "fallback"
         },
         {
-          "videoId": "VkFB_P1BfKM",
-          "title": "김관성 목사  낮은담교회 새벽만나   2026. 8. 20 “무덤 사이에 앉으신 주” 누가복음 8:26-39",
+          "videoId": "ZaQ6vF7bxUM",
+          "title": "최일관 목사  낮은담교회 새벽만나   2026. 8. 21 “두사람 사이에서” 누가복음 8:40-56",
           "channel": "낮은담교회",
-          "publishedAt": "2026-08-19T21:35:42Z",
-          "duration": "PT38M50S",
+          "publishedAt": "2026-08-20T21:43:09Z",
+          "duration": "PT44M18S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -1662,6 +1653,15 @@
           "channel": "우리들교회",
           "publishedAt": "2026-08-20T00:11:44Z",
           "duration": "PT1H8M57S",
+          "media_type": "sermon",
+          "source": "fallback"
+        },
+        {
+          "videoId": "m-GGSHBibUE",
+          "title": "[아침예배] 제사장 신분 강등 (겔 44:1-14)_베이직교회_조정민 목사_20260821",
+          "channel": "베이직교회",
+          "publishedAt": "2026-08-20T22:11:22Z",
+          "duration": "PT42M6S",
           "media_type": "sermon",
           "source": "fallback"
         }
@@ -1676,6 +1676,15 @@
       ],
       "media_default": "worship",
       "videos": [
+        {
+          "videoId": "9buK09GIzlE",
+          "title": "소망교회 김경진 목사(CBS 소망의 말씀 346회) - 세대를 넘어 함께하시는 하나님",
+          "channel": "CBS설교",
+          "publishedAt": "2026-08-16T15:00:27Z",
+          "duration": "PT36M32S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
         {
           "videoId": "ErcjvW9u9Mo",
           "title": "01 주는 나의 참 소망 | 새노래배우기ㅣ어노인팅예배캠프2026",
@@ -1821,38 +1830,29 @@
           "source": "theme"
         },
         {
-          "videoId": "9buK09GIzlE",
-          "title": "소망교회 김경진 목사(CBS 소망의 말씀 346회) - 세대를 넘어 함께하시는 하나님",
+          "videoId": "SrWTQgbLAAU",
+          "title": "성남빛나는교회 서학복 목사(CBS TV강단 342회) - 왜 내 소망은 이루어지지 않을까",
           "channel": "CBS설교",
-          "publishedAt": "2026-08-16T15:00:27Z",
-          "duration": "PT36M32S",
+          "publishedAt": "2026-08-21T00:09:43Z",
+          "duration": "PT25M1S",
           "media_type": "sermon",
           "source": "theme"
         },
         {
-          "videoId": "AmQgvjnvtmw",
-          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
-          "channel": "우리들교회",
-          "publishedAt": "2026-08-16T06:49:41Z",
-          "duration": "PT14M26S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "rUo6dDcV6V0",
-          "title": "[CTS 추천픽] 부교역자 구인난 | 한국성결신문 황승영 기자 출연 | 📰 우리 사회 이슈들을 기독교의 시선으로 전하는 「CTS 뉴스 W」",
+          "videoId": "vYbIg5GUdCg",
+          "title": "[Clip] 시련의 자리에서 피어난 또 다른 기회! | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T06:00:38Z",
-          "duration": "PT9M41S",
-          "media_type": "worship",
+          "publishedAt": "2026-08-21T06:00:05Z",
+          "duration": "PT19M48S",
+          "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
           "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
           "media_type": "unknown",
           "source": "fallback"
         }
@@ -1921,15 +1921,6 @@
           "source": "theme"
         },
         {
-          "videoId": "jq7NzJawI_g",
-          "title": "세종 샘솟는교회 최병남 목사(CBS TV강단 30회) - 하나님과 동행하는 삶",
-          "channel": "CBS설교",
-          "publishedAt": "2026-08-14T15:00:22Z",
-          "duration": "PT24M34S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
           "videoId": "rIBokP7yzhI",
           "title": "07 온 땅의 주인 + 08 사랑한다 말하시네 (MR+Chord) | 어노인팅예배캠프2025",
           "channel": "ANOINTING",
@@ -1945,6 +1936,15 @@
           "publishedAt": "2026-03-12T03:00:44Z",
           "duration": "PT10M48S",
           "media_type": "worship",
+          "source": "theme"
+        },
+        {
+          "videoId": "jq7NzJawI_g",
+          "title": "세종 샘솟는교회 최병남 목사(CBS TV강단 30회) - 하나님과 동행하는 삶",
+          "channel": "CBS설교",
+          "publishedAt": "2026-08-14T15:00:22Z",
+          "duration": "PT24M34S",
+          "media_type": "sermon",
           "source": "theme"
         },
         {
@@ -2038,12 +2038,12 @@
           "source": "theme"
         },
         {
-          "videoId": "AmQgvjnvtmw",
-          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
-          "channel": "우리들교회",
-          "publishedAt": "2026-08-16T06:49:41Z",
-          "duration": "PT14M26S",
-          "media_type": "worship",
+          "videoId": "vYbIg5GUdCg",
+          "title": "[Clip] 시련의 자리에서 피어난 또 다른 기회! | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
+          "channel": "CTS기독교TV",
+          "publishedAt": "2026-08-21T06:00:05Z",
+          "duration": "PT19M48S",
+          "media_type": "unknown",
           "source": "fallback"
         }
       ]
@@ -2165,38 +2165,29 @@
           "source": "theme"
         },
         {
-          "videoId": "AmQgvjnvtmw",
-          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
-          "channel": "우리들교회",
-          "publishedAt": "2026-08-16T06:49:41Z",
-          "duration": "PT14M26S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "rUo6dDcV6V0",
-          "title": "[CTS 추천픽] 부교역자 구인난 | 한국성결신문 황승영 기자 출연 | 📰 우리 사회 이슈들을 기독교의 시선으로 전하는 「CTS 뉴스 W」",
+          "videoId": "vYbIg5GUdCg",
+          "title": "[Clip] 시련의 자리에서 피어난 또 다른 기회! | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T06:00:38Z",
-          "duration": "PT9M41S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
-          "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T06:00:05Z",
+          "duration": "PT19M48S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "Epeox_I9oKg",
-          "title": "어머니의 40년 기도가 가난한 막내아들에게 남긴 것 │김경필 대표 │새롭게 하소서",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
+          "channel": "CGN",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
+          "media_type": "unknown",
+          "source": "fallback"
+        },
+        {
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
           "channel": "CBSJOY",
-          "publishedAt": "2026-08-20T10:00:18Z",
-          "duration": "PT24M37S",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
           "source": "fallback"
         },
@@ -2219,12 +2210,12 @@
           "source": "fallback"
         },
         {
-          "videoId": "-Dy5dxz46Rw",
-          "title": "[경건생활 365] 8월 12일 - 진짜로 믿으십니까",
+          "videoId": "Mr6cn9xg0xo",
+          "title": "정구영 장로 (전북극동방송 전주운영위원장) | 만나고 싶은 사람, 듣고 싶은 이야기 1122회",
           "channel": "극동방송",
-          "publishedAt": "2026-08-11T20:00:33Z",
-          "duration": "PT3M",
-          "media_type": "worship",
+          "publishedAt": "2026-08-21T04:15:31Z",
+          "duration": "PT20M12S",
+          "media_type": "unknown",
           "source": "fallback"
         },
         {
@@ -2233,6 +2224,15 @@
           "channel": "광주극동방송",
           "publishedAt": "2026-03-30T02:45:03Z",
           "duration": "PT2H11M15S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "u_FKpWlYxkc",
+          "title": "주 예수 내 맘에 들어와 + 갈 길을 밝히 보이시니 + 나는 아무것도 아닙니다 + 내 삶은 주의 것 | 오륜교회 수요 오후예배 찬양 브릿지워십 (2026-08-19)",
+          "channel": "오륜교회 oryunchurch",
+          "publishedAt": "2026-08-19T12:15:34Z",
+          "duration": "PT18M34S",
           "media_type": "worship",
           "source": "fallback"
         }
@@ -2319,38 +2319,29 @@
           "source": "theme"
         },
         {
-          "videoId": "AmQgvjnvtmw",
-          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
-          "channel": "우리들교회",
-          "publishedAt": "2026-08-16T06:49:41Z",
-          "duration": "PT14M26S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "rUo6dDcV6V0",
-          "title": "[CTS 추천픽] 부교역자 구인난 | 한국성결신문 황승영 기자 출연 | 📰 우리 사회 이슈들을 기독교의 시선으로 전하는 「CTS 뉴스 W」",
+          "videoId": "vYbIg5GUdCg",
+          "title": "[Clip] 시련의 자리에서 피어난 또 다른 기회! | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T06:00:38Z",
-          "duration": "PT9M41S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
-          "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T06:00:05Z",
+          "duration": "PT19M48S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "Epeox_I9oKg",
-          "title": "어머니의 40년 기도가 가난한 막내아들에게 남긴 것 │김경필 대표 │새롭게 하소서",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
+          "channel": "CGN",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
+          "media_type": "unknown",
+          "source": "fallback"
+        },
+        {
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
           "channel": "CBSJOY",
-          "publishedAt": "2026-08-20T10:00:18Z",
-          "duration": "PT24M37S",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
           "source": "fallback"
         },
@@ -2373,12 +2364,12 @@
           "source": "fallback"
         },
         {
-          "videoId": "-Dy5dxz46Rw",
-          "title": "[경건생활 365] 8월 12일 - 진짜로 믿으십니까",
+          "videoId": "Mr6cn9xg0xo",
+          "title": "정구영 장로 (전북극동방송 전주운영위원장) | 만나고 싶은 사람, 듣고 싶은 이야기 1122회",
           "channel": "극동방송",
-          "publishedAt": "2026-08-11T20:00:33Z",
-          "duration": "PT3M",
-          "media_type": "worship",
+          "publishedAt": "2026-08-21T04:15:31Z",
+          "duration": "PT20M12S",
+          "media_type": "unknown",
           "source": "fallback"
         },
         {
@@ -2409,21 +2400,30 @@
           "source": "fallback"
         },
         {
-          "videoId": "pmBpmIGwZeY",
-          "title": "[주일찬양] 판교채플 / 26.08.16 / 나는 주를 섬기는 것에 / 그리 아니하실지라도 / 찬송하며 살리라 + 주님 다시 오실 때까지",
+          "videoId": "AmQgvjnvtmw",
+          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
           "channel": "우리들교회",
           "publishedAt": "2026-08-16T06:49:41Z",
-          "duration": "PT14M47S",
+          "duration": "PT14M26S",
           "media_type": "worship",
           "source": "fallback"
         },
         {
-          "videoId": "Id6uh95c9Xc",
-          "title": "[CTS 추천픽] 변화하는 찬양집회 | 히스플랜 리더 한상희 출연 | 📰 우리 사회 이슈들을 기독교의 시선으로 전하는 「CTS 뉴스 W」",
+          "videoId": "rUo6dDcV6V0",
+          "title": "[CTS 추천픽] 부교역자 구인난 | 한국성결신문 황승영 기자 출연 | 📰 우리 사회 이슈들을 기독교의 시선으로 전하는 「CTS 뉴스 W」",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T06:00:26Z",
-          "duration": "PT15M17S",
+          "publishedAt": "2026-08-20T06:00:38Z",
+          "duration": "PT9M41S",
           "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "kFeOJtl_bfo",
+          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
+          "channel": "CGN",
+          "publishedAt": "2026-08-20T07:00:01Z",
+          "duration": "PT20M13S",
+          "media_type": "unknown",
           "source": "fallback"
         }
       ]
@@ -2527,38 +2527,29 @@
           "source": "theme"
         },
         {
-          "videoId": "AmQgvjnvtmw",
-          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
-          "channel": "우리들교회",
-          "publishedAt": "2026-08-16T06:49:41Z",
-          "duration": "PT14M26S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "rUo6dDcV6V0",
-          "title": "[CTS 추천픽] 부교역자 구인난 | 한국성결신문 황승영 기자 출연 | 📰 우리 사회 이슈들을 기독교의 시선으로 전하는 「CTS 뉴스 W」",
+          "videoId": "vYbIg5GUdCg",
+          "title": "[Clip] 시련의 자리에서 피어난 또 다른 기회! | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T06:00:38Z",
-          "duration": "PT9M41S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
-          "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T06:00:05Z",
+          "duration": "PT19M48S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "Epeox_I9oKg",
-          "title": "어머니의 40년 기도가 가난한 막내아들에게 남긴 것 │김경필 대표 │새롭게 하소서",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
+          "channel": "CGN",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
+          "media_type": "unknown",
+          "source": "fallback"
+        },
+        {
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
           "channel": "CBSJOY",
-          "publishedAt": "2026-08-20T10:00:18Z",
-          "duration": "PT24M37S",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
           "source": "fallback"
         },
@@ -2581,12 +2572,12 @@
           "source": "fallback"
         },
         {
-          "videoId": "-Dy5dxz46Rw",
-          "title": "[경건생활 365] 8월 12일 - 진짜로 믿으십니까",
+          "videoId": "Mr6cn9xg0xo",
+          "title": "정구영 장로 (전북극동방송 전주운영위원장) | 만나고 싶은 사람, 듣고 싶은 이야기 1122회",
           "channel": "극동방송",
-          "publishedAt": "2026-08-11T20:00:33Z",
-          "duration": "PT3M",
-          "media_type": "worship",
+          "publishedAt": "2026-08-21T04:15:31Z",
+          "duration": "PT20M12S",
+          "media_type": "unknown",
           "source": "fallback"
         },
         {
@@ -2615,6 +2606,15 @@
           "duration": "PT4M3S",
           "media_type": "worship",
           "source": "fallback"
+        },
+        {
+          "videoId": "AmQgvjnvtmw",
+          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
+          "channel": "우리들교회",
+          "publishedAt": "2026-08-16T06:49:41Z",
+          "duration": "PT14M26S",
+          "media_type": "worship",
+          "source": "fallback"
         }
       ]
     },
@@ -2626,6 +2626,15 @@
       ],
       "media_default": "worship",
       "videos": [
+        {
+          "videoId": "3OV-PZL8vXM",
+          "title": "우리의 예배는 + 주님을 예배하는 것 + 새 힘 얻으리 + 예수 사랑하심은 + 성도의 노래 + 깊어진 삶을 주께 | 오륜교회 금요기도회 찬양 (2026-08-07)",
+          "channel": "오륜교회 oryunchurch",
+          "publishedAt": "2026-08-07T14:32:16Z",
+          "duration": "PT30M29S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
         {
           "videoId": "RbVF7t7Je4w",
           "title": "왕이신 나의 하나님 + 이 몸의 소망 무언가 + 나는 주를 섬기는 것에 + 예수를 나의 구주 삼고 | 오륜교회 주일 2부예배 찬양 헤세드 (2026-07-05)",
@@ -2659,6 +2668,15 @@
           "channel": "CGN 생명의 삶",
           "publishedAt": "2026-06-14T15:00:00Z",
           "duration": "PT8M55S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "SrWTQgbLAAU",
+          "title": "성남빛나는교회 서학복 목사(CBS TV강단 342회) - 왜 내 소망은 이루어지지 않을까",
+          "channel": "CBS설교",
+          "publishedAt": "2026-08-21T00:09:43Z",
+          "duration": "PT25M1S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -2726,47 +2744,29 @@
           "source": "theme"
         },
         {
-          "videoId": "3OV-PZL8vXM",
-          "title": "우리의 예배는 + 주님을 예배하는 것 + 새 힘 얻으리 + 예수 사랑하심은 + 성도의 노래 + 깊어진 삶을 주께 | 오륜교회 금요기도회 찬양 (2026-08-07)",
-          "channel": "오륜교회 oryunchurch",
-          "publishedAt": "2026-08-07T14:32:16Z",
-          "duration": "PT30M29S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "AmQgvjnvtmw",
-          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
-          "channel": "우리들교회",
-          "publishedAt": "2026-08-16T06:49:41Z",
-          "duration": "PT14M26S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "rUo6dDcV6V0",
-          "title": "[CTS 추천픽] 부교역자 구인난 | 한국성결신문 황승영 기자 출연 | 📰 우리 사회 이슈들을 기독교의 시선으로 전하는 「CTS 뉴스 W」",
+          "videoId": "vYbIg5GUdCg",
+          "title": "[Clip] 시련의 자리에서 피어난 또 다른 기회! | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T06:00:38Z",
-          "duration": "PT9M41S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
-          "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T06:00:05Z",
+          "duration": "PT19M48S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "Epeox_I9oKg",
-          "title": "어머니의 40년 기도가 가난한 막내아들에게 남긴 것 │김경필 대표 │새롭게 하소서",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
+          "channel": "CGN",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
+          "media_type": "unknown",
+          "source": "fallback"
+        },
+        {
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
           "channel": "CBSJOY",
-          "publishedAt": "2026-08-20T10:00:18Z",
-          "duration": "PT24M37S",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
           "source": "fallback"
         },
@@ -2789,12 +2789,12 @@
           "source": "fallback"
         },
         {
-          "videoId": "-Dy5dxz46Rw",
-          "title": "[경건생활 365] 8월 12일 - 진짜로 믿으십니까",
+          "videoId": "Mr6cn9xg0xo",
+          "title": "정구영 장로 (전북극동방송 전주운영위원장) | 만나고 싶은 사람, 듣고 싶은 이야기 1122회",
           "channel": "극동방송",
-          "publishedAt": "2026-08-11T20:00:33Z",
-          "duration": "PT3M",
-          "media_type": "worship",
+          "publishedAt": "2026-08-21T04:15:31Z",
+          "duration": "PT20M12S",
+          "media_type": "unknown",
           "source": "fallback"
         },
         {
@@ -3150,39 +3150,39 @@
           "source": "theme"
         },
         {
-          "videoId": "AmQgvjnvtmw",
-          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
-          "channel": "우리들교회",
-          "publishedAt": "2026-08-16T06:49:41Z",
-          "duration": "PT14M26S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "rUo6dDcV6V0",
-          "title": "[CTS 추천픽] 부교역자 구인난 | 한국성결신문 황승영 기자 출연 | 📰 우리 사회 이슈들을 기독교의 시선으로 전하는 「CTS 뉴스 W」",
+          "videoId": "vYbIg5GUdCg",
+          "title": "[Clip] 시련의 자리에서 피어난 또 다른 기회! | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T06:00:38Z",
-          "duration": "PT9M41S",
-          "media_type": "worship",
+          "publishedAt": "2026-08-21T06:00:05Z",
+          "duration": "PT19M48S",
+          "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
           "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "Epeox_I9oKg",
-          "title": "어머니의 40년 기도가 가난한 막내아들에게 남긴 것 │김경필 대표 │새롭게 하소서",
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
           "channel": "CBSJOY",
-          "publishedAt": "2026-08-20T10:00:18Z",
-          "duration": "PT24M37S",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
+          "source": "fallback"
+        },
+        {
+          "videoId": "9j1hLyR299E",
+          "title": "2026_0806ㅣ어노인팅목요예배ㅣ인도_ 양민호  #성문교회 ",
+          "channel": "ANOINTING",
+          "publishedAt": "2026-08-12T09:00:21Z",
+          "duration": "PT1H52M41S",
+          "media_type": "worship",
           "source": "fallback"
         }
       ]
@@ -3348,29 +3348,29 @@
           "source": "theme"
         },
         {
-          "videoId": "AmQgvjnvtmw",
-          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
-          "channel": "우리들교회",
-          "publishedAt": "2026-08-16T06:49:41Z",
-          "duration": "PT14M26S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "rUo6dDcV6V0",
-          "title": "[CTS 추천픽] 부교역자 구인난 | 한국성결신문 황승영 기자 출연 | 📰 우리 사회 이슈들을 기독교의 시선으로 전하는 「CTS 뉴스 W」",
+          "videoId": "vYbIg5GUdCg",
+          "title": "[Clip] 시련의 자리에서 피어난 또 다른 기회! | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T06:00:38Z",
-          "duration": "PT9M41S",
-          "media_type": "worship",
+          "publishedAt": "2026-08-21T06:00:05Z",
+          "duration": "PT19M48S",
+          "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
           "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
+          "media_type": "unknown",
+          "source": "fallback"
+        },
+        {
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
+          "channel": "CBSJOY",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
           "source": "fallback"
         }
@@ -3384,6 +3384,24 @@
       ],
       "media_default": "worship",
       "videos": [
+        {
+          "videoId": "SrWTQgbLAAU",
+          "title": "성남빛나는교회 서학복 목사(CBS TV강단 342회) - 왜 내 소망은 이루어지지 않을까",
+          "channel": "CBS설교",
+          "publishedAt": "2026-08-21T00:09:43Z",
+          "duration": "PT25M1S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "9buK09GIzlE",
+          "title": "소망교회 김경진 목사(CBS 소망의 말씀 346회) - 세대를 넘어 함께하시는 하나님",
+          "channel": "CBS설교",
+          "publishedAt": "2026-08-16T15:00:27Z",
+          "duration": "PT36M32S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
         {
           "videoId": "ErcjvW9u9Mo",
           "title": "01 주는 나의 참 소망 | 새노래배우기ㅣ어노인팅예배캠프2026",
@@ -3484,47 +3502,29 @@
           "source": "theme"
         },
         {
-          "videoId": "9buK09GIzlE",
-          "title": "소망교회 김경진 목사(CBS 소망의 말씀 346회) - 세대를 넘어 함께하시는 하나님",
-          "channel": "CBS설교",
-          "publishedAt": "2026-08-16T15:00:27Z",
-          "duration": "PT36M32S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "AmQgvjnvtmw",
-          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
-          "channel": "우리들교회",
-          "publishedAt": "2026-08-16T06:49:41Z",
-          "duration": "PT14M26S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "rUo6dDcV6V0",
-          "title": "[CTS 추천픽] 부교역자 구인난 | 한국성결신문 황승영 기자 출연 | 📰 우리 사회 이슈들을 기독교의 시선으로 전하는 「CTS 뉴스 W」",
+          "videoId": "vYbIg5GUdCg",
+          "title": "[Clip] 시련의 자리에서 피어난 또 다른 기회! | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T06:00:38Z",
-          "duration": "PT9M41S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
-          "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T06:00:05Z",
+          "duration": "PT19M48S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "Epeox_I9oKg",
-          "title": "어머니의 40년 기도가 가난한 막내아들에게 남긴 것 │김경필 대표 │새롭게 하소서",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
+          "channel": "CGN",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
+          "media_type": "unknown",
+          "source": "fallback"
+        },
+        {
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
           "channel": "CBSJOY",
-          "publishedAt": "2026-08-20T10:00:18Z",
-          "duration": "PT24M37S",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
           "source": "fallback"
         },
@@ -3547,12 +3547,12 @@
           "source": "fallback"
         },
         {
-          "videoId": "-Dy5dxz46Rw",
-          "title": "[경건생활 365] 8월 12일 - 진짜로 믿으십니까",
+          "videoId": "Mr6cn9xg0xo",
+          "title": "정구영 장로 (전북극동방송 전주운영위원장) | 만나고 싶은 사람, 듣고 싶은 이야기 1122회",
           "channel": "극동방송",
-          "publishedAt": "2026-08-11T20:00:33Z",
-          "duration": "PT3M",
-          "media_type": "worship",
+          "publishedAt": "2026-08-21T04:15:31Z",
+          "duration": "PT20M12S",
+          "media_type": "unknown",
           "source": "fallback"
         },
         {
@@ -3728,29 +3728,29 @@
           "source": "theme"
         },
         {
-          "videoId": "AmQgvjnvtmw",
-          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
-          "channel": "우리들교회",
-          "publishedAt": "2026-08-16T06:49:41Z",
-          "duration": "PT14M26S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "rUo6dDcV6V0",
-          "title": "[CTS 추천픽] 부교역자 구인난 | 한국성결신문 황승영 기자 출연 | 📰 우리 사회 이슈들을 기독교의 시선으로 전하는 「CTS 뉴스 W」",
+          "videoId": "vYbIg5GUdCg",
+          "title": "[Clip] 시련의 자리에서 피어난 또 다른 기회! | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T06:00:38Z",
-          "duration": "PT9M41S",
-          "media_type": "worship",
+          "publishedAt": "2026-08-21T06:00:05Z",
+          "duration": "PT19M48S",
+          "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
           "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
+          "media_type": "unknown",
+          "source": "fallback"
+        },
+        {
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
+          "channel": "CBSJOY",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
           "source": "fallback"
         }
@@ -3873,38 +3873,29 @@
           "source": "theme"
         },
         {
-          "videoId": "AmQgvjnvtmw",
-          "title": "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / 주의 은혜라 / 지금까지 지내 온 것",
-          "channel": "우리들교회",
-          "publishedAt": "2026-08-16T06:49:41Z",
-          "duration": "PT14M26S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "rUo6dDcV6V0",
-          "title": "[CTS 추천픽] 부교역자 구인난 | 한국성결신문 황승영 기자 출연 | 📰 우리 사회 이슈들을 기독교의 시선으로 전하는 「CTS 뉴스 W」",
+          "videoId": "vYbIg5GUdCg",
+          "title": "[Clip] 시련의 자리에서 피어난 또 다른 기회! | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T06:00:38Z",
-          "duration": "PT9M41S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
-          "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T06:00:05Z",
+          "duration": "PT19M48S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "Epeox_I9oKg",
-          "title": "어머니의 40년 기도가 가난한 막내아들에게 남긴 것 │김경필 대표 │새롭게 하소서",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
+          "channel": "CGN",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
+          "media_type": "unknown",
+          "source": "fallback"
+        },
+        {
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
           "channel": "CBSJOY",
-          "publishedAt": "2026-08-20T10:00:18Z",
-          "duration": "PT24M37S",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
           "source": "fallback"
         },
@@ -3927,12 +3918,12 @@
           "source": "fallback"
         },
         {
-          "videoId": "-Dy5dxz46Rw",
-          "title": "[경건생활 365] 8월 12일 - 진짜로 믿으십니까",
+          "videoId": "Mr6cn9xg0xo",
+          "title": "정구영 장로 (전북극동방송 전주운영위원장) | 만나고 싶은 사람, 듣고 싶은 이야기 1122회",
           "channel": "극동방송",
-          "publishedAt": "2026-08-11T20:00:33Z",
-          "duration": "PT3M",
-          "media_type": "worship",
+          "publishedAt": "2026-08-21T04:15:31Z",
+          "duration": "PT20M12S",
+          "media_type": "unknown",
           "source": "fallback"
         },
         {
@@ -3941,6 +3932,15 @@
           "channel": "광주극동방송",
           "publishedAt": "2026-03-30T02:45:03Z",
           "duration": "PT2H11M15S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "u_FKpWlYxkc",
+          "title": "주 예수 내 맘에 들어와 + 갈 길을 밝히 보이시니 + 나는 아무것도 아닙니다 + 내 삶은 주의 것 | 오륜교회 수요 오후예배 찬양 브릿지워십 (2026-08-19)",
+          "channel": "오륜교회 oryunchurch",
+          "publishedAt": "2026-08-19T12:15:34Z",
+          "duration": "PT18M34S",
           "media_type": "worship",
           "source": "fallback"
         }
@@ -3954,6 +3954,15 @@
       ],
       "media_default": "worship",
       "videos": [
+        {
+          "videoId": "klsCXhsaGFQ",
+          "title": "[매일성경]으로 하루를 시작하며 듣는 '아침의 말씀' _ 서동원 목사 | 2026/8/20",
+          "channel": "김학중 목사_꿈의교회 미디어교회",
+          "publishedAt": "2026-08-19T21:25:03Z",
+          "duration": "PT9M48S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
         {
           "videoId": "GUNsm37tB9k",
           "title": "[매일성경]으로 하루를 시작하며 듣는 '아침의 말씀' _ 서동원 목사 | 2026/8/19",
@@ -3982,12 +3991,12 @@
           "source": "theme"
         },
         {
-          "videoId": "lCQzEHq0IAg",
-          "title": "2026/08/09(주일) 꿈의교회, 희망의 찬양대_거룩하시다",
-          "channel": "김학중 목사_꿈의교회 미디어교회",
-          "publishedAt": "2026-08-11T02:00:27Z",
-          "duration": "PT4M42S",
-          "media_type": "worship",
+          "videoId": "oiMVN0qvQSg",
+          "title": "2026-08-21 (금) | 큐티인 | 신명기 9:22-29 | 주의 기업이로소이다 | 정영길 목사 | 우리들교회 새벽기도회",
+          "channel": "우리들교회",
+          "publishedAt": "2026-08-20T22:16:47Z",
+          "duration": "PT44M43S",
+          "media_type": "sermon",
           "source": "theme"
         },
         {
@@ -4027,6 +4036,15 @@
           "source": "theme"
         },
         {
+          "videoId": "wv8jmJnckrY",
+          "title": "[생명의 삶 큐티] 이전의 죄를 버리고 새로운 헌신으로 |에스겔 44:1~14| 이기훈 목사 | 260821QT",
+          "channel": "CGN 생명의 삶",
+          "publishedAt": "2026-08-20T15:00:16Z",
+          "duration": "PT11M5S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
           "videoId": "IiGJS0X2QHk",
           "title": "[생명의 삶 큐티] 하나님이 기쁘게 받으시는 예배의 제단 |에스겔 43:13~27| 이기훈 목사 | 260820QT",
           "channel": "CGN 생명의 삶",
@@ -4050,24 +4068,6 @@
           "channel": "CGN 생명의 삶",
           "publishedAt": "2026-08-17T15:00:15Z",
           "duration": "PT9M59S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "B4wkxRvGb5g",
-          "title": "[생명의 삶 큐티] 성소에서 하나님과 누리는 친밀한 교제 |에스겔 41:1~26| 이기훈 목사 | 260817QT",
-          "channel": "CGN 생명의 삶",
-          "publishedAt": "2026-08-16T15:00:08Z",
-          "duration": "PT11M59S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "RUfZrEv6IAY",
-          "title": "[생명의 삶 큐티] 바깥뜰에서 안뜰로, 더 높아지는 거룩함 |에스겔 40:17~49| 이기훈 목사 | 260816QT",
-          "channel": "CGN 생명의 삶",
-          "publishedAt": "2026-08-15T15:00:21Z",
-          "duration": "PT14M6S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -4126,11 +4126,11 @@
           "source": "theme"
         },
         {
-          "videoId": "klsCXhsaGFQ",
-          "title": "[매일성경]으로 하루를 시작하며 듣는 '아침의 말씀' _ 서동원 목사 | 2026/8/20",
+          "videoId": "7HgFeN7-g3Y",
+          "title": "[매일성경]으로 하루를 시작하며 듣는 '아침의 말씀' _ 권준모 목사 | 2026/8/21",
           "channel": "김학중 목사_꿈의교회 미디어교회",
-          "publishedAt": "2026-08-19T21:25:03Z",
-          "duration": "PT9M48S",
+          "publishedAt": "2026-08-20T21:26:36Z",
+          "duration": "PT16M21S",
           "media_type": "sermon",
           "source": "theme"
         }
@@ -4143,6 +4143,15 @@
       ],
       "media_default": "sermon",
       "videos": [
+        {
+          "videoId": "eUb0YcKzhL8",
+          "title": "2026-08-19 (수) | 큐티인 | 신명기 9:1-10 | 앞서가시는 하나님 | 김현정 평원지기 | 우리들교회 새벽기도회",
+          "channel": "우리들교회",
+          "publishedAt": "2026-08-18T21:22:38Z",
+          "duration": "PT45M35S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
         {
           "videoId": "Lup6vhEiIUw",
           "title": "2026-08-18 (화) | 큐티인 | 신명기 8:11-20 | 여호와의 소리를 청종하라 | 류익현 목사 | 우리들교회 새벽기도회",
@@ -4162,11 +4171,11 @@
           "source": "theme"
         },
         {
-          "videoId": "ifI9GjH1n-E",
-          "title": "2026-08-16 (주일) | 큐티인 | 신명기 7:17-26 | 우리 중에 계시는 하나님 | 김오석 목사 | 우리들교회 새벽기도회",
-          "channel": "우리들교회",
-          "publishedAt": "2026-08-15T20:30:25Z",
-          "duration": "PT27M13S",
+          "videoId": "wv8jmJnckrY",
+          "title": "[생명의 삶 큐티] 이전의 죄를 버리고 새로운 헌신으로 |에스겔 44:1~14| 이기훈 목사 | 260821QT",
+          "channel": "CGN 생명의 삶",
+          "publishedAt": "2026-08-20T15:00:16Z",
+          "duration": "PT11M5S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -4207,11 +4216,11 @@
           "source": "theme"
         },
         {
-          "videoId": "RUfZrEv6IAY",
-          "title": "[생명의 삶 큐티] 바깥뜰에서 안뜰로, 더 높아지는 거룩함 |에스겔 40:17~49| 이기훈 목사 | 260816QT",
-          "channel": "CGN 생명의 삶",
-          "publishedAt": "2026-08-15T15:00:21Z",
-          "duration": "PT14M6S",
+          "videoId": "7HgFeN7-g3Y",
+          "title": "[매일성경]으로 하루를 시작하며 듣는 '아침의 말씀' _ 권준모 목사 | 2026/8/21",
+          "channel": "김학중 목사_꿈의교회 미디어교회",
+          "publishedAt": "2026-08-20T21:26:36Z",
+          "duration": "PT16M21S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -4252,11 +4261,11 @@
           "source": "theme"
         },
         {
-          "videoId": "jYZT2lg1ACk",
-          "title": "[매일성경]으로 하루를 시작하며 듣는 '아침의 말씀' _ 이동현 목사 | 2026/8/15",
-          "channel": "김학중 목사_꿈의교회 미디어교회",
-          "publishedAt": "2026-08-14T21:42:11Z",
-          "duration": "PT16M11S",
+          "videoId": "oiMVN0qvQSg",
+          "title": "2026-08-21 (금) | 큐티인 | 신명기 9:22-29 | 주의 기업이로소이다 | 정영길 목사 | 우리들교회 새벽기도회",
+          "channel": "우리들교회",
+          "publishedAt": "2026-08-20T22:16:47Z",
+          "duration": "PT44M43S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -4270,57 +4279,48 @@
           "source": "theme"
         },
         {
-          "videoId": "eUb0YcKzhL8",
-          "title": "2026-08-19 (수) | 큐티인 | 신명기 9:1-10 | 앞서가시는 하나님 | 김현정 평원지기 | 우리들교회 새벽기도회",
-          "channel": "우리들교회",
-          "publishedAt": "2026-08-18T21:22:38Z",
-          "duration": "PT45M35S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "V4a1fnOgR0c",
-          "title": "[아침예배] 탑인가 제단인가? (겔 43:13-27)_베이직교회_조정민 목사_20260820",
-          "channel": "베이직교회",
-          "publishedAt": "2026-08-19T22:13:20Z",
-          "duration": "PT40M46S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "ec9pLj0LHnY",
-          "title": "감당하기 힘든 일을 이제 시작한다면 l 원유경 목사 l 에스라 8장 15-23절ㅣ메신저스",
+          "videoId": "HdcpmdkFdcE",
+          "title": "[Full] 신용불량자가 만두퀸이 되기까지 | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T08:00:06Z",
-          "duration": "PT25M59S",
+          "publishedAt": "2026-08-21T09:13:05Z",
+          "duration": "PT44M46S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
           "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "yJsDBg-P9N8",
-          "title": "[232일차] 예레미야 15~17장 (2026.8.20) | CGN과 함께 일-일 통독(우리말성경)",
+          "videoId": "4sGd4cgiA_g",
+          "title": "[233일차] 예레미야 18~21장 (2026.8.21) | CGN과 함께 일-일 통독(우리말성경)",
           "channel": "CGN 성경통독",
-          "publishedAt": "2026-08-19T20:00:03Z",
-          "duration": "PT15M3S",
+          "publishedAt": "2026-08-20T20:00:27Z",
+          "duration": "PT15M32S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "Epeox_I9oKg",
-          "title": "어머니의 40년 기도가 가난한 막내아들에게 남긴 것 │김경필 대표 │새롭게 하소서",
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
           "channel": "CBSJOY",
-          "publishedAt": "2026-08-20T10:00:18Z",
-          "duration": "PT24M37S",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
+          "source": "fallback"
+        },
+        {
+          "videoId": "jO2QkQrhDlE",
+          "title": "나에게 주신 사명 (서초중앙교회 / 박동식 목사) 행복다이어리",
+          "channel": "CBS설교",
+          "publishedAt": "2026-08-21T09:00:01Z",
+          "duration": "PT5M26S",
+          "media_type": "sermon",
           "source": "fallback"
         }
       ]
@@ -4398,65 +4398,56 @@
           "source": "theme"
         },
         {
-          "videoId": "V4a1fnOgR0c",
-          "title": "[아침예배] 탑인가 제단인가? (겔 43:13-27)_베이직교회_조정민 목사_20260820",
-          "channel": "베이직교회",
-          "publishedAt": "2026-08-19T22:13:20Z",
-          "duration": "PT40M46S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "ec9pLj0LHnY",
-          "title": "감당하기 힘든 일을 이제 시작한다면 l 원유경 목사 l 에스라 8장 15-23절ㅣ메신저스",
+          "videoId": "HdcpmdkFdcE",
+          "title": "[Full] 신용불량자가 만두퀸이 되기까지 | 남미경 대표 | 원더풀우먼 | You're so Wonderful",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-08-20T08:00:06Z",
-          "duration": "PT25M59S",
+          "publishedAt": "2026-08-21T09:13:05Z",
+          "duration": "PT44M46S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "kFeOJtl_bfo",
-          "title": "급진적인 사랑의 원천 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
+          "videoId": "w8PZWs39D-M",
+          "title": "유혹의 초대를 거절하라 (2) | 젠센 프랭클린의 부흥 | Jentezen Franklin's Revival",
           "channel": "CGN",
-          "publishedAt": "2026-08-20T07:00:01Z",
-          "duration": "PT20M13S",
+          "publishedAt": "2026-08-21T07:00:23Z",
+          "duration": "PT17M24S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "yJsDBg-P9N8",
-          "title": "[232일차] 예레미야 15~17장 (2026.8.20) | CGN과 함께 일-일 통독(우리말성경)",
+          "videoId": "4sGd4cgiA_g",
+          "title": "[233일차] 예레미야 18~21장 (2026.8.21) | CGN과 함께 일-일 통독(우리말성경)",
           "channel": "CGN 성경통독",
-          "publishedAt": "2026-08-19T20:00:03Z",
-          "duration": "PT15M3S",
+          "publishedAt": "2026-08-20T20:00:27Z",
+          "duration": "PT15M32S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "Epeox_I9oKg",
-          "title": "어머니의 40년 기도가 가난한 막내아들에게 남긴 것 │김경필 대표 │새롭게 하소서",
+          "videoId": "5LTV9YMd8J4",
+          "title": "강남 아파트라는 우상에 집착하다, 주님 앞에 납작 엎드리게 된 사건 │김경필 대표 │새롭게 하소서",
           "channel": "CBSJOY",
-          "publishedAt": "2026-08-20T10:00:18Z",
-          "duration": "PT24M37S",
+          "publishedAt": "2026-08-21T10:00:38Z",
+          "duration": "PT25M39S",
           "media_type": "unknown",
           "source": "fallback"
         },
         {
-          "videoId": "Y_-KVz-m5vM",
-          "title": "양천교회 김동인 목사(영혼의양식 412회) - 과거로의 시간 여행",
+          "videoId": "jO2QkQrhDlE",
+          "title": "나에게 주신 사명 (서초중앙교회 / 박동식 목사) 행복다이어리",
           "channel": "CBS설교",
-          "publishedAt": "2026-08-20T00:09:14Z",
-          "duration": "PT5M10S",
+          "publishedAt": "2026-08-21T09:00:01Z",
+          "duration": "PT5M26S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "x8u7NoZkPzk",
-          "title": "[성경의 무림고수를 찾아서 특별 세미나_2편] 로마서 1000독, 성경 100독, 누구나 할 수 있습니다! | 조상연 목사님 (레제나하우스)",
+          "videoId": "HGhHsacxUgs",
+          "title": "[성경의 무림고수를 찾아서 특별 세미나_3편] 말씀 한 구절로 사람이 근본적으로 변하는 “하가다의 비밀!” | 신대호 목사님 (인천광명교회)",
           "channel": "극동방송",
-          "publishedAt": "2026-08-14T08:58:06Z",
-          "duration": "PT53M6S",
+          "publishedAt": "2026-08-21T08:58:06Z",
+          "duration": "PT54M10S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -4488,11 +4479,11 @@
           "source": "fallback"
         },
         {
-          "videoId": "VkFB_P1BfKM",
-          "title": "김관성 목사  낮은담교회 새벽만나   2026. 8. 20 “무덤 사이에 앉으신 주” 누가복음 8:26-39",
+          "videoId": "ZaQ6vF7bxUM",
+          "title": "최일관 목사  낮은담교회 새벽만나   2026. 8. 21 “두사람 사이에서” 누가복음 8:40-56",
           "channel": "낮은담교회",
-          "publishedAt": "2026-08-19T21:35:42Z",
-          "duration": "PT38M50S",
+          "publishedAt": "2026-08-20T21:43:09Z",
+          "duration": "PT44M18S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -4502,6 +4493,15 @@
           "channel": "우리들교회",
           "publishedAt": "2026-08-20T00:11:44Z",
           "duration": "PT1H8M57S",
+          "media_type": "sermon",
+          "source": "fallback"
+        },
+        {
+          "videoId": "m-GGSHBibUE",
+          "title": "[아침예배] 제사장 신분 강등 (겔 44:1-14)_베이직교회_조정민 목사_20260821",
+          "channel": "베이직교회",
+          "publishedAt": "2026-08-20T22:11:22Z",
+          "duration": "PT42M6S",
           "media_type": "sermon",
           "source": "fallback"
         }
