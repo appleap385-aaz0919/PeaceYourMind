@@ -1,7 +1,7 @@
 {
-  "version": "2026-08-21T10:01:32Z",
-  "untagged_ratio": 0.732,
-  "kept": 1067,
+  "version": "2026-08-22T09:51:59Z",
+  "untagged_ratio": 0.73,
+  "kept": 1070,
   "themes_empty": [
     "rest",
     "self_control"
@@ -43,12 +43,11 @@
   ],
   "screens_below_target": [
     "anger.unfair",
-    "boredom.novelty",
     "frustration.suppressed"
   ],
   "screens_below_min": [],
-  "total_exposed": 474,
-  "from_fallback": 142,
+  "total_exposed": 476,
+  "from_fallback": 140,
   "channels_zero_yield": [],
   "allowlist_size": 15
 }
