@@ -1,7 +1,7 @@
 {
-  "version": "2026-08-22T09:51:59Z",
-  "untagged_ratio": 0.73,
-  "kept": 1070,
+  "version": "2026-08-23T09:53:19Z",
+  "untagged_ratio": 0.727,
+  "kept": 1071,
   "themes_empty": [
     "rest",
     "self_control"
@@ -27,11 +27,9 @@
   "media_type_gaps": [
     "daily_word",
     "forgiveness",
-    "guidance",
     "justice",
     "lament",
     "new_thing",
-    "presence",
     "quiet_worship",
     "strength"
   ],
@@ -47,7 +45,7 @@
   ],
   "screens_below_min": [],
   "total_exposed": 476,
-  "from_fallback": 140,
+  "from_fallback": 134,
   "channels_zero_yield": [],
   "allowlist_size": 15
 }
