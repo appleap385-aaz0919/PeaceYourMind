@@ -28,6 +28,10 @@
     ⚠ 위기 풀 제외(exclude)는 비워 둔다. 지금 위기 풀이 0건이라 실제와 같지만,
       위기 채널이 승인되면 이 재현은 화면당 최대 20건만큼 낙관적이 된다.
 
+[곡명 분해는 lib/tagging.py에 있다]
+    2026-08-24부터 형식 판별의 동점 처리가 같은 분해를 쓴다. 두 벌을 두면
+    한쪽만 고쳐져 조용히 갈라지므로 lib으로 옮기고 여기서는 부른다.
+
 [곡명을 따로 보는 이유 — --songs]
     찬양 콘티 제목은 곡명을 +·/로 이어붙인 목록이다.
     "성도여 다 함께 + Jehovah + 하나님의 부르심 + 푯대를 향하여 | 오륜교회 …"
@@ -39,7 +43,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -48,10 +51,16 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from build_videos import build_subcategories
-from lib.allowlist import load_allowlist
+from lib.allowlist import Allowlist, load_allowlist
 from lib.filters import Video
 from lib.results import BuildContext, TaggedVideo
-from lib.tagging import WORSHIP, classify_media_type, matches_keyword, tag_themes
+from lib.tagging import (
+    WORSHIP,
+    classify_media_type,
+    matches_keyword,
+    song_names,
+    tag_themes,
+)
 from lib.taxonomy import load_subcategory_ids
 from lib.themes import (
     FALLBACK_HEAVY_RATIO,
@@ -68,27 +77,6 @@ ALLOWLIST_PATH = ROOT / "channel_allowlist.yaml"
 TITLES_PATH = ROOT / "dist" / "titles.json"
 EXIT_OK, EXIT_FAIL = 0, 1
 
-# 콘티 제목에서 곡명을 가르는 구분자.
-#   오륜교회   "성도여 다 함께 + Jehovah + 하나님의 부르심 | 오륜교회 …"
-#   낮은담교회 "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / …"
-# 두 관행이 달라 +와 / 를 모두 구분자로 본다.
-_SONG_SPLIT = re.compile(r"\s*[+/]\s*")
-# 세로줄 뒤는 채널·예배 이름이라 곡명이 아니다.
-_TRAILER = re.compile(r"\s*[|｜]\s*")
-# 조각 앞머리의 대괄호 표지 — "[주일찬양] 휘문채플"의 앞부분.
-_LEADING_TAG = re.compile(r"^\s*[\[(][^\])]{0,24}[\])]\s*")
-# 곡명이 아닌 조각.
-#   날짜      26.08.16 · 2026 · 08
-#   브랜드    휘문채플 · 판교채플 (낮은담교회 예배 장소)
-#   부스러기  "Chord)" 처럼 괄호가 깨진 조각, 한글이 없는 짧은 토막
-# ⚠ 이 목록은 곡명 **통계**만 정리한다. 태깅은 제목 원문으로 하므로
-#   여기서 무엇을 빼든 실제 태깅 결과는 달라지지 않는다.
-_NOT_A_SONG = re.compile(
-    r"^(?:\d{1,4}(?:[.\-/]\d{1,2}){0,2}\(?[^)]{0,4}\)?|"
-    r"[가-힣]{0,3}채플|후렴|[^가-힣]{0,12})$"
-)
-
-
 def load_titles(path: Path) -> list[dict[str, Any]]:
     """제목 덤프를 읽는다. 배치가 남긴 형식을 그대로 쓴다."""
     raw = json.loads(path.read_text(encoding="utf-8"))
@@ -98,26 +86,42 @@ def load_titles(path: Path) -> list[dict[str, Any]]:
     return videos
 
 
-def retag(videos: list[dict[str, Any]], themes: Themes) -> list[dict[str, Any]]:
-    """현재 themes.yaml로 다시 태깅한다. 원본을 고치지 않고 새 목록을 만든다."""
+def retag(
+    videos: list[dict[str, Any]], themes: Themes, allowlist: Allowlist
+) -> list[dict[str, Any]]:
+    """현재 themes.yaml로 주제와 **형식**을 다시 판별한다. 원본은 고치지 않는다.
+
+    형식(media_type)도 다시 계산하는 이유 — 2026-08-24
+        덤프의 mediaType은 **덤프를 뜬 날의 판정**이다. 판별 규칙을 고쳤을 때
+        저장값을 읽으면 도구가 개정을 보여주지 못한다. 실제로 동점 처리를 넣은 날
+        [형식별]이 개정 전 수치를 그대로 찍었다. 주제는 이미 재태깅하고 있었으므로
+        형식만 저장값을 읽고 있던 셈이다.
+
+        ⚠ 채널 content_type이 덤프에 없다. allowlist에서 channelId로 채워야
+          채널 단계(판별 3순위)가 살아나 배치와 같은 결과가 나온다. 채우지 않으면
+          sermon이 730건이 아니라 671건으로 보인다 (실측 2026-08-24).
+    """
+    content_types = {c.channel_id: c.content_type for c in allowlist.channels}
     rows = []
     for v in videos:
-        matches = tag_themes(v.get("title", ""), themes)
+        title = v.get("title", "")
+        matches = tag_themes(title, themes)
+        media = classify_media_type(
+            title,
+            int(v.get("durationSeconds") or 0),
+            content_types.get(v.get("channelId")),
+            themes,
+        )
         rows.append(
             {
                 **v,
                 "retagThemes": [m.theme_id for m in matches],
                 "retagHits": sorted({h for m in matches for h in m.hits}),
+                "retagMedia": media.media_type,
+                "retagMediaReason": media.reason,
             }
         )
     return rows
-
-
-def song_names(title: str) -> list[str]:
-    """콘티 제목을 곡명으로 가른다. 세로줄 뒤(채널·예배명)는 버린다."""
-    head = _TRAILER.split(title)[0]
-    parts = (_LEADING_TAG.sub("", s).strip() for s in _SONG_SPLIT.split(head))
-    return [s for s in parts if s and not _NOT_A_SONG.match(s)]
 
 
 def _rate(n: int, total: int) -> str:
@@ -161,11 +165,21 @@ def report_summary(rows: list[dict[str, Any]], themes: Themes) -> None:
     for ch, (n, t) in sorted(per.items(), key=lambda kv: -kv[1][0]):
         print(f"  {n:5d} {t:5d} {_rate(t, n)}  {ch}")
 
-    print("\n[형식별]")
+    print("\n[형식별]  덤프 -> 재판별")
     for kind in ("sermon", "worship", "unknown"):
-        sub = [r for r in rows if r.get("mediaType") == kind]
+        sub = [r for r in rows if r.get("retagMedia") == kind]
+        was = sum(1 for r in rows if r.get("mediaType") == kind)
         hit = sum(1 for r in sub if r["retagThemes"])
-        print(f"  {kind:8s} {len(sub):5d}건 · 태깅 {hit:4d} ({_rate(hit, len(sub))})")
+        delta = f"  {len(sub) - was:+d}" if len(sub) != was else ""
+        print(
+            f"  {kind:8s} {was:5d} -> {len(sub):5d}{delta:6s}"
+            f" · 태깅 {hit:4d} ({_rate(hit, len(sub))})"
+        )
+    shifted = [r for r in rows if r.get("mediaType") != r.get("retagMedia")]
+    if shifted:
+        by_reason = Counter(r["retagMediaReason"] for r in shifted)
+        detail = " · ".join(f"{k} {n}" for k, n in by_reason.most_common())
+        print(f"  형식이 바뀐 제목 {len(shifted)}건 — 새 판정 근거: {detail}")
 
 
 def report_probe(rows: list[dict[str, Any]], keywords: list[str], limit: int) -> None:
@@ -192,7 +206,7 @@ def report_songs(rows: list[dict[str, Any]], themes: Themes, limit: int) -> None
     """곡명 단위 적중률 — 콘티 제목을 갈라서 센다."""
     songs: Counter[str] = Counter()
     for r in rows:
-        if r.get("mediaType") != WORSHIP:
+        if r.get("retagMedia") != WORSHIP:
             continue
         for s in song_names(r.get("title", "")):
             songs[s] += 1
@@ -357,7 +371,7 @@ def main(argv: list[str] | None = None) -> int:
         report_screens(videos, themes, load_allowlist(args.allowlist), args.day)
         return EXIT_OK
 
-    rows = retag(videos, themes)
+    rows = retag(videos, themes, load_allowlist(args.allowlist))
     if args.probe:
         report_probe(rows, args.probe, args.limit)
     elif args.songs:

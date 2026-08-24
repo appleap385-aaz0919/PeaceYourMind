@@ -55,6 +55,8 @@ CHANNEL_CONTENT_TYPE_MAP = {
 REASON_CHANNEL = "channel"
 REASON_SCRIPTURE = "scripture"
 REASON_TITLE = "title"
+# 동점을 곡명 구조로 갈랐다 — 아래 split_conti 참조.
+REASON_CONTI = "conti"
 REASON_DURATION = "duration"
 REASON_NONE = "none"
 
@@ -272,6 +274,110 @@ def has_scripture_reference(title: str) -> bool:
     return bool(SCRIPTURE_RE.search(title))
 
 
+# --- 콘티 제목 분해 --------------------------------------------------------
+#
+# 찬양 콘티 제목은 곡명을 +·/로 이어붙인 목록이다.
+#   오륜교회   "성도여 다 함께 + Jehovah + 하나님의 부르심 | 오륜교회 금요기도회 찬양"
+#   낮은담교회 "[주일찬양] 휘문채플 / 26.08.16 / 주님 뜻대로 살기로 했네 / …"
+# 두 관행이 달라 +와 / 를 모두 구분자로 본다.
+#
+# ⚠ 이 분해는 **형식 판별(classify_media_type)의 동점 구간에서도 쓴다.**
+#   2026-08-24 이전에는 --songs 통계 전용이었고 "여기서 무엇을 빼든 태깅
+#   결과는 달라지지 않는다"고 적혀 있었다. 그 말은 이제 틀리다 — _NOT_A_SONG를
+#   고치면 동점 판정이 움직인다.
+_SONG_SPLIT = re.compile(r"\s*[+/]\s*")
+# 세로줄 뒤는 채널·예배 이름이라 곡명이 아니다.
+_TRAILER = re.compile(r"\s*[|｜]\s*")
+# 조각 앞머리의 대괄호 표지 — "[주일찬양] 휘문채플"의 앞부분.
+_LEADING_TAG = re.compile(r"^\s*[\[(][^\])]{0,24}[\])]\s*")
+# 곡명이 아닌 조각.
+#   날짜      26.08.16 · 2026 · 08
+#   브랜드    휘문채플 · 판교채플 (낮은담교회 예배 장소)
+#   부스러기  "Chord)" 처럼 괄호가 깨진 조각, 한글이 없는 짧은 토막
+_NOT_A_SONG = re.compile(
+    r"^(?:\d{1,4}(?:[.\-/]\d{1,2}){0,2}\(?[^)]{0,4}\)?|"
+    r"[가-힣]{0,3}채플|후렴|[^가-힣]{0,12})$"
+)
+
+# 콘티로 인정하는 최소 곡명 수. 1이면 콘티가 아니다 — 아래 split_conti 주석 참조.
+CONTI_MIN_SONGS = 2
+
+
+def split_conti(title: str) -> tuple[list[str], str]:
+    """제목을 (곡명, 그 외)로 가른다.
+
+    "그 외"는 앞머리 대괄호 표지 + 곡명이 아닌 조각 + 세로줄 뒤 전부다.
+    형식을 말하는 어휘는 거의 언제나 이쪽에 있다("… | 오륜교회 금요기도회 찬양 헤세드").
+    """
+    segments = _TRAILER.split(title)
+    head, rest = segments[0], list(segments[1:])
+    songs: list[str] = []
+    for chunk in _SONG_SPLIT.split(head):
+        tag = _LEADING_TAG.match(chunk)
+        if tag:
+            rest.append(tag.group(0))
+            chunk = _LEADING_TAG.sub("", chunk)
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        (rest if _NOT_A_SONG.match(chunk) else songs).append(chunk)
+    return songs, " ".join(rest)
+
+
+def song_names(title: str) -> list[str]:
+    """콘티 제목의 곡명만 돌려준다 (retag_titles.py --songs가 쓴다)."""
+    return split_conti(title)[0]
+
+
+def _break_media_tie(title: str, themes: Themes) -> str | None:
+    """제목 어휘가 양쪽 다 걸렸을 때 곡명 구조로 가른다. 못 가르면 None.
+
+    [왜 필요한가 — 2026-08-24 실사용 제보로 열렸다]
+      "말씀 탭에 찬양 영상이 계속 보인다."
+      원인은 동점이었다. 제목에 "찬양"이 명시된 콘티인데도
+
+        곡명 안의 말씀   "주의 약속하신 말씀 위에서" · "말씀하소서" · "말씀이 육신 되어"
+        예배명           "금요기도회" · "저녁예배"
+
+      가 sermon 어휘로 함께 걸려 동점이 됐고, 동점은 제목 증거를 통째로 버리고
+      장절·채널·길이로 내려간다. 그 아래 단계는 전부 sermon 쪽으로 기운다
+      (오륜교회·꿈의교회가 sermon 채널이고, 콘티는 대개 30분을 넘는다).
+      **"제목이 채널보다 앞"이라는 2026-08-19 개정이 동점 구간에서만 무효였다.**
+      실측 1,067건 중 동점 31건, 그중 22건이 찬양 콘티였다.
+
+    [곡명은 형식 증거가 아니다]
+      곡명은 가사 제목이지 "이 영상이 무엇인가"가 아니다. 그래서 곡명 구간을
+      빼고 나머지(앞머리 표지 + 세로줄 뒤)에서만 형식 어휘를 다시 센다.
+
+    [곡명 2개 미만이면 손대지 않는다 — 이 가드가 정탐을 지킨다]
+      실측에서 걸러진 것들:
+        "[LIVE] W워십ㅣ… 저녁예배 _ 냄새는 감출 수 없다ㅣ김학중 목사 설교 잠언 강해"
+        "[사역자설교] 울림 웬즈데이 워십 | 사무엘하 19:31-39 - 최대규 목사"
+        "[생명의 삶 큐티] 찬양의 이유, 영원한 인자하심 |시편 117:1~118:7| 김상수 목사"
+      셋 다 **실제 설교**이고 worship 어휘는 프로그램명·설교 제목에서 왔다.
+      곡명이 1개라 여기서 그대로 통과하고 기존 순서를 탄다.
+
+      ⚠ 곡명 2개 이상이라고 콘티인 것은 아니다. 우리들교회 사역자설교 제목은
+        "[사역자설교] 제목 / 마가복음 14:43-52 - 임대선 목사 / 정의학 초원지기"
+        처럼 /를 메타데이터 구분자로 쓴다 (실측 18건). 그래서 곡명 수만으로
+        worship을 주지 않고, **나머지 구간에 worship 어휘가 남을 때만** 준다.
+        위 18건은 나머지 구간에 sermon("설교")만 남아 sermon으로 확정된다.
+    """
+    songs, rest = split_conti(title)
+    if len(songs) < CONTI_MIN_SONGS:
+        return None
+    hit_ids = [
+        media.id
+        for media in themes.media_types
+        if matched_keywords(rest, media.title_keywords)
+    ]
+    if len(hit_ids) == 1:
+        return hit_ids[0]
+    # 나머지 구간에서도 동점이면(예: "금요기도회 찬양") 곡명 나열 구조가 증거다.
+    # 아무것도 안 남았을 때는 판정하지 않는다 — 근거 없이 한쪽을 주지 않는다.
+    return WORSHIP if WORSHIP in hit_ids else None
+
+
 def classify_media_type(
     title: str,
     duration_seconds: int,
@@ -281,6 +387,7 @@ def classify_media_type(
     """말씀/찬양을 가린다 (themes.yaml 판별 우선순위).
 
         1. 제목 어휘 — **한쪽만** 걸릴 때 확정한다
+        1.5 양쪽 다 걸리면(동점) 곡명 구조로 한 번 더 가른다 — _break_media_tie
         2. 본문 장절 — 있으면 sermon
         3. 채널 content_type — sermon·worship·devotion이면 그대로
         4. 길이 — 30분↑ sermon / 10분↓ worship
@@ -305,6 +412,14 @@ def classify_media_type(
       찬양 콘티의 **곡명이 시편**인 경우다. 장절을 먼저 보면 설교가 된다.
       제목에 형식 어휘("찬양")가 명시된 이상 그것이 우선한다.
 
+    [2026-08-24 추가 — 동점 구간에서 위 개정이 무효였다]
+      "제목이 채널보다 앞"은 **제목이 한쪽만 말할 때만** 적용됐다. 양쪽이 걸리면
+      제목 증거를 통째로 버리고 장절·채널·길이로 내려갔고, 그 아래는 전부
+      sermon 쪽으로 기운다. 실사용 제보("말씀 탭에 찬양 영상이 계속 보인다")로
+      드러났고, 실측 1,067건 중 동점 31건 가운데 22건이 찬양 콘티였다.
+      19건은 unknown이라 **양쪽 토글에 노출**되고 있었다.
+      근거는 _break_media_tie에 적었다.
+
     unknown은 버리는 값이 아니다. 앱은 unknown을 **양쪽 토글 모두에 노출한다**
     (PLAN.md 3.4) — 판별 실패로 영상이 사라지는 것보다 낫고, unknown 비율이
     사전을 고칠 근거가 된다. 주제 태깅의 untagged와는 성격이 다르다.
@@ -316,6 +431,11 @@ def classify_media_type(
     ]
     if len(hit_ids) == 1:
         return MediaVerdict(hit_ids[0], REASON_TITLE)
+
+    if len(hit_ids) > 1:
+        broken = _break_media_tie(title, themes)
+        if broken:
+            return MediaVerdict(broken, REASON_CONTI)
 
     if themes.scripture_reference_signal and has_scripture_reference(title):
         return MediaVerdict(SERMON, REASON_SCRIPTURE)
