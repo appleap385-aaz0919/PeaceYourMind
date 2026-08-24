@@ -43,7 +43,7 @@ const OPERATOR = "";
 // 방침 8절과 **같은 주소**여야 한다. 두 곳이 갈리면 어느 쪽이 맞는지 알 수 없다.
 // 방침은 새 탭으로 열리는 외부 페이지라, 앱 안에서 문의할 곳을 찾는 사람이
 // 방침을 열어 8절까지 내려가야 하는 상태를 만들지 않는다.
-const CONTACT = "aaz0919@gmail.com";
+const CONTACT = "appleap385@gmail.com";
 // 개인정보처리방침 — app/public/privacy/index.html 이 이 주소로 배포된다.
 // 앱과 같은 오리진의 정적 페이지라 앱을 설치하지 않아도 열린다(스토어 심사 요건).
 const PRIVACY_URL = "/PeaceYourMind/privacy/";

@@ -232,6 +232,47 @@ test("방침과 앱이 같은 문의처를 말한다", () => {
   );
 });
 
+/* --- 이메일 노출 — **하나만, 그리고 그 하나여야 한다** (2026-08-24) ---------
+ *
+ * 2.50절이 "배포본 이메일 0건"을 손으로 확인했다. 그 전제가 **의도적으로
+ * 바뀌었다** — 문의처는 스토어 심사 요건이라 넣어야 하고, 넣는 순간 공개된다.
+ *
+ * 그래서 "0건"을 "확정된 한 주소만"으로 바꿔 **상시 게이트로 만든다.**
+ * 손으로 한 번 훑는 것과 매번 검사하는 것은 다르다 — 다음에 다른 주소가
+ * (회사 이메일이든 실수든) 섞여 들어오면 여기서 걸린다.
+ *
+ * ⚠ 주소를 바꾸려면 About.jsx의 CONTACT 하나만 고치면 된다.
+ *   이 검사는 그 값을 읽어 기준으로 삼는다 — 여기에 주소를 적어 두지 않는다.
+ */
+const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+
+test("앱과 방침에 노출되는 이메일은 CONTACT 하나뿐이다", () => {
+  const contact = (aboutSrc.match(/const CONTACT = "([^"]*)"/) || [])[1];
+  assert.ok(contact, "About.jsx의 CONTACT가 비어 있다");
+
+  // 주석은 걷어낸 상태다 — 검사 대상은 사용자에게 닿는 문자열이지
+  // 그것을 설명한 문장이 아니다(helpers.js 머리말).
+  const surfaces = [
+    ["About.jsx", aboutSrc],
+    ["개인정보처리방침", privacyHtml],
+    ["VerseCard.jsx", verseCardSrc],
+    ["CrisisScreen.jsx", crisisSrc],
+    ["ChapterReader.jsx", readerSrc],
+    ["App.jsx", appSrc],
+  ];
+
+  for (const [name, source] of surfaces) {
+    for (const found of source.match(EMAIL) || []) {
+      assert.equal(
+        found,
+        contact,
+        `${name}에 CONTACT가 아닌 주소가 있다: ${found}. 노출되는 이메일은 ` +
+          `확정된 문의처 하나여야 한다 (HANDOFF 2.50 ① · 2.56)`,
+      );
+    }
+  }
+});
+
 test("구절 카드·위기 화면·이어서 읽기는 출처를 그리지 않는다 (2026-08-19 정책)", () => {
   // 되돌리는 것 자체는 판단의 문제지만, **조용히** 되돌아가지는 않게 한다.
   // 이 검사가 깨지면 위 정책 주석을 함께 고쳤는지 확인할 것.
