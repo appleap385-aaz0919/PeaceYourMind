@@ -253,6 +253,15 @@ def build_diagnostics(
             y.name for y in ctx.yields.values() if y.collected and y.kept == 0
         ),
         "allowlist_size": ctx.allowlist.size,
+        # 주제별 풀 크기 — 2026-08-24 추가.
+        #   경보 목록(themes_low_yield)은 "얇다"만 말하고 **얼마나** 얇은지는
+        #   버렸다. 3차 채널 발굴은 그 수치를 근거로 목표를 정하는데, 배포본에
+        #   남지 않아 지난 배치의 풀 크기를 되찾을 수 없었다(2026-08-24 확인:
+        #   run 8 진단에 quiet_worship이 경보로만 있고 건수가 없다).
+        #   로컬 재현(retag_titles.py)은 덤프 코퍼스라 배포본과 다르다(2.42절).
+        #   그래서 배치가 직접 남긴다 — 주제 24개뿐이라 파일이 커지지도 않는다.
+        "theme_pool": {t.id: t.pool_size for t in themes},
+        "theme_picked": {t.id: len(t.picked) for t in themes},
     }
 
 
