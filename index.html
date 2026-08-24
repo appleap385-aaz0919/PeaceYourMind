@@ -21,6 +21,15 @@
       sizes="192x192"
       href="/PeaceYourMind/icons/icon-192.png"
     />
+    <!-- AdSense — 소유권 확인과 광고 게재. client는 계정 단위 고정값이고
+         slot(광고 단위)은 승인 후 발급되어 app/src/lib/ads.js로 들어간다.
+         ⚠ 이 태그가 <head>에 있어야 구글 크롤러가 소유권을 확인한다.
+            slot이 비어 있어도 이 태그는 남는다 — 확인용이기 때문이다. -->
+    <script
+      async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5074778849873789"
+      crossorigin="anonymous"
+    ></script>
     <!-- 폰트는 preconnect로 미리 연결해 두되, 실패해도 시스템 폰트로 읽힌다 -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -32,7 +41,7 @@
       html, body, #root { height: 100%; margin: 0; }
       body { background: #0B1216; }
     </style>
-    <script type="module" crossorigin src="/PeaceYourMind/assets/index-wlVZ7NXD.js"></script>
+    <script type="module" crossorigin src="/PeaceYourMind/assets/index-CP57JQtY.js"></script>
   </head>
   <body>
     <div id="root"></div>
