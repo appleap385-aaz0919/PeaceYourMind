@@ -105,6 +105,38 @@ export async function clearAllLocalData() {
   }, false);
 }
 
+/**
+ * 브라우저 캐시에 남은 **열람 흔적**을 지운다.
+ *
+ * [무엇을 지우고 무엇을 남기는가 — 흔적인가 성능인가로 갈랐다 (2026-08-24)]
+ *   pym-thumbs-*  지운다   어떤 영상을 봤는지가 남는다 (최근 200개)
+ *   pym-krv-*     지운다   어떤 장을 열었는지가 남는다.
+ *                          성경 본문 자체는 개인정보가 아니지만,
+ *                          **"내가 무엇을 읽었는지"는 흔적이다**
+ *   pym-shell-*   남긴다   앱 화면 파일이다. 누가 써도 같고 흔적이 아니다.
+ *                          지우면 오프라인에서 앱이 열리지 않게 된다 —
+ *                          지울 이유가 없는데 잃는 것만 있다
+ *
+ * ⚠ 캐시는 지워도 **다시 열면 다시 받는다.** 흔적을 지우는 것이지 기능을 끄는 것이
+ *   아니다. 그래서 되돌릴 수 없는 것은 IndexedDB 쪽(방문 기록·회전 상태)뿐이다.
+ */
+const TRACE_CACHES = ["pym-thumbs-", "pym-krv-"];
+
+export async function clearBrowsingTraces() {
+  if (typeof caches === "undefined") return false;
+  try {
+    const names = await caches.keys();
+    await Promise.all(
+      names
+        .filter((name) => TRACE_CACHES.some((prefix) => name.startsWith(prefix)))
+        .map((name) => caches.delete(name)),
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const KEYS = {
   MEDIA_TYPE: "media_type", // [말씀]/[찬양] 토글의 마지막 선택 (세분류별)
   VERSE_INDEXES: "verse_indexes", // 직전에 보여준 구절 (구절 회전용)

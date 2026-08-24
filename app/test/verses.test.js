@@ -121,6 +121,42 @@ test("이 앱에 대해 — 영상을 어떻게 고르는지는 여전히 말한
   );
 });
 
+/* --- 기록 삭제 — 문서가 약속한 것을 코드가 지키는가 (2026-08-24) -------------
+ *
+ * taxonomy.yaml ui.revisit.privacy_note가 "설정에 기록 삭제 버튼을 둔다"고
+ * 약속하고 db.js에 clearAllLocalData()가 있는데 **호출부가 없었다.**
+ * 문서가 약속한 것을 코드가 안 지키는 상태였고, 개인정보처리방침이 그 문장을
+ * 쓸 수 없었다. 아래 검사가 그 자리다.
+ */
+test("이 앱에 대해 — 기록 삭제 버튼이 실제로 연결돼 있다", () => {
+  assert.ok(aboutSrc.includes("clearAllLocalData"), "기록 삭제가 호출되지 않는다");
+  assert.ok(
+    aboutSrc.includes("clearBrowsingTraces"),
+    "열람 흔적(썸네일·장 본문 캐시)이 함께 지워지지 않는다",
+  );
+  assert.ok(aboutSrc.includes("<EraseRecords />"), "버튼이 화면에 놓이지 않았다");
+});
+
+test("기록 삭제는 한 번 더 묻는다 (되돌릴 수 없다)", () => {
+  // 한 번에 지우면 안 되고, 그렇다고 window.confirm은 이 앱의 톤이 아니다.
+  assert.ok(aboutSrc.includes('"asking"'), "확인 단계가 없다");
+  assert.ok(aboutSrc.includes("그만두기"), "물러설 길이 없다");
+  assert.ok(
+    !aboutSrc.includes("window.confirm") && !aboutSrc.includes("alert("),
+    "브라우저 경고창을 쓰고 있다 — 시스템 목소리는 이 화면의 톤이 아니다",
+  );
+});
+
+test("앱 셸 캐시는 지우지 않는다 (흔적이 아니라 성능이다)", () => {
+  const dbSrc = readSource("lib", "db.js");
+  assert.ok(dbSrc.includes("pym-thumbs-"), "썸네일 캐시가 삭제 대상에서 빠졌다");
+  assert.ok(dbSrc.includes("pym-krv-"), "장 본문 캐시가 삭제 대상에서 빠졌다");
+  assert.ok(
+    !dbSrc.includes('"pym-shell-'),
+    "앱 셸까지 지우면 오프라인에서 앱이 열리지 않는다 — 흔적도 아니다",
+  );
+});
+
 test("구절 카드·위기 화면·이어서 읽기는 출처를 그리지 않는다 (2026-08-19 정책)", () => {
   // 되돌리는 것 자체는 판단의 문제지만, **조용히** 되돌아가지는 않게 한다.
   // 이 검사가 깨지면 위 정책 주석을 함께 고쳤는지 확인할 것.

@@ -26,6 +26,9 @@
  *   단정형("아닙니다", "이용해 주세요")을 쓴다.
  */
 
+import { useState } from "react";
+
+import { clearAllLocalData, clearBrowsingTraces } from "../lib/db.js";
 import { T, SERIF } from "../theme.js";
 
 // vite.config.js가 package.json에서 주입한다. 손으로 적지 않는다.
@@ -85,6 +88,7 @@ export function About({ attribution, onBack }) {
           방문 기록과 마지막으로 고른 형식만 이 기기에 남습니다.
           개인정보를 수집하지 않으며 어떤 것도 서버로 보내지 않습니다.
         </p>
+        <EraseRecords />
         {PRIVACY_URL ? (
           <p style={styles.body}>
             <a href={PRIVACY_URL} target="_blank" rel="noreferrer" style={styles.link}>
@@ -129,6 +133,52 @@ export function About({ attribution, onBack }) {
   );
 }
 
+/**
+ * 기록 삭제 — taxonomy.yaml ui.revisit.privacy_note가 약속한 버튼이다.
+ *
+ * [확인 단계를 두되 경고창은 쓰지 않는다 (2026-08-24)]
+ *   되돌릴 수 없으므로 한 번에 지우면 안 된다. 그렇다고 window.confirm은
+ *   이 앱의 톤과 맞지 않는다 — 브라우저 기본 대화상자는 시스템 목소리이고,
+ *   이 화면은 조용히 말하는 자리다. **버튼 자신이 한 번 더 묻는다.**
+ *     1) "기록 지우기"        → 누르면
+ *     2) "정말 지울까요? 예"  → 누르면 지운다
+ *     3) "지웠어요"           → 상태만 바뀐다. 화면을 가로막지 않는다
+ *   물러설 길을 함께 둔다 — 2)에서 "아니요"가 옆에 있다.
+ */
+function EraseRecords() {
+  const [step, setStep] = useState("idle"); // idle → asking → done
+
+  const erase = async () => {
+    await clearAllLocalData();
+    await clearBrowsingTraces();
+    setStep("done");
+  };
+
+  if (step === "done") {
+    return <p style={styles.note}>지웠어요. 다음에 오시면 처음처럼 맞이할게요.</p>;
+  }
+
+  if (step === "asking") {
+    return (
+      <p style={styles.note}>
+        방문 기록과 받아 둔 목록이 사라집니다. 되돌릴 수 없어요.{" "}
+        <button type="button" onClick={erase} style={styles.eraseYes}>
+          지울게요
+        </button>
+        <button type="button" onClick={() => setStep("idle")} style={styles.eraseNo}>
+          그만두기
+        </button>
+      </p>
+    );
+  }
+
+  return (
+    <button type="button" onClick={() => setStep("asking")} style={styles.erase}>
+      이 기기에서 기록 지우기
+    </button>
+  );
+}
+
 const styles = {
   title: { fontFamily: SERIF, fontSize: 19, fontWeight: 400, margin: "6px 0 24px", color: T.mist },
   block: { marginBottom: 26 },
@@ -143,6 +193,37 @@ const styles = {
     border: "none",
     color: "#ffffff40",
     fontSize: 12.5,
+    cursor: "pointer",
+  },
+  // 기록 삭제 — 되돌릴 수 없으므로 눈에 띄되 앞으로 나서지는 않는다.
+  // 본문(note)과 같은 크기로 두어 "설정 항목"이 아니라 "문장 옆의 행동"으로 읽히게 한다.
+  erase: {
+    background: "none",
+    border: "none",
+    padding: 0,
+    color: T.muted,
+    fontSize: 13,
+    textDecoration: "underline",
+    textUnderlineOffset: 3,
+    cursor: "pointer",
+  },
+  eraseYes: {
+    background: "none",
+    border: "none",
+    padding: 0,
+    marginRight: 12,
+    color: T.jade,
+    fontSize: 13,
+    textDecoration: "underline",
+    textUnderlineOffset: 3,
+    cursor: "pointer",
+  },
+  eraseNo: {
+    background: "none",
+    border: "none",
+    padding: 0,
+    color: T.muted,
+    fontSize: 13,
     cursor: "pointer",
   },
 };
