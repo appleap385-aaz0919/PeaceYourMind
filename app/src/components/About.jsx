@@ -128,14 +128,21 @@ export function About({ attribution, onBack }) {
           방문 기록과 마지막으로 고른 형식만 이 기기에 남습니다.
           개인정보를 수집하지 않으며 어떤 것도 서버로 보내지 않습니다.
         </p>
-        <EraseRecords />
-        {PRIVACY_URL ? (
-          <p style={styles.body}>
-            <a href={PRIVACY_URL} target="_blank" rel="noreferrer" style={styles.link}>
+        {/* 지우기와 방침을 한 행에 둔다 — 둘 다 "내 기록을 어떻게 하는가"다.
+            세로로 쌓으면 방침이 별개 항목처럼 읽힌다 (styles.recordRow 주석). */}
+        <div style={styles.recordRow}>
+          <EraseRecords />
+          {PRIVACY_URL ? (
+            <a
+              href={PRIVACY_URL}
+              target="_blank"
+              rel="noreferrer"
+              style={styles.privacyInline}
+            >
               개인정보처리방침
             </a>
-          </p>
-        ) : null}
+          ) : null}
+        </div>
       </section>
 
       <section style={styles.block}>
@@ -154,10 +161,10 @@ export function About({ attribution, onBack }) {
       {OPERATOR || CONTACT || VERSION ? (
         <section style={styles.block}>
           <h2 style={styles.heading}>만든 곳</h2>
-          {OPERATOR ? <p style={styles.body}>{OPERATOR}</p> : null}
+          {OPERATOR ? <p style={styles.operator}>{OPERATOR}</p> : null}
           {CONTACT ? (
-            <p style={styles.body}>
-              <a href={`mailto:${CONTACT}`} style={styles.link}>
+            <p style={styles.contactLine}>
+              <a href={`mailto:${CONTACT}`} style={styles.contactLink}>
                 {CONTACT}
               </a>
             </p>
@@ -195,12 +202,12 @@ function EraseRecords() {
   };
 
   if (step === "done") {
-    return <p style={styles.note}>지웠어요. 다음에 오시면 처음처럼 맞이할게요.</p>;
+    return <p style={styles.eraseLine}>지웠어요. 다음에 오시면 처음처럼 맞이할게요.</p>;
   }
 
   if (step === "asking") {
     return (
-      <p style={styles.note}>
+      <p style={styles.eraseLine}>
         방문 기록과 받아 둔 목록이 사라집니다. 되돌릴 수 없어요.{" "}
         <button type="button" onClick={erase} style={styles.eraseYes}>
           지울게요
@@ -226,6 +233,28 @@ const styles = {
   body: { margin: "0 0 4px", fontSize: 14, color: T.mist, lineHeight: 1.7 },
   note: { margin: "0 0 8px", fontSize: 13, color: T.muted, lineHeight: 1.8, wordBreak: "keep-all" },
   link: { color: T.jade, textDecoration: "none", borderBottom: `1px solid ${T.jade}59` },
+  /**
+   * 운영자 줄 — 바로 아래 문의처(link)와 **같은 계열로 맞춘다** (2026-08-24).
+   * body와 크기·서체·행간이 같고 색만 jade다. 둘은 "만든 곳"이라는 한 묶음이라
+   * 색이 갈리면 운영자 줄만 다른 종류의 정보처럼 읽혔다.
+   * ⚠ 밑줄은 주지 않는다 — 링크가 아니다. 색은 계열을 맞추는 것이고
+   *   누를 수 있다는 신호는 밑줄이 낸다.
+   */
+  operator: { margin: "0 0 4px", fontSize: 14, color: T.jade, lineHeight: 1.7 },
+  /**
+   * 문의처 — **"이 기기에서 기록 지우기" 버튼과 글자를 똑같이 맞춘다**
+   * (2026-08-24 사용자 지시). erase와 크기·서체·색·밑줄 처리가 전부 같다.
+   * ⚠ styles.link(jade + borderBottom)를 쓰지 않는다. 이 자리만 예외이므로
+   *   link를 고치지 말고 이 스타일을 고칠 것 — link는 방침·본문 링크가 쓴다.
+   */
+  contactLine: { margin: "0 0 4px", fontSize: 13, lineHeight: 1.8 },
+  contactLink: {
+    fontSize: 13,
+    fontFamily: "inherit",
+    color: T.muted,
+    textDecoration: "underline",
+    textUnderlineOffset: 3,
+  },
   back: {
     display: "block",
     margin: "20px auto 0",
@@ -233,6 +262,11 @@ const styles = {
     border: "none",
     color: "#ffffff40",
     fontSize: 12.5,
+    // ⚠ <button>은 font-family를 상속하지 않는다 — 지정하지 않으면 브라우저
+    //   기본 버튼 폰트로 그려져 같은 화면의 글자들과 서체가 갈린다.
+    //   이 파일의 버튼 4개가 전부 빠져 있었다(2026-08-24 수정).
+    //   다른 컴포넌트는 전부 지정돼 있다 — ResultTabs·VerseCard·ChapterReader.
+    fontFamily: "inherit",
     cursor: "pointer",
   },
   // 기록 삭제 — 되돌릴 수 없으므로 눈에 띄되 앞으로 나서지는 않는다.
@@ -243,6 +277,7 @@ const styles = {
     padding: 0,
     color: T.muted,
     fontSize: 13,
+    fontFamily: "inherit",
     textDecoration: "underline",
     textUnderlineOffset: 3,
     cursor: "pointer",
@@ -254,6 +289,7 @@ const styles = {
     marginRight: 12,
     color: T.jade,
     fontSize: 13,
+    fontFamily: "inherit",
     textDecoration: "underline",
     textUnderlineOffset: 3,
     cursor: "pointer",
@@ -264,6 +300,54 @@ const styles = {
     padding: 0,
     color: T.muted,
     fontSize: 13,
+    fontFamily: "inherit",
     cursor: "pointer",
+  },
+
+  /**
+   * 기록 지우기 + 개인정보처리방침을 **한 행에** 둔다 (2026-08-24).
+   *
+   * 둘은 같은 성격이다 — "내 기록을 어떻게 하는가". 세로로 쌓으면 방침이
+   * 별개 항목처럼 읽히는데, 실제로는 지우기 버튼과 짝이다.
+   *
+   * ⚠ nowrap이다. 두 줄로 떨어지지 않게 한다 — 360px에서 실측 폭은
+   *   버튼 약 145px + gap 14 + 링크 약 104px = 263px로 콘텐츠 폭(320) 안에 든다.
+   * ⚠ 확인 단계에서는 왼쪽이 긴 문장이 된다. minWidth:0을 주어 그 문장이
+   *   **안에서 접히게** 하고, 링크는 flexShrink:0으로 절대 깨지지 않게 한다.
+   */
+  /**
+   * 확인·완료 문장 — recordRow 안의 왼쪽 칸이다.
+   * ⚠ minWidth:0이 없으면 flex 항목이 min-content 아래로 줄지 않아
+   *   긴 문장이 오른쪽 링크를 밀어낸다. 아래 여백은 행이 대신 잡는다.
+   */
+  eraseLine: {
+    margin: 0,
+    fontSize: 13,
+    color: T.muted,
+    lineHeight: 1.8,
+    wordBreak: "keep-all",
+    minWidth: 0,
+  },
+  recordRow: {
+    display: "flex",
+    alignItems: "baseline",
+    flexWrap: "nowrap",
+    gap: 14,
+    minWidth: 0,
+  },
+  /**
+   * 방침 링크 — 옆의 지우기 버튼과 **글자를 똑같이** 맞춘다.
+   * 크기·서체·밑줄 처리가 같고 색만 다르다. 색은 남긴다 —
+   * jade는 이 앱에서 "앱 밖으로 나간다"는 신호이고(styles.link), 방침은
+   * 실제로 새 탭에서 열린다.
+   */
+  privacyInline: {
+    fontSize: 13,
+    fontFamily: "inherit",
+    color: T.jade,
+    textDecoration: "underline",
+    textUnderlineOffset: 3,
+    whiteSpace: "nowrap",
+    flexShrink: 0,
   },
 };

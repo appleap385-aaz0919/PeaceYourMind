@@ -272,6 +272,39 @@ test("About 광고 문단은 광고가 실제로 나갈 때만 그려진다", ()
   );
 });
 
+/* --- About 버튼 서체 — <button>은 font-family를 상속하지 않는다 (2026-08-24) --
+ *
+ * 사용자가 "개인정보처리방침 버튼이 폰트가 다르다"고 짚어 찾은 결함이다.
+ * 원인은 링크가 아니라 **버튼** 쪽이었다 — 이 파일의 버튼 4개에만
+ * fontFamily가 없어 브라우저 기본 버튼 서체로 그려지고 있었다.
+ * 다른 컴포넌트(ResultTabs·VerseCard·ChapterReader·App)는 전부 지정돼 있다.
+ *
+ * ⚠ 증상이 "왜 얘만 글꼴이 다르지"로 나타나고 CSS만 봐서는 원인이 안 보인다
+ *   — 지정하지 않은 것이 원인이기 때문이다. 그래서 검사로 못 박는다.
+ */
+test("About의 버튼은 전부 페이지 서체를 물려받는다", () => {
+  const buttonStyles = ["back", "erase", "eraseYes", "eraseNo"];
+  for (const name of buttonStyles) {
+    const block = (aboutSrc.match(new RegExp(`${name}: \\{[^}]*\\}`, "s")) || [])[0];
+    assert.ok(block, `styles.${name}을 찾지 못했다`);
+    assert.ok(
+      block.includes('fontFamily: "inherit"'),
+      `styles.${name}에 fontFamily가 없다 — <button>은 상속하지 않으므로 ` +
+        "브라우저 기본 서체로 그려져 같은 화면의 글자와 갈린다",
+    );
+  }
+});
+
+test("기록 지우기와 방침 링크가 같은 행에 있다 (두 줄로 떨어지지 않는다)", () => {
+  const row = (aboutSrc.match(/recordRow: \{[^}]*\}/s) || [])[0];
+  assert.ok(row, "recordRow 스타일이 없다");
+  assert.ok(row.includes('flexWrap: "nowrap"'), "nowrap이 아니다 — 두 줄로 떨어질 수 있다");
+  assert.ok(/display: "flex"/.test(row), "flex 행이 아니다");
+  const link = (aboutSrc.match(/privacyInline: \{[^}]*\}/s) || [])[0];
+  assert.ok(link.includes("flexShrink: 0"), "링크가 줄어들 수 있다");
+  assert.ok(link.includes('whiteSpace: "nowrap"'), "링크가 중간에서 접힐 수 있다");
+});
+
 test("만든 곳 — 운영자와 문의처가 둘 다 채워져 있다 (출시 준비 5번)", () => {
   // 빈 문자열이면 그 줄이 안 그려진다. 즉 **조용히 사라진다** —
   // 스토어 심사에서 걸리는 항목이 소리 없이 빠지는 것을 막는다.
