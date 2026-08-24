@@ -185,6 +185,61 @@ QUERY_SETS: dict[str, tuple[tuple[str, str], ...]] = {
         ),
         ("워십 콘서트 실황", "찬양 사역 단체. 1차 '찬양 예배 실황'과 어휘를 분리해 중복을 줄인다"),
     ),
+    # 3차 (2026-08-24) — ★ 앞의 둘과 갈래가 다르다. **주제가 검색어를 정했다.**
+    #
+    # [왜 기관형·교회형이 아니라 주제형인가]
+    #   1·2차는 "좋은 채널"을 찾았고 승인 15개를 얻었다. 그런데 실 배치에서
+    #   비는 자리는 채널의 품질이 아니라 **주제의 공급**이었다.
+    #     self_control  풀 0 — 후보 어휘 13종을 전부 쟀는데 0건(2.28절)
+    #     rest          풀 0 — [3]에서 `안식` 오탐(안식일)이 빠지며 0이 됐다
+    #     quiet_worship 하한 15 미달 · 공급 채널이 2개뿐
+    #     bible_story   풀 4 — 키워드로는 여기까지가 한계다
+    #   그래서 3차는 "어떤 채널인가"가 아니라 **"무엇을 올리는 채널인가"**로 짠다.
+    #
+    # ⚠ 발굴 검색어와 태깅 사전을 섞지 않는다 (3절 10번).
+    #   태깅은 "잔잔한 찬양"으로 잡지만 채널 제목 관행은 "찬양대"·"Instrumental"이다.
+    #   검색어는 **채널이 실제로 쓰는 말**이어야 한다.
+    #
+    # ⚠ self_control에 `다스리`를 쓰지 않는다. 실측에서 걸린 4건이 전부 방향이
+    #   반대였다 — "하나님이 다스리십니다"는 통치이지 내 마음을 다스리는 것이 아니다.
+    "theme": (
+        (
+            "분노 조절 설교",
+            "self_control 정면. 화·미움을 **사람의 문제**로 다루는 설교를 노린다",
+        ),
+        (
+            "기독교 상담",
+            "self_control·rest 공통 진입점. 상담·심리 결이 있는 사역 채널이 "
+            "감정을 감정으로 다룬다 (3절 10번 1순위 메모)",
+        ),
+        (
+            "쉼과 회복 말씀",
+            "rest. `안식`을 쓰지 않는다 — 개역한글의 안식은 율법 규례 용어라 "
+            "검색에서도 안식일 콘텐츠를 데려온다 (2.41절 calm.ease 근거와 같은 이유)",
+        ),
+        (
+            "찬양대 찬양",
+            "quiet_worship. ★ 한국 개신교는 압도적으로 '찬양대'를 쓴다 — "
+            "'성가대'는 가톨릭 쪽이거나 오래된 표현이다. 실측이 결정적이었다: "
+            "1,067건에서 찬양대 6건(꿈의교회, 희망의 찬양대) · 성가대 0건. "
+            "정기 업로드가 있는 찬양대/합창단 채널을 노린다",
+        ),
+        (
+            "찬양 피아노 연주",
+            "quiet_worship. Instrumental 갈래. 1·2차의 '찬양 예배 실황'·"
+            "'워십 콘서트 실황'과 어휘가 겹치지 않게 연주를 명시한다",
+        ),
+        (
+            "성경 인물 강해",
+            "bible_story. 인물·배경 강해 전문. 1차 '성경 강해'보다 좁혀 "
+            "본문 주해가 아니라 이야기 결을 노린다",
+        ),
+        (
+            "C채널",
+            "2차에서 6종 제한 때문에 뺀 기관형 잔여 후보 (3차 발굴 메모). "
+            "⚠ 브랜드명 검색이므로 사칭 채널 위험이 있다 — 기준 1a로 홈페이지 확인",
+        ),
+    ),
 }
 DEFAULT_QUERY_SET = "church"
 
@@ -209,6 +264,42 @@ SIGNAL_TERMS: dict[str, tuple[str, ...]] = {
     "신비주의": ("예언", "계시받", "영분별"),
 }
 
+# =============================================================================
+# 위기 후보 어휘 — ★ 위의 SIGNAL_TERMS와 **방향이 반대다**
+# =============================================================================
+#
+# SIGNAL_TERMS는 "이건 좀 봐야 한다"는 주의 표시다. 아래는 반대로
+# **"이 채널은 위기 화면 후보일 수 있다"**는 표시다. 한 딕셔너리에 섞으면
+# 시트의 `성격 신호` 열에서 둘이 같은 얼굴로 나와 의미가 뒤집힌다.
+#
+# [왜 발굴 때 함께 표시하나 — 2026-08-24]
+#   승인 15개 전부 crisis_eligible: false다. 위기 화면에 영상이 0건이고,
+#   그건 결함이 아니라 설계대로지만(3절 9번) 채널을 **따로 찾으러 나가는 일**이
+#   과제로 남아 있었다. 3차 발굴의 "기독교 상담" 검색어가 어차피 그 갈래를
+#   데려오므로, 지나가는 김에 표시해 둔다. 나중에 같은 검색을 다시 돌리지
+#   않아도 되게 하는 것이 목적이다.
+#
+# ⚠ 표시일 뿐 승인이 아니다. crisis_eligible 검토는 **일반 승인보다 엄격하다**
+#   (channel_allowlist.yaml 머리말 · PLAN.md 7절). 여기 걸렸다는 것은
+#   "후보 목록에 올려 두라"는 뜻이지 "기준을 통과했다"가 아니다.
+#
+# ⚠ 오탐이 많을 수밖에 없다. "불안"·"우울"은 일반 설교 제목에도 흔하다.
+#   그래서 자동 판정에 쓰지 않고 세어서 보여주기만 한다 — SIGNAL_TERMS와
+#   같은 설계다(2차 발굴에서 신호어를 탈락 조건으로 뒀다면 큐티 채널과
+#   매일기도 채널을 모두 잃었을 것이라는 사례가 위에 있다).
+CRISIS_SIGNAL_TERMS: tuple[str, ...] = (
+    "상담",
+    "심리",
+    "정신건강",
+    "마음치유",
+    "우울",
+    "불안장애",
+    "자존감",
+    "트라우마",
+    "중독",
+    "회복탄력",
+)
+
 # [오탐 사례 — 신호어를 차단이 아니라 표시로 둔 이유]
 #   "축복"은 유지한다. 번영신학 제목에 실제로 흔하기 때문이다. 다만 오탐도 있다:
 #     극동방송 "[매일기도] 대한민국을 축복의 통로로 사용하소서" → 국가 중보기도
@@ -226,6 +317,8 @@ class RecentVideo:
     published_at: str
     blocked_by: list[str] = field(default_factory=list)
     signals: list[str] = field(default_factory=list)
+    # 위기 후보 어휘 적중 — SIGNAL_TERMS와 방향이 반대다 (CRISIS_SIGNAL_TERMS 주석)
+    crisis_terms: list[str] = field(default_factory=list)
 
     @property
     def is_short(self) -> bool:
@@ -278,6 +371,19 @@ class Candidate:
             for label in set(video.signals):
                 counts[label] += 1
         return counts
+
+    @property
+    def crisis_hits(self) -> int:
+        """위기 후보 어휘가 걸린 최근 영상 수. 판정이 아니라 표시용이다."""
+        return sum(1 for video in self.recent if video.crisis_terms)
+
+    @property
+    def crisis_terms_seen(self) -> list[str]:
+        seen: dict[str, None] = {}
+        for video in self.recent:
+            for term in video.crisis_terms:
+                seen[term] = None
+        return list(seen)
 
     @property
     def warnings(self) -> list[str]:
@@ -408,6 +514,7 @@ def _fill_recent_videos(
             for label, terms in SIGNAL_TERMS.items()
             if matched_terms(title, terms)
         ]
+        crisis_terms = list(matched_terms(title, CRISIS_SIGNAL_TERMS))
         candidate.recent.append(
             RecentVideo(
                 title=title,
@@ -416,6 +523,7 @@ def _fill_recent_videos(
                 ),
                 published_at=str(snippet.get("publishedAt", "")),
                 signals=signals,
+                crisis_terms=crisis_terms,
             )
         )
 
@@ -481,8 +589,9 @@ def render_markdown(
         "",
         "**`교단/소속 확인` 열은 비어 있습니다. 사람이 채우는 칸입니다.**",
         "",
-        "| # | 채널명 | 교단/소속 확인 | 등장 | 구독자 | 총영상 | 최근 업로드 | 쇼츠제외 | 쇼츠비율 | 성격 신호 | 자동 점검 |",
-        "|---:|---|---|---:|---:|---:|---|---:|---:|---|---|",
+        "| # | 채널명 | 교단/소속 확인 | 등장 | 구독자 | 총영상 | 최근 업로드 |"
+        " 쇼츠제외 | 쇼츠비율 | 성격 신호 | 위기 후보 | 자동 점검 |",
+        "|---:|---|---|---:|---:|---:|---|---:|---:|---|---|---|",
     ]
     for index, c in enumerate(candidates, start=1):
         lines.append(_render_summary_row(index, c))
@@ -500,6 +609,14 @@ def _render_howto() -> str:
     return "\n".join(
         [
             "## 읽는 법",
+            "",
+            "**`위기 후보` 열은 승인이 아니라 메모입니다.** 상담·심리 어휘가 최근 영상",
+            "제목에 몇 건 걸렸는지만 셉니다. 지금 승인 채널 15개는 전부",
+            "`crisis_eligible: false`이고 위기 화면에 영상이 0건입니다(설계대로입니다).",
+            "여기 걸린 채널은 **나중에 위기 채널을 따로 찾으러 나가지 않아도 되게**",
+            "적어 두는 것입니다. `crisis_eligible` 검토는 일반 승인보다 엄격하며",
+            "정신건강 전문 사역·상담 사역 중심입니다(PLAN.md 7절).",
+            "⚠ \"불안\"·\"우울\"은 일반 설교 제목에도 흔합니다. 오탐을 전제로 읽으세요.",
             "",
             "**자동 점검은 객관적으로 확인 가능한 것만 봅니다.** 최근 업로드 지속성,",
             "쇼츠를 제외한 업로드 건수, channel_blocklist 등재 여부입니다.",
@@ -562,6 +679,9 @@ def _render_summary_row(index: int, c: Candidate) -> str:
         if signals
         else "-"
     )
+    crisis_text = (
+        f"{c.crisis_hits}건 ({', '.join(c.crisis_terms_seen)})" if c.crisis_hits else "-"
+    )
     if c.blocked:
         verdict = "차단 채널"
     elif c.already_listed:
@@ -573,7 +693,7 @@ def _render_summary_row(index: int, c: Candidate) -> str:
     non_short = f"{c.non_short_count}/{len(c.recent)}" if c.recent else "-"
     return (
         f"| {index} | {_escape(c.title)} |  | {c.appearances} | {subs} | {videos} | "
-        f"{upload} | {non_short} | {short} | {signal_text} | {verdict} |"
+        f"{upload} | {non_short} | {short} | {signal_text} | {crisis_text} | {verdict} |"
     )
 
 
@@ -662,7 +782,17 @@ def _render_yaml_block(
             if signals
             else ""
         )
-        lines += [
+        crisis_note = (
+            [
+                f"  # ★ 위기 후보 표시 — 최근 {c.crisis_hits}건에 상담·심리 어휘"
+                f" ({', '.join(c.crisis_terms_seen)}).",
+                "  #   crisis_eligible: true로 올리려면 **일반 승인보다 엄격한** 검토가",
+                "  #   따로 필요하다 (PLAN.md 7절 · HANDOFF 3절 9번). 지금은 표시일 뿐이다.",
+            ]
+            if c.crisis_hits
+            else []
+        )
+        lines += crisis_note + [
             "  # TODO(검토): 교단/소속을 2개 이상 교차 확인하고 아래 두 필드를 채울 것.",
             "  #             이단 규정 목록 대조 전에는 승인하지 않는다.",
             f"  - channel_id: {c.channel_id}",
