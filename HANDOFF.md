@@ -73,8 +73,8 @@ self_control 0 · rest 0
            app/public/krv/ · .gitignore 대상 · 매 빌드 재생성
 주제       24개 · 제목 어휘 97 · 형식 어휘 30
 감정 분류   대분류 9 · 세분류 24 · 키워드 920
-채널       allowlist 15 = MIN_ALLOWLIST_SIZE (한 건만 빠져도 경보)
-           blocklist 0 · reviewed_out 11
+채널       allowlist 16 (하한 15까지 여유 1)
+           blocklist 0 · reviewed_out 13
 게이트      파이썬 5종 + 앱 110건
 ```
 <!-- STATS:END -->
@@ -4053,8 +4053,8 @@ Phase 4  사전 보강 · UI 개정 · 구절 확장                            
            app/public/krv/ · .gitignore 대상 · 매 빌드 재생성
 주제       24개 · 제목 어휘 97 · 형식 어휘 30
 감정 분류   대분류 9 · 세분류 24 · 키워드 920
-채널       allowlist 15 = MIN_ALLOWLIST_SIZE (한 건만 빠져도 경보)
-           blocklist 0 · reviewed_out 11
+채널       allowlist 16 (하한 15까지 여유 1)
+           blocklist 0 · reviewed_out 13
 게이트      파이썬 5종 + 앱 110건
 ```
 <!-- STATS:END -->
