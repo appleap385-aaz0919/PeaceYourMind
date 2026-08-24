@@ -198,6 +198,40 @@ test("개인정보처리방침으로 가는 길이 앱에 있다", () => {
   assert.ok(aboutSrc.includes("개인정보처리방침"), "링크 문구가 없다");
 });
 
+/* --- 문의처 — 방침과 앱이 같은 주소를 말하는가 (2026-08-24) -----------------
+ *
+ * 개인정보처리방침에 문의처가 없으면 스토어 심사에서 걸린다. 그리고 방침과 앱이
+ * **다른 주소**를 말하면 어느 쪽이 맞는지 알 수 없다 — 둘을 함께 고정한다.
+ *
+ * ⚠ 방침은 public/의 정적 HTML이라 readSource()(src/ 전용)를 못 쓴다.
+ *   대신 HTML 주석을 걷어내고 읽는다 — 주석이 검사를 오염시키는 함정은
+ *   확장자가 달라도 똑같이 성립한다 (helpers.js 머리말).
+ */
+const privacyHtml = readFileSync(
+  join(here, "..", "public", "privacy", "index.html"),
+  "utf8",
+).replace(/<!--[\s\S]*?-->/g, "");
+
+test("개인정보처리방침에 문의처가 있다 (스토어 심사 요건)", () => {
+  const found = privacyHtml.match(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g) || [];
+  assert.ok(found.length > 0, "방침 8절에 이메일이 없다 — 심사에서 걸린다");
+  assert.ok(
+    !privacyHtml.includes("(준비 중)"),
+    "'(준비 중)'이 남아 있다. 자리표시자를 둔 채로 출시하지 않는다",
+  );
+});
+
+test("방침과 앱이 같은 문의처를 말한다", () => {
+  const inPolicy = (privacyHtml.match(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g) || [])[0];
+  const inApp = (aboutSrc.match(/const CONTACT = "([^"]*)"/) || [])[1];
+  assert.ok(inApp, "About.jsx의 CONTACT가 비어 있다 — 앱 화면에 문의처가 안 그려진다");
+  assert.equal(
+    inApp,
+    inPolicy,
+    "방침과 앱의 문의처가 다르다. 두 곳이 갈리면 어느 쪽이 맞는지 알 수 없다",
+  );
+});
+
 test("구절 카드·위기 화면·이어서 읽기는 출처를 그리지 않는다 (2026-08-19 정책)", () => {
   // 되돌리는 것 자체는 판단의 문제지만, **조용히** 되돌아가지는 않게 한다.
   // 이 검사가 깨지면 위 정책 주석을 함께 고쳤는지 확인할 것.

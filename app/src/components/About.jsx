@@ -37,8 +37,13 @@ const VERSION = typeof __APP_VERSION__ === "string" ? __APP_VERSION__ : "";
 // TODO(스토어 출시): 실제 값으로 교체한다. HANDOFF "스토어 출시 전 확정 필요" 참조.
 //   빈 문자열이면 그 줄을 그리지 않는다 — "TODO"라고 적힌 화면이 사용자에게
 //   보이는 것보다 항목이 없는 편이 낫고, 값을 넣는 순간 자동으로 나타난다.
-const OPERATOR = ""; // 예: "홍길동" 또는 "OO 스튜디오"
-const CONTACT = ""; // 예: "pym@example.com"
+// 운영자명은 비워 둔다 — 개인정보처리방침에서도 "운영자" 줄을 뺐다(2026-08-24).
+// 개인인지 팀인지 정해지면 그때 채운다. 빈 문자열이면 그 줄을 그리지 않는다.
+const OPERATOR = "";
+// 방침 8절과 **같은 주소**여야 한다. 두 곳이 갈리면 어느 쪽이 맞는지 알 수 없다.
+// 방침은 새 탭으로 열리는 외부 페이지라, 앱 안에서 문의할 곳을 찾는 사람이
+// 방침을 열어 8절까지 내려가야 하는 상태를 만들지 않는다.
+const CONTACT = "aaz0919@gmail.com";
 // 개인정보처리방침 — app/public/privacy/index.html 이 이 주소로 배포된다.
 // 앱과 같은 오리진의 정적 페이지라 앱을 설치하지 않아도 열린다(스토어 심사 요건).
 const PRIVACY_URL = "/PeaceYourMind/privacy/";
