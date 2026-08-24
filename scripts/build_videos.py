@@ -151,7 +151,7 @@ def tag_pool(ctx: BuildContext, kept: Sequence[Video]) -> list[TaggedVideo]:
     tagged: list[TaggedVideo] = []
     for video in kept:
         channel = ctx.channel(video.channel_id)
-        matches = tag_themes(video.title, ctx.themes)
+        matches = tag_themes(video.title, ctx.themes, video.channel)
         media = classify_media_type(
             video.title,
             video.duration_seconds,

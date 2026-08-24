@@ -265,6 +265,14 @@ def main() -> int:
         ("주의 아름다움은 말로 다 | 오륜교회 금요기도회 찬양 하이프레이즈", False),
         ("문들아 머리 들어라 + 날마다 | 오륜교회 주일 5부예배 찬양 램넌트워십", False),
         ("[주일찬양] 휘문채플 / 주님 뜻대로 살기로 했네", False),
+        # 2026-08-24 추가분 — 3차 발굴 후보의 실제 제목 관행 (HANDOFF 2.46)
+        #   현재 코퍼스에서는 0건이라, 이 검사가 유일한 방어다.
+        #   "0건이니 죽은 어휘"라며 지우면 여기서 걸린다.
+        ("[CCM Playlist] 감사가 줄어들던 날에 | 피아노 찬양 | [4시간]", True),
+        ("[미니뮤직 LIVE] 실시간 연주 찬양 | 테마= 주께 더 가까이", True),
+        # ⛔ `주일찬양`은 검토하고 뺐다 — 적중 14건이지만 전부 회중 찬양 콘티다.
+        #   넣으면 위 세 줄과 같은 이유로 joy_praise와 구분이 무너진다.
+        ("[주일 BRANDNEW 찬양] 휘문채플 / 26.08.02 / 말씀하소서", False),
     ):
         hit = "quiet_worship" in {m.theme_id for m in tag_themes(title, themes)}
         _check(
@@ -272,6 +280,32 @@ def main() -> int:
             hit is want,
             f"quiet_worship {'태깅' if want else '비태깅'}: {title[:38]}",
         )
+    print("\n3-1. 채널명 접두어를 콘텐츠로 착각하지 않는다")
+    print("-" * 76)
+    # 2026-08-24 — 3차 발굴 1위 후보가 드러낸 오탐 유형 (HANDOFF 2.46).
+    #   `쉼과 회복이 있는 교회`는 영상 1,994건 전부에 [쉼과회복]을 붙인다.
+    #   그대로 두면 주일예배 라이브가 rest로 태깅돼 풀 0이 "메워진다".
+    #
+    # ★ 아래 뒤쪽 두 줄이 이 검사의 핵심이다. 대괄호를 **전부** 떼는 안은
+    #   실측에서 태깅 118건을 잃었다([생명의 삶 큐티] 100 · [매일성경] 18,
+    #   전부 daily_word). 브랜드인지 내용인지는 괄호 모양으로 갈리지 않는다.
+    for title, channel, theme_id, want in (
+        ("[쉼과회복] 주일예배 라이브 - 2026.08.23 (3부)", "쉼과 회복이 있는 교회", "rest", False),
+        ("[쉼과회복] 수요 성경강좌 창세기 시리즈(8)", "쉼과 회복이 있는 교회", "renewal", False),
+        # 채널명을 주지 않으면 예전과 똑같이 동작한다 (하위 호환)
+        ("[쉼과회복] 주일예배 라이브 - 2026.08.23 (3부)", None, "rest", True),
+        # 브랜드가 아니라 프로그램 이름이면 그대로 둔다 — daily_word 주력 공급
+        ("[생명의 삶 큐티] 찬양의 이유, 영원한 인자하심", "CGN 생명의 삶", "daily_word", True),
+        ("[매일성경]으로 하루를 시작하며 듣는 아침의 말씀", "CGN", "daily_word", True),
+    ):
+        hit = theme_id in {m.theme_id for m in tag_themes(title, themes, channel)}
+        _check(
+            failures,
+            hit is want,
+            f"{channel or '(채널명 없음)':14} {theme_id:11}"
+            f" {'태깅' if want else '비태깅'}: {title[:34]}",
+        )
+
     # 검색어를 되돌리지 않았는가 — 죽은 어휘가 다시 들어오면 여기서 걸린다
     qw = next(t for t in themes.taggable if t.id == "quiet_worship")
     revived = [k for k in ("잔잔한 찬양", "조용한 찬양", "CCM 피아노", "새벽 찬양") if k in qw.title_keywords]

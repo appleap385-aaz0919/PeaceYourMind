@@ -105,7 +105,7 @@ def retag(
     rows = []
     for v in videos:
         title = v.get("title", "")
-        matches = tag_themes(title, themes)
+        matches = tag_themes(title, themes, v.get("channel"))
         media = classify_media_type(
             title,
             int(v.get("durationSeconds") or 0),

@@ -243,7 +243,53 @@ def matched_keywords(title: str, keywords: Iterable[str]) -> tuple[str, ...]:
     return tuple(k for k in keywords if matches_keyword(title, k))
 
 
-def tag_themes(title: str, themes: Themes) -> tuple[ThemeMatch, ...]:
+def strip_brand_prefix(title: str, channel_name: str | None) -> str:
+    """제목 앞머리의 대괄호가 **채널 이름이면** 떼어낸다. 아니면 그대로 둔다.
+
+    [왜 — 2026-08-24, 3차 발굴이 드러냈다 (HANDOFF 2.46)]
+      발굴 1위 후보 `쉼과 회복이 있는 교회`는 모든 영상 제목에 `[쉼과회복]`을
+      붙인다(영상 1,994건). 그대로 두면 **주일예배 라이브·수요 성경강좌·
+      찬양예배가 전부 rest + renewal로 태깅된다.** 풀 0이 단번에 메워지지만
+      지친 사용자가 받는 것은 "주일예배 라이브 3부(1시간 7분)"다.
+      숫자는 좋아지고 화면은 나빠진다.
+
+      오탐 유형으로 보면 다섯 번째다 (2.29절의 넷에 이어) —
+      **사전이 채널명을 콘텐츠로 착각한다.**
+
+    [★ 대괄호를 전부 떼는 안은 실측으로 버렸다]
+      그 안은 현재 코퍼스 1,067건에서 **태깅 118건을 잃는다.**
+        [생명의 삶 큐티] 100건 · [매일성경] 18건 — 전부 daily_word
+      둘 다 **프로그램 이름이고 내용을 정확히 말한다.** daily_word의 주력
+      공급이 통째로 날아간다. 대괄호가 브랜드인지 내용인지는 괄호 모양으로
+      갈리지 않는다.
+
+    [그래서 채널 이름과 대조한다]
+      접두어를 정규화한 것이 채널명을 정규화한 것 안에 들어 있으면 브랜드다.
+        [쉼과회복]      vs 쉼과 회복이 있는 교회   → 포함  → 뗀다
+        [생명의 삶 큐티]  vs CGN 생명의 삶         → 미포함 → 둔다
+        [매일성경]      vs 김학중 목사_꿈의교회…    → 미포함 → 둔다
+      실측: 접두어가 있는 440건 중 **떼어지는 것은 0건**이다(2026-08-24).
+      순수한 방어이고, 그 관행을 쓰는 채널이 승인될 때만 발동한다.
+
+    ⚠ 형식 판별(classify_media_type)에는 적용하지 않는다. 거기서는 앞머리
+      대괄호가 `[주일찬양]`처럼 **형식의 증거**로 쓰인다(2.44절 동점 처리).
+      주제는 "무엇에 관한 내용인가"이고 형식은 "어떤 형태인가"라, 브랜드가
+      답이 될 수 있는 쪽은 형식뿐이다.
+    """
+    if not channel_name:
+        return title
+    match = _LEADING_TAG.match(title)
+    if not match:
+        return title
+    inside = normalize(match.group(0).strip().strip("[]()"))
+    if inside and inside in normalize(channel_name):
+        return title[match.end() :]
+    return title
+
+
+def tag_themes(
+    title: str, themes: Themes, channel_name: str | None = None
+) -> tuple[ThemeMatch, ...]:
     """제목을 주제로 태깅한다. 걸리는 주제가 없으면 빈 튜플(=untagged).
 
     **복수 태깅을 허용한다.** 한 영상이 comfort와 hope에 동시에 걸리면 양쪽
@@ -251,7 +297,11 @@ def tag_themes(title: str, themes: Themes) -> tuple[ThemeMatch, ...]:
     themes.yaml의 매핑도 세분류마다 주제를 2~3개씩 겹쳐 쓰도록 짜여 있다.
 
     위기 전용 주제(crisis_fixed)는 대상에서 빠진다 — Themes.taggable 참조.
+
+    channel_name을 주면 채널명과 같은 앞머리 대괄호를 떼고 본다
+    (strip_brand_prefix). 주지 않으면 예전과 똑같이 동작한다.
     """
+    title = strip_brand_prefix(title, channel_name)
     negative = any(word in title for word in NEGATIVE_CONTEXT)
     matches: list[ThemeMatch] = []
     for theme in themes.taggable:
