@@ -99,7 +99,9 @@ jobs:
         #   tagging_test   주제/형식 판별 규칙 + themes.yaml 게이트 6종
         #   spread_test    채널 분산·형식 균형·폴백·위기 유지·무결성 단언
         run: |
-          python scripts/verify_verses.py --check > /dev/null && echo "구절 대조 통과 (250건)"
+          # 건수를 여기에 적지 않는다 — 2026-08-24에 "250건"이 박혀 있었고 실제는
+          # 303건이었다. HANDOFF 2.43과 같은 유형의 표류다. 스크립트가 세게 둔다.
+          python scripts/verify_verses.py --check
           python scripts/tagging_test.py > /dev/null && echo "태깅·판별 테스트 통과"
           python scripts/spread_test.py > /dev/null && echo "선정·폴백 테스트 통과"
 
