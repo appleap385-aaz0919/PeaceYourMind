@@ -28,6 +28,7 @@
 
 import { useState } from "react";
 
+import { AD_SLOT } from "../lib/ads.js";
 import { clearAllLocalData, clearBrowsingTraces } from "../lib/db.js";
 import { T, SERIF } from "../theme.js";
 
@@ -90,6 +91,35 @@ export function About({ attribution, onBack }) {
           이 앱의 입장과 같지 않을 수 있습니다.
         </p>
       </section>
+
+      {/*
+        광고 — **광고가 실제로 나가는 동안에만 그린다.**
+
+        [왜 AD_SLOT에 묶는가]
+          광고 단위 ID는 AdSense 승인 후에 발급된다. 그 전에는 AdSlot이
+          <ins>를 만들지 않아 화면에 광고가 하나도 없다(2.55 ③).
+          그 상태에서 "광고를 싣습니다"라고 적으면 **화면과 문장이 갈라진다.**
+          조건을 광고 렌더 조건과 같은 것으로 묶어 두 사실이 함께 움직이게 한다.
+        ⚠ AD_SLOT이 상수 빈 문자열인 동안 번들러가 이 절을 통째로 접는다 —
+          AdSlot 본체와 같은 방식이다. 즉 배포본에 문장이 남지도 않는다.
+
+        [문안은 사용자 확정값이다 — 자구를 바꾸지 말 것]
+          ⚠ 초안은 "말씀을 읽는 자리"였고 2026-08-24에 "성경 본문"으로 고쳤다.
+            이 앱에서 **"말씀"은 설교 영상 탭의 이름**이고(ResultTabs LABELS),
+            그 탭은 광고가 뜨는 자리다. 그대로 두면 화면이 문장을 반증한다.
+          ⚠ 위기 화면은 **일부러 언급하지 않는다**(사용자 결정). 광고 제외
+            자체는 코드와 방침이 그대로 지킨다 — 말하지 않을 뿐 바뀐 것이 없다.
+          회귀가 이 문구를 고정한다 (verses.test.js).
+      */}
+      {AD_SLOT ? (
+        <section style={styles.block}>
+          <h2 style={styles.heading}>광고</h2>
+          <p style={styles.note}>
+            이 앱은 무료로 운영됩니다. 무료 서비스 제공을 위해 영상 목록에 광고를
+            최소한으로 싣습니다. 성경 본문을 읽는 자리에는 광고를 두지 않습니다.
+          </p>
+        </section>
+      ) : null}
 
       <section style={styles.block}>
         <h2 style={styles.heading}>기록</h2>
