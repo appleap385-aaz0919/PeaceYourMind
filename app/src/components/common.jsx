@@ -129,6 +129,89 @@ export function CrisisBlock({ message, resources }) {
  */
 const REVEAL_AFTER_PX = 100;
 
+/**
+ * 떠 있는 버튼의 모양 — FloatingRestart와 FloatingBack이 함께 쓴다.
+ * 둘은 하는 일이 다르지만 **같은 자리에 같은 모양으로** 나타나야 한다.
+ * 한쪽만 고치면 화면에 두 종류의 떠 있는 버튼이 생긴다.
+ */
+function floatingStyle(shown, reducedMotion) {
+  return {
+    position: "fixed",
+    right: 20,
+    bottom: 24,
+    padding: "10px 16px",
+    borderRadius: 99,
+    border: `1px solid ${T.jade}33`,
+    background: `${T.ink}d9`,
+    backdropFilter: "blur(6px)",
+    WebkitBackdropFilter: "blur(6px)",
+    color: T.muted,
+    fontSize: 12.5,
+    letterSpacing: "0.04em",
+    opacity: shown ? 1 : 0,
+    pointerEvents: shown ? "auto" : "none",
+    transition: reducedMotion ? "none" : "opacity .3s ease",
+  };
+}
+
+/**
+ * "이 앱에 대해" 화면의 떠 있는 "돌아가기".
+ *
+ * 이 화면도 결과 화면처럼 길다 — 절이 여섯이고 하단 "돌아가기"까지 한참
+ * 내려가야 한다. FloatingRestart와 **같은 조건·같은 자리·같은 모양**이다
+ * (스크롤 100px 뒤 등장 · 우하단 · HANDOFF 2.22).
+ *
+ * ⚠⚠ FloatingRestart와 똑같이 **Shell에서, `.rise` 바깥에** 렌더해야 한다.
+ *   (HANDOFF 4.8) 화면 컴포넌트 안에 두면 `.rise`의 transform이 containing
+ *   block을 만들어 fixed가 죽는다. behavior.test.js가 렌더 위치를 검사한다.
+ *
+ * [하단 고정 버튼과 겹치지 않게 한다]
+ *   하단 "돌아가기"는 **그대로 둔다**(사용자 결정). 다만 그것이 화면에
+ *   들어오면 같은 일을 하는 버튼이 둘 보이므로, 그동안 떠 있는 쪽을 숨긴다.
+ *   ⚠ 위치를 비교하지 않고 **보이는가**로 판단한다 — 하단 버튼은 가운데
+ *     정렬이고 떠 있는 버튼은 우측이라 픽셀이 겹치지 않을 수도 있지만,
+ *     피하려는 것은 충돌이 아니라 **중복 노출**이다.
+ */
+export function FloatingBack({ onClick, reducedMotion, anchorId }) {
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    const update = () => {
+      const scrolled = window.scrollY > REVEAL_AFTER_PX;
+      const anchor = anchorId ? document.getElementById(anchorId) : null;
+      // 하단 버튼이 화면 안에 있는가. 없으면(anchor null) 스크롤만 본다.
+      const anchorVisible = anchor
+        ? (() => {
+            const box = anchor.getBoundingClientRect();
+            return box.top < window.innerHeight && box.bottom > 0;
+          })()
+        : false;
+      setShown(scrolled && !anchorVisible);
+    };
+    update(); // 이미 스크롤된 상태로 들어올 수 있다
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [anchorId]);
+
+  if (reducedMotion && !shown) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-hidden={!shown}
+      tabIndex={shown ? 0 : -1}
+      style={floatingStyle(shown, reducedMotion)}
+    >
+      돌아가기
+    </button>
+  );
+}
+
 export function FloatingRestart({ onClick, reducedMotion }) {
   const [shown, setShown] = useState(false);
 
@@ -147,23 +230,7 @@ export function FloatingRestart({ onClick, reducedMotion }) {
       onClick={onClick}
       aria-hidden={!shown}
       tabIndex={shown ? 0 : -1}
-      style={{
-        position: "fixed",
-        right: 20,
-        bottom: 24,
-        padding: "10px 16px",
-        borderRadius: 99,
-        border: `1px solid ${T.jade}33`,
-        background: `${T.ink}d9`,
-        backdropFilter: "blur(6px)",
-        WebkitBackdropFilter: "blur(6px)",
-        color: T.muted,
-        fontSize: 12.5,
-        letterSpacing: "0.04em",
-        opacity: shown ? 1 : 0,
-        pointerEvents: shown ? "auto" : "none",
-        transition: reducedMotion ? "none" : "opacity .3s ease",
-      }}
+      style={floatingStyle(shown, reducedMotion)}
     >
       다시 적기
     </button>

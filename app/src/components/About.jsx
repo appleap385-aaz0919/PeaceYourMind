@@ -52,6 +52,13 @@ const CONTACT = "appleap385@gmail.com";
 // 앱과 같은 오리진의 정적 페이지라 앱을 설치하지 않아도 열린다(스토어 심사 요건).
 const PRIVACY_URL = "/PeaceYourMind/privacy/";
 
+/**
+ * 하단 고정 "돌아가기"의 id — 떠 있는 버튼이 이것을 찾아 겹침을 피한다.
+ * ⚠ 떠 있는 쪽은 Shell에서 그린다(.rise 밖이어야 한다 · HANDOFF 4.8).
+ *   두 컴포넌트가 만나는 지점이 이 id 하나뿐이라 여기서 내보낸다.
+ */
+export const ABOUT_BACK_ID = "about-back";
+
 export function About({ attribution, onBack }) {
   return (
     <div className="rise">
@@ -173,7 +180,9 @@ export function About({ attribution, onBack }) {
         </section>
       ) : null}
 
-      <button type="button" onClick={onBack} style={styles.back}>
+      {/* ⚠ 이 버튼은 유지한다(사용자 결정). 떠 있는 버튼은 이것을 대체하는
+          것이 아니라 **닿기 전까지만** 대신한다. */}
+      <button type="button" id={ABOUT_BACK_ID} onClick={onBack} style={styles.back}>
         돌아가기
       </button>
     </div>
@@ -234,13 +243,11 @@ const styles = {
   note: { margin: "0 0 8px", fontSize: 13, color: T.muted, lineHeight: 1.8, wordBreak: "keep-all" },
   link: { color: T.jade, textDecoration: "none", borderBottom: `1px solid ${T.jade}59` },
   /**
-   * 운영자 줄 — 바로 아래 문의처(link)와 **같은 계열로 맞춘다** (2026-08-24).
-   * body와 크기·서체·행간이 같고 색만 jade다. 둘은 "만든 곳"이라는 한 묶음이라
-   * 색이 갈리면 운영자 줄만 다른 종류의 정보처럼 읽혔다.
-   * ⚠ 밑줄은 주지 않는다 — 링크가 아니다. 색은 계열을 맞추는 것이고
-   *   누를 수 있다는 신호는 밑줄이 낸다.
+   * 운영자 줄 — "만든 곳" 세 줄과 "기록" 절 버튼 행을 **전부 같은 글자로** 맞춘다
+   * (2026-08-24 사용자 확인). 13px · T.muted가 이 화면의 조용한 기준선이다.
+   * ⚠ 밑줄은 주지 않는다 — 링크가 아니다. 누를 수 있다는 신호는 밑줄이 낸다.
    */
-  operator: { margin: "0 0 4px", fontSize: 14, color: T.jade, lineHeight: 1.7 },
+  operator: { margin: "0 0 4px", fontSize: 13, color: T.muted, lineHeight: 1.8 },
   /**
    * 문의처 — **"이 기기에서 기록 지우기" 버튼과 글자를 똑같이 맞춘다**
    * (2026-08-24 사용자 지시). erase와 크기·서체·색·밑줄 처리가 전부 같다.
@@ -336,15 +343,16 @@ const styles = {
     minWidth: 0,
   },
   /**
-   * 방침 링크 — 옆의 지우기 버튼과 **글자를 똑같이** 맞춘다.
-   * 크기·서체·밑줄 처리가 같고 색만 다르다. 색은 남긴다 —
-   * jade는 이 앱에서 "앱 밖으로 나간다"는 신호이고(styles.link), 방침은
-   * 실제로 새 탭에서 열린다.
+   * 방침 링크 — 옆의 지우기 버튼과 **완전히 같은 글자다** (2026-08-24 사용자 확인).
+   * 크기·서체·색·밑줄이 전부 같다. 한 행에 나란히 서는 두 항목이라
+   * 색이 갈리면 하나가 더 중요한 것처럼 읽혔다.
+   * ⚠ styles.link(jade)를 쓰지 않는다. 이 자리만 예외이므로 link를 고치지 말 것 —
+   *   link는 본문 안의 링크가 쓴다.
    */
   privacyInline: {
     fontSize: 13,
     fontFamily: "inherit",
-    color: T.jade,
+    color: T.muted,
     textDecoration: "underline",
     textUnderlineOffset: 3,
     whiteSpace: "nowrap",

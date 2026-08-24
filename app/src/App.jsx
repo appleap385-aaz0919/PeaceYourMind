@@ -53,12 +53,12 @@ import {
 } from "./lib/videos.js";
 
 import { ChapterReader } from "./components/ChapterReader.jsx";
-import { Closing, FloatingRestart, Msg } from "./components/common.jsx";
+import { Closing, FloatingBack, FloatingRestart, Msg } from "./components/common.jsx";
 import { CrisisScreen } from "./components/CrisisScreen.jsx";
 import { READING, ResultTabs } from "./components/ResultTabs.jsx";
 import { VerseCard, verseFontSize } from "./components/VerseCard.jsx";
 import { VideoList } from "./components/VideoList.jsx";
-import { About } from "./components/About.jsx";
+import { ABOUT_BACK_ID, About } from "./components/About.jsx";
 import { T, SERIF } from "./theme.js";
 
 const MIN_DURATION_MS = taxonomy.ui.loading.min_duration_ms;
@@ -189,12 +189,12 @@ export default function App() {
   }, []);
 
   if (showAbout) {
+    // 떠 있는 버튼과 하단 버튼이 **같은 함수**를 쓴다. 복귀 경로가 둘로
+    // 갈리면 한쪽만 고쳐지는 날이 온다.
+    const closeAbout = () => setShowAbout(false);
     return (
-      <Shell>
-        <About
-          attribution={attributionOf(versesData)}
-          onBack={() => setShowAbout(false)}
-        />
+      <Shell onAboutBack={closeAbout} reducedMotion={reducedMotion}>
+        <About attribution={attributionOf(versesData)} onBack={closeAbout} />
       </Shell>
     );
   }
@@ -591,7 +591,7 @@ function SelectMode({ selectedCategory, setSelectedCategory, setMode, onChoose }
  *   이 자리를 고정해 두면 호출부가 실수할 여지가 없다.
  *   ⚠ 화면 컴포넌트 안으로 옮기지 말 것.
  */
-function Shell({ children, onAbout, onRestart, reducedMotion }) {
+function Shell({ children, onAbout, onAboutBack, onRestart, reducedMotion }) {
   return (
     <div style={styles.shell}>
       <style>{`
@@ -615,6 +615,16 @@ function Shell({ children, onAbout, onRestart, reducedMotion }) {
       <div style={styles.inner}>{children}</div>
       {onRestart ? (
         <FloatingRestart onClick={onRestart} reducedMotion={reducedMotion} />
+      ) : null}
+      {/* "이 앱에 대해"의 떠 있는 돌아가기. FloatingRestart와 같은 이유로
+          **여기서** 그린다 — .rise 안에 두면 fixed가 죽는다(HANDOFF 4.8).
+          anchorId는 하단 고정 버튼이다. 그것이 보이는 동안에는 숨는다. */}
+      {onAboutBack ? (
+        <FloatingBack
+          onClick={onAboutBack}
+          reducedMotion={reducedMotion}
+          anchorId={ABOUT_BACK_ID}
+        />
       ) : null}
       {onAbout ? (
         <button type="button" onClick={onAbout} style={styles.about}>

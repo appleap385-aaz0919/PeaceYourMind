@@ -305,6 +305,30 @@ test("기록 지우기와 방침 링크가 같은 행에 있다 (두 줄로 떨�
   assert.ok(link.includes('whiteSpace: "nowrap"'), "링크가 중간에서 접힐 수 있다");
 });
 
+/* --- 조용한 기준선 — 이 화면의 작은 글자는 전부 13px · T.muted다 -----------
+ *
+ * 2026-08-24에 색이 세 번 갈렸다(jade 14px → muted 13px). 사용자가 매번
+ * 짚어 줬고, 마지막에 **전부 같게**로 정해졌다. 기준을 기계로 고정한다.
+ *
+ * ⚠ 밑줄만 다르다 — 누를 수 있는 것에만 붙는다(방침 링크·메일).
+ *   운영자 줄은 링크가 아니라 밑줄이 없다.
+ */
+test("만든 곳·기록 절의 글자가 전부 같은 기준선이다 (13px · T.muted)", () => {
+  const targets = ["operator", "contactLink", "privacyInline", "erase"];
+  for (const name of targets) {
+    const block = (aboutSrc.match(new RegExp(`${name}: \{[^}]*\}`, "s")) || [])[0];
+    assert.ok(block, `styles.${name}을 찾지 못했다`);
+    assert.ok(
+      /fontSize: 13,/.test(block),
+      `styles.${name}의 크기가 13px가 아니다 — 이 화면의 작은 글자는 전부 13px다`,
+    );
+    assert.ok(
+      block.includes("color: T.muted"),
+      `styles.${name}의 색이 T.muted가 아니다 — 색이 갈리면 하나가 더 중요한 것처럼 읽힌다`,
+    );
+  }
+});
+
 test("만든 곳 — 운영자와 문의처가 둘 다 채워져 있다 (출시 준비 5번)", () => {
   // 빈 문자열이면 그 줄이 안 그려진다. 즉 **조용히 사라진다** —
   // 스토어 심사에서 걸리는 항목이 소리 없이 빠지는 것을 막는다.

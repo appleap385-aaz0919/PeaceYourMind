@@ -807,18 +807,49 @@ test("떠 있는 버튼은 Shell에서만 그린다 (.rise 안에 두면 fixed�
   //   그래서 렌더 위치를 Shell 한 곳으로 고정한다. 이 검사는 "있는가"가 아니라
   //   **"어디서 그리는가"**를 본다 — 있어도 자리가 틀리면 동작하지 않는다.
   const src = readSource("App.jsx");
-  assert.ok(src.includes("<Closing"), "하단 마무리 문구·되돌아가기가 없다");
 
   const shell = src.slice(src.indexOf("function Shell("));
-  assert.ok(
-    shell.includes("<FloatingRestart"),
-    "Shell이 떠 있는 버튼을 그리지 않는다",
-  );
-  // Shell 바깥(= 화면 컴포넌트 안)에서 그리면 .rise 안이 된다.
   const outside = src.slice(0, src.indexOf("function Shell("));
+
+  // 떠 있는 버튼이 늘어날 때마다 여기에 추가한다. 하나만 자리가 틀려도
+  // 그 버튼만 조용히 고장난다 — 화면에서는 "있긴 있는데" 로 보인다.
+  for (const tag of ["<FloatingRestart", "<FloatingBack"]) {
+    assert.ok(shell.includes(tag), `Shell이 ${tag}를 그리지 않는다`);
+    assert.ok(
+      !outside.includes(tag),
+      `${tag}를 화면 컴포넌트 안에서 그린다 — .rise의 transform 때문에 fixed가 죽는다`,
+    );
+  }
+  assert.ok(src.includes("<Closing"), "하단 마무리 문구·되돌아가기가 없다");
+});
+
+test("떠 있는 돌아가기는 하단 버튼과 같은 복귀 함수를 쓴다", () => {
+  // 경로가 둘로 갈리면 한쪽만 고쳐지는 날이 온다.
+  const src = readSource("App.jsx");
+  assert.ok(src.includes("const closeAbout ="), "복귀 함수를 따로 두지 않았다");
   assert.ok(
-    !outside.includes("<FloatingRestart"),
-    "화면 컴포넌트 안에서 그린다 — .rise의 transform 때문에 fixed가 죽는다",
+    /<Shell onAboutBack=\{closeAbout\}/.test(src),
+    "떠 있는 버튼이 closeAbout을 쓰지 않는다",
+  );
+  assert.ok(
+    /<About [^>]*onBack=\{closeAbout\}/s.test(src),
+    "하단 버튼이 closeAbout을 쓰지 않는다",
+  );
+});
+
+test("떠 있는 돌아가기는 하단 버튼이 보이면 숨는다 (중복 노출 방지)", () => {
+  const src = readSource("components", "common.jsx");
+  const block = src.slice(src.indexOf("export function FloatingBack"));
+  assert.ok(block.includes("anchorId"), "하단 버튼을 참조하지 않는다");
+  assert.ok(
+    block.includes("getBoundingClientRect"),
+    "하단 버튼이 화면에 있는지 재지 않는다",
+  );
+  assert.ok(/setShown\(scrolled && !anchorVisible\)/.test(block), "겹침 회피 조건이 없다");
+  const about = readSource("components", "About.jsx");
+  assert.ok(
+    about.includes("id={ABOUT_BACK_ID}"),
+    "하단 버튼에 id가 없다 — 떠 있는 버튼이 찾지 못한다",
   );
 });
 
