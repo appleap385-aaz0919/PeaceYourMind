@@ -1,0 +1,289 @@
+<!doctype html>
+<!--
+  개인정보처리방침 — 앱과 분리된 정적 페이지.
+
+  [왜 앱 안이 아니라 별도 페이지인가]
+    스토어 심사는 **앱 밖에서 열리는 URL**을 요구한다. 앱을 설치하지 않아도
+    읽을 수 있어야 하므로 라우팅이 아니라 정적 파일이다.
+    app/public/ 아래 두면 vite가 dist로 옮기고 deploy-app.yml이 gh-pages 루트에 올린다.
+
+  [스타일을 인라인으로 둔 이유]
+    앱 번들과 무관하게 혼자 떠야 한다. 빌드 해시가 붙은 CSS에 의존하면
+    앱을 다시 배포할 때 이 페이지가 깨질 수 있다. 색은 theme.js의 값을 손으로 옮겼다.
+    ⚠ 팔레트를 바꾸면 여기도 함께 고칠 것 (T.ink / T.mist / T.muted / T.jade / T.sand).
+
+  ⚠ 이 문서의 사실은 코드에서 확인한 것이다 (HANDOFF 2.50 · 2.51).
+    저장 항목은 app/src/lib/db.js의 KEYS, 캐시는 app/public/sw.js,
+    외부 접속은 배포본 자산 전수 검사로 확인했다.
+    **코드를 고치면 이 문서도 고쳐야 한다.**
+-->
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>개인정보처리방침 — Peace Your Mind</title>
+    <meta name="robots" content="index, follow" />
+    <style>
+      :root {
+        --ink: #141e24;
+        --ink-deep: #0b1216;
+        --mist: #e9eeea;
+        --muted: #8da29e;
+        --jade: #7fb3a3;
+        --sand: #e0c49b;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 40px 20px 64px;
+        background: var(--ink-deep);
+        color: var(--mist);
+        font-family: "Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif;
+        font-size: 14px;
+        line-height: 1.8;
+        word-break: keep-all;
+      }
+      main { max-width: 640px; margin: 0 auto; }
+      h1 {
+        font-family: "Nanum Myeongjo", "Gowun Batang", serif;
+        font-size: 21px;
+        font-weight: 400;
+        margin: 0 0 6px;
+      }
+      .dates { color: var(--muted); font-size: 12.5px; margin: 0 0 32px; }
+      h2 {
+        font-size: 13px;
+        font-weight: 400;
+        color: var(--sand);
+        letter-spacing: 0.04em;
+        margin: 36px 0 10px;
+      }
+      h3 { font-size: 13.5px; font-weight: 500; color: var(--mist); margin: 22px 0 8px; }
+      p { margin: 0 0 12px; color: var(--muted); }
+      strong { color: var(--mist); font-weight: 500; }
+      ul { margin: 0 0 12px; padding-left: 18px; color: var(--muted); }
+      li { margin-bottom: 5px; }
+      a { color: var(--jade); text-decoration: none; border-bottom: 1px solid #7fb3a359; }
+      a:hover { border-bottom-color: var(--jade); }
+      .wrap { overflow-x: auto; margin: 0 0 14px; }
+      table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 340px; }
+      th, td {
+        text-align: left;
+        padding: 9px 10px 9px 0;
+        border-bottom: 1px solid #ffffff14;
+        vertical-align: top;
+        color: var(--muted);
+      }
+      th { color: var(--mist); font-weight: 400; font-size: 12px; letter-spacing: 0.03em; }
+      code { font-size: 12.5px; color: var(--mist); background: #ffffff0d; padding: 1px 5px; border-radius: 3px; }
+      blockquote {
+        margin: 0 0 14px;
+        padding: 12px 14px;
+        background: #ffffff08;
+        border-radius: 3px;
+        color: var(--muted);
+        font-size: 13.5px;
+      }
+      blockquote p:last-child { margin-bottom: 0; }
+      footer { margin-top: 44px; color: #ffffff40; font-size: 12.5px; }
+      footer a { color: #ffffff40; border-bottom-color: #ffffff26; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Peace Your Mind 개인정보처리방침</h1>
+      <p class="dates">시행일 2026-08-24 · 최종 개정 2026-08-24</p>
+
+      <p>
+        Peace Your Mind(이하 "이 앱")는 이용자를 식별하는 개인정보를 수집하지 않습니다.
+        다만 무료로 운영하기 위해 <strong>일부 화면에 광고를 게재하며</strong>, 이때 광고
+        제공자가 이용자의 기기 정보를 사용합니다. 이 방침은 그 내용을 밝힙니다.
+      </p>
+
+      <h2>1. 이 앱이 수집하지 않는 것</h2>
+      <p>
+        이 앱에는 <strong>서버가 없습니다.</strong> 회원가입·로그인·계정이 없고,
+        이용자를 식별하는 어떤 정보도 만들지 않습니다.
+      </p>
+      <ul>
+        <li>이름·이메일·전화번호·생년월일 등 신원 정보를 <strong>묻지 않습니다.</strong></li>
+        <li>
+          마음 상태를 적는 입력창의 <strong>글은 저장되지도, 전송되지도 않습니다.</strong>
+          입력한 글은 기기 안에서 감정을 분류하는 데에만 쓰이고 화면을 벗어나면 사라집니다.
+          <strong>광고 제공자에게도 전달되지 않습니다.</strong>
+        </li>
+        <li>이용 분석 도구(Google Analytics 등)나 추적기를 <strong>하나도 넣지 않았습니다.</strong></li>
+        <li>위치 정보·카메라·마이크·주소록에 접근하지 않습니다.</li>
+      </ul>
+
+      <h2>2. 광고에 대하여</h2>
+      <p>
+        이 앱은 무료로 운영하기 위해 영상 목록 사이에
+        <strong>Google AdSense 광고를 게재합니다.</strong>
+        광고에는 "광고"임을 알리는 표시가 함께 나옵니다.
+      </p>
+
+      <h3>광고를 넣지 않는 화면</h3>
+      <p>
+        <strong>위기 상황 안내 화면과 "이어서 읽기"(성경 본문) 화면에는 광고를 넣지
+        않습니다.</strong> 도움이 급한 자리와 본문을 읽는 자리에 광고를 두지 않기 위한
+        것이며, 이는 이 앱의 정책입니다.
+      </p>
+
+      <h3>광고 제공자가 사용하는 정보</h3>
+      <p>
+        Google 및 그 파트너는 광고를 게재하는 과정에서 이용자의 기기에
+        <strong>쿠키 또는 유사한 식별자</strong>를 저장하거나 읽을 수 있고, 아래와 같은
+        정보를 사용할 수 있습니다.
+      </p>
+      <ul>
+        <li>IP 주소, 기기 종류, 브라우저 종류, 운영체제</li>
+        <li>광고 식별자 및 쿠키에 담긴 값</li>
+        <li>이 앱과 다른 웹사이트의 이전 방문 기록</li>
+      </ul>
+      <p>
+        이 정보는 광고를 보여주고, 같은 광고가 지나치게 반복되지 않게 하며, 광고 성과를
+        측정하는 데 쓰입니다. <strong>이 앱은 이 정보를 받지도, 보관하지도 않습니다.</strong>
+        처리 주체는 Google이며 Google의 방침이 적용됩니다.
+      </p>
+
+      <h3>개인 맞춤 광고를 원하지 않으실 때</h3>
+      <ul>
+        <li>
+          <strong>Google 광고 설정</strong>
+          <a href="https://adssettings.google.com" target="_blank" rel="noreferrer noopener">adssettings.google.com</a>
+          에서 개인 맞춤 광고를 끌 수 있습니다.
+        </li>
+        <li><strong>Android</strong> 설정 → Google → 광고 → "광고 개인 최적화 선택 해제"</li>
+        <li><strong>iOS</strong> 설정 → 개인정보 보호 및 보안 → 추적 → 앱의 추적 요청 허용을 끄기</li>
+        <li><strong>웹 브라우저</strong> 브라우저 설정에서 제3자 쿠키를 차단하면 광고 쿠키도 차단됩니다.</li>
+        <li>
+          <strong>참고</strong>
+          <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noreferrer noopener">Google 광고 기술</a>
+        </li>
+      </ul>
+      <p>개인 맞춤을 끄더라도 광고 자체는 계속 나오며, 관심사와 무관한 광고로 바뀝니다.</p>
+
+      <h2>3. 기기에 저장되는 것</h2>
+      <p>
+        아래는 모두 <strong>이용자의 기기 안에만</strong> 있습니다.
+        이 앱이 어디로도 전송하지 않습니다.
+      </p>
+
+      <h3>사용 기록 (브라우저 IndexedDB, 데이터베이스 이름 <code>peaceyourmind</code>)</h3>
+      <div class="wrap">
+        <table>
+          <thead><tr><th>항목</th><th>무엇에 쓰는가</th></tr></thead>
+          <tbody>
+            <tr><td>마지막 방문 시각 · 방문 날짜 · 그날의 방문 횟수</td><td>다시 찾아왔을 때 건네는 인사말을 고릅니다</td></tr>
+            <tr><td>마지막으로 고른 감정 세분류</td><td>목록에서 직접 골랐을 때만 남습니다</td></tr>
+            <tr><td>말씀 / 찬양 형식의 마지막 선택</td><td>화면마다 따로 기억합니다</td></tr>
+            <tr><td>직전에 보여준 구절과 문구의 순번</td><td>같은 것이 연달아 나오지 않게 합니다</td></tr>
+            <tr><td>영상 목록 사본과 받은 시각</td><td>네트워크가 없을 때도 화면이 뜨게 합니다</td></tr>
+            <tr><td>영상 목록을 마지막으로 확인한 시각</td><td>갱신 주기를 지키는 데 씁니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>임시 저장 (브라우저 Cache Storage)</h3>
+      <div class="wrap">
+        <table>
+          <thead><tr><th>항목</th><th>무엇에 쓰는가</th></tr></thead>
+          <tbody>
+            <tr><td>앱 화면 파일</td><td>오프라인에서도 앱이 열리게 합니다</td></tr>
+            <tr><td>유튜브 썸네일 최근 200개</td><td>오래된 것부터 자동으로 지워집니다</td></tr>
+            <tr><td>개역한글 장 본문</td><td>"이어서 읽기"로 한 번 연 장만 남습니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>광고 쿠키는 위 목록과 별개로 Google이 저장합니다.</strong>
+        이 앱은 그 값을 읽지 않습니다.
+      </p>
+
+      <h3>지우는 방법</h3>
+      <p>
+        <strong>"이 앱에 대해" 화면의 「이 기기에서 기록 지우기」</strong>를 누르면
+        위의 사용 기록과, 무엇을 보았는지가 남는 임시 저장(썸네일·장 본문)이 지워집니다.
+        되돌릴 수 없으므로 누른 뒤 한 번 더 묻습니다.
+      </p>
+      <blockquote>
+        <p>
+          앱 화면 파일은 지우지 않습니다. 누가 쓰든 같은 파일이라 이용자의 흔적이 아니고,
+          지우면 오프라인에서 앱이 열리지 않게 되기 때문입니다.
+        </p>
+        <p>
+          <strong>광고 쿠키도 이 버튼으로는 지워지지 않습니다</strong> — 이 앱의 저장
+          영역이 아니기 때문입니다. 브라우저 설정에서 쿠키를 삭제하거나 위 2절의 방법을
+          이용해 주세요.
+        </p>
+      </blockquote>
+      <p>
+        브라우저 설정에서 이 사이트의 저장 데이터를 삭제하거나 설치한 앱을 삭제하면
+        사용 기록이 모두 사라집니다.
+        <strong>서버에 사본이 없으므로 그것으로 완전히 지워집니다.</strong>
+      </p>
+
+      <h2>4. 외부로 나가는 통신</h2>
+      <p>
+        이 앱은 이용자의 정보를 어디에도 보내지 않지만, 화면을 그리는 과정에서 아래
+        서비스에 <strong>접속이 일어납니다.</strong> 이때 통신 상대에게는 이용자의 IP
+        주소와 브라우저 종류가 전달됩니다. 이는 인터넷 통신의 일반적인 성질입니다.
+      </p>
+      <div class="wrap">
+        <table>
+          <thead><tr><th>접속처</th><th>무엇을 위해</th><th>전달되는 것</th></tr></thead>
+          <tbody>
+            <tr><td>GitHub Pages</td><td>앱 파일 · 영상 목록 · 성경 본문을 내려받습니다</td><td>IP 주소, 브라우저 종류</td></tr>
+            <tr><td><code>img.youtube.com</code> (Google)</td><td>영상 썸네일 이미지</td><td>IP 주소, 브라우저 종류</td></tr>
+            <tr><td><code>fonts.googleapis.com</code> · <code>fonts.gstatic.com</code> (Google)</td><td>화면 글꼴</td><td>IP 주소, 브라우저 종류</td></tr>
+            <tr><td><code>pagead2.googlesyndication.com</code> · <code>googleads.g.doubleclick.net</code> · <code>tpc.googlesyndication.com</code> (Google)</td><td>광고 게재</td><td>IP 주소, 브라우저 종류, 광고 쿠키</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>영상을 누르면 유튜브로 이동합니다.</strong> 그때부터는 이 앱이 아니라
+        <strong>YouTube의 개인정보처리방침이 적용됩니다.</strong> 이 앱은 영상을 저장하거나
+        재가공하지 않고 링크만 제공합니다.
+      </p>
+      <ul>
+        <li><a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer noopener">Google 개인정보처리방침</a></li>
+        <li><a href="https://policies.google.com/technologies/ads" target="_blank" rel="noreferrer noopener">Google 광고 기술</a></li>
+        <li><a href="https://docs.github.com/site-policy/privacy-policies/github-privacy-statement" target="_blank" rel="noreferrer noopener">GitHub 개인정보처리방침</a></li>
+      </ul>
+
+      <h2>5. 만 14세 미만 이용자</h2>
+      <p>
+        이 앱은 이용자를 식별하는 개인정보를 수집하지 않으므로 별도의 법정대리인 동의
+        절차를 두지 않습니다. 광고는 이 앱을 아동 대상 서비스로 설정하지 않은 상태에서
+        게재됩니다.
+      </p>
+
+      <h2>6. 이용자의 권리</h2>
+      <p>
+        이 앱이 수집·보관하는 개인정보가 없으므로 열람·정정·삭제를 요청할 대상이 없습니다.
+        기기에 남은 사용 기록은 3절의 방법으로 직접 지울 수 있고, 광고 쿠키는 2절의
+        방법으로 거부하거나 삭제할 수 있습니다.
+      </p>
+
+      <h2>7. 이 방침의 변경</h2>
+      <p>
+        내용이 바뀌면 이 페이지에 개정 내용과 시행일을 밝힙니다.
+        처리 방식이 달라지는 경우에는 <strong>시행 전에</strong> 고지합니다.
+      </p>
+
+      <h2>8. 문의</h2>
+      <ul>
+        <li>운영자: (준비 중)</li>
+        <li>이메일: (준비 중)</li>
+      </ul>
+      <blockquote>
+        <p>이 항목은 아직 정해지지 않았습니다. 확정되는 대로 이 페이지에 반영합니다.</p>
+      </blockquote>
+
+      <footer>
+        <a href="/PeaceYourMind/">Peace Your Mind로 돌아가기</a>
+      </footer>
+    </main>
+  </body>
+</html>

@@ -157,6 +157,47 @@ test("앱 셸 캐시는 지우지 않는다 (흔적이 아니라 성능이다)",
   );
 });
 
+/* --- 광고 제외 — 방침에 적은 약속을 코드가 지키는가 (2026-08-24) -------------
+ *
+ * 개인정보처리방침 2절이 이렇게 약속한다:
+ *   "위기 상황 안내 화면과 '이어서 읽기'(성경 본문) 화면에는 광고를 넣지 않습니다."
+ *
+ * ⚠ **문서만으로는 못 막는다.** 나중에 인피드 컴포넌트를 만들고 나서
+ *   "여기도 넣으면 수익이 오르지 않나" 하는 순간 방침 위반이 된다.
+ *   광고 코드가 아직 없는 지금 검사를 먼저 둔다 — 넣는 순간 걸리게.
+ *
+ * 검사 대상 어휘는 앞으로 쓸 이름을 미리 못 박은 것이다.
+ * 인피드 컴포넌트를 다른 이름으로 만들거든 **이 목록에 그 이름을 추가할 것.**
+ */
+const AD_TOKENS = ["adsbygoogle", "googlesyndication", "InFeedAd", "AdSlot", "data-ad-client"];
+const AD_FREE_SCREENS = [
+  ["CrisisScreen.jsx", "위기 화면 — 도움이 급한 자리다"],
+  ["ChapterReader.jsx", "이어서 읽기 — 본문을 읽는 자리다"],
+];
+
+for (const [file, why] of AD_FREE_SCREENS) {
+  test(`광고 없음: ${file} (${why})`, () => {
+    const src = readSource("components", file);
+    for (const token of AD_TOKENS) {
+      assert.ok(
+        !src.includes(token),
+        `${file}에 "${token}"이 들어왔다. 개인정보처리방침 2절이 이 화면에 광고를 ` +
+          `넣지 않겠다고 약속했으므로, 넣으면 방침 위반이다`,
+      );
+    }
+  });
+}
+
+test("개인정보처리방침으로 가는 길이 앱에 있다", () => {
+  // 방침이 배포돼 있어도 앱에서 갈 수 없으면 고지가 되지 않는다 (출처 표기와 같은 논리).
+  assert.ok(aboutSrc.includes("PRIVACY_URL"), "방침 링크 상수가 없다");
+  assert.ok(
+    /const PRIVACY_URL = "[^"]+"/.test(aboutSrc),
+    "PRIVACY_URL이 비어 있다 — 빈 문자열이면 링크가 그려지지 않는다",
+  );
+  assert.ok(aboutSrc.includes("개인정보처리방침"), "링크 문구가 없다");
+});
+
 test("구절 카드·위기 화면·이어서 읽기는 출처를 그리지 않는다 (2026-08-19 정책)", () => {
   // 되돌리는 것 자체는 판단의 문제지만, **조용히** 되돌아가지는 않게 한다.
   // 이 검사가 깨지면 위 정책 주석을 함께 고쳤는지 확인할 것.

@@ -39,7 +39,9 @@ const VERSION = typeof __APP_VERSION__ === "string" ? __APP_VERSION__ : "";
 //   보이는 것보다 항목이 없는 편이 낫고, 값을 넣는 순간 자동으로 나타난다.
 const OPERATOR = ""; // 예: "홍길동" 또는 "OO 스튜디오"
 const CONTACT = ""; // 예: "pym@example.com"
-const PRIVACY_URL = ""; // 예: "https://example.com/pym/privacy"
+// 개인정보처리방침 — app/public/privacy/index.html 이 이 주소로 배포된다.
+// 앱과 같은 오리진의 정적 페이지라 앱을 설치하지 않아도 열린다(스토어 심사 요건).
+const PRIVACY_URL = "/PeaceYourMind/privacy/";
 
 export function About({ attribution, onBack }) {
   return (
