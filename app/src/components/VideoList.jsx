@@ -15,8 +15,12 @@
  *   토글의 한쪽이 비면 버튼을 끄지 않고 여기서 문장을 띄운다.
  */
 
+import { Fragment } from "react";
+
+import { adPositions, positionsWithin } from "../lib/ads.js";
 import { formatDuration, thumbnailUrl, watchUrl, MEDIA } from "../lib/videos.js";
 import { T, SERIF } from "../theme.js";
+import { AdSlot } from "./AdSlot.jsx";
 
 const OTHER_LABEL = { [MEDIA.SERMON]: "찬양", [MEDIA.WORSHIP]: "말씀" };
 const SELF_LABEL = { [MEDIA.SERMON]: "말씀", [MEDIA.WORSHIP]: "찬양" };
@@ -28,10 +32,21 @@ export function VideoList({ layers, mediaType, otherCount }) {
     return <EmptySide mediaType={mediaType} otherCount={otherCount} />;
   }
 
+  /**
+   * 광고 자리 — 두 층을 이어 붙인 통합 번호로 계산한 뒤 층별로 나눈다.
+   * ⛔ 5·11·17을 여기에 박지 말 것. 폴백 시작 위치가 매일 달라
+   *    층 경계와 겹친다(ads.js 머리말 · HANDOFF 2.51).
+   */
+  const slots = adPositions({ themeCount: theme.length, fallbackCount: fallback.length });
+
   return (
     <div>
       {theme.length > 0 ? (
-        <Section title="이 마음에 맞춰 고른 영상" videos={theme} />
+        <Section
+          title="이 마음에 맞춰 고른 영상"
+          videos={theme}
+          adsAfter={positionsWithin(slots, 0, theme.length)}
+        />
       ) : null}
       {fallback.length > 0 ? (
         // 2026-08-19 문구 개정 — 정직성은 그대로, 톤만 부드럽게.
@@ -43,6 +58,7 @@ export function VideoList({ layers, mediaType, otherCount }) {
         <Section
           title="딱 맞는 건 아니지만, 요즘 올라온 것들도 놓고 갈게요"
           videos={fallback}
+          adsAfter={positionsWithin(slots, theme.length, fallback.length)}
           quiet
         />
       ) : null}
@@ -66,38 +82,55 @@ function EmptySide({ mediaType, otherCount }) {
   );
 }
 
-function Section({ title, videos, quiet }) {
+/**
+ * @param {Set<number>} adsAfter 이 층에서 광고가 따라붙는 항목 번호(1부터).
+ *   비어 있으면 광고가 없다 — 위기 화면과 "이어서 읽기"는 이 컴포넌트를
+ *   아예 쓰지 않으므로(CrisisScreen·ChapterReader가 직접 그린다) 그쪽에는
+ *   구조적으로 광고가 들어갈 수 없다. 방침 2절이 약속한 것이 그것이다.
+ */
+function Section({ title, videos, quiet, adsAfter }) {
   return (
     <section style={{ marginBottom: 30 }}>
       <h2 style={{ ...styles.heading, ...(quiet ? styles.headingQuiet : null) }}>
         {title}
       </h2>
       <ul style={styles.list}>
-        {videos.map((video) => (
-          <li key={video.videoId} style={styles.item}>
-            <a
-              href={watchUrl(video.videoId)}
-              target="_blank"
-              rel="noreferrer noopener"
-              style={styles.link}
-            >
-              <img
-                src={thumbnailUrl(video.videoId)}
-                alt=""
-                loading="lazy"
-                style={styles.thumb}
-              />
-              <span style={styles.meta}>
-                <span style={styles.title}>{video.title}</span>
-                <span style={styles.sub}>
-                  {video.channel}
-                  {formatDuration(video.duration)
-                    ? ` · ${formatDuration(video.duration)}`
-                    : ""}
+        {videos.map((video, index) => (
+          /* key를 Fragment가 든다 — 목록이 다시 조립되면(감정 전환·토글·데이터
+             갱신) 이 조각이 통째로 새로 마운트되고, 안의 <ins>도 함께 새로
+             생겨 push가 정확히 한 번만 돈다. 같은 영상이 같은 자리에 남으면
+             다시 마운트하지 않는다 — 이미 채워진 광고는 건드리지 않는 것이 맞다. */
+          <Fragment key={video.videoId}>
+            <li style={styles.item}>
+              <a
+                href={watchUrl(video.videoId)}
+                target="_blank"
+                rel="noreferrer noopener"
+                style={styles.link}
+              >
+                <img
+                  src={thumbnailUrl(video.videoId)}
+                  alt=""
+                  loading="lazy"
+                  style={styles.thumb}
+                />
+                <span style={styles.meta}>
+                  <span style={styles.title}>{video.title}</span>
+                  <span style={styles.sub}>
+                    {video.channel}
+                    {formatDuration(video.duration)
+                      ? ` · ${formatDuration(video.duration)}`
+                      : ""}
+                  </span>
                 </span>
-              </span>
-            </a>
-          </li>
+              </a>
+            </li>
+            {adsAfter?.has(index + 1) ? (
+              <li style={styles.item}>
+                <AdSlot />
+              </li>
+            ) : null}
+          </Fragment>
         ))}
       </ul>
     </section>

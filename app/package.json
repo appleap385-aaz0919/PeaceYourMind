@@ -11,7 +11,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "pretest": "npm run gen:data",
-    "test": "node --test test/behavior.test.js test/normalize.parity.test.js test/verses.test.js test/chapters.test.js"
+    "test": "node --test test/behavior.test.js test/normalize.parity.test.js test/verses.test.js test/chapters.test.js test/ads.test.js"
   },
   "dependencies": {
     "idb": "^8.0.0",
