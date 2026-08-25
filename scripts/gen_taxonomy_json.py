@@ -113,7 +113,7 @@ def build_ui(ui: dict[str, Any]) -> dict[str, Any]:
     return {
         "placeholders": list(ui.get("placeholders", {}).get("items", [])),
         "empty_input": list(ui.get("empty_input", {}).get("items", [])),
-        "no_match": str(ui.get("no_match", {}).get("message", "")),
+        "no_match": list(ui.get("no_match", {}).get("items", [])),
         "loading": {
             "min_duration_ms": int(ui.get("loading", {}).get("min_duration_ms", 1000)),
             "messages": list(ui.get("loading", {}).get("messages", [])),

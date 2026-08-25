@@ -260,10 +260,12 @@ export default function App() {
     return (
       <Shell>
         <Msg
-          title={taxonomy.ui.no_match}
-          sub=""
+          title={taxonomy.ui.no_match[0]}
+          sub={taxonomy.ui.no_match[1] || ""}
           onBack={resetToPicker}
           back="골라서 찾기"
+          onAlt={reset}
+          alt="다시 적기"
         />
       </Shell>
     );

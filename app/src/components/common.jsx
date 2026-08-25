@@ -30,8 +30,20 @@ export function Closing({ text, onBack }) {
   );
 }
 
-/** 빈 입력·분류 실패 안내. 오류가 아니라 초대처럼 보이게 한다. */
-export function Msg({ title, sub, onBack, back = "돌아가기" }) {
+/**
+ * 빈 입력·분류 실패 안내. 오류가 아니라 초대처럼 보이게 한다.
+ *
+ * [보조 버튼 — 2026-08-25]
+ *   분류 실패 문구가 "다른 말로 다시 적어 주셔도 좋아요"라고 말한다. 그러면
+ *   **그 길이 한 번에 닿아야 한다.** 전에는 고르는 화면으로 간 뒤 거기서
+ *   "직접 적기"를 또 눌러야 했다 — 두 번 이동이라 문구가 거짓이 된다.
+ *   ⚠ 문구와 경로는 함께 고쳐야 한다. 한쪽만 고치면 화면이 거짓말을 한다.
+ *
+ *   모양은 Closing의 "다시 적어보기"와 같은 조용한 텍스트 버튼이다
+ *   (#ffffff66 · 12.5px). 주 버튼(테두리 있는 jade)과 위계를 갈라 둔다 —
+ *   무엇이 기본 경로인지 화면이 말해야 한다.
+ */
+export function Msg({ title, sub, onBack, back = "돌아가기", onAlt, alt }) {
   return (
     <div className="rise" style={{ textAlign: "center", paddingTop: 60 }}>
       <div style={{ fontFamily: SERIF, fontSize: 19, color: T.mist, lineHeight: 1.7 }}>
@@ -52,6 +64,24 @@ export function Msg({ title, sub, onBack, back = "돌아가기" }) {
       >
         {back}
       </button>
+      {onAlt ? (
+        <div>
+          <button
+            type="button"
+            onClick={onAlt}
+            style={{
+              marginTop: 14,
+              padding: "6px 10px",
+              border: "none",
+              background: "transparent",
+              color: "#ffffff66",
+              fontSize: 12.5,
+            }}
+          >
+            {alt}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

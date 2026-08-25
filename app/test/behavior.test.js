@@ -926,3 +926,89 @@ test("복귀 함수는 인자를 받지 않는다 (onClick이 이벤트를 넘�
     "resetTo(mode)를 onBack에 직접 넘겼다 — mode 자리에 이벤트 객체가 앉는다",
   );
 });
+
+/* --- `구려`·`구질` 계열 — 어절 결합으로만 넣었다 (2026-08-25) ---------------
+ *
+ * 실사용 조사에서 "기분이 구려"·"기분이 구질구질해"가 미분류로 나왔다.
+ * 매칭 실패가 아니라 **사전에 어휘가 아예 없었다** — 2026-08-20의 `나쁘` 사고와
+ * 같은 유형이다.
+ *
+ * ⛔ 단독형을 넣지 않은 이유가 이 검사의 본체다. 실측으로 확인했다:
+ *     `구려`      고구려 · 하시구려(예스러운 어미)가 걸린다
+ *     `구질구질`   "날씨가 구질구질하다" — 감정 진술이 아니다
+ *   그래서 `기분`이 붙은 형태로만 넣었다. `나빠` 계열과 같은 규칙이다.
+ */
+const MUST_BE_IRRITATION_GURYEO = [
+  "기분이 구려",
+  "기분 구려",
+  "기분이구려",
+  "오늘 기분이 구려",
+  "기분이 구질구질해",
+  "기분이 구질구질하다",
+];
+
+const MUST_NOT_MATCH_GURYEO = [
+  "고구려 역사 공부가 안 돼",
+  "그렇게 하시구려",
+  "어서 오시구려",
+  "날씨가 구질구질하다",
+  "구질구질한 변명은 그만",
+  "옷이 구려",
+];
+
+test("`구려`·`구질` 계열이 짜증으로 걸린다", () => {
+  const missed = MUST_BE_IRRITATION_GURYEO.filter(
+    (s) => subcategoryOf(s) !== "anger.irritation",
+  );
+  assert.deepEqual(missed, [], `짜증으로 안 걸렸다: ${missed.join(" · ")}`);
+});
+
+test("⛔ 단독 `구려`·`구질구질` 함정 — 감정이 아닌 문장이 걸리지 않는다", () => {
+  // 이 목록이 통과하는 한 단독형을 넣지 않은 판단이 유지된다.
+  // ⚠ 여기에 단독형을 추가하면 이 검사가 먼저 깨진다 — 그것이 목적이다.
+  const leaked = MUST_NOT_MATCH_GURYEO.filter(
+    (s) => subcategoryOf(s) === "anger.irritation",
+  );
+  assert.deepEqual(leaked, [], `짜증으로 샜다: ${leaked.join(" · ")}`);
+});
+
+/* --- 분류 실패 안내 문구와 경로가 함께 맞는가 (2026-08-25) ------------------
+ *
+ * ⚠ 문구가 "다른 말로 다시 적어 주셔도 좋아요"라고 말하면 **그 길이 한 번에
+ *   닿아야 한다.** 전에는 고르는 화면으로 간 뒤 "직접 적기"를 또 눌러야 했다.
+ *   문구만 고치고 버튼을 안 두면 화면이 거짓말을 한다 — 둘을 함께 고정한다.
+ */
+test("분류 실패 문구가 '아래에서'라고 말하지 않는다 (아래에 아무것도 없다)", () => {
+  const [title, sub] = taxonomy.ui.no_match;
+  assert.ok(title && sub, "no_match가 [제목, 부연] 두 줄이 아니다");
+  assert.ok(
+    !`${title}${sub}`.includes("아래에서"),
+    "화면에 없는 것을 가리킨다 — 버튼 하나뿐이고 고르는 화면은 눌러야 나온다",
+  );
+});
+
+test("'다시 적어도 된다'고 말하면 그 버튼이 그 화면에 있다", () => {
+  const [, sub] = taxonomy.ui.no_match;
+  const promises = /다시 적/.test(sub);
+  const block = appSrc.slice(appSrc.indexOf("taxonomy.ui.no_match"));
+  const msg = block.slice(0, block.indexOf("/>"));
+  const hasAlt = /onAlt=\{reset\}/.test(msg) && /alt="다시 적기"/.test(msg);
+  assert.equal(
+    promises,
+    hasAlt,
+    promises
+      ? "문구는 다시 적으라고 하는데 그 버튼이 없다 — 두 번 이동이라 문구가 거짓이 된다"
+      : "버튼만 있고 문구가 안내하지 않는다",
+  );
+});
+
+test("보조 버튼은 주 버튼과 위계가 갈린다", () => {
+  const src = readSource("components", "common.jsx");
+  const msg = src.slice(src.indexOf("export function Msg"));
+  const body = msg.slice(0, msg.indexOf("export function", 10));
+  assert.ok(/onAlt \? \(/.test(body), "보조 버튼이 조건부가 아니다 — 빈 입력 화면에도 뜬다");
+  assert.ok(
+    /#ffffff66/.test(body) && /fontSize: 12\.5/.test(body),
+    "보조 버튼이 Closing의 조용한 텍스트 버튼과 같은 모양이 아니다",
+  );
+});
