@@ -608,8 +608,15 @@ test("번역본 표시가 개역한글이다", () => {
 
 /* --- 서비스 표시 이름 — 이름과 경로를 갈라 놓는다 (2026-08-25) --------------
  *
- * 표시명을 "Peace Your Mind" → "Peace in Your Mind"로 바꿨다.
- * 그러나 **경로·레포는 구명(PeaceYourMind)을 그대로 쓴다.**
+ * 표시명은 **하루에 두 번 바뀌었다.** 이력을 지우지 않는다.
+ *
+ *   Peace Your Mind  →  Peace in Your Mind  →  Peace in Mind
+ *                                              ★ 지금 값
+ *
+ *   마지막에 다시 줄인 이유 — `short_name`은 홈 화면 아이콘 밑에 붙는 라벨이라
+ *   길면 런처가 자른다. 13자로 줄여 **name과 short_name을 같은 값으로 유지**한다.
+ *
+ * 그러나 세 번 다 **경로·레포는 구명(PeaceYourMind)을 그대로 썼다.**
  *
  *   AdSense 심사가 이 URL로 진행 중이다 — 바꾸면 심사가 끊긴다
  *   서비스워커 scope와 start_url이 경로다 — 바꾸면 설치된 PWA가 깨진다
@@ -618,15 +625,26 @@ test("번역본 표시가 개역한글이다", () => {
  * ⚠ 그래서 이 저장소에서 **"이름"과 "경로"는 서로 다른 것이다.**
  *   한쪽을 고치다 다른 쪽까지 함께 고치는 사고가 이 검사가 막으려는 것이다.
  *
- * ⛔ 표시명을 상수 한 곳으로 모으지 않았다 — 세 자리가 전부 정적 파일이고
+ * ⛔ 표시명을 상수 한 곳으로 모으지 않았다 — 노출 자리가 전부 정적 파일이고
  *   (index.html · manifest · 방침 HTML) 빌드가 문자열을 주입하지 않는다.
  *   상수 대신 **자리끼리 일치하는지**로 묶는다.
  * ⚠ 유저 사이트(appleap385-aaz0919.github.io)는 **다른 레포라 이 검사가 못 본다.**
  *   이름을 또 바꾸거든 그쪽 index.html도 손으로 함께 고칠 것.
  */
-const DISPLAY_NAME = "Peace in Your Mind";
-const OLD_DISPLAY_NAME = "Peace Your Mind";
+const DISPLAY_NAME = "Peace in Mind";
+
+/**
+ * 지금까지 쓴 옛 이름 전부. **줄이지 말고 쌓을 것** — 하나를 빼면 그 이름이
+ * 어딘가에 남아도 검사가 통과한다.
+ * ⚠ 셋 중 어느 것도 서로의 부분 문자열이 아니다. 부분 일치 함정이 없다:
+ *     "Peace in Mind"는 "Peace Your Mind"·"Peace in Your Mind"를 포함하지 않고
+ *     그 반대도 성립하지 않는다.
+ */
+const RETIRED_NAMES = ["Peace Your Mind", "Peace in Your Mind"];
+
 const BASE_PATH = "/PeaceYourMind/";
+/** 홈 화면 라벨이 잘리지 않는 상한. 이번 재변경의 근거가 이 값이다. */
+const SHORT_NAME_MAX = 13;
 
 const indexHtml = readFileSync(join(root, "index.html"), "utf8").replace(
   /<!--[\s\S]*?-->/g,
@@ -642,20 +660,39 @@ const manifest = JSON.parse(
 const viteConfig = readAppFile("vite.config.js");
 
 test("표시 이름이 모든 노출 자리에서 같다", () => {
-  const spots = [
+  // 값 자체가 이름인 자리 — 정확히 같아야 한다.
+  for (const [where, value] of [
     ["앱 <title>", (indexHtml.match(/<title>([^<]*)<\/title>/) || [])[1]],
     ["manifest.name", manifest.name],
     ["manifest.short_name", manifest.short_name],
+  ]) {
+    assert.equal(value, DISPLAY_NAME, where + "가 표시명과 다르다");
+  }
+  // 문장 안에 이름이 박히는 자리 — 포함이면 된다.
+  for (const [where, value] of [
     ["방침 <title>", (privacyHtml.match(/<title>([^<]*)<\/title>/) || [])[1]],
     ["방침 <h1>", (privacyHtml.match(/<h1>([^<]*)<\/h1>/) || [])[1]],
-  ];
-  for (const [where, value] of spots) {
+    ["방침 1절 본문", privacyHtml],
+    ["방침 돌아가기 문구", privacyHtml],
+  ]) {
     assert.ok(value, where + "를 못 읽었다 — 검사가 헛돌고 있다");
     assert.ok(
       value.includes(DISPLAY_NAME),
-      where + '가 "' + value + '"다. 표시명은 "' + DISPLAY_NAME + '"이어야 한다',
+      where + '에 표시명 "' + DISPLAY_NAME + '"이 없다',
     );
   }
+});
+
+test("name과 short_name이 같고, 홈 화면 라벨이 잘릴 길이가 아니다", () => {
+  assert.equal(
+    manifest.short_name,
+    manifest.name,
+    "둘을 같게 유지하는 것이 이름 길이를 13자로 정한 이유다",
+  );
+  assert.ok(
+    manifest.short_name.length <= SHORT_NAME_MAX,
+    'short_name이 ' + manifest.short_name.length + '자다 — 홈 화면 라벨이 잘린다',
+  );
 });
 
 test("옛 표시 이름이 사용자에게 보이는 곳에 남아 있지 않다", () => {
@@ -664,11 +701,12 @@ test("옛 표시 이름이 사용자에게 보이는 곳에 남아 있지 않다
     ["방침", privacyHtml],
     ["manifest", JSON.stringify(manifest)],
   ]) {
-    // "Peace in Your Mind"는 "Peace Your Mind"를 포함하지 않는다 — 부분 일치 함정이 없다.
-    assert.ok(
-      !text.includes(OLD_DISPLAY_NAME),
-      where + '에 옛 이름 "' + OLD_DISPLAY_NAME + '"이 남았다',
-    );
+    for (const retired of RETIRED_NAMES) {
+      assert.ok(
+        !text.includes(retired),
+        where + '에 옛 이름 "' + retired + '"이 남았다',
+      );
+    }
   }
 });
 
@@ -683,9 +721,14 @@ test("이름을 바꿔도 경로·식별자는 구명 그대로다 (심사·PWA�
     aboutSrc.includes('const PRIVACY_URL = "' + BASE_PATH + 'privacy/"'),
     "About의 방침 링크 경로가 바뀌었다 — 404가 난다",
   );
-  // 이름 쪽 오염 방지: 경로에 새 이름(공백 포함)이 끼어들면 URL이 깨진다.
-  assert.ok(
-    !viteConfig.includes(DISPLAY_NAME) && !JSON.stringify(manifest).includes(BASE_PATH.replace("PeaceYourMind", "Peace in Your Mind")),
-    "표시명이 경로 자리로 새어 들어갔다",
-  );
+  // 이름 쪽 오염 방지: 표시명은 공백을 포함한다. 경로 자리에 끼어들면 URL이 깨진다.
+  for (const [where, text] of [
+    ["vite.config.js", viteConfig],
+    ["manifest 경로 필드", manifest.start_url + " " + manifest.scope],
+  ]) {
+    assert.ok(
+      !text.includes(DISPLAY_NAME),
+      where + "에 표시명이 새어 들어갔다 — 경로는 구명을 쓴다",
+    );
+  }
 });

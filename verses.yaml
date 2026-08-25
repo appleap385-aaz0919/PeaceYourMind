@@ -227,7 +227,7 @@ verses:
       두려워하지도 말라
     emotion_tags: [anxiety.restless, anxiety.tension]
     theme: peace
-    note: 서비스명(Peace in Your Mind)과 직결되는 대표 구절. 초조함 화면의 첫 후보.
+    note: 서비스명(Peace in Mind)과 직결되는 대표 구절. 초조함 화면의 첫 후보.
     verified: true
     verified_by: verify_verses.py(krv1961@bluesaurel/Korean-Bible-1961-KRV#65cdce8)
     verified_at: "2026-08-18"

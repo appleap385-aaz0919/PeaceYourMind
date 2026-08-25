@@ -67,7 +67,7 @@ themes:
 
   - id: peace
     label: 평안
-    intent: 불안을 억누르지 않고, 마음을 가라앉히는 방향으로 받친다. 서비스명(Peace in Your Mind)의 중심 주제.
+    intent: 불안을 억누르지 않고, 마음을 가라앉히는 방향으로 받친다. 서비스명(Peace in Mind)의 중심 주제.
     title_keywords: [평안, 평강, 두려워, 염려]
     caution: >
       "염려"는 마 6:34 계열 설교 제목에 흔해 유효하지만, "염려 마세요" 류
