@@ -179,14 +179,28 @@ export default function App() {
     [show],
   );
 
-  const reset = useCallback(() => {
+  /**
+   * 입력 화면으로 되돌린다. **입력창을 비우는 유일한 자리다.**
+   *
+   * [왜 비우는가 — 2026-08-25 사용자 결정]
+   *   마음이 힘들어 적은 문장이 화면에 그대로 남아 있는 것이 이 앱에 맞지 않다.
+   *   결과를 보고 돌아오든 못 알아들어서 돌아오든 같다.
+   *
+   * ⚠ 인자를 받지 않는다. Msg·Closing이 `onClick={onBack}`으로 넘기므로
+   *   **클릭 이벤트가 첫 인자로 들어온다.** `reset(mode)` 형태로 두면
+   *   mode 자리에 이벤트 객체가 앉는다. 그래서 목적지별로 함수를 나눈다.
+   */
+  const resetTo = useCallback((mode) => {
     setResult(null);
     setSelectedCategory(null);
     setText("");
-    setMode("text");
+    setMode(mode);
     setPhase("input");
     setPlaceholder(pickMessage("placeholder", taxonomy.ui.placeholders));
   }, []);
+  const reset = useCallback(() => resetTo("text"), [resetTo]);
+  /** 분류 실패에서 나가는 길 — 고르는 화면으로 간다. 비우는 것은 위와 같다. */
+  const resetToPicker = useCallback(() => resetTo("select"), [resetTo]);
 
   if (showAbout) {
     // 떠 있는 버튼과 하단 버튼이 **같은 함수**를 쓴다. 복귀 경로가 둘로
@@ -248,11 +262,7 @@ export default function App() {
         <Msg
           title={taxonomy.ui.no_match}
           sub=""
-          onBack={() => {
-            setResult(null);
-            setMode("select");
-            setPhase("input");
-          }}
+          onBack={resetToPicker}
           back="골라서 찾기"
         />
       </Shell>

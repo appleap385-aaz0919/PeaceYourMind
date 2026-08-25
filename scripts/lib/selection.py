@@ -24,6 +24,7 @@ from lib.tagging import SERMON, UNKNOWN, WORSHIP
 from lib.themes import (
     CRISIS_MAX_VIDEOS,
     CRISIS_MIN_VIDEOS,
+    FALLBACK_MAX_PER_SUBCATEGORY,
     PER_CHANNEL_STEPS,
     THEME_MAX_PER_CHANNEL,
     THEME_MAX_VIDEOS,
@@ -34,6 +35,47 @@ logger = logging.getLogger("build_videos")
 
 # 한 주제의 20슬롯을 형식별로 몇 건까지 먼저 확보할 것인가 (나머지는 남는 쪽이 채운다).
 MEDIA_BALANCE_TARGET = THEME_MAX_VIDEOS // 2
+
+# 반대 형식 바닥 — 토글 한쪽이 이 아래로 내려가지 않게 한다 (2026-08-25 신설).
+#
+# [왜 필요한가 — MEDIA_BALANCE_TARGET만으로는 못 막았다]
+#   위 상수는 **주제 풀 안에서만** 동작한다. 풀에 그 형식이 아예 없으면 예약해도
+#   채울 것이 없고, 부족분이 조용히 사라진 채 나머지 형식이 20슬롯을 다 가져갔다.
+#   실측: anger.irritation·exhaustion.tired가 [말씀] 탭 0건. 두 화면 모두 주제가
+#   self_control(영상 0건) + quiet_worship(어휘가 전부 찬양이라 말씀이 안 나온다)이다.
+#
+#   ⚠ **공급이 늘수록 나빠지는 구조였다.** 찬양 3곳 승인으로 quiet_worship 풀이
+#     10 → 207이 되자 주제분만으로 20슬롯이 차서 폴백 층이 사라졌고, 폴백이 넣어
+#     주던 unknown 3건이 [말씀] 탭의 유일한 재고였다 → 3건에서 0건이 됐다.
+#
+# [왜 4인가]
+#   배포본 24화면의 **약한 쪽 건수 분포**에서 정했다 (2026-08-24 실측).
+#       중앙값 6 · 1사분위 4 · 최소 0
+#   4는 중앙값 아래라 건강한 화면을 건드리지 않는다 — 이 값 이상인 19개 화면은
+#   아래 계산이 전부 0으로 지나간다. 실제로 슬롯을 내주는 화면은 5개뿐이다.
+#   ⛔ 이 값을 키워서 "충분히 나오게" 만들려 하지 말 것. 그것은 폴백을 늘리는
+#     것이고, 폴백은 감정에 맞춰 고른 영상이 아니다 — 정확도를 잃는다.
+#     "비지 않게"는 여기서 풀고, "충분히"는 채널 발굴로 푼다 (HANDOFF 2.59).
+MEDIA_FLOOR = 4
+
+
+def visible_count(videos: Sequence[TaggedVideo], media_type: str) -> int:
+    """토글 한쪽에 실제로 보이는 건수. **앱의 visibleVideos()와 같은 기준이다.**
+
+    unknown은 양쪽 토글 모두에 노출되므로 양쪽에 센다(PLAN.md 3.4). 그래서
+    말씀 합계 + 찬양 합계는 전체보다 클 수 있다 — 그게 정상이다.
+    """
+    return sum(1 for t in videos if t.media.media_type in (media_type, UNKNOWN))
+
+
+def weak_side(videos: Sequence[TaggedVideo]) -> str:
+    """토글 두 쪽 중 더 적게 보이는 쪽. 동수면 SERMON (결정적이어야 한다).
+
+    ⚠ 양쪽이 **동시에** MEDIA_FLOOR 아래인 경우는 다루지 않는다. unknown이 양쪽에
+      세어지므로 `말씀 + 찬양 >= 전체`이고, 둘 다 4 미만이려면 화면이 8건 미만이어야
+      한다. 그것은 SUBCATEGORY_MIN_VIDEOS 경보가 이미 잡는 별개의 상태다.
+    """
+    return SERMON if visible_count(videos, SERMON) <= visible_count(videos, WORSHIP) else WORSHIP
 
 
 # =============================================================================
@@ -256,6 +298,14 @@ def fill_balanced(
       unknown은 별도 몫을 두지 않는다. 양쪽 토글 모두에 노출되므로 어느 쪽의
       빈 화면도 만들지 않기 때문이다. 남은 슬롯을 채우는 3차 순회에서 들어온다.
 
+    [2026-08-25 — 풀에 없으면 슬롯을 비워서 폴백에 넘긴다]
+      위 균형은 **풀 안에서만** 성립한다. 풀에 한쪽 형식이 없으면 예약분이 조용히
+      사라지고 반대 형식이 20슬롯을 다 가져갔다. 그래서 3차 순회를 둘로 나눴다.
+        3-a  약한 쪽을 MEDIA_FLOOR까지 **먼저** 채운다 (풀에 있으면 여기서 끝난다)
+        3-b  그래도 모자라면 그 수만큼 슬롯을 비우고 20 미만을 돌려준다
+      ⚠ 이 함수는 이제 **항상 20을 채우지 않는다.** 호출부가 빈 자리를 폴백으로
+        메운다. 20을 넘기지는 않는다.
+
     [순서]
       선정은 라운드로빈(채널 분산)으로 하고, **출력 순서는 최신순으로 되돌린다.**
       선정 순서 그대로 내보내면 목록 앞쪽에 말씀이 뭉치는데, 토글로 걸러 보는
@@ -269,13 +319,36 @@ def fill_balanced(
         group = [t for t in pool if t.media.media_type == media_type]
         picked.extend(_round_robin(group, cap, MEDIA_BALANCE_TARGET, order, used))
 
+    # 3-a) 약한 쪽 바닥을 **먼저** 확보한다. 남은 자리를 아무거나로 덮고 나면
+    #      되돌릴 방법이 없다 — 그때는 무엇을 뺄지 골라야 하고, 그 규칙은
+    #      "근거가 강한 주제분을 빼서 약한 폴백을 넣는다"가 되어 층 설계와 어긋난다.
+    weak = weak_side(picked)
     taken = {t.video_id for t in picked}
     rest = [t for t in pool if t.video_id not in taken]
-    picked.extend(_round_robin(rest, cap, THEME_MAX_VIDEOS - len(picked), order, used))
+    floor_need = MEDIA_FLOOR - visible_count(picked, weak)
+    if floor_need > 0:
+        weak_rest = [t for t in rest if t.media.media_type in (weak, UNKNOWN)]
+        picked.extend(_round_robin(weak_rest, cap, floor_need, order, used))
+
+    # 3-b) 나머지. 3-a로도 바닥에 못 미치면 **그만큼 슬롯을 비운 채 돌려준다.**
+    #      풀에 없는 것을 여기서 만들 수는 없고, 비워 두면 폴백 층이 그 자리를
+    #      받는다(build_videos의 형식 보장분). 20을 넘기지 않는 것이 조건이다 —
+    #      20은 데이터 상한이 아니라 제품 결정이다(선택 부담, taxonomy content_policy).
+    reserved = max(0, MEDIA_FLOOR - visible_count(picked, weak))
+    taken = {t.video_id for t in picked}
+    rest = [t for t in pool if t.video_id not in taken]
+    picked.extend(
+        _round_robin(rest, cap, THEME_MAX_VIDEOS - reserved - len(picked), order, used)
+    )
 
     rank = {t.video_id: i for i, t in enumerate(pool)}
     picked.sort(key=lambda t: rank.get(t.video_id, len(rank)))
     return picked
+
+
+def reserved_slots(picked: Sequence[TaggedVideo]) -> int:
+    """이 선정 결과가 폴백에 넘긴 슬롯 수. fill_balanced가 비워 둔 만큼이다."""
+    return max(0, MEDIA_FLOOR - visible_count(picked, weak_side(picked)))
 
 
 def select_theme_videos(
@@ -283,8 +356,15 @@ def select_theme_videos(
 ) -> tuple[list[TaggedVideo], int, bool]:
     """주제 하나의 최종 목록을 고른다.
 
+    ⚠ **목표는 20이 아니라 `20 - reserved_slots()`다** (2026-08-25).
+      fill_balanced가 반대 형식 자리를 비워 두면 여기서 20에 절대 닿지 못한다.
+      그것을 "못 채웠다"로 읽으면 상한 사다리가 끝까지 올라가 **채널 분산이
+      이유 없이 무너진다.** 실측으로 잡았다 — 독식 채널이 상한 3을 지키던
+      풀에서 5건까지 올라갔다(spread_test 1절).
+      ⛔ 비워 둔 자리를 "미달"로 세지 말 것. 그 자리는 폴백이 받기로 되어 있다.
+
     완화 순서 (FYM 승계)
-      1. 기본 상한(3)으로 20건이 차면 그대로 쓴다 — 분산이 개수보다 우선이다.
+      1. 기본 상한(3)으로 목표가 차면 그대로 쓴다 — 분산이 개수보다 우선이다.
       2. 못 채우면 4, 5로 한 단계씩 올린다.
       3. 마지막 단계로도 하한(15)에 못 미치는데 **상한만 풀면 채울 수 있는**
          경우에만 상한을 해제한다. 풀 자체가 얕아서 미달인 경우에는 해제해도
@@ -295,7 +375,7 @@ def select_theme_videos(
     ladder = per_channel_ladder()
     for cap in ladder:
         picked = fill_balanced(pool, cap, day_of_year)
-        if len(picked) >= THEME_MAX_VIDEOS:
+        if len(picked) >= THEME_MAX_VIDEOS - reserved_slots(picked):
             return picked, cap, False
 
     last = ladder[-1]
@@ -338,7 +418,7 @@ def select_crisis_videos(
 
 def select_fallback_videos(
     untagged: Sequence[TaggedVideo],
-    media_default: str,
+    target: str,
     need: int,
     day_of_year: int,
     *,
@@ -347,9 +427,24 @@ def select_fallback_videos(
     """주제 태깅이 안 된 영상으로 화면의 남은 슬롯을 채운다 (PLAN.md 3.3 개정).
 
     [무엇을 담는가]
-      그 세분류의 기본 형식(media_defaults) + unknown. unknown을 넣는 것은
-      **양쪽 토글 모두에 노출되는 값**이라 어느 쪽에서도 빈 화면을 만들지 않기
-      때문이다(주제 태깅의 untagged와 다르다).
+      target 형식 + unknown. unknown을 넣는 것은 **양쪽 토글 모두에 노출되는 값**이라
+      어느 쪽에서도 빈 화면을 만들지 않기 때문이다(주제 태깅의 untagged와 다르다).
+
+    [2026-08-25 — target을 인자로 받는다. 필터를 없앤 것이 아니다]
+      전에는 화면의 media_default가 여기 박혀 있어, 찬양 기본 화면은 폴백으로도
+      찬양만 받았다. 그러면 [말씀] 탭이 빈 화면을 벗어날 방법이 없다.
+      호출부가 슬롯 그룹마다 목표 형식을 정해 두 번 부른다.
+        형식 보장분   target = 약한 형식   (MEDIA_FLOOR까지만)
+        개수 보충분   target = media_default
+      **"아무거나 넣지 않는다"는 필터의 목적은 그대로 살아 있다** — 무엇이 목표인지만
+      슬롯 그룹별로 달라진다.
+
+    ★ 편집 결정 (2026-08-25, 사용자) — 찬양 기본 화면에 말씀 폴백을 넣어도 된다.
+      media_default는 "먼저 보여준다"는 판단이지 "반대 형식을 안 보여준다"가 아니다.
+      [말씀] 토글의 존재 자체가 그 증거이고, 사용자가 그것을 눌렀다는 것은 설교를
+      보고 싶다고 명시한 것이다. 거기서 0건은 편집 의도가 아니라 그냥 빈 화면이다.
+      토글이 갈라 주므로 찬양 목록에 말씀이 섞이지도 않는다(visibleVideos).
+      ⚠ 반대 형식은 MEDIA_FLOOR까지만이다. 기본 형식이 16/20을 유지해 편집 의도가 남는다.
 
     [정렬은 주제분과 같은 규칙이다 — 최신순 + 채널 라운드로빈]
       채널 간 우열을 두지 않는다. 승인 채널은 전원 동등한 자격으로 목록에 있고
@@ -368,8 +463,65 @@ def select_fallback_videos(
     pool = [
         t
         for t in untagged
-        if t.video_id not in exclude and t.media.media_type in (media_default, UNKNOWN)
+        if t.video_id not in exclude and t.media.media_type in (target, UNKNOWN)
     ]
     order = _channel_order(pool, day_of_year)
     used: Counter[str] = Counter()
     return _round_robin(pool, THEME_MAX_PER_CHANNEL, need, order, used)
+
+
+def select_fallback_layer(
+    untagged: Sequence[TaggedVideo],
+    picked: Sequence[TaggedVideo],
+    media_default: str,
+    day_of_year: int,
+    *,
+    exclude: set[str],
+) -> list[TaggedVideo]:
+    """폴백 층을 두 몫으로 나눠 채운다 — 형식 보장분 먼저, 개수 보충분 나중 (2026-08-25).
+
+    [왜 나눴는가 — need가 개수만 봤다]
+      전에는 `need = min(20 - 주제분, 12)` 하나였다. 주제분이 20을 채우면 need가 0이라
+      폴백 함수가 즉시 빈 목록을 냈고, **20건이 전부 찬양이어도 폴백이 돌지 않았다.**
+      게다가 돌았더라도 풀 필터가 media_default로 고정돼 있어 반대 형식은 못 들어왔다.
+      두 겹 다 열려야 [말씀] 탭의 빈 화면이 풀린다.
+
+      ⚠ 주제분이 20을 채우는 화면일수록 이 문제가 심했다 — **공급이 늘수록 나빠지는
+        구조였다.** 어제 찬양 3곳 승인으로 두 화면이 3건 → 0건이 됐다.
+
+    [순서가 중요하다]
+      형식 보장분을 **먼저** 뽑는다. 개수 보충분이 남은 자리를 다 가져가고 나면
+      보장분이 들어갈 자리가 없다. 둘을 합친 뒤에는 최신순으로 되돌린다 —
+      선정 순서가 아니라 사용자가 읽는 순서로 내보낸다(fill_balanced와 같은 규칙).
+
+    ⚠ 두 몫을 합쳐도 FALLBACK_MAX_PER_SUBCATEGORY(12)를 넘지 않는다. 폴백이 화면을
+      다 덮지 못하게 막는 정책은 그대로다.
+    """
+    open_slots = THEME_MAX_VIDEOS - len(picked)
+    if open_slots <= 0:
+        return []
+
+    # ① 형식 보장분 — 약한 쪽을 MEDIA_FLOOR까지. **여기서만 반대 형식이 들어온다.**
+    weak = weak_side(picked)
+    need_fmt = min(
+        open_slots,
+        FALLBACK_MAX_PER_SUBCATEGORY,
+        max(0, MEDIA_FLOOR - visible_count(picked, weak)),
+    )
+    by_format = select_fallback_videos(untagged, weak, need_fmt, day_of_year, exclude=exclude)
+
+    # ② 개수 보충분 — 남은 자리를 화면 기본 형식으로.
+    need_count = min(
+        open_slots - len(by_format),
+        FALLBACK_MAX_PER_SUBCATEGORY - len(by_format),
+    )
+    by_count = select_fallback_videos(
+        untagged,
+        media_default,
+        need_count,
+        day_of_year,
+        exclude=exclude | {t.video_id for t in by_format},
+    )
+
+    rank = {t.video_id: i for i, t in enumerate(untagged)}
+    return sorted(by_format + by_count, key=lambda t: rank.get(t.video_id, len(rank)))

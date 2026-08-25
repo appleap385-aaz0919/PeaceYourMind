@@ -869,3 +869,60 @@ test("소스를 읽는 테스트는 전부 readSource()를 지난다 (같은 함
     );
   }
 });
+
+/* --- 분류 실패에서 나올 때 입력창을 비운다 (2026-08-25 사용자 결정) ---------
+ *
+ * 마음이 힘들어 적은 문장이 화면에 그대로 남아 있는 것이 이 앱에 맞지 않다.
+ * 결과를 보고 돌아오든(reset) 못 알아들어서 돌아오든(resetToPicker) 같다.
+ *
+ * ⚠ 전에는 분류 실패 경로만 인라인 핸들러였고 setText("")가 없었다.
+ *   성공 경로는 처음부터 비우고 있었다 — **두 경로가 갈려 있었다는 것이 결함이다.**
+ * ⚠ Msg는 onClick={onBack}으로 넘긴다 — 클릭 이벤트가 첫 인자로 들어온다.
+ *   목적지를 인자로 받는 함수를 onBack에 그대로 두면 그 자리에 이벤트 객체가 앉는다.
+ */
+const appSrc = readSource("App.jsx");
+
+test("입력창을 비우는 자리가 하나뿐이고, 두 복귀 경로가 그것을 함께 쓴다", () => {
+  const setters = appSrc.match(/setText\(""\)/g) || [];
+  assert.equal(
+    setters.length,
+    1,
+    `setText("")가 ${setters.length}곳이다 — 비우는 자리는 resetTo 하나여야 한다`,
+  );
+  assert.ok(
+    /const resetTo = useCallback\(\(mode\) => \{[\s\S]*?setText\(""\)/.test(appSrc),
+    "resetTo가 입력창을 비우지 않는다",
+  );
+  assert.ok(
+    /const reset = useCallback\(\(\) => resetTo\("text"\)/.test(appSrc),
+    "reset이 resetTo를 거치지 않는다 — 경로가 갈리면 한쪽만 고쳐지는 날이 온다",
+  );
+  assert.ok(
+    /const resetToPicker = useCallback\(\(\) => resetTo\("select"\)/.test(appSrc),
+    "resetToPicker가 resetTo를 거치지 않는다",
+  );
+});
+
+test("분류 실패 화면이 인라인 핸들러가 아니라 resetToPicker를 쓴다", () => {
+  const block = appSrc.slice(appSrc.indexOf("taxonomy.ui.no_match"));
+  const msg = block.slice(0, block.indexOf("/>"));
+  assert.ok(
+    /onBack=\{resetToPicker\}/.test(msg),
+    "분류 실패 복귀가 resetToPicker가 아니다 — 입력창이 안 비워진다",
+  );
+  assert.ok(
+    !/setPhase\("input"\)/.test(msg),
+    "인라인 핸들러가 남아 있다 — 비우는 자리를 우회한다",
+  );
+});
+
+test("복귀 함수는 인자를 받지 않는다 (onClick이 이벤트를 넘긴다)", () => {
+  for (const name of ["reset", "resetToPicker"]) {
+    const decl = new RegExp(`const ${name} = useCallback\\(\\(\\) =>`);
+    assert.ok(decl.test(appSrc), `${name}이 인자를 받는다 — onBack에 그대로 넘길 수 없다`);
+  }
+  assert.ok(
+    !/onBack=\{resetTo\}/.test(appSrc),
+    "resetTo(mode)를 onBack에 직접 넘겼다 — mode 자리에 이벤트 객체가 앉는다",
+  );
+});

@@ -94,14 +94,13 @@ from lib.results import (
 from lib.selection import (
     drop_promotional,
     rotate_for_subcategory,
-    select_fallback_videos,
+    select_fallback_layer,
     select_theme_videos,
 )
 from lib.taxonomy import load_subcategory_ids
 from lib.tagging import SERMON, UNKNOWN, WORSHIP, classify_media_type, tag_themes
 from lib.themes import (
     FALLBACK_HEAVY_RATIO,
-    FALLBACK_MAX_PER_SUBCATEGORY,
     MIN_DURATION_SECONDS,
     SUBCATEGORY_MIN_VIDEOS,
     THEME_MAX_VIDEOS,
@@ -389,11 +388,10 @@ def build_subcategories(
         picked = rotate_for_subcategory(picked, position)
 
         media_default = ctx.themes.media_default(sub) or SERMON
-        need = min(THEME_MAX_VIDEOS - len(picked), FALLBACK_MAX_PER_SUBCATEGORY)
-        fallback = select_fallback_videos(
+        fallback = select_fallback_layer(
             untagged,
+            picked,
             media_default,
-            need,
             day_of_year,
             exclude=exclude | {t.video_id for t in picked},
         )
