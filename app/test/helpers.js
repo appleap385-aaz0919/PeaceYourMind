@@ -44,6 +44,20 @@ export function readSource(...parts) {
   return stripComments(readFileSync(join(SRC, ...parts), "utf8"));
 }
 
+/**
+ * app/ 루트의 설정 파일(vite.config.js 등)을 주석 없이 읽는다.
+ *
+ * ⚠ src/ 밖이라 readSource()가 닿지 않지만 **사정은 똑같다** —
+ *   vite.config.js의 주석이 base 경로를 그대로 인용한다(`/PeaceYourMind/`).
+ *   그래서 `includes("/PeaceYourMind/")` 같은 느슨한 검사는 코드를 지워도
+ *   주석만으로 통과한다. 3회차 거짓 통과와 정확히 같은 모양이다.
+ * ★ 원본 읽기는 이 파일 안에만 둔다. test/ 쪽에서 readFileSync로 .js를 직접
+ *   읽으면 sourcesAreStripped 검사가 막는다 — 그 통로가 여기다.
+ */
+export function readAppFile(...parts) {
+  return stripComments(readFileSync(join(here, "..", ...parts), "utf8"));
+}
+
 /** 주석까지 그대로 필요할 때만. 쓰는 곳에 이유를 적을 것. */
 export function readSourceRaw(...parts) {
   return readFileSync(join(SRC, ...parts), "utf8");

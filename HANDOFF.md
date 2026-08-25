@@ -75,7 +75,7 @@ self_control 0 · rest 0
 감정 분류   대분류 9 · 세분류 24 · 키워드 920
 채널       allowlist 19 (하한 15까지 여유 4)
            blocklist 0 · reviewed_out 13
-게이트      파이썬 5종 + 앱 149건
+게이트      파이썬 5종 + 앱 152건
 ```
 <!-- STATS:END -->
 
@@ -5227,6 +5227,89 @@ scroll 399·맨아래  opacity 0    · aria-hidden true    하단 버튼 등장 
 
 ---
 
+### 2.58 서비스 표시 이름 변경 — 이름과 경로를 갈라 놓았다 (2026-08-25)
+
+**① 표시명만 바꿨다. 경로·레포·약어는 그대로다**
+
+```
+표시명   Peace Your Mind  →  Peace in Your Mind
+경로     /PeaceYourMind/      ⛔ 그대로
+레포     PeaceYourMind        ⛔ 그대로
+약어     PYM                  ⛔ 그대로 (in을 반영해 PIYM으로 바꾸지 않는다 — 사용자 결정)
+```
+
+★ **왜 경로는 구명을 유지하는가 — 이유가 셋이다.**
+
+```
+1  AdSense 심사가 이 URL로 진행 중이다. 경로가 바뀌면 심사가 끊긴다
+2  manifest의 start_url·scope가 경로다. 바꾸면 **이미 설치된 PWA가 깨진다**
+   (서비스워커 scope=/PeaceYourMind/ 로 등록돼 있다)
+3  앱으로 배포하면 경로는 사용자에게 보이지 않는다 — 구명 유지가 확정 방침이다
+```
+
+**② 바꾼 자리 (①사용자 노출 · ③문서)**
+
+```
+① 앱      app/index.html <title>
+① 앱      manifest.webmanifest  name · short_name
+① 방침    privacy/index.html  <title> · <h1> · 1절 본문 · 돌아가기 링크 문구
+① 루트    유저 사이트 index.html  <title> · <h1> · "열기" 링크 문구  (다른 레포)
+③ 문서    PLAN.md 제목·표 · themes.yaml peace intent · verses.yaml 대표 구절 note
+③ 주석    icons/icon.svg 머리말
+```
+
+⛔ **손대지 않은 자리(②)** — vite.config.js `BASE` · manifest `start_url`·`scope` ·
+  app/index.html의 manifest·아이콘 href · About.jsx `PRIVACY_URL` ·
+  deploy-app.yml base 가드 · 방침 돌아가기 링크의 **href**(문구만 바꿨다).
+
+⚠ **About 화면에는 서비스명이 없다.** "이 앱에 대해"라고만 부른다 —
+  그래서 바꿀 것이 없었다. 이름이 안 나오는 것이 이 화면의 설계다.
+
+**③ ⚠ 표시명은 한 상수로 모을 수 없다 — 그래서 일치 검사로 묶었다**
+
+```
+노출 자리 4곳이 전부 정적 파일이다
+   app/index.html · manifest.webmanifest · privacy/index.html · 유저 사이트 index.html
+빌드가 이 파일들에 문자열을 주입하지 않는다 (public/은 그대로 복사된다)
+게다가 유저 사이트는 **다른 레포**라 어떤 상수도 닿지 않는다
+```
+
+★ **의견 — 상수화는 권하지 않는다.** 값을 하나로 만들려면 Vite HTML 치환과
+manifest 생성 단계를 새로 들여야 하는데, **얻는 것은 1년에 한 번 있을까 한
+이름 변경**이고 잃는 것은 "public/은 그대로 나간다"는 단순함이다.
+대신 회귀 3건으로 **자리끼리 어긋나지 않는지**를 지킨다 — 문의처를
+`CONTACT` 일치 검사로 묶은 것과 같은 방식이다(2.56 ①).
+
+⚠⚠ **유저 사이트는 이 회귀가 못 본다.** 다른 레포라 테스트가 파일에 닿지 않는다.
+  ★ 이름을 또 바꾸거든 **그쪽 index.html을 손으로 함께 고칠 것.** 회귀 주석에도
+  같은 경고를 적어 뒀다.
+
+**④ 회귀 3건 (주입으로 무는 것을 확인했다)**
+
+```
+표시 이름이 모든 노출 자리에서 같다        5자리 대조
+옛 표시 이름이 사용자에게 보이는 곳에 없다   "Peace Your Mind" 잔존 0
+이름을 바꿔도 경로·식별자는 구명 그대로다    BASE · start_url · scope · PRIVACY_URL
+```
+
+주입 확인 — `manifest.name`을 옛 이름으로 되돌리자 **2건이 실패했다.**
+
+⛔ "약어 PYM 유지" 회귀는 **만들지 않았다.** PYM은 주석과 내부 식별자에만 있고
+  화면에 나오지 않는다. 게다가 `readSource()`가 주석을 걷어내므로 검사 대상이
+  애초에 없다 — 만들면 늘 통과하는 장식이 된다. 확정 사항은 여기 문서로 남긴다.
+
+**⑤ 곁가지 — `readAppFile()`을 새로 뚫었다**
+
+`vite.config.js`는 `src/` 밖이라 `readSource()`가 닿지 않는데, `test/`에서
+`readFileSync`로 `.js`를 직접 읽으면 **4회차 방지 검사가 막는다**(설계대로다).
+`helpers.js`에 `readAppFile()`을 더해 원본 읽기를 그 파일 안에만 두었다.
+
+⚠ 이 파일의 주석도 `/PeaceYourMind/`를 인용한다 — 느슨한 `includes()` 검사를
+  쓰면 코드를 지워도 주석만으로 통과한다. 3회차 거짓 통과와 같은 모양이다.
+
+
+---
+
 ## 3. 다음 세션 할 일 — Phase 4 운영과 남은 과제
 
 > ⚠ **이 목록은 참고 자료이지 자동 착수 지시가 아니다.**
@@ -5264,6 +5347,7 @@ Phase 4  사전 보강 · UI 개정 · 구절 확장                            
          About 기록 절 한 행 정렬 · 서체 진단 정정(2.57 ⑦)               2026-08-24
          About 색 통일 13px muted · 떠 있는 돌아가기(2.57 ⑧⑨)            2026-08-24
          "앱 N건"=선언 수 확정 · quiet_worship 10→207 확인(2.55 ⑪)       2026-08-25
+         ★ 표시명 Peace in Your Mind — 경로·레포·PYM은 구명 유지(2.58)   2026-08-25
 ```
 
 **규모**
@@ -5280,7 +5364,7 @@ Phase 4  사전 보강 · UI 개정 · 구절 확장                            
 감정 분류   대분류 9 · 세분류 24 · 키워드 920
 채널       allowlist 19 (하한 15까지 여유 4)
            blocklist 0 · reviewed_out 13
-게이트      파이썬 5종 + 앱 149건
+게이트      파이썬 5종 + 앱 152건
 ```
 <!-- STATS:END -->
 

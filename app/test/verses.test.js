@@ -26,7 +26,7 @@ import {
   rememberVerse,
   versesFor,
 } from "../src/lib/verses.js";
-import { readSource } from "./helpers.js";
+import { readAppFile, readSource } from "./helpers.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..");
@@ -604,4 +604,88 @@ test("모든 구절에 id·ref·text가 있다", () => {
 
 test("번역본 표시가 개역한글이다", () => {
   assert.equal(verses.translation, "krv1961");
+});
+
+/* --- 서비스 표시 이름 — 이름과 경로를 갈라 놓는다 (2026-08-25) --------------
+ *
+ * 표시명을 "Peace Your Mind" → "Peace in Your Mind"로 바꿨다.
+ * 그러나 **경로·레포는 구명(PeaceYourMind)을 그대로 쓴다.**
+ *
+ *   AdSense 심사가 이 URL로 진행 중이다 — 바꾸면 심사가 끊긴다
+ *   서비스워커 scope와 start_url이 경로다 — 바꾸면 설치된 PWA가 깨진다
+ *   앱으로 배포하면 경로는 사용자에게 보이지 않는다 (사용자 결정)
+ *
+ * ⚠ 그래서 이 저장소에서 **"이름"과 "경로"는 서로 다른 것이다.**
+ *   한쪽을 고치다 다른 쪽까지 함께 고치는 사고가 이 검사가 막으려는 것이다.
+ *
+ * ⛔ 표시명을 상수 한 곳으로 모으지 않았다 — 세 자리가 전부 정적 파일이고
+ *   (index.html · manifest · 방침 HTML) 빌드가 문자열을 주입하지 않는다.
+ *   상수 대신 **자리끼리 일치하는지**로 묶는다.
+ * ⚠ 유저 사이트(appleap385-aaz0919.github.io)는 **다른 레포라 이 검사가 못 본다.**
+ *   이름을 또 바꾸거든 그쪽 index.html도 손으로 함께 고칠 것.
+ */
+const DISPLAY_NAME = "Peace in Your Mind";
+const OLD_DISPLAY_NAME = "Peace Your Mind";
+const BASE_PATH = "/PeaceYourMind/";
+
+const indexHtml = readFileSync(join(root, "index.html"), "utf8").replace(
+  /<!--[\s\S]*?-->/g,
+  "",
+);
+const manifest = JSON.parse(
+  readFileSync(join(root, "public", "manifest.webmanifest"), "utf8"),
+);
+// vite.config.js는 src/ 밖이라 readSource()가 못 간다 — helpers의 readAppFile을 쓴다.
+// ⚠ 이 파일의 주석이 base 경로를 인용하므로(`/PeaceYourMind/`), 원문으로 읽으면
+//   느슨한 검사가 주석만으로 통과한다. 아래 검사는 `const BASE = ...` 형태를 보므로
+//   지금 문장으로는 걸리지 않지만, 검사를 느슨하게 고치는 순간 걸린다.
+const viteConfig = readAppFile("vite.config.js");
+
+test("표시 이름이 모든 노출 자리에서 같다", () => {
+  const spots = [
+    ["앱 <title>", (indexHtml.match(/<title>([^<]*)<\/title>/) || [])[1]],
+    ["manifest.name", manifest.name],
+    ["manifest.short_name", manifest.short_name],
+    ["방침 <title>", (privacyHtml.match(/<title>([^<]*)<\/title>/) || [])[1]],
+    ["방침 <h1>", (privacyHtml.match(/<h1>([^<]*)<\/h1>/) || [])[1]],
+  ];
+  for (const [where, value] of spots) {
+    assert.ok(value, where + "를 못 읽었다 — 검사가 헛돌고 있다");
+    assert.ok(
+      value.includes(DISPLAY_NAME),
+      where + '가 "' + value + '"다. 표시명은 "' + DISPLAY_NAME + '"이어야 한다',
+    );
+  }
+});
+
+test("옛 표시 이름이 사용자에게 보이는 곳에 남아 있지 않다", () => {
+  for (const [where, text] of [
+    ["앱 index.html", indexHtml],
+    ["방침", privacyHtml],
+    ["manifest", JSON.stringify(manifest)],
+  ]) {
+    // "Peace in Your Mind"는 "Peace Your Mind"를 포함하지 않는다 — 부분 일치 함정이 없다.
+    assert.ok(
+      !text.includes(OLD_DISPLAY_NAME),
+      where + '에 옛 이름 "' + OLD_DISPLAY_NAME + '"이 남았다',
+    );
+  }
+});
+
+test("이름을 바꿔도 경로·식별자는 구명 그대로다 (심사·PWA가 걸려 있다)", () => {
+  assert.ok(
+    viteConfig.includes('const BASE = "' + BASE_PATH + '"'),
+    "vite base가 " + BASE_PATH + "가 아니다 — 배포 자산이 전부 404가 난다",
+  );
+  assert.equal(manifest.start_url, BASE_PATH, "start_url이 바뀌면 설치된 PWA가 깨진다");
+  assert.equal(manifest.scope, BASE_PATH, "scope가 바뀌면 서비스워커가 페이지를 못 잡는다");
+  assert.ok(
+    aboutSrc.includes('const PRIVACY_URL = "' + BASE_PATH + 'privacy/"'),
+    "About의 방침 링크 경로가 바뀌었다 — 404가 난다",
+  );
+  // 이름 쪽 오염 방지: 경로에 새 이름(공백 포함)이 끼어들면 URL이 깨진다.
+  assert.ok(
+    !viteConfig.includes(DISPLAY_NAME) && !JSON.stringify(manifest).includes(BASE_PATH.replace("PeaceYourMind", "Peace in Your Mind")),
+    "표시명이 경로 자리로 새어 들어갔다",
+  );
 });
