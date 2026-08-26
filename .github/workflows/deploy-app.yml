@@ -82,9 +82,17 @@ jobs:
       # 하나라도 실패하면 배포하지 않는다 — 잘못된 본문이나 어긋난 사전이
       # 배포되면 되돌리는 데 다음 배포까지 걸린다.
       - name: 파이썬 게이트 (API 호출 0)
+        # 건수를 여기에 적지 않는다 — "250건"이 박혀 있었고 실제는 303건이었다.
+        # build.yml이 2026-08-26에 같은 표류를 없앴는데 이 파일에는 남아 있었다
+        # (HANDOFF 2.43·2.70). 건수는 스크립트가 세서 제 출력에 적는다.
+        #
+        # ⚠ 여기에 build_videos.py 드라이런은 넣지 않는다. 이 워크플로는 **앱**을
+        #   배포하고 배치 진입점은 앱 배포 경로에 없다. 그 스모크는 build.yml
+        #   게이트에 있다. 대신 이 워크플로의 진입점 커버리지는 아래가 맡는다 —
+        #   gen:data(생성기 3종 실제 실행) · npm test · vite build.
         run: |
-          python scripts/verify_verses.py --check > /dev/null && echo "구절 원문 대조 통과 (250건)"
-          python scripts/messages_test.py > /dev/null && echo "문구 원칙 통과 (485건)"
+          python scripts/verify_verses.py --check > /dev/null && echo "구절 원문 대조 통과"
+          python scripts/messages_test.py > /dev/null && echo "문구 원칙 통과"
           python scripts/tagging_test.py > /dev/null && echo "태깅·판별 통과"
           python scripts/spread_test.py > /dev/null && echo "선정·폴백 통과"
 

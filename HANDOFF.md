@@ -6206,9 +6206,9 @@ spread_test    통과   ★ select_theme_videos를 lib.selection에서 직접 �
 배치는 첫 실행에서 죽는 구멍이 있었다. 게이트가 "라이브러리는 맞는가"만 보고
 "진입점이 라이브러리를 제대로 부르는가"는 안 봤다.
 
-⚠ **드라이런(`--dry-run`, API 0)이 유일하게 이걸 잡는다.** CI 게이트에 넣는 것을
-검토할 것 — 비용이 0이고 파이프라인 전 구간을 탄다. 이번에 안 넣은 이유는 2.68
-범위 밖이라서다. **다음 세션 후보 1순위.**
+⚠ **드라이런(`--dry-run`, API 0)이 유일하게 이걸 잡는다.**
+✅ **처리됨 — 2.70절.** 같은 날 CI 게이트에 넣었고, 결함을 재현해 **기존 게이트
+3종은 exit 0인데 드라이런만 exit 1**로 잡는 것을 역검증했다.
 
 **고친 내용**
 
@@ -6224,6 +6224,95 @@ select_theme_videos  주제별 진단·경보. build_videos.py:271
 임포트 자리에 그 사실을 주석으로 적어 뒀다. 다시 정리할 때 `build_themes`를 함께 볼 것.
 
 **검증**: 드라이런 exit 0 · 실제 소모 76 units(하드캡 잔여 9,724) · 24세분류 정상 산출.
+
+---
+
+### 2.70 ★ CI 게이트에 진입점 드라이런 — 2.69의 구멍을 막았다 (2026-08-26)
+
+2.69에서 남긴 "다음 세션 후보 1순위"를 처리했다. `build.yml` 배포 전 게이트에
+`build_videos.py --dry-run`을 넣었다. **API 0이다.**
+
+**★ 역검증 — 구멍이 실재했음을 증명했다**
+
+임포트를 다시 빼서 2.69의 결함을 재현한 뒤 각 게이트를 돌렸다.
+
+```
+                결함 있는 코드    판정
+verify_verses      exit 0        못 잡음
+tagging_test       exit 0        못 잡음
+spread_test        exit 0        못 잡음   ← lib에서 직접 임포트하므로 볼 수 없다
+★ 드라이런        exit 1        ★ 잡는다
+```
+
+**게이트 3종이 전부 초록인데 배치는 죽는다**는 것을 실제로 재현해 확인했다.
+셋 다 `build_videos.py`를 실행하지 않기 때문이다 — "라이브러리는 맞는가"만 보고
+"진입점이 라이브러리를 제대로 부르는가"를 안 본다. 드라이런은 수집→필터→태깅→
+선정→위기→리포트 기록까지 **진입점 전 구간**을 탄다.
+
+**흔들리지 않는다 — 확인하고 넣었다**
+
+게이트는 간헐 실패하면 없느니만 못하다. `DryRunClient`에 난수가 없음을 코드로
+확인하고 2회 연속 실행으로 실측했다.
+
+```
+세분류·videoId    순서까지 완전 동일
+diagnostics       동일
+차이              version 타임스탬프뿐
+```
+
+**dist에 쓰지 않는다 — 이 경로를 바꾸지 말 것**
+
+`--out-dir "$RUNNER_TEMP/gate-dryrun"`. 합성 데이터가 배포 산출물과 섞이면 앱이
+그걸 진짜로 받는다("공개 배포 대상만 남기기" 주석의 그 위험이다). 워크스페이스
+밖에 쓰고 버린다. 로컬 재현에서 `dist/`가 실제로 안 건드려지는 것도 확인했다.
+
+⚠ `--dump-titles`는 넣지 않았다. 스모크에 불필요하고 수백 KB를 쓴다.
+⚠ `--previous`는 넣었다. 파일이 없어도(첫 실행·gh-pages 미존재) 정상 통과한다 —
+  로컬에 `_previous`가 없는 상태로 검증했다.
+
+**★ 다른 진입점 전수 조사 — 미커버는 하나뿐이다**
+
+AST로 33개 파이썬 파일의 미정의 전역 이름을 전수 검사했다. **현재 0건**이다
+(2.69의 그 결함이 유일했고 고쳐졌다). CI 실행 여부는 이렇다.
+
+```
+build_videos.py            ★ 이번에 추가 (build.yml 게이트)
+verify_verses.py           build.yml · deploy-app.yml
+tagging_test.py            build.yml · deploy-app.yml
+spread_test.py             build.yml · deploy-app.yml
+messages_test.py           deploy-app.yml
+gen_taxonomy_json.py       deploy-app.yml의 npm run gen:data — 실제로 실행된다
+gen_verses_json.py         "
+gen_krv_chapters.py        "
+앱(main.jsx 등)            vite build + npm test — 정적 임포트 오류는 빌드가 잡는다
+
+★ suggest_channels.py      **어디서도 안 돈다** — 유일한 미커버 진입점
+   fill_verses.py · retag_titles.py · stats.py   일회성 도구
+```
+
+`suggest_channels.py`도 `--dry-run`이 `DryRunClient`라 **API 0**이다(`:917`).
+이번에 수동으로 돌려 **exit 0**을 확인했다 — 지금은 같은 잠복 결함이 없다.
+쿼터 로그도 오염시키지 않는다(드라이런은 기록하지 않음을 실측).
+
+⚠ **CI에 넣지 않은 이유**: 월 1회 수동 발굴 도구이고 어느 워크플로의 목적에도
+속하지 않는다. 넣는다면 별도 워크플로(예: PR 검사)가 맞다. **판단 대기 항목.**
+넣기 전까지는 발굴 전에 `--dry-run`을 먼저 돌리는 습관이 유일한 방어다.
+
+**함께 고친 것 — deploy-app.yml에 같은 표류가 남아 있었다**
+
+```
+- python scripts/verify_verses.py --check ... && echo "구절 원문 대조 통과 (250건)"
++ ... && echo "구절 원문 대조 통과"
+```
+
+`build.yml`은 2026-08-24에 "250건"이 실제 303건과 어긋난 것을 발견해 건수를
+지웠는데(2.43 유형) **`deploy-app.yml`에는 그대로 남아 있었다.** 실측 확인:
+verify_verses는 **303건**(250은 틀림), messages_test는 485건(맞음). 원칙대로
+둘 다 지웠다 — 건수는 스크립트가 세서 제 출력에 적는다.
+
+⚠ deploy-app.yml에는 배치 드라이런을 **넣지 않았다.** 앱을 배포하는 워크플로이고
+배치 진입점은 그 경로에 없다. 대신 `gen:data`·`npm test`·`vite build`가 그
+워크플로의 진입점 커버리지를 맡는다.
 
 ---
 
