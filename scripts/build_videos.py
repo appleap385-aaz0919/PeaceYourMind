@@ -95,6 +95,11 @@ from lib.selection import (
     MEDIA_FLOOR,
     drop_promotional,
     select_tab_layers,
+    # build_themes()가 주제별 진단·경보를 낼 때 쓴다(아래 271행 부근).
+    # 화면 구성은 select_tab_layers가 하지만 그 안에서도 이 함수를 부른다.
+    # ⚠ 2026-08-26 "영상 상한을 탭별로"(4702779)에서 이 줄이 빠져 배치가
+    #   NameError로 죽었다. 임포트를 정리할 때 build_themes를 함께 볼 것.
+    select_theme_videos,
 )
 from lib.taxonomy import load_subcategory_ids
 from lib.tagging import SERMON, UNKNOWN, WORSHIP, classify_media_type, tag_themes
