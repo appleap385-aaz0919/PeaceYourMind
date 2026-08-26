@@ -20,7 +20,7 @@ import { Fragment } from "react";
 import { adPositions, positionsWithin } from "../lib/ads.js";
 import { formatDuration, thumbnailUrl, watchUrl, MEDIA } from "../lib/videos.js";
 import { T, SERIF } from "../theme.js";
-import { AdSlot } from "./AdSlot.jsx";
+import { AD_SLOT_RENDERS, AdSlot } from "./AdSlot.jsx";
 
 const OTHER_LABEL = { [MEDIA.SERMON]: "찬양", [MEDIA.WORSHIP]: "말씀" };
 const SELF_LABEL = { [MEDIA.SERMON]: "말씀", [MEDIA.WORSHIP]: "찬양" };
@@ -125,7 +125,9 @@ function Section({ title, videos, quiet, adsAfter }) {
                 </span>
               </a>
             </li>
-            {adsAfter?.has(index + 1) ? (
+            {/* ⚠ AD_SLOT_RENDERS를 **먼저** 본다. AdSlot이 null을 돌려주는데도
+                <li>를 그리면 격자에 빈 행이 남아 32px 여백이 된다(AdSlot 주석). */}
+            {AD_SLOT_RENDERS && adsAfter?.has(index + 1) ? (
               <li style={styles.item}>
                 <AdSlot />
               </li>

@@ -92,10 +92,10 @@ from lib.results import (
     ThemeResult,
 )
 from lib.selection import (
+    MEDIA_FLOOR,
+    TAB_MAX_VIDEOS,
     drop_promotional,
-    rotate_for_subcategory,
-    select_fallback_layer,
-    select_theme_videos,
+    select_tab_layers,
 )
 from lib.taxonomy import load_subcategory_ids
 from lib.tagging import SERMON, UNKNOWN, WORSHIP, classify_media_type, tag_themes
@@ -382,18 +382,11 @@ def build_subcategories(
             for t in tagged
             if t.video_id not in exclude and any(x in t.themes for x in theme_ids)
         ]
-        picked, _, _ = select_theme_videos(pool, day_of_year)
-        # 같은 주제 풀을 공유하는 화면들이 같은 순서를 내지 않게 한다.
-        # 구성은 그대로이고 시작점만 다르다 (lib/selection 주석 참조).
-        picked = rotate_for_subcategory(picked, position)
-
+        # 탭별로 채운다 — 주제분 먼저, 부족분을 그 탭의 폴백이 (2026-08-26).
+        # 회전(rotate_for_subcategory)은 select_tab_layers 안에서 탭마다 걸린다.
         media_default = ctx.themes.media_default(sub) or SERMON
-        fallback = select_fallback_layer(
-            untagged,
-            picked,
-            media_default,
-            day_of_year,
-            exclude=exclude | {t.video_id for t in picked},
+        picked, fallback = select_tab_layers(
+            pool, untagged, day_of_year, position, exclude=exclude
         )
 
         result = SubcategoryResult(
@@ -450,17 +443,39 @@ def _evaluate_subcategory(ctx: BuildContext, r: SubcategoryResult) -> None:
         ctx.collector.add(
             **alert_specs.theme_too_few(r.id, r.count, SUBCATEGORY_MIN_VIDEOS)
         )
-    if r.fallback_ratio > FALLBACK_HEAVY_RATIO:
+    # ⚠⚠ 폴백 비율은 **탭별로** 잰다 (2026-08-26). 화면 평균으로 두면 한 탭이
+    #   100% 폴백이어도 반대 탭에 가려진다 — 탭별 상한 이후 두 탭의 구성이 크게
+    #   갈리므로 평균은 어느 쪽도 설명하지 못한다.
+    counts = r.tab_counts
+    for side, ratio in r.tab_fallback_ratio.items():
+        if ratio <= FALLBACK_HEAVY_RATIO:
+            continue
+        n = counts[side]
         logger.warning(
-            "%s 폴백 %.0f%% — 주제 사전·채널 구성이 이 감정을 못 받치고 있다",
+            "%s [%s] 폴백 %.0f%% (%d/%d) — 주제 사전·채널이 이 감정을 못 받치고 있다",
             r.id,
-            r.fallback_ratio * 100,
+            side,
+            ratio * 100,
+            n["fallback"],
+            n["total"],
         )
         ctx.collector.add(
             **alert_specs.theme_fallback_heavy(
-                r.id, r.fallback_ratio, len(r.fallback_videos), r.count
+                f"{r.id} [{side}]", ratio, n["fallback"], n["total"]
             )
         )
+
+    # 탭이 20에 못 닿고 진단선 아래로 내려갔는가 (MEDIA_FLOOR의 남은 쓰임).
+    for side, n in counts.items():
+        if n["total"] < MEDIA_FLOOR:
+            logger.error(
+                "%s [%s] %d건 — 공급이 %d건에도 못 미친다 (탭 상한 %d)",
+                r.id,
+                side,
+                n["total"],
+                MEDIA_FLOOR,
+                TAB_MAX_VIDEOS,
+            )
 
 
 # =============================================================================

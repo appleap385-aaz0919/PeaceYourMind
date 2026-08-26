@@ -60,9 +60,9 @@ from lib.selection import (
     fill_balanced,
     promo_reason,
     select_crisis_videos,
-    reserved_slots,
-    select_fallback_layer,
+    TAB_MAX_VIDEOS,
     select_fallback_videos,
+    select_tab_layers,
     select_theme_videos,
     visible_count,
     weak_side,
@@ -76,7 +76,7 @@ from lib.quota import QuotaBudget
 from lib.tagging import SERMON, UNKNOWN, WORSHIP, MediaVerdict
 from lib.themes import (
     CRISIS_MIN_VIDEOS,
-    FALLBACK_MAX_PER_SUBCATEGORY,
+    FALLBACK_MAX_PER_TAB,
     THEME_MAX_PER_CHANNEL,
     THEME_MAX_VIDEOS,
     load_themes,
@@ -173,16 +173,13 @@ def main() -> int:
         f"독식 채널이 상한 {cap0} 이하로 억제된다",
         f"{spread['독식채널']}건 (상한 {cap})",
     )
-    # ⚠ 이 풀은 찬양이 독식채널에만 있어 채널 상한에 막힌다. 그래서 반대 형식
-    #   자리가 예약되고 총계가 20 미만이 된다(2026-08-25 MEDIA_FLOOR).
-    #   ★ 목표는 20이 아니라 `20 - reserved_slots()`다. 이것을 "미달"로 읽으면
-    #     상한 사다리가 끝까지 올라가 채널 분산이 무너진다 — 실제로 그 결함을
-    #     이 검사가 잡았다(독식채널 3건 → 5건).
+    # ⚠ 2026-08-26 — 예약(MEDIA_FLOOR 슬롯 비우기)은 탭별 상한으로 대체돼 사라졌다.
+    #   이 함수는 이제 다시 "20을 채운다"가 목표다.
     _check(
         failures,
-        len(picked) == THEME_MAX_VIDEOS - reserved_slots(picked) and not unlocked,
-        "목표를 채우면서 상한을 풀지 않는다 (목표 = 20 - 예약)",
-        f"{len(picked)}건 + 예약 {reserved_slots(picked)}건",
+        len(picked) == THEME_MAX_VIDEOS and not unlocked,
+        "20건을 채우면서 상한을 풀지 않는다",
+        f"{len(picked)}건",
     )
 
     # --- 2. 형식 균형 --------------------------------------------------------
@@ -221,15 +218,14 @@ def main() -> int:
         f"말씀 {media[SERMON]} / 찬양 {media[WORSHIP]}",
     )
 
-    # ★ 2026-08-25 개정 — 전에는 "한쪽뿐이어도 20건을 채운다"였다.
-    #   그것이 [말씀] 탭 0건의 직접 원인이었다. 이제는 반대 형식 자리를
-    #   MEDIA_FLOOR만큼 비우고 폴백에 넘긴다.
+    # 2026-08-26 — 다시 "20을 채운다"로 돌아왔다. 반대 탭은 이제 **자기 상한**을
+    # 따로 가지므로 이쪽 자리를 비워 줄 이유가 없다(select_tab_layers).
     only_sermon = _pool([(f"채널{i}", 8, SERMON) for i in range(5)])
     picked, _, _ = select_theme_videos(only_sermon, day_of_year=0)
     _check(
         failures,
-        len(picked) == THEME_MAX_VIDEOS - MEDIA_FLOOR,
-        f"한쪽 형식뿐이면 {MEDIA_FLOOR}자리를 비워 폴백에 넘긴다",
+        len(picked) == THEME_MAX_VIDEOS,
+        "한쪽 형식뿐이어도 20건을 채운다 (탭이 갈라져 자리를 비울 이유가 없다)",
         f"{len(picked)}건",
     )
 
@@ -245,16 +241,12 @@ def main() -> int:
     # --- 3. 완화 사다리와 상한 해제 -----------------------------------------
     print("\n3. 완화 사다리 · 상한 해제")
     print("-" * 76)
-    # 말씀만 있는 풀이라 목표가 16이다(20 - MEDIA_FLOOR). 상한 3이면 15건이라
-    # 한 단계 올려야 16에 닿는다 — 사다리가 도는지를 보는 것이 이 검사의 목적이고,
-    # 목표값이 바뀌어도 그 성질은 그대로다.
     five_channels = _pool([(f"채널{i}", 10, SERMON) for i in range(5)])
     picked, cap, unlocked = select_theme_videos(five_channels, day_of_year=0)
-    target = THEME_MAX_VIDEOS - MEDIA_FLOOR
     _check(
         failures,
-        cap == cap0 + 1 and len(picked) == target and not unlocked,
-        f"5채널이면 상한 {cap0}로 15건뿐 → {cap0+1}로 올려 {target}건",
+        cap == cap0 + 1 and len(picked) == THEME_MAX_VIDEOS and not unlocked,
+        f"5채널이면 상한 {cap0}로 15건뿐 → {cap0+1}로 올려 20건",
         f"상한 {cap}, {len(picked)}건",
     )
 
@@ -526,101 +518,125 @@ def main() -> int:
     )
     _check(failures, not select_fallback_videos(fb_pool, WORSHIP, 0, 0), "need가 0이면 빈 목록")
 
-    # --- 8-b. 형식 보장 폴백 (2026-08-25 신설) ------------------------------
+    # --- 8-b. 탭별 상한 (2026-08-26 · 총량 20 → 탭당 20) --------------------
     print("")
-    print("8-b. 형식 보장 — 토글 한쪽이 비지 않게 폴백이 반대 형식을 받는다")
+    print("8-b. 탭별 상한 — 두 탭이 서로의 자리를 뺏지 않는다")
     print("-" * 76)
-    # 재현하는 상태: anger.irritation. 주제분 20건이 전부 찬양이고 [말씀] 탭이 0건.
-    #   실제로는 주제가 self_control(영상 0건) + quiet_worship(어휘가 전부 찬양)이다.
-    all_worship_theme = [
-        _tagged(f"주제{i}", f"찬양채널{i % 5}", WORSHIP) for i in range(THEME_MAX_VIDEOS)
-    ]
+    # 재현: anger.irritation. 주제 풀이 전부 찬양이라 총량 모델에서는 [말씀]이
+    # 자리를 못 얻었다. 탭이 갈라지면 각자 자기 상한을 가진다.
+    worship_pool = _pool([(f"찬양채널{i}", 8, WORSHIP) for i in range(5)])
+    # ⚠ 채널을 넉넉히 둔다. 폴백은 채널당 상한 3이 걸리고 **완화 사다리가 없어서**
+    #   `3 x 채널 수`가 그 탭 폴백의 천장이다. 4채널이면 12에서 멈춘다 —
+    #   실제로 이 픽스처를 4채널로 뒀다가 "20에 못 찬다"로 잘못 읽을 뻔했다.
+    tab_fb = (
+        [_untagged(f"fs{i}", f"말씀채널{i % 8}", SERMON) for i in range(40)]
+        + [_untagged(f"fw{i}", f"찬양채널{i % 8}", WORSHIP) for i in range(40)]
+    )
+    theme, fall = select_tab_layers(
+        worship_pool, tab_fb, day_of_year=0, position=0, exclude=set()
+    )
+    total = theme + fall
     _check(
         failures,
-        visible_count(all_worship_theme, SERMON) == 0,
-        "전제 재현: 주제분 20건이 전부 찬양이라 [말씀] 탭이 0건이다",
-        f"말씀 {visible_count(all_worship_theme, SERMON)} / 찬양 {visible_count(all_worship_theme, WORSHIP)}",
+        visible_count(theme, WORSHIP) == TAB_MAX_VIDEOS,
+        f"[찬양] 주제분이 탭 상한 {TAB_MAX_VIDEOS}까지 찬다 (반대 탭에 자리를 뺏기지 않는다)",
+        f"{visible_count(theme, WORSHIP)}건",
     )
     _check(
         failures,
-        weak_side(all_worship_theme) == SERMON,
-        "약한 쪽을 말씀으로 판정한다",
-    )
-
-    # 주제 풀 자체가 한쪽뿐이면 fill_balanced가 자리를 비운다.
-    only_worship_pool = _pool([(f"찬양채널{i}", 8, WORSHIP) for i in range(5)])
-    reserved_pick, _, _ = select_theme_videos(only_worship_pool, day_of_year=0)
-    _check(
-        failures,
-        len(reserved_pick) == THEME_MAX_VIDEOS - MEDIA_FLOOR
-        and reserved_slots(reserved_pick) == MEDIA_FLOOR,
-        f"주제 풀이 한쪽뿐이면 {MEDIA_FLOOR}자리를 비운다 (20을 넘기지 않는다)",
-        f"{len(reserved_pick)}건 + 예약 {reserved_slots(reserved_pick)}건",
-    )
-
-    # 폴백 층 — 비운 자리에 반대 형식이 들어온다.
-    layer = select_fallback_layer(
-        fb_pool, reserved_pick, WORSHIP, day_of_year=0, exclude=set()
-    )
-    total = list(reserved_pick) + layer
-    _check(
-        failures,
-        visible_count(total, SERMON) == MEDIA_FLOOR,
-        f"찬양 기본 화면에도 [말씀]이 정확히 {MEDIA_FLOOR}건 들어온다 (편집 결정 2026-08-25)",
-        f"말씀 {visible_count(total, SERMON)}건",
+        visible_count(total, SERMON) == TAB_MAX_VIDEOS,
+        f"[말씀]도 {TAB_MAX_VIDEOS}까지 찬다 — 주제분이 0이면 그 탭 폴백이 전부 메운다",
+        f"{visible_count(total, SERMON)}건 (주제분 {visible_count(theme, SERMON)})",
     )
     _check(
         failures,
-        len(total) == THEME_MAX_VIDEOS,
-        "총계는 여전히 20이다 — 20을 넘기지 않는다(제품 결정)",
-        f"{len(total)}건",
+        visible_count(fall, WORSHIP) == 0,
+        "주제분이 이미 상한을 채운 탭에는 폴백이 들어가지 않는다",
+        f"{visible_count(fall, WORSHIP)}건",
     )
     _check(
         failures,
-        visible_count(total, WORSHIP) >= THEME_MAX_VIDEOS - MEDIA_FLOOR,
-        "기본 형식이 16/20을 지킨다 — 반대 형식은 바닥 메우기이지 동등한 자리가 아니다",
-        f"찬양 {visible_count(total, WORSHIP)}건",
-    )
-    _check(
-        failures,
-        all(t.is_untagged for t in layer),
-        "형식 보장분도 미태깅만 쓴다 (assert_fallback_untagged 불변식)",
-    )
-    _check(
-        failures,
-        len(layer) <= FALLBACK_MAX_PER_SUBCATEGORY,
-        f"두 몫을 합쳐도 폴백 상한 {FALLBACK_MAX_PER_SUBCATEGORY}를 넘지 않는다",
-        f"{len(layer)}건",
-    )
-    _check(
-        failures,
-        len({t.video_id for t in layer}) == len(layer),
-        "두 몫이 같은 영상을 두 번 넣지 않는다",
+        visible_count(fall, SERMON) <= FALLBACK_MAX_PER_TAB,
+        f"탭 폴백이 상한 {FALLBACK_MAX_PER_TAB}을 넘지 않는다",
+        f"{visible_count(fall, SERMON)}건",
     )
 
-    # 이미 충분한 화면은 계산이 그대로 지나간다 — 19/24 화면이 여기 해당한다.
-    healthy = [
-        _tagged(f"주제{i}", f"채널{i % 5}", SERMON if i % 2 else WORSHIP)
-        for i in range(THEME_MAX_VIDEOS)
-    ]
+    # ★ 진짜 천장은 상수가 아니라 **채널 수**다. 폴백에는 완화 사다리가 없다.
+    narrow = [_untagged(f"n{i}", f"한채널{i % 2}", SERMON) for i in range(30)]
+    _, narrow_fall = select_tab_layers(
+        worship_pool, narrow, day_of_year=0, position=0, exclude=set()
+    )
     _check(
         failures,
-        not select_fallback_layer(fb_pool, healthy, WORSHIP, day_of_year=0, exclude=set()),
-        "약한 쪽이 이미 바닥 이상이면 폴백이 돌지 않는다 (정상 화면 무영향)",
+        visible_count(narrow_fall, SERMON) == 2 * THEME_MAX_PER_CHANNEL,
+        f"폴백 천장은 채널 수 x 상한이다 (2채널이면 {2 * THEME_MAX_PER_CHANNEL}건에서 멈춘다)",
+        f"{visible_count(narrow_fall, SERMON)}건 — 사다리가 없어 상한이 안 풀린다",
+    )
+    _check(
+        failures,
+        all(t.is_untagged for t in fall),
+        "폴백은 여전히 미태깅만 쓴다 (assert_fallback_untagged 불변식)",
+    )
+    _check(
+        failures,
+        len({t.video_id for t in total}) == len(total),
+        "같은 영상이 두 번 담기지 않는다 (unknown이 양쪽 탭에서 뽑혀도)",
     )
 
-    # unknown은 양쪽에 세므로 약한 쪽을 혼자 메울 수 있다.
-    with_unknown = [_tagged(f"u{i}", "미판별채널", UNKNOWN) for i in range(MEDIA_FLOOR)] + [
-        _tagged(f"w{i}", f"찬양채널{i % 3}", WORSHIP)
-        for i in range(THEME_MAX_VIDEOS - MEDIA_FLOOR)
-    ]
+    # 주제분이 늘면 폴백이 자동으로 줄어드는가 — 구조의 핵심 성질이다.
+    mixed_pool = worship_pool + _pool([(f"말씀채널{i}", 3, SERMON) for i in range(4)])
+    theme2, fall2 = select_tab_layers(
+        mixed_pool, tab_fb, day_of_year=0, position=0, exclude=set()
+    )
     _check(
         failures,
-        visible_count(with_unknown, SERMON) == MEDIA_FLOOR
-        and not select_fallback_layer(
-            fb_pool, with_unknown, WORSHIP, day_of_year=0, exclude=set()
-        ),
-        "unknown이 바닥을 채우고 있으면 추가로 넣지 않는다 (양쪽 토글에 노출되는 값)",
+        visible_count(fall2, SERMON) < visible_count(fall, SERMON),
+        "말씀 주제분이 생기면 [말씀] 폴백이 그만큼 줄어든다",
+        f"폴백 {visible_count(fall, SERMON)} → {visible_count(fall2, SERMON)}건",
+    )
+    _check(
+        failures,
+        visible_count(theme2 + fall2, SERMON) == TAB_MAX_VIDEOS,
+        "줄어들어도 탭 합계는 상한 그대로다",
+        f"{visible_count(theme2 + fall2, SERMON)}건",
+    )
+
+    # unknown은 양쪽 탭에 세지만 데이터는 한 벌이다.
+    unk_pool = [_tagged(f"u{i}", f"미판별{i % 3}", UNKNOWN) for i in range(24)]
+    theme3, fall3 = select_tab_layers(
+        unk_pool, tab_fb, day_of_year=0, position=0, exclude=set()
+    )
+    both = theme3 + fall3
+    _check(
+        failures,
+        visible_count(both, SERMON) == TAB_MAX_VIDEOS
+        and visible_count(both, WORSHIP) == TAB_MAX_VIDEOS
+        and len({t.video_id for t in both}) <= 2 * TAB_MAX_VIDEOS,
+        "unknown만 있으면 한 벌로 양쪽 탭을 채운다 (고유 영상은 40건을 넘지 않는다)",
+        f"말씀 {visible_count(both, SERMON)} · 찬양 {visible_count(both, WORSHIP)} "
+        f"· 고유 {len({t.video_id for t in both})}건",
+    )
+
+    # 탭별 폴백 비율 — 화면 평균이 아니라 탭별로 재는가.
+    lopsided = SubcategoryResult(
+        id="anger.irritation",
+        themes=("self_control", "quiet_worship"),
+        media_default=WORSHIP,
+        theme_videos=theme,
+        fallback_videos=fall,
+    )
+    ratios = lopsided.tab_fallback_ratio
+    _check(
+        failures,
+        ratios[SERMON] == 1.0 and ratios[WORSHIP] == 0.0,
+        "폴백 비율을 탭별로 잰다 (화면 평균이면 100% 탭이 가려진다)",
+        f"말씀 {ratios[SERMON]:.0%} · 찬양 {ratios[WORSHIP]:.0%}",
+    )
+    _check(
+        failures,
+        abs(lopsided.fallback_ratio - 0.5) < 0.2,
+        "★ 화면 평균은 어느 탭도 설명하지 못한다 (그래서 경보에 쓰지 않는다)",
+        f"화면 평균 {lopsided.fallback_ratio:.0%}",
     )
 
     sub = SubcategoryResult(

@@ -35,6 +35,19 @@ import { T } from "../theme.js";
  */
 const IS_DEV = import.meta.env.DEV;
 
+/**
+ * 이 컴포넌트가 **실제로 무언가를 그리는가.**
+ *
+ * ⚠⚠ 호출부가 빈 <li>를 만들지 않게 하는 값이다. 2026-08-24 광고 구현(4811cf8)
+ *   이래 VideoList가 <li>를 조건 없이 그리고 안쪽만 null이 됐다. 목록이
+ *   display:grid · gap:16px라 **높이 0인 칸이 행 하나를 차지하고 양옆에 16px씩
+ *   붙어 32px 여백**이 생겼다(실측). 사용자에게는 층 경계처럼 보였다.
+ * ⚠ **프로덕션 전용 결함이었다.** dev에서는 자리표시자가 그려져 간격이 정상이라
+ *   개발 중에는 보이지 않는다. 그래서 회귀도 **프로덕션 조건(AD_SLOT 빈 값)**에서
+ *   검사해야 한다 — dev 조건으로 검사하면 같은 결함을 또 놓친다.
+ */
+export const AD_SLOT_RENDERS = Boolean(AD_SLOT) || IS_DEV;
+
 export function AdSlot() {
   const insRef = useRef(null);
   // push는 이 <ins>당 **정확히 한 번**이다. 두 번 부르면 AdSense가

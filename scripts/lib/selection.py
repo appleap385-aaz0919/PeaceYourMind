@@ -24,7 +24,7 @@ from lib.tagging import SERMON, UNKNOWN, WORSHIP
 from lib.themes import (
     CRISIS_MAX_VIDEOS,
     CRISIS_MIN_VIDEOS,
-    FALLBACK_MAX_PER_SUBCATEGORY,
+    FALLBACK_MAX_PER_TAB,
     PER_CHANNEL_STEPS,
     THEME_MAX_PER_CHANNEL,
     THEME_MAX_VIDEOS,
@@ -56,7 +56,30 @@ MEDIA_BALANCE_TARGET = THEME_MAX_VIDEOS // 2
 #   ⛔ 이 값을 키워서 "충분히 나오게" 만들려 하지 말 것. 그것은 폴백을 늘리는
 #     것이고, 폴백은 감정에 맞춰 고른 영상이 아니다 — 정확도를 잃는다.
 #     "비지 않게"는 여기서 풀고, "충분히"는 채널 발굴로 푼다 (HANDOFF 2.59).
+#
+# ★ 2026-08-26 탭별 상한으로 바뀌며 **역할이 좁아졌다.**
+#   이제 각 탭을 TAB_MAX_VIDEOS까지 채우려 하므로 정상적으로는 바닥에 걸릴 일이 없다.
+#   판정 기준도 "총 20 안에서 약한 쪽"이 아니라 **각 탭의 부족분**이다 —
+#   select_tab_layers의 need가 곧 그 부족분이고, 언제나 MEDIA_FLOOR보다 크다.
+#   남은 쓰임은 **공급이 모자라 탭이 20에 못 닿았을 때의 진단선**이다.
+#   이 아래로 내려간 탭은 사전이나 채널이 그 감정을 못 받치고 있다는 신호다.
 MEDIA_FLOOR = 4
+
+
+# 탭 하나가 보여 줄 최대 건수 (2026-08-26 — 화면 총량 20에서 탭별 20으로).
+#
+# [왜 바꿨나 — 두 탭이 서로의 자리를 뺏고 있었다]
+#   총량이 20이면 찬양이 16일 때 말씀은 4밖에 못 가진다. 그런데 **사용자가 한 번에
+#   보는 것은 한 탭**이다. 총량으로 묶을 이유가 없었다.
+#
+# ⚠ 2026-08-25에 같은 방향의 (b)안을 기각했는데 근거는 **선택 부담**이었다
+#   (taxonomy content_policy). 탭별 20은 한 번에 보는 목록을 20 이하로 유지하므로
+#   **그 결정을 어기지 않는다.** 기각 근거가 이 재해석에서는 성립하지 않는다
+#   (HANDOFF 2.64 ①에 정정 기록).
+#
+# ⚠ unknown은 양쪽 탭에 노출되므로 화면당 **고유** 영상은 20~40건이 된다.
+#   두 탭 합계가 40을 넘는 것처럼 보이는 것은 중복 계산이지 데이터 중복이 아니다.
+TAB_MAX_VIDEOS = THEME_MAX_VIDEOS
 
 
 def visible_count(videos: Sequence[TaggedVideo], media_type: str) -> int:
@@ -298,13 +321,11 @@ def fill_balanced(
       unknown은 별도 몫을 두지 않는다. 양쪽 토글 모두에 노출되므로 어느 쪽의
       빈 화면도 만들지 않기 때문이다. 남은 슬롯을 채우는 3차 순회에서 들어온다.
 
-    [2026-08-25 — 풀에 없으면 슬롯을 비워서 폴백에 넘긴다]
-      위 균형은 **풀 안에서만** 성립한다. 풀에 한쪽 형식이 없으면 예약분이 조용히
-      사라지고 반대 형식이 20슬롯을 다 가져갔다. 그래서 3차 순회를 둘로 나눴다.
-        3-a  약한 쪽을 MEDIA_FLOOR까지 **먼저** 채운다 (풀에 있으면 여기서 끝난다)
-        3-b  그래도 모자라면 그 수만큼 슬롯을 비우고 20 미만을 돌려준다
-      ⚠ 이 함수는 이제 **항상 20을 채우지 않는다.** 호출부가 빈 자리를 폴백으로
-        메운다. 20을 넘기지는 않는다.
+    [2026-08-26 — 이 함수는 이제 **탭 하나**의 풀을 받는다]
+      select_tab_layers가 형식으로 거른 풀(그 형식 + unknown)을 넘긴다. 그래서
+      위 "말씀 10 / 찬양 10" 균형은 한 탭 안에서는 거의 의미가 없다 —
+      반대 형식이 애초에 없기 때문이다. 남는 것은 **채널 분산과 상한 사다리**다.
+      ⚠ 위기 풀 선정은 여전히 형식을 섞은 풀을 넘기므로 균형 코드는 살려 둔다.
 
     [순서]
       선정은 라운드로빈(채널 분산)으로 하고, **출력 순서는 최신순으로 되돌린다.**
@@ -319,36 +340,19 @@ def fill_balanced(
         group = [t for t in pool if t.media.media_type == media_type]
         picked.extend(_round_robin(group, cap, MEDIA_BALANCE_TARGET, order, used))
 
-    # 3-a) 약한 쪽 바닥을 **먼저** 확보한다. 남은 자리를 아무거나로 덮고 나면
-    #      되돌릴 방법이 없다 — 그때는 무엇을 뺄지 골라야 하고, 그 규칙은
-    #      "근거가 강한 주제분을 빼서 약한 폴백을 넣는다"가 되어 층 설계와 어긋난다.
-    weak = weak_side(picked)
+    # ⛔ 2026-08-25에 여기 있던 "반대 형식 자리 예약"은 **걷어냈다**(2026-08-26).
+    #   탭별 상한으로 바뀌어 select_tab_layers가 탭마다 따로 채우므로, 한쪽 형식이
+    #   자리를 다 가져가는 상황 자체가 없어졌다.
+    #   ⚠⚠ 되살리지 말 것 — 이 함수는 이제 **탭으로 걸러진 풀**을 받는다. 그 풀에는
+    #     한 형식 + unknown만 있어 반대 형식이 구조적으로 0이다. 예약을 두면
+    #     **모든 탭에서 무조건 4자리가 비어** 주제분이 이유 없이 줄어든다.
     taken = {t.video_id for t in picked}
     rest = [t for t in pool if t.video_id not in taken]
-    floor_need = MEDIA_FLOOR - visible_count(picked, weak)
-    if floor_need > 0:
-        weak_rest = [t for t in rest if t.media.media_type in (weak, UNKNOWN)]
-        picked.extend(_round_robin(weak_rest, cap, floor_need, order, used))
-
-    # 3-b) 나머지. 3-a로도 바닥에 못 미치면 **그만큼 슬롯을 비운 채 돌려준다.**
-    #      풀에 없는 것을 여기서 만들 수는 없고, 비워 두면 폴백 층이 그 자리를
-    #      받는다(build_videos의 형식 보장분). 20을 넘기지 않는 것이 조건이다 —
-    #      20은 데이터 상한이 아니라 제품 결정이다(선택 부담, taxonomy content_policy).
-    reserved = max(0, MEDIA_FLOOR - visible_count(picked, weak))
-    taken = {t.video_id for t in picked}
-    rest = [t for t in pool if t.video_id not in taken]
-    picked.extend(
-        _round_robin(rest, cap, THEME_MAX_VIDEOS - reserved - len(picked), order, used)
-    )
+    picked.extend(_round_robin(rest, cap, THEME_MAX_VIDEOS - len(picked), order, used))
 
     rank = {t.video_id: i for i, t in enumerate(pool)}
     picked.sort(key=lambda t: rank.get(t.video_id, len(rank)))
     return picked
-
-
-def reserved_slots(picked: Sequence[TaggedVideo]) -> int:
-    """이 선정 결과가 폴백에 넘긴 슬롯 수. fill_balanced가 비워 둔 만큼이다."""
-    return max(0, MEDIA_FLOOR - visible_count(picked, weak_side(picked)))
 
 
 def select_theme_videos(
@@ -356,15 +360,8 @@ def select_theme_videos(
 ) -> tuple[list[TaggedVideo], int, bool]:
     """주제 하나의 최종 목록을 고른다.
 
-    ⚠ **목표는 20이 아니라 `20 - reserved_slots()`다** (2026-08-25).
-      fill_balanced가 반대 형식 자리를 비워 두면 여기서 20에 절대 닿지 못한다.
-      그것을 "못 채웠다"로 읽으면 상한 사다리가 끝까지 올라가 **채널 분산이
-      이유 없이 무너진다.** 실측으로 잡았다 — 독식 채널이 상한 3을 지키던
-      풀에서 5건까지 올라갔다(spread_test 1절).
-      ⛔ 비워 둔 자리를 "미달"로 세지 말 것. 그 자리는 폴백이 받기로 되어 있다.
-
     완화 순서 (FYM 승계)
-      1. 기본 상한(3)으로 목표가 차면 그대로 쓴다 — 분산이 개수보다 우선이다.
+      1. 기본 상한(3)으로 20건이 차면 그대로 쓴다 — 분산이 개수보다 우선이다.
       2. 못 채우면 4, 5로 한 단계씩 올린다.
       3. 마지막 단계로도 하한(15)에 못 미치는데 **상한만 풀면 채울 수 있는**
          경우에만 상한을 해제한다. 풀 자체가 얕아서 미달인 경우에는 해제해도
@@ -375,7 +372,7 @@ def select_theme_videos(
     ladder = per_channel_ladder()
     for cap in ladder:
         picked = fill_balanced(pool, cap, day_of_year)
-        if len(picked) >= THEME_MAX_VIDEOS - reserved_slots(picked):
+        if len(picked) >= THEME_MAX_VIDEOS:
             return picked, cap, False
 
     last = ladder[-1]
@@ -453,9 +450,9 @@ def select_fallback_videos(
       순위를 매기면 그 관행 차이가 노출 차별이 된다.
 
     [상한은 호출부가 정한다]
-      need = min(빈 슬롯, FALLBACK_MAX_PER_SUBCATEGORY). 폴백이 화면을 다 덮지
-      못하게 막는 것은 정책이고(20슬롯 중 최대 12), 그 판단은 세분류를 아는
-      호출부에 있다.
+      need는 호출부가 정한다(select_tab_layers). 상한은 FALLBACK_MAX_PER_TAB이고,
+      2026-08-26부터 탭 상한과 같은 20이다 — 한 탭이 100% 폴백이 될 수 있다는
+      뜻이며 사용자 결정이다(themes.py 주석).
     """
     if need <= 0:
         return []
@@ -470,58 +467,63 @@ def select_fallback_videos(
     return _round_robin(pool, THEME_MAX_PER_CHANNEL, need, order, used)
 
 
-def select_fallback_layer(
-    untagged: Sequence[TaggedVideo],
-    picked: Sequence[TaggedVideo],
-    media_default: str,
+def select_tab_layers(
+    pool,
+    untagged,
     day_of_year: int,
+    position: int,
     *,
     exclude: set[str],
-) -> list[TaggedVideo]:
-    """폴백 층을 두 몫으로 나눠 채운다 — 형식 보장분 먼저, 개수 보충분 나중 (2026-08-25).
+) -> tuple[list[TaggedVideo], list[TaggedVideo]]:
+    """화면 하나를 **탭별로** 채운다 (2026-08-26 · 사용자 결정).
 
-    [왜 나눴는가 — need가 개수만 봤다]
-      전에는 `need = min(20 - 주제분, 12)` 하나였다. 주제분이 20을 채우면 need가 0이라
-      폴백 함수가 즉시 빈 목록을 냈고, **20건이 전부 찬양이어도 폴백이 돌지 않았다.**
-      게다가 돌았더라도 풀 필터가 media_default로 고정돼 있어 반대 형식은 못 들어왔다.
-      두 겹 다 열려야 [말씀] 탭의 빈 화면이 풀린다.
+    [무엇이 달라졌나]
+      전   주제분 20(형식 균형) → 남은 자리를 폴백.        **화면 총량 20**
+      후   탭마다 주제분 → 그 탭의 부족분을 그 탭 폴백이.  **탭당 20**
 
-      ⚠ 주제분이 20을 채우는 화면일수록 이 문제가 심했다 — **공급이 늘수록 나빠지는
-        구조였다.** 어제 찬양 3곳 승인으로 두 화면이 3건 → 0건이 됐다.
+      각 탭에서 **주제분을 먼저** 채우므로 주제분이 늘면 폴백이 자동으로 줄어든다.
+      그 성질은 그대로다 — 바뀐 것은 "얼마까지 채우는가"의 단위뿐이다.
 
-    [순서가 중요하다]
-      형식 보장분을 **먼저** 뽑는다. 개수 보충분이 남은 자리를 다 가져가고 나면
-      보장분이 들어갈 자리가 없다. 둘을 합친 뒤에는 최신순으로 되돌린다 —
-      선정 순서가 아니라 사용자가 읽는 순서로 내보낸다(fill_balanced와 같은 규칙).
+    [탭 풀을 어떻게 나누나]
+      앱의 visibleVideos()와 같은 기준이다 — 그 형식 + unknown.
+      ⚠ unknown은 양쪽 탭에 들어가므로 두 탭에서 같은 영상이 뽑힐 수 있다.
+        최종 목록에는 **한 번만** 담고(seen), 부족분은 "지금까지 담은 것 중 이 탭에
+        보이는 수"를 빼서 센다. 그래서 두 탭 합계가 40을 넘어 보여도 데이터는 한 벌이다.
 
-    ⚠ 두 몫을 합쳐도 FALLBACK_MAX_PER_SUBCATEGORY(12)를 넘지 않는다. 폴백이 화면을
-      다 덮지 못하게 막는 정책은 그대로다.
+    ⚠ 채널 상한·완화 사다리·회전은 select_theme_videos를 그대로 쓴다. 탭마다 따로
+      부르므로 **한 채널이 말씀 3 + 찬양 3까지 가질 수 있다.** 전에는 used를 형식
+      사이에 공유해 3이 상한이었다. 탭이 갈라진 이상 한 탭 안에서 3이면 충분하다 —
+      사용자는 두 탭을 겹쳐 보지 않는다.
+
+    ⚠ 순서가 결과를 바꾼다. SERMON을 먼저 돌리므로 unknown이 말씀 쪽에 먼저
+      담기고, 찬양 탭은 그것을 이미 가진 채로 부족분을 센다. 형식 간 우열이 아니라
+      **결정적이어야 해서** 고정한 순서다.
     """
-    open_slots = THEME_MAX_VIDEOS - len(picked)
-    if open_slots <= 0:
-        return []
+    theme: list[TaggedVideo] = []
+    fallback: list[TaggedVideo] = []
+    seen: set[str] = set(exclude)
 
-    # ① 형식 보장분 — 약한 쪽을 MEDIA_FLOOR까지. **여기서만 반대 형식이 들어온다.**
-    weak = weak_side(picked)
-    need_fmt = min(
-        open_slots,
-        FALLBACK_MAX_PER_SUBCATEGORY,
-        max(0, MEDIA_FLOOR - visible_count(picked, weak)),
-    )
-    by_format = select_fallback_videos(untagged, weak, need_fmt, day_of_year, exclude=exclude)
+    for tab in (SERMON, WORSHIP):
+        tab_pool = [t for t in pool if t.media.media_type in (tab, UNKNOWN)]
+        picked, _, _ = select_theme_videos(tab_pool, day_of_year)
+        picked = rotate_for_subcategory(picked, position)
+        for tagged in picked[:TAB_MAX_VIDEOS]:
+            if tagged.video_id in seen:
+                continue
+            theme.append(tagged)
+            seen.add(tagged.video_id)
 
-    # ② 개수 보충분 — 남은 자리를 화면 기본 형식으로.
-    need_count = min(
-        open_slots - len(by_format),
-        FALLBACK_MAX_PER_SUBCATEGORY - len(by_format),
-    )
-    by_count = select_fallback_videos(
-        untagged,
-        media_default,
-        need_count,
-        day_of_year,
-        exclude=exclude | {t.video_id for t in by_format},
-    )
+        # 이미 담긴 것 중 **이 탭에 보이는** 수를 뺀 만큼만 폴백으로 메운다.
+        have = visible_count(theme, tab) + visible_count(fallback, tab)
+        # 상한 둘은 지금 같은 값(20)이지만 뜻이 다르다 — 앞은 "탭이 보여 줄 최대",
+        # 뒤는 "그중 폴백이 가져갈 수 있는 최대". 둘을 갈라 두면 나중에 폴백만
+        # 조일 때 한 줄이면 된다.
+        need = min(max(0, TAB_MAX_VIDEOS - have), FALLBACK_MAX_PER_TAB)
+        for tagged in select_fallback_videos(
+            untagged, tab, need, day_of_year, exclude=seen
+        ):
+            fallback.append(tagged)
+            seen.add(tagged.video_id)
 
-    rank = {t.video_id: i for i, t in enumerate(untagged)}
-    return sorted(by_format + by_count, key=lambda t: rank.get(t.video_id, len(rank)))
+    return theme, fallback
+

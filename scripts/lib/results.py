@@ -136,7 +136,40 @@ class SubcategoryResult:
 
     @property
     def fallback_ratio(self) -> float:
+        """화면 전체 폴백 비중. **경보에는 쓰지 않는다** — tab_fallback_ratio를 쓸 것."""
         return len(self.fallback_videos) / self.count if self.count else 0.0
+
+    @property
+    def tab_fallback_ratio(self) -> dict[str, float]:
+        """토글별 폴백 비중 (2026-08-26 · 탭별 상한).
+
+        ⚠⚠ 화면 평균으로 재면 **한 탭이 100% 폴백이어도 가려진다.** 탭별 상한
+          이후에는 두 탭의 구성이 크게 달라져 평균이 어느 쪽도 설명하지 못한다.
+          경보는 반드시 이 값으로 판정한다.
+        ⚠ unknown은 양쪽에 세므로 분모가 탭마다 다르다. 그게 맞다 —
+          사용자가 그 탭에서 실제로 보는 건수가 분모여야 한다.
+        """
+        theme = visible_counts([t.media.media_type for t in self.theme_videos])
+        fall = visible_counts([t.media.media_type for t in self.fallback_videos])
+        out = {}
+        for side in (SERMON, WORSHIP):
+            total = theme[side] + fall[side]
+            out[side] = (fall[side] / total) if total else 0.0
+        return out
+
+    @property
+    def tab_counts(self) -> dict[str, dict[str, int]]:
+        """토글별 (주제분, 폴백, 합계). 로그와 진단이 같은 값을 본다."""
+        theme = visible_counts([t.media.media_type for t in self.theme_videos])
+        fall = visible_counts([t.media.media_type for t in self.fallback_videos])
+        return {
+            side: {
+                "theme": theme[side],
+                "fallback": fall[side],
+                "total": theme[side] + fall[side],
+            }
+            for side in (SERMON, WORSHIP)
+        }
 
     @property
     def videos(self) -> list[dict[str, str]]:

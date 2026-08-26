@@ -265,3 +265,62 @@ test("맞춤 광고 거부 방법이 방침에 있다 (AdSense 필수 콘텐츠)
   assert.ok(privacyHtml.includes("adssettings.google.com"), "Google 광고 설정 안내가 없다");
   assert.ok(privacyHtml.includes("aboutads.info"), "일괄 거부 안내가 없다");
 });
+
+/* --- 빈 <li>가 32px 여백을 만들던 결함 (2026-08-26) -------------------------
+ *
+ * VideoList가 광고 자리에 <li>를 **조건 없이** 그리고 안쪽 AdSlot만 null이 됐다.
+ * 목록이 display:grid · gap:16px라 높이 0인 칸이 행 하나를 차지하고 양옆에
+ * 16px씩 붙어 **32px 여백**이 생겼다. 라이브 실측:
+ *
+ *     정상 항목 간격            16px
+ *     빈 광고 칸이 낀 자리      32px   (짜증나 [찬양]: 5·11·14번 뒤 3곳)
+ *
+ * 사용자에게는 "폴백 층 헤더가 사라지고 여백만 남은" 것으로 보였다.
+ *
+ * ⚠⚠ **프로덕션 전용이었다.** dev에서는 자리표시자가 그려져 간격이 정상이다.
+ *   그래서 아래 검사는 **AD_SLOT이 빈 값(=지금 상태)** 에서 성립해야 한다.
+ *   dev 조건으로만 검사하면 같은 결함을 또 놓친다 — 2026-08-24 광고 구현부터
+ *   이틀간 아무도 못 본 이유가 그것이다. 짧았던 것은 운이지 장치 덕이 아니다.
+ */
+/**
+ * AdSlot.jsx의 AD_SLOT_RENDERS와 **같은 식**을 테스트에서 재현한다.
+ * 그 상수는 import.meta.env.DEV에 묶여 있어 여기서 dev/prod를 갈라 볼 수 없다.
+ * ⚠ 식이 어긋나면 이 검사가 헛돈다 — 아래 마지막 테스트가 원문과 대조한다.
+ */
+const AD_SLOT_RENDERS_FOR_PROD = (slot, isDev) => Boolean(slot) || isDev;
+
+test("slot이 비면 <li>도 그리지 않는다 (빈 격자 행이 32px 여백을 만든다)", () => {
+  // ① 프로덕션 조건 재현 — 지금 AD_SLOT은 빈 문자열이다.
+  assert.equal(AD_SLOT, "", "slot이 채워졌다 — 승인 후라면 이 검사를 갱신할 것");
+  assert.equal(
+    AD_SLOT_RENDERS_FOR_PROD(AD_SLOT, false),
+    false,
+    "프로덕션에서 AdSlot이 아무것도 안 그리는데 호출부가 그것을 모른다",
+  );
+
+  // ② 호출부가 그 사실을 <li> 앞에서 본다.
+  assert.ok(
+    /\{AD_SLOT_RENDERS && adsAfter\?\.has\(index \+ 1\) \?/.test(videoListSrc),
+    "<li>가 AD_SLOT_RENDERS로 막히지 않는다 — 빈 격자 행이 남는다",
+  );
+  assert.ok(
+    videoListSrc.includes("AD_SLOT_RENDERS"),
+    "VideoList가 AD_SLOT_RENDERS를 import하지 않는다",
+  );
+});
+
+test("slot이 채워지면 <li>를 그린다 (막느라 광고까지 없애지 않는다)", () => {
+  // 승인 후 AD_SLOT이 채워지면 dev/prod 어느 쪽이든 그려져야 한다.
+  assert.equal(AD_SLOT_RENDERS_FOR_PROD("1234567890", false), true, "프로덕션에서 안 그린다");
+  assert.equal(AD_SLOT_RENDERS_FOR_PROD("1234567890", true), true, "dev에서 안 그린다");
+  // 빈 slot이어도 dev에서는 자리표시자가 있으므로 그린다.
+  assert.equal(AD_SLOT_RENDERS_FOR_PROD("", true), true, "dev 자리표시자가 사라졌다");
+});
+
+test("AD_SLOT_RENDERS가 dev 분기를 정적으로 접을 수 있는 형태다", () => {
+  // 옵셔널 체이닝을 쓰면 vite가 치환하지 못해 프로덕션 번들에 dev 가지가 남는다.
+  assert.ok(
+    /export const AD_SLOT_RENDERS = Boolean\(AD_SLOT\) \|\| IS_DEV;/.test(adSlotSrc),
+    "AD_SLOT_RENDERS의 형태가 바뀌었다 — 정적 치환이 깨질 수 있다",
+  );
+});
