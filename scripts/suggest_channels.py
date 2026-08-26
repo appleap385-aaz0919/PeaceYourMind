@@ -1028,7 +1028,7 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         "--no-reserve-actions-batch",
         dest="reserve_actions_batch",
         action="store_false",
-        help="Actions 일일 배치 몫(200)을 미리 빼두지 않는다",
+        help="Actions 배치 몫(500 = 하루 2회분)을 미리 빼두지 않는다",
     )
     parser.add_argument("-v", "--verbose", action="store_true")
     return parser.parse_args(argv)
