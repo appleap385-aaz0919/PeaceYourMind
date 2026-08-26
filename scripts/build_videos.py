@@ -93,7 +93,6 @@ from lib.results import (
 )
 from lib.selection import (
     MEDIA_FLOOR,
-    TAB_MAX_VIDEOS,
     drop_promotional,
     select_tab_layers,
 )
@@ -433,16 +432,32 @@ def _evaluate_subcategory(ctx: BuildContext, r: SubcategoryResult) -> None:
     주제 경보  "이 주제 풀이 얇다"          → 사전·채널 진단용
     화면 경보  "이 화면이 성립하지 않는다"    → 사용자가 실제로 겪는 상태
     """
-    if r.count < SUBCATEGORY_MIN_VIDEOS:
+    # ⚠⚠ 성립 여부도 **탭별로** 잰다 (2026-08-26). 화면 합계는 사용자가 보는 것이
+    #   아니다 — 말씀 20 · 찬양 2인 화면은 합계 22로 옛 기준을 통과하지만 찬양 쪽
+    #   사용자에게는 빈 화면이다.
+    #   ★ 탭 검사가 화면 검사를 **포함한다** (vis <= count) — 놓치는 것이 없다.
+    for side, n in r.tab_counts.items():
+        if n["total"] >= SUBCATEGORY_MIN_VIDEOS:
+            continue
+        empty = n["total"] < MEDIA_FLOOR
         logger.error(
-            "%s 화면 %d건 < 최소 %d건 — 목록으로 성립하지 않는다",
+            "%s [%s] %d건 < %d건 — %s",
             r.id,
-            r.count,
-            SUBCATEGORY_MIN_VIDEOS,
+            side,
+            n["total"],
+            MEDIA_FLOOR if empty else SUBCATEGORY_MIN_VIDEOS,
+            "사실상 빈 탭이다" if empty else "목록으로 성립하지 않는다",
         )
         ctx.collector.add(
-            **alert_specs.theme_too_few(r.id, r.count, SUBCATEGORY_MIN_VIDEOS)
+            **alert_specs.theme_too_few(
+                r.id,
+                side,
+                n["total"],
+                MEDIA_FLOOR if empty else SUBCATEGORY_MIN_VIDEOS,
+                empty=empty,
+            )
         )
+
     # ⚠⚠ 폴백 비율은 **탭별로** 잰다 (2026-08-26). 화면 평균으로 두면 한 탭이
     #   100% 폴백이어도 반대 탭에 가려진다 — 탭별 상한 이후 두 탭의 구성이 크게
     #   갈리므로 평균은 어느 쪽도 설명하지 못한다.
@@ -464,18 +479,6 @@ def _evaluate_subcategory(ctx: BuildContext, r: SubcategoryResult) -> None:
                 f"{r.id} [{side}]", ratio, n["fallback"], n["total"]
             )
         )
-
-    # 탭이 20에 못 닿고 진단선 아래로 내려갔는가 (MEDIA_FLOOR의 남은 쓰임).
-    for side, n in counts.items():
-        if n["total"] < MEDIA_FLOOR:
-            logger.error(
-                "%s [%s] %d건 — 공급이 %d건에도 못 미친다 (탭 상한 %d)",
-                r.id,
-                side,
-                n["total"],
-                MEDIA_FLOOR,
-                TAB_MAX_VIDEOS,
-            )
 
 
 # =============================================================================

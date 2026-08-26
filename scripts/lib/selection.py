@@ -61,8 +61,11 @@ MEDIA_BALANCE_TARGET = THEME_MAX_VIDEOS // 2
 #   이제 각 탭을 TAB_MAX_VIDEOS까지 채우려 하므로 정상적으로는 바닥에 걸릴 일이 없다.
 #   판정 기준도 "총 20 안에서 약한 쪽"이 아니라 **각 탭의 부족분**이다 —
 #   select_tab_layers의 need가 곧 그 부족분이고, 언제나 MEDIA_FLOOR보다 크다.
-#   남은 쓰임은 **공급이 모자라 탭이 20에 못 닿았을 때의 진단선**이다.
-#   이 아래로 내려간 탭은 사전이나 채널이 그 감정을 못 받치고 있다는 신호다.
+#   ★ 2026-08-26 — **선정 로직에 관여하지 않는다. 경보 임계값이 유일한 쓰임이다.**
+#     build_videos._evaluate_subcategory에서 theme_too_few의 심각도를 가른다:
+#       탭 노출 < MEDIA_FLOOR          critical  "사실상 빈 탭"
+#       탭 노출 < SUBCATEGORY_MIN(8)   warning   "목록 성립 불가"
+#     전에는 logger.error로만 남아 아무도 보지 않았다 — 정식 경보로 올렸다(2.67).
 MEDIA_FLOOR = 4
 
 

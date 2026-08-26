@@ -77,6 +77,7 @@ from lib.tagging import SERMON, UNKNOWN, WORSHIP, MediaVerdict
 from lib.themes import (
     CRISIS_MIN_VIDEOS,
     FALLBACK_MAX_PER_TAB,
+    SUBCATEGORY_MIN_VIDEOS,
     THEME_MAX_PER_CHANNEL,
     THEME_MAX_VIDEOS,
     load_themes,
@@ -637,6 +638,69 @@ def main() -> int:
         abs(lopsided.fallback_ratio - 0.5) < 0.2,
         "★ 화면 평균은 어느 탭도 설명하지 못한다 (그래서 경보에 쓰지 않는다)",
         f"화면 평균 {lopsided.fallback_ratio:.0%}",
+    )
+
+    # --- 8-c. 성립 경보를 탭 단위로 (2026-08-26) ----------------------------
+    print("")
+    print("8-c. 성립 경보 — 화면 합계가 아니라 탭에서 보이는 수로 잰다")
+    print("-" * 76)
+    # ★ 옛 검사(화면 합계 < 8)가 놓치던 모양: 합계 22인데 한 탭이 2건이다.
+    blind = SubcategoryResult(
+        id="x.blind",
+        themes=("a",),
+        media_default=SERMON,
+        theme_videos=[_tagged(f"s{i}", f"채널{i % 5}", SERMON) for i in range(20)]
+        + [_tagged(f"w{i}", "찬양채널", WORSHIP) for i in range(2)],
+        fallback_videos=[],
+    )
+    _check(
+        failures,
+        blind.count >= SUBCATEGORY_MIN_VIDEOS,
+        f"전제 재현: 화면 합계 {blind.count}건이라 옛 화면 검사는 통과한다",
+        f"{blind.count}건",
+    )
+    _check(
+        failures,
+        blind.tab_counts[WORSHIP]["total"] < SUBCATEGORY_MIN_VIDEOS,
+        "★ 그러나 [찬양] 탭은 성립하지 않는다 — 탭 검사만 이것을 잡는다",
+        f"찬양 {blind.tab_counts[WORSHIP]['total']}건 / 말씀 {blind.tab_counts[SERMON]['total']}건",
+    )
+
+    # 탭 검사가 화면 검사를 **포함**하는가 (vis <= count 이므로 논리적으로 성립).
+    tiny = SubcategoryResult(
+        id="x.tiny",
+        themes=("a",),
+        media_default=SERMON,
+        theme_videos=[_tagged(f"t{i}", f"채널{i}", SERMON) for i in range(5)],
+        fallback_videos=[],
+    )
+    _check(
+        failures,
+        tiny.count < SUBCATEGORY_MIN_VIDEOS
+        and all(n["total"] < SUBCATEGORY_MIN_VIDEOS for n in tiny.tab_counts.values()),
+        "화면 합계가 미달이면 두 탭 모두 반드시 걸린다 (옛 검사를 포함한다)",
+        f"합계 {tiny.count} · 말씀 {tiny.tab_counts[SERMON]['total']} "
+        f"· 찬양 {tiny.tab_counts[WORSHIP]['total']}",
+    )
+
+    # 심각도 2단 — MEDIA_FLOOR 미만은 critical, 그 위 미달은 warning.
+    critical = alert_specs.theme_too_few("x", SERMON, 2, MEDIA_FLOOR, empty=True)
+    warning = alert_specs.theme_too_few("x", SERMON, 6, SUBCATEGORY_MIN_VIDEOS, empty=False)
+    _check(
+        failures,
+        critical["severity"] == "critical" and warning["severity"] == "warning",
+        f"{MEDIA_FLOOR}건 미만은 critical · 그 위 미달은 warning",
+        f"{critical['severity']} / {warning['severity']}",
+    )
+    _check(
+        failures,
+        "[sermon]" in critical["title"] and "토글" in critical["body"],
+        "경보 문구가 어느 탭인지 말한다",
+    )
+    _check(
+        failures,
+        route_for(critical["type"]) == ROUTE_ISSUE,
+        "성립 경보는 Issue로 간다 (상태가 아니라 사건이다)",
     )
 
     sub = SubcategoryResult(

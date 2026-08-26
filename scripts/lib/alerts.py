@@ -396,19 +396,41 @@ def theme_fallback_heavy(
     }
 
 
-def theme_too_few(subcategory: str, count: int, minimum: int) -> dict[str, Any]:
+def theme_too_few(
+    subcategory: str, side: str, count: int, minimum: int, *, empty: bool
+) -> dict[str, Any]:
+    """토글 한쪽이 목록으로 성립하지 않는다.
+
+    [2026-08-26 — 화면 단위에서 **탭 단위**로 옮겼다]
+      전에는 화면 전체 건수(주제분+폴백)로 쟀다. 탭별 상한(2.64) 이후로는 그 수가
+      **사용자가 보는 것과 다르다** — 사용자는 한 탭만 본다. 말씀 20 · 찬양 2인
+      화면은 합계 22라 옛 기준(8)을 통과하지만 찬양 쪽 사용자에게는 빈 화면이다.
+
+    ★ **탭 검사가 화면 검사를 포함한다.** unknown이 양쪽에 세이므로 각 탭의 노출
+      건수는 화면 합계 이하다(vis <= count). 따라서 화면 합계가 minimum 미만이면
+      두 탭 모두 반드시 걸린다 — 옛 검사가 잡던 것을 하나도 놓치지 않는다.
+
+    [두 단계로 나눈 이유 — MEDIA_FLOOR를 여기로 흡수했다]
+      empty=True   MEDIA_FLOOR 미만. 사실상 빈 탭이다 → critical
+      empty=False  SUBCATEGORY_MIN_VIDEOS 미만. 얇다 → warning
+      ⚠ 전에는 MEDIA_FLOOR가 logger.error로만 남아 **아무도 보지 않았다.**
+        "있다고 믿는 검사가 없는 상태"를 만들지 않으려고 경보로 올렸다.
+    """
+    label = "사실상 빈 탭" if empty else "목록 성립 불가"
     return {
         "type": "theme_too_few",
-        "severity": "critical",
-        "title": f"[배치] 화면 성립 불가: {subcategory} ({count}건)",
+        "severity": "critical" if empty else "warning",
+        "title": f"[배치] {label}: {subcategory} [{side}] ({count}건)",
         "body": (
-            f"`{subcategory}` 화면에 나갈 영상이 {count}건으로 최소 {minimum}건에 "
-            "미달합니다.\n\n"
-            "폴백까지 동원하고도 이 수준이면 그 감정에 내놓을 것이 실질적으로 "
-            "없다는 뜻입니다. 20건을 못 채우는 것은 허용된 상태지만(폴백 상한 정책), "
-            f"{minimum}건 미만은 목록으로서 성립하지 않습니다.\n\n"
-            "조치: 채널 보충이 가장 직접적입니다. 그 전에 이 세분류의 기본 형식"
-            "(media_defaults)이 실제 풀과 맞는지 먼저 확인하세요."
+            f"`{subcategory}` 화면의 **[{side}] 토글**에 나갈 영상이 {count}건으로 "
+            f"최소 {minimum}건에 미달합니다.\n\n"
+            "폴백까지 동원하고도 이 수준이면 그 감정에 그 형식으로 내놓을 것이 "
+            "실질적으로 없다는 뜻입니다.\n\n"
+            "⚠ 이 값은 **그 탭에서 실제로 보이는 건수**입니다(unknown 포함). "
+            "화면 합계가 아니라 사용자가 토글을 눌렀을 때 보는 수입니다.\n\n"
+            "조치: 그 형식의 채널 보충이 가장 직접적입니다. 그 전에 이 세분류에 "
+            "매핑된 주제들이 그 형식을 실제로 공급하는지 확인하세요 "
+            "(진단의 `media_type_gaps`·`themes_empty`)."
         ),
         "labels": ("batch", "auto"),
         "renotify_days": SAFETY_RENOTIFY_DAYS,
