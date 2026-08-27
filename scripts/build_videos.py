@@ -375,7 +375,7 @@ def build_subcategories(
     untagged, promo_dropped = drop_promotional([t for t in tagged if t.is_untagged])
     if promo_dropped:
         logger.info(
-            "폴백 후보에서 공고·행사·홍보 %d건 제외 — 남은 후보 %d건",
+            "폴백 후보에서 공고·행사·홍보·제3범주 %d건 제외 — 남은 후보 %d건",
             len(promo_dropped),
             len(untagged),
         )
