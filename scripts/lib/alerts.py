@@ -60,6 +60,12 @@ ROUTE_SUMMARY: Route = "summary"
 #     crisis_stale                        시간이 갈수록 악화된다 = 사건
 #     채널이 0개인 동안에는 이 셋이 아예 발동하지 않는다(lib/crisis.py에서
 #     파생 경보를 접는다). 그래서 지금 상태에서 Issue는 0건이 된다.
+#   ⛔ [2026-08-27] tab_over_cap은 **여기 넣지 않았다. 옮기지 말 것.**
+#     이웃 경보(theme_fallback_heavy)가 summary라 같이 묶고 싶어지지만 성격이 다르다.
+#     저쪽은 매일 같은 값이 뜨는 상태 보고이고, 이쪽은 **임계를 오늘의 정상 범위
+#     위(26)에 두어 평소에는 아예 울리지 않게** 만든 경보다(selection.py TAB_OVER_*).
+#     울린다는 것은 곧 "어제까지와 달라졌다"는 뜻이므로 사건이다 → Issue.
+#     summary로 옮기면 그 설계가 무의미해진다.
 SUMMARY_ONLY_TYPES = frozenset(
     {
         "theme_low_yield",
@@ -434,4 +440,56 @@ def theme_too_few(
         ),
         "labels": ("batch", "auto"),
         "renotify_days": SAFETY_RENOTIFY_DAYS,
+    }
+
+
+def tab_over_cap(
+    subcategory: str, side: str, count: int, threshold: int, *, severe: bool
+) -> dict[str, Any]:
+    """탭 노출이 의도한 상한(20)을 크게 넘었다.
+
+    [무엇을 재는가 — theme_too_few의 반대쪽 끝이다]
+      theme_too_few  탭이 너무 얇다 (< 4 / < 8)
+      tab_over_cap   탭이 너무 두껍다 (>= 26 / >= 30)
+      둘 다 **그 탭에서 실제로 보이는 건수**를 본다(unknown 포함).
+
+    [왜 20 초과를 바로 알리지 않는가 — 초과는 허용된 상태다]
+      TAB_MAX_VIDEOS가 보장하는 것은 "한 탭이 20건 이하"가 아니라 "각 패스의
+      기여가 20 이하"다. 두 패스가 하나의 목록에 쌓고 unknown이 양쪽 탭에
+      보이므로, 뒷 패스의 unknown이 앞 패스의 탭에 더해져 20을 넘는다.
+      2026-08-26 실측으로 15개 탭이 21~24였고, **사용자 결정(2026-08-27)으로
+      이 초과를 허용했다**(D안, HANDOFF 2.72).
+
+      그래서 이 경보는 초과를 잡는 것이 아니라 **정상 범위를 벗어난 것**을 잡는다.
+      임계 근거는 selection.py의 TAB_OVER_* 주석에 있다.
+
+    ★ 이 경보는 사실상 **unknown 급증 감지기**다. 초과분은 곧 뒷 패스가 담은
+      unknown 수이므로, 울린다는 것은 미판별 영상이 늘었다는 뜻이다.
+      진단의 `unknown_ratio`를 함께 볼 것 — 그쪽이 선행 지표다.
+
+    ⛔ 이 경보에 대응한다고 B안(뒷 패스의 unknown 억제)이나 C안(사후 절단)으로
+      가지 말 것. 둘 다 기각됐다(selection.py TAB_MAX_VIDEOS 주석).
+      20으로 정확히 맞추는 길은 탭별 목록 분리(A안)뿐이다.
+    """
+    label = "탭 과다 노출" if severe else "탭 노출 상한 초과"
+    return {
+        "type": "tab_over_cap",
+        "severity": "critical" if severe else "warning",
+        "title": f"[배치] {label}: {subcategory} [{side}] ({count}건)",
+        "body": (
+            f"`{subcategory}` 화면의 **[{side}] 토글**에 {count}건이 노출됩니다 "
+            f"(경보 임계 {threshold}건, 의도한 상한 20건).\n\n"
+            "초과 자체는 허용된 상태입니다 — unknown(형식 미판별) 영상이 양쪽 탭에 "
+            "모두 보이기 때문에 생기는 구조적 여유입니다. **다만 이 수치는 "
+            "unknown이 늘면 함께 늘고, 구조적으로는 40건까지 벌어질 수 있습니다.**\n\n"
+            "조치: 먼저 진단의 `unknown_ratio`를 보세요. 그쪽이 올랐다면 원인은 "
+            "이 화면이 아니라 **형식 판별**입니다 — 곡명만 나열된 찬양 제목이 "
+            "대표적입니다(HANDOFF 2.71 ⑤). 제목 어휘·곡명 사전을 보강하면 "
+            "unknown이 줄어 이 수치도 함께 내려갑니다.\n\n"
+            "⛔ 선정 로직을 부분 수정해 20에 맞추려 하지 마세요. 검토를 마치고 "
+            "기각한 안이 둘 있습니다(HANDOFF 2.72) — 뒷 패스의 unknown 억제는 "
+            "주제분이 얇은 탭을 다시 비게 만들고, 사후 절단은 반대 탭을 깎아 "
+            "순환합니다."
+        ),
+        "labels": ("batch", "auto"),
     }

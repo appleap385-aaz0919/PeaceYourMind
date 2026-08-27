@@ -764,6 +764,11 @@ def main() -> int:
         "crisis_stale",
         "theme_empty",
         "theme_too_few",
+        # 탭이 너무 두껍다 (2026-08-27 · D안). theme_too_few의 반대쪽 끝이다.
+        # ⛔ SUMMARY로 옮기지 말 것 — 임계(26/30)를 오늘의 정상 범위 위에 두어
+        #   평소에는 아예 울리지 않는다. 울린다 = 어제와 달라졌다 = 사건이다.
+        #   이웃인 theme_fallback_heavy가 summary라 묶고 싶어지지만 성격이 다르다.
+        "tab_over_cap",
         "channel_zero_yield",
         "channel_dead",
         "allowlist_undersized",

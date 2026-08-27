@@ -22,13 +22,18 @@ from pathlib import Path
 from typing import Any
 
 from lib.filters import FilterStats
-from lib.tagging import SERMON, WORSHIP
+from lib.tagging import SERMON, UNKNOWN, WORSHIP
 from lib.themes import (
     FALLBACK_HEAVY_RATIO,
     SUBCATEGORY_MIN_VIDEOS,
     THEME_MAX_VIDEOS,
     THEME_MIN_VIDEOS,
 )
+
+# 탭 상한 — 진단의 tabs_over_cap 기준선. THEME_MAX_VIDEOS와 같은 값이지만 뜻이
+# 달라 별칭을 그대로 쓴다(앞은 주제당 상한, 이쪽은 탭이 보여 줄 최대).
+# ⚠ selection은 results·tagging·themes만 가져오므로 순환하지 않는다.
+from lib.selection import TAB_MAX_VIDEOS
 from lib.results import (
     BuildContext,
     CrisisResult,
@@ -227,9 +232,31 @@ def build_diagnostics(
     그 판정에 필요한 것은 목록과 개수뿐이다.
     """
     fallback_heavy = [s.id for s in subcategories if s.fallback_ratio > FALLBACK_HEAVY_RATIO]
+
+    # 탭 노출 초과 — 2026-08-27 D안(HANDOFF 2.72). 경보는 임계(26/30)를 넘을 때만
+    # 울리지만, 진단에는 **매일 남긴다.** 임계 아래에서 조금씩 오르는 추세를
+    # 주간 비교로 보려면 경보와 무관하게 숫자가 있어야 한다.
+    tab_totals = [
+        (f"{s.id} [{side}]", n["total"])
+        for s in subcategories
+        for side, n in s.tab_counts.items()
+    ]
+    over = sorted(name for name, total in tab_totals if total > TAB_MAX_VIDEOS)
+
+    # ★ unknown 비율 — 탭 초과의 **선행 지표다.**
+    #   탭이 20을 넘는 만큼은 곧 뒷 패스가 담은 unknown 수이므로, 이 값이 오르면
+    #   tabs_over_cap의 최댓값도 따라 오른다. 경보가 울리기 전에 여기서 먼저 보인다.
+    #   ⚠ untagged_ratio와 다른 것이다 — 저쪽은 **주제** 태깅 실패,
+    #     이쪽은 **형식(media_type)** 판별 실패다. 둘은 독립이다.
+    media = tagging.get("media_types") or {}
+    media_total = sum(media.values())
     return {
         "version": version,
         "untagged_ratio": tagging.get("untagged_ratio", 0.0),
+        "unknown_ratio": round(media.get(UNKNOWN, 0) / media_total, 3) if media_total else 0.0,
+        "unknown_kept": media.get(UNKNOWN, 0),
+        "tabs_over_cap": over,
+        "tab_max_exposed": max((total for _, total in tab_totals), default=0),
         "kept": tagging.get("kept", 0),
         "themes_empty": sorted(t.id for t in themes if not t.picked),
         "themes_low_yield": sorted(

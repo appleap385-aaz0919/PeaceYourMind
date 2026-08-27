@@ -93,6 +93,8 @@ from lib.results import (
 )
 from lib.selection import (
     MEDIA_FLOOR,
+    TAB_OVER_CRITICAL,
+    TAB_OVER_WARN,
     drop_promotional,
     select_tab_layers,
     # build_themes()가 주제별 진단·경보를 낼 때 쓴다(아래 271행 부근).
@@ -460,6 +462,34 @@ def _evaluate_subcategory(ctx: BuildContext, r: SubcategoryResult) -> None:
                 n["total"],
                 MEDIA_FLOOR if empty else SUBCATEGORY_MIN_VIDEOS,
                 empty=empty,
+            )
+        )
+
+    # ⚠⚠ 반대쪽 끝 — 탭이 **너무 두꺼운** 경우다 (2026-08-27 · 사용자 결정 D안).
+    #   TAB_MAX_VIDEOS(20)는 "한 탭이 20건 이하"를 보장하지 않는다. 보장하는 것은
+    #   "각 패스의 기여가 20 이하"이고, 뒷 패스가 담은 unknown이 앞 패스의 탭에도
+    #   보여 20을 넘는다(2026-08-26 실측 최대 24 · 구조적 상한 40).
+    #   초과는 **허용하기로 했다.** 조용히 40까지 벌어지는 것만 막는다.
+    #   임계 근거는 selection.py의 TAB_OVER_* 주석에 있다.
+    for side, n in r.tab_counts.items():
+        if n["total"] < TAB_OVER_WARN:
+            continue
+        severe = n["total"] >= TAB_OVER_CRITICAL
+        logger.warning(
+            "%s [%s] %d건 — 탭 노출이 임계 %d건을 넘었다 (의도 상한 20). "
+            "unknown 급증을 의심할 것",
+            r.id,
+            side,
+            n["total"],
+            TAB_OVER_CRITICAL if severe else TAB_OVER_WARN,
+        )
+        ctx.collector.add(
+            **alert_specs.tab_over_cap(
+                r.id,
+                side,
+                n["total"],
+                TAB_OVER_CRITICAL if severe else TAB_OVER_WARN,
+                severe=severe,
             )
         )
 
