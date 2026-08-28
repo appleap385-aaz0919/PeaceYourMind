@@ -34,14 +34,25 @@ export function screenFor(data, subcategoryId) {
 /**
  * 토글 한쪽에 실제로 보이는 영상.
  *
- * unknown이 양쪽에 들어가므로 [말씀] 합계 + [찬양] 합계는 전체보다 클 수 있다.
- * 그게 정상이다 — 개수를 맞추려고 unknown을 한쪽에만 넣으면 반대쪽 화면이 빈다.
+ * ★★ 2026-08-28 — **unknown은 어느 탭에도 넣지 않는다** (사용자 결정).
+ *   ⚠ 배치의 `lib/selection.visible_count()`와 **같은 기준이어야 한다.**
+ *     둘이 어긋나면 배치가 세는 수와 사용자가 보는 수가 달라진다.
+ *
+ * [원래는 양쪽에 넣었다 — 전제가 달라져 뒤집혔다]
+ *   "판별 실패로 영상이 사라지는 것보다 양쪽에 보이는 편이 낫다"(PLAN.md 3.4)는
+ *   판단은 unknown이 많던 시절의 것이다.
+ *     2026-08-26  unknown 79건(4.5%) → 빼면 주제분 −39
+ *     2026-08-28  unknown 25건(1.4%) → 빼면 주제분 −6
+ *   얻는 것은 그대로다 — 탭이 정확히 20건이 되고, [말씀]을 눌러도 [찬양]을 눌러도
+ *   같은 영상이 나오던 화면(11/24개)이 사라진다.
+ *
+ * ⚠ 배포된 캐시·번들 시드에는 unknown이 남아 있을 수 있다(시드 13건).
+ *   그것들은 이제 어느 탭에도 안 보인다 — 데이터가 아니라 **표시 규칙**이
+ *   바뀐 것이므로 캐시를 비울 필요는 없다. 다음 배치부터는 애초에 안 담긴다.
  */
 export function visibleVideos(videos, mediaType) {
   if (!Array.isArray(videos)) return [];
-  return videos.filter(
-    (v) => v.media_type === mediaType || v.media_type === MEDIA.UNKNOWN,
-  );
+  return videos.filter((v) => v.media_type === mediaType);
 }
 
 /**

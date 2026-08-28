@@ -508,11 +508,21 @@ const sample = [
   { videoId: "u1", media_type: MEDIA.UNKNOWN, source: SOURCE.THEME },
 ];
 
-test("unknown은 양쪽 토글에 모두 노출된다", () => {
+// ★★ 2026-08-28 뒤집힌 결정 — 전에는 "unknown은 양쪽에 모두 노출된다"였다.
+//   unknown이 79건(4.5%)이던 시절엔 빼면 주제분을 39건 잃었다. 25건(1.4%)이 된
+//   지금은 −6건뿐이고, 얻는 것(탭 정확히 20 · 양쪽 탭 중복 0)은 그대로다.
+//   ⚠ 배치의 lib/selection.visible_count()와 **같은 기준이어야 한다.**
+test("★ unknown은 어느 토글에도 노출되지 않는다", () => {
   const sermon = visibleVideos(sample, MEDIA.SERMON).map((v) => v.videoId);
   const worship = visibleVideos(sample, MEDIA.WORSHIP).map((v) => v.videoId);
-  assert.ok(sermon.includes("u1"), "말씀 쪽에 unknown이 없다");
-  assert.ok(worship.includes("u1"), "찬양 쪽에 unknown이 없다");
+  assert.ok(!sermon.includes("u1"), "말씀 쪽에 unknown이 남아 있다");
+  assert.ok(!worship.includes("u1"), "찬양 쪽에 unknown이 남아 있다");
+});
+
+test("★ 두 탭은 겹치는 영상을 갖지 않는다 (말씀 + 찬양 = 전체)", () => {
+  const sermon = visibleVideos(sample, MEDIA.SERMON).map((v) => v.videoId);
+  const worship = visibleVideos(sample, MEDIA.WORSHIP).map((v) => v.videoId);
+  assert.equal(sermon.filter((id) => worship.includes(id)).length, 0, "겹치는 영상이 있다");
 });
 
 test("반대 형식은 노출되지 않는다", () => {
@@ -521,10 +531,10 @@ test("반대 형식은 노출되지 않는다", () => {
   assert.ok(!worship.includes("s2"));
 });
 
-test("토글 건수는 unknown을 양쪽에 센다", () => {
+test("★ 토글 건수에서 unknown을 빼고 센다", () => {
   const counts = toggleCounts(sample);
-  assert.equal(counts[MEDIA.SERMON], 3); // s1 s2 u1
-  assert.equal(counts[MEDIA.WORSHIP], 2); // w1 u1
+  assert.equal(counts[MEDIA.SERMON], 2); // s1 s2  (u1은 안 센다)
+  assert.equal(counts[MEDIA.WORSHIP], 1); // w1
 });
 
 test("모든 세분류에 형식 기본값이 있다", () => {
@@ -544,7 +554,8 @@ test("모든 세분류에 형식 기본값이 있다", () => {
 
 test("layersFor가 주제분과 폴백을 갈라서 돌려준다", () => {
   const { theme, fallback } = layersFor(sample, MEDIA.SERMON);
-  assert.deepEqual(theme.map((v) => v.videoId), ["s1", "u1"]);
+  // u1(unknown)은 2026-08-28부터 어느 탭에도 안 들어간다
+  assert.deepEqual(theme.map((v) => v.videoId), ["s1"]);
   assert.deepEqual(fallback.map((v) => v.videoId), ["s2"]);
 });
 

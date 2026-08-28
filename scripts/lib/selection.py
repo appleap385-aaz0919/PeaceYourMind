@@ -94,16 +94,16 @@ MEDIA_FLOOR = 4
 #   선택 부담을 유의미하게 늘리지 않고, 진짜 위험은 상한이 보장되지 않아 조용히
 #   벌어지는 것이기 때문이다. 임계는 아래 TAB_OVER_* 참조.
 #
-# ⛔ 20으로 **정확히** 맞추는 길은 탭별 목록 분리(A안)뿐이다. 아래 두 안으로
-#   부분 수정하지 말 것 — 둘 다 검토를 마치고 기각했다(2.72).
-#     B  뒷 패스의 unknown 채택 억제 → unknown은 약한 탭을 메우는 값이라
-#        조이면 주제분 0인 탭이 20을 못 채운다. **2.64가 푼 문제로 되돌아간다.**
-#        게다가 찬양 탭만 고쳐지고 말씀 탭 초과는 남는다.
-#     C  사후 절단 → 순환한다. unknown을 빼면 반대 탭도 하나 잃어 20 아래로
-#        떨어질 수 있다. 단독으로 성립하지 않는다.
+# ★★ 2026-08-28 — **초과가 사라졌다. 이제 탭은 정확히 20건이다.**
+#   위 D안(초과를 허용하고 경보로 드러내기)은 unknown을 양쪽 탭에서 빼면서
+#   전제가 없어졌다(visible_count 주석). 초과분은 애초에 unknown 누출이었고,
+#   누출이 없으면 넘칠 것이 없다. 실측 최대 21 → **20**.
 #
-# ⚠ unknown은 양쪽 탭에 노출되므로 화면당 **고유** 영상은 20~40건이 된다.
-#   두 탭 합계가 40을 넘는 것처럼 보이는 것은 중복 계산이지 데이터 중복이 아니다.
+#   ⛔ 위에 적힌 A·B·C 논의는 **지나간 기록이다.** "20으로 맞추려면 A안뿐"이라던
+#     결론은 unknown이 양쪽에 보이던 시절의 것이고, 지금은 그 길을 안 거치고
+#     같은 결과에 도달했다. 되살릴 안이 아니다.
+#
+# ⚠ 두 탭은 이제 **겹치는 영상을 갖지 않는다.** 말씀 합계 + 찬양 합계 = 화면 전체다.
 TAB_MAX_VIDEOS = THEME_MAX_VIDEOS
 
 # 탭 노출이 이 값 이상이면 경보 (2026-08-27 · 사용자 결정 D안).
@@ -125,9 +125,14 @@ TAB_MAX_VIDEOS = THEME_MAX_VIDEOS
 #     CRIT 30   의도치의 1.5배이자 20과 40의 **정확한 중간**. 여기까지 오면
 #               "탭당 20"이라는 말이 사실상 의미를 잃는다.
 #
-# ⚠ 이 값을 낮춰 "초과 자체"를 잡으려 하지 말 것. 초과는 D안이 **허용하기로 한
-#   것**이다. 낮추면 매일 울리는 경보가 되어 아무도 안 보게 된다 — MEDIA_FLOOR가
-#   logger.error로만 남아 아무도 안 보던 그 상태(2.67)를 반대 방향으로 재현한다.
+# ⚠ 이 값을 낮춰 "초과 자체"를 잡으려 하지 말 것. 낮추면 매일 울리는 경보가 되어
+#   아무도 안 보게 된다 — MEDIA_FLOOR가 logger.error로만 남아 아무도 안 보던
+#   그 상태(2.67)를 반대 방향으로 재현한다.
+#
+# ★★ 2026-08-28 — unknown을 탭에서 빼면서 **탭 최대가 20이 됐다.** 이 경보는
+#   이제 정상 동작에서 **구조적으로 울리지 않는다.** 그래도 남겨 둔다:
+#   울린다면 그것은 "unknown이 다시 탭에 들어왔다"는 뜻이고, 그건 누가
+#   visible_count나 tab_pool을 되돌렸다는 신호다. **회귀 감지기로 값이 있다.**
 TAB_OVER_WARN = 26
 TAB_OVER_CRITICAL = 30
 
@@ -135,18 +140,41 @@ TAB_OVER_CRITICAL = 30
 def visible_count(videos: Sequence[TaggedVideo], media_type: str) -> int:
     """토글 한쪽에 실제로 보이는 건수. **앱의 visibleVideos()와 같은 기준이다.**
 
-    unknown은 양쪽 토글 모두에 노출되므로 양쪽에 센다(PLAN.md 3.4). 그래서
-    말씀 합계 + 찬양 합계는 전체보다 클 수 있다 — 그게 정상이다.
+    ★★ 2026-08-28 — **unknown을 어느 탭에도 넣지 않는다** (사용자 결정).
+       ⚠ 이 함수를 고치면 앱의 visibleVideos()도 같이 고쳐야 한다. 둘이 어긋나면
+         배치가 세는 수와 사용자가 보는 수가 달라진다.
+
+    [무엇이 뒤집혔나 — 원래는 양쪽에 넣었다]
+      PLAN.md 3.4의 판단은 "판별 실패로 영상이 **사라지는** 것보다 양쪽에 보이는
+      편이 낫다"였다. 그 판단은 **unknown이 많던 시절의 것**이다.
+
+        2026-08-26  unknown 79건(4.5%)  →  빼면 주제분 −39. 손실이 컸다
+        2026-08-28  unknown 25건(1.4%)  →  빼면 주제분 −6.  거의 없다
+                    (안 E로 사각지대가 10~30분에서 10~20분으로 좁아진 결과, 2.80)
+
+      값이 뒤집힌 것은 판단이 틀려서가 아니라 **전제가 달라져서다.**
+
+    [무엇을 얻는가]
+      탭이 **정확히 20건**이 된다(최대 21→20). 2.72에서 "A안(탭별 목록 분리)뿐"
+      이라던 목표를 앱 계약 변경 없이 이룬다 — 초과가 애초에 unknown 누출이었다.
+      양쪽 탭 중복 노출도 **0**이 된다([말씀]을 눌러도 [찬양]을 눌러도 같은 영상이
+      나오던 화면이 11/24개 있었다).
+
+    ⚠⚠ **unknown이 다시 늘면 이 안의 손해가 그만큼 커진다.**
+      진단의 `unknown_ratio`가 그 **선행 지표**다(2.72 ⑤). 그 값이 오르면
+      여기서 버려지는 영상이 늘고, 주제분이 얇아진다.
+      ⛔ 그때 되돌리기 전에 **왜 unknown이 늘었는지부터** 볼 것 — 판별을 고치는
+        쪽이 먼저다. 되돌리면 중복 노출과 탭 초과가 함께 돌아온다.
     """
-    return sum(1 for t in videos if t.media.media_type in (media_type, UNKNOWN))
+    return sum(1 for t in videos if t.media.media_type == media_type)
 
 
 def weak_side(videos: Sequence[TaggedVideo]) -> str:
     """토글 두 쪽 중 더 적게 보이는 쪽. 동수면 SERMON (결정적이어야 한다).
 
-    ⚠ 양쪽이 **동시에** MEDIA_FLOOR 아래인 경우는 다루지 않는다. unknown이 양쪽에
-      세어지므로 `말씀 + 찬양 >= 전체`이고, 둘 다 4 미만이려면 화면이 8건 미만이어야
-      한다. 그것은 SUBCATEGORY_MIN_VIDEOS 경보가 이미 잡는 별개의 상태다.
+    ⚠ 양쪽이 **동시에** MEDIA_FLOOR 아래인 경우는 다루지 않는다. 2026-08-28부터
+      unknown이 어느 탭에도 안 들어가므로 `말씀 + 찬양 = 전체`이고, 둘 다 4 미만이면
+      화면이 8건 미만이다. 그것은 SUBCATEGORY_MIN_VIDEOS 경보가 이미 잡는 상태다.
     """
     return SERMON if visible_count(videos, SERMON) <= visible_count(videos, WORSHIP) else WORSHIP
 
@@ -600,7 +628,9 @@ def select_fallback_videos(
     pool = [
         t
         for t in untagged
-        if t.video_id not in exclude and t.media.media_type in (target, UNKNOWN)
+        # 2026-08-28 — unknown을 빼면서 target만 남는다 (visible_count 주석 참조).
+        #   전에는 "target + unknown"이었다. unknown이 양쪽 탭에 보이던 시절의 규칙이다.
+        if t.video_id not in exclude and t.media.media_type == target
     ]
     order = _channel_order(pool, day_of_year)
     used: Counter[str] = Counter()
@@ -661,7 +691,9 @@ def select_tab_layers(
     seen: set[str] = set(exclude)
 
     for tab in (SERMON, WORSHIP):
-        tab_pool = [t for t in pool if t.media.media_type in (tab, UNKNOWN)]
+        # 2026-08-28 — unknown을 빼면서 그 탭의 형식만 남는다.
+        #   ★ 그래서 두 탭이 겹치는 영상을 갖지 않는다 — 초과도 중복도 사라진다.
+        tab_pool = [t for t in pool if t.media.media_type == tab]
         picked, _, _ = select_theme_videos(tab_pool, day_of_year)
         picked = rotate_for_subcategory(picked, position)
         for tagged in picked[:TAB_MAX_VIDEOS]:
@@ -682,5 +714,12 @@ def select_tab_layers(
             fallback.append(tagged)
             seen.add(tagged.video_id)
 
+    # ★ 2026-08-28 — 합친 뒤 **한 번 더** 정렬한다.
+    #   select_fallback_videos는 **호출마다** 최신순으로 준다. 그런데 두 패스의
+    #   결과가 이 배열에 이어 붙으므로 이어붙인 지점에서 순서가 끊긴다.
+    #   실측(2026-08-28 배치): 48개 탭 중 2개(anxiety.tension·anger.rage [말씀])에
+    #   역전이 1건씩 있었고, 둘 다 마지막 항목이 반대 패스에서 담긴 것이었다.
+    # ⚠ 정렬만 한다 — 무엇이 담기는지는 위에서 이미 끝났다.
+    fallback.sort(key=lambda t: t.video.published_at, reverse=True)
     return theme, fallback
 

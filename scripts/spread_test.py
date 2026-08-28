@@ -21,6 +21,7 @@
  10. 폴백 품질 필터가 공고·행사·홍보·제3범주만 빼고 찬양 콘티는 남긴다 (2026-08-20·27)
  11. 세분류별 오프셋이 같은 풀을 공유하는 화면을 갈라 준다 (2026-08-20)
  12. 주간 진단 게이트가 배치 지연·중복·누락에 흔들리지 않는다 (2026-08-28)
+ 13. unknown이 어느 탭에도 안 들어가고, 폴백이 단조 최신순이다 (2026-08-28)
 """
 
 from __future__ import annotations
@@ -232,12 +233,16 @@ def main() -> int:
         f"{len(picked)}건",
     )
 
+    # ⚠ 2026-08-28 정정 — select_theme_videos 자체는 형식을 안 가리므로 여전히
+    #   20건을 채운다. 그러나 **호출부(select_tab_layers)가 unknown을 탭 풀에서
+    #   빼므로** 실제 화면에는 한 건도 안 나간다. 이 검사는 "이 함수가 형식으로
+    #   버리지 않는다"만 고정한다 — 격리는 [13]이 본다.
     unknown_pool = _pool([(f"채널{i}", 8, UNKNOWN) for i in range(5)])
     picked, _, _ = select_theme_videos(unknown_pool, day_of_year=0)
     _check(
         failures,
         len(picked) == THEME_MAX_VIDEOS,
-        "미판별만 있어도 20건을 채운다 (양쪽 토글에 노출되므로 버리지 않는다)",
+        "미판별만 있어도 이 함수는 20건을 채운다 (격리는 호출부가 한다 — [13])",
         f"{len(picked)}건",
     )
 
@@ -1097,6 +1102,72 @@ def main() -> int:
         wf.count("steps.weekly.outputs.due == 'true'") == 2 and not stale,
         "두 스텝이 같은 출력값을 쓰고, 실행 시각 판정이 살아 있지 않다",
         f"잔존: {', '.join(stale)}" if stale else "-",
+    )
+
+
+    # =========================================================================
+    # 13. unknown 격리 + 폴백 정렬 (2026-08-28)
+    # =========================================================================
+    print()
+    print("[13] unknown 격리 · 폴백 최신순")
+
+    # ★ unknown은 어느 탭에도 안 들어간다 (2026-08-28 결정)
+    mixed_pool = _pool([("채널A", 6, SERMON), ("채널B", 6, WORSHIP), ("채널C", 6, UNKNOWN)])
+    unt = [
+        _tagged_untagged(f"u{i}", f"채널{c}", m, f"{c} 폴백 {i}")
+        for i, (c, m) in enumerate(
+            [("D", SERMON), ("E", WORSHIP), ("F", UNKNOWN), ("G", SERMON), ("H", WORSHIP)] * 6
+        )
+    ]
+    pk, fb = select_tab_layers(mixed_pool, unt, 0, 0, exclude=set())
+    leaked = [t for t in pk + fb if t.media.media_type == UNKNOWN]
+    _check(
+        failures,
+        not leaked,
+        "★ unknown이 어느 층에도 담기지 않는다",
+        f"{len(leaked)}건 유입" if leaked else "-",
+    )
+    _check(
+        failures,
+        visible_count(pk + fb, SERMON) + visible_count(pk + fb, WORSHIP) == len(pk) + len(fb),
+        "★ 말씀 + 찬양 = 전체 (두 탭이 겹치지 않는다)",
+        f"말씀 {visible_count(pk+fb, SERMON)} + 찬양 {visible_count(pk+fb, WORSHIP)}"
+        f" vs 전체 {len(pk)+len(fb)}",
+    )
+    # 고장 주입 — unknown을 다시 세면 위 등식이 깨진다
+    broken = sum(
+        1 for t in pk + fb if t.media.media_type in (SERMON, UNKNOWN)
+    ) + sum(1 for t in pk + fb if t.media.media_type in (WORSHIP, UNKNOWN))
+    _check(
+        failures,
+        broken == len(pk) + len(fb),
+        "고장 주입: unknown을 양쪽에 세면 합계가 전체를 넘는다 (지금은 unknown이 0이라 같다)",
+    )
+
+    # ★ 폴백은 탭마다 단조 최신순이다 — 두 패스를 이어 붙인 지점에서 끊기던 자리
+    dated = []
+    for i, (ch, m) in enumerate([("채널P", SERMON), ("채널Q", WORSHIP)] * 12):
+        base = _tagged_untagged(f"d{i}", ch, m, f"{ch} 영상 {i}")
+        day = 28 - (i % 20)
+        dated.append(
+            replace(base, video=replace(base.video, published_at=f"2026-08-{day:02d}T00:00:00Z"))
+        )
+    pk2, fb2 = select_tab_layers([], dated, 0, 0, exclude=set())
+    bad = []
+    for side in (SERMON, WORSHIP):
+        seq = [t.video.published_at for t in fb2 if t.media.media_type == side]
+        if any(seq[i] < seq[i + 1] for i in range(len(seq) - 1)):
+            bad.append(side)
+    _check(
+        failures,
+        not bad,
+        "★ 폴백이 탭마다 단조 최신순이다 (두 패스를 합친 뒤에도)",
+        f"역전: {bad}" if bad else "-",
+    )
+    _check(
+        failures,
+        "fallback.sort(" in inspect.getsource(select_tab_layers),
+        "합친 뒤 한 번 더 정렬한다 — 호출별 정렬만으로는 이어붙인 지점이 끊긴다",
     )
 
 
