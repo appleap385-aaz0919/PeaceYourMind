@@ -95,7 +95,9 @@ from lib.selection import (
     MEDIA_FLOOR,
     TAB_OVER_CRITICAL,
     TAB_OVER_WARN,
+    FALLBACK_MAX_AGE_DAYS,
     drop_promotional,
+    drop_stale,
     select_tab_layers,
     # build_themes()가 주제별 진단·경보를 낼 때 쓴다(아래 271행 부근).
     # 화면 구성은 select_tab_layers가 하지만 그 안에서도 이 함수를 부른다.
@@ -353,6 +355,7 @@ def build_subcategories(
     tagged: Sequence[TaggedVideo],
     exclude: set[str],
     day_of_year: int,
+    now: datetime,
 ) -> list[SubcategoryResult]:
     """감정 세분류마다 실제 화면에 나갈 목록을 만든다.
 
@@ -381,6 +384,20 @@ def build_subcategories(
         )
         for reason, item in promo_dropped[:PROMO_LOG_SAMPLE]:
             logger.info("  제외 [%s] %s", reason, item.video.title[:70])
+
+    # 신선도 컷 (2026-08-28) — 폴백 후보를 거르는 **두 번째이자 마지막 자리**다.
+    # ⚠ 주제분에는 걸지 않는다. 이 컷은 폴백 전용이고, 근거는
+    #   selection.FALLBACK_MAX_AGE_DAYS 주석에 있다.
+    untagged, stale_dropped = drop_stale(untagged, now)
+    if stale_dropped:
+        logger.info(
+            "폴백 후보에서 %d일 지난 것 %d건 제외 — 남은 후보 %d건 (말씀 %d · 찬양 %d)",
+            FALLBACK_MAX_AGE_DAYS,
+            len(stale_dropped),
+            len(untagged),
+            sum(1 for t in untagged if t.media.media_type == SERMON),
+            sum(1 for t in untagged if t.media.media_type == WORSHIP),
+        )
 
     for position, (sub, theme_ids) in enumerate(ctx.themes.mapping.items()):
         pool = [
@@ -860,7 +877,7 @@ def run(args: argparse.Namespace, spent_box: dict[str, Any] | None = None) -> in
     theme_results = build_themes(ctx, tagged, exclude, day_of_year, selected)
 
     # 6) 세분류 화면 조립 — 사용자가 실제로 보는 단위 (주제분 + 폴백)
-    subcategories = build_subcategories(ctx, tagged, exclude, day_of_year)
+    subcategories = build_subcategories(ctx, tagged, exclude, day_of_year, now)
     _record_selected(ctx, theme_results, subcategories)
 
     # 7) 무결성 검증 후에만 기록한다

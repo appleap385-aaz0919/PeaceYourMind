@@ -14,10 +14,13 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
+import random
 import re
 from collections import Counter
 from collections.abc import Sequence
+from datetime import datetime, timezone
 
 from lib.results import TaggedVideo
 from lib.tagging import SERMON, UNKNOWN, WORSHIP
@@ -349,6 +352,70 @@ def drop_promotional(
 
 
 # =============================================================================
+# 폴백 신선도 — 90일 컷 (2026-08-28 · 사용자 결정)
+# =============================================================================
+# ⚠ **이 컷은 무작위(_shuffled_for_fallback)와 짝이다. 하나만 넣으면 둘 다 무의미하다.**
+#
+#   컷만 넣으면   배포본 954건 중 17건이 줄 뿐이다. 폴백은 이미 최신이었다
+#                 (실측 중앙값 말씀 1일 · 찬양 2일). 겹침도 100% 그대로다
+#   무작위만 넣으면 채널의 100건 수집 창을 깊이 긁어 **1020일짜리**가 올라온다
+#                 (옹기장이 1030일 · mini Music 1028일 · 택피아노 867일 백로그)
+#   둘을 같이     겹침이 풀리면서(말씀 100%→2.7%) 최고령이 90일에 묶인다
+#
+# [왜 90일인가 — 60·120과 재서 정했다 (단일일 1,770건)]
+#
+#       컷    말씀 천장  채널여유  겹침   |  찬양 천장  채널여유  겹침    최고령
+#     없음      48      10   3.2%  |    41       8  28.6%   1020일
+#    120일      45       9   2.6%  |    35       6  36.8%    120일
+#   ★ 90일      45       9   2.7%  |    33       5  34.4%     90일
+#     60일      45       9   2.8%  |    30       4  44.3%     59일
+#
+#   ⛔ 60일로 내리지 말 것. 찬양 채널 여유가 4개로 얇아지고 겹침이 44%로 나빠지는데
+#     얻는 것은 최고령 90→59일뿐이다. 120일은 90일보다 나은 것이 없다.
+#
+# ⚠ **병목은 언제나 찬양 채널 수다.** 말씀은 30일까지 내려도 천장 45로 끄떡없다.
+#   찬양은 90일에서 채널 14개 · 천장 33이고, 기여 큰 채널 5개를 더 잃으면 20을
+#   못 채운다. 그때 고칠 것은 이 상수가 아니라 **채널 승인**이다.
+#
+# ⚠ 이 컷은 **폴백에만** 건다. 주제분에는 날짜 제한이 없고, 사용자가 본
+#   950일짜리(옹기장이 CCM PIANO)는 주제분에 있다 — 이 컷으로는 안 사라진다.
+FALLBACK_MAX_AGE_DAYS = 90
+
+
+def _age_days(published_at: str, now: datetime) -> int | None:
+    """업로드 경과일. 파싱 실패는 None — 그때는 거르지 않는다(있는 것을 잃지 않는다)."""
+    try:
+        moment = datetime.fromisoformat(str(published_at).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return (now - moment.astimezone(timezone.utc)).days
+
+
+def drop_stale(
+    untagged: Sequence[TaggedVideo],
+    now: datetime,
+    max_age_days: int = FALLBACK_MAX_AGE_DAYS,
+) -> tuple[list[TaggedVideo], list[TaggedVideo]]:
+    """폴백 후보에서 오래된 것을 뺀다. (남은 후보, 뺀 것)을 돌려준다.
+
+    drop_promotional과 같은 자리에 나란히 선다 — 둘 다 "폴백 후보를 거르는" 규칙이고
+    호출부(build_subcategories)가 한 번만 적용한다.
+
+    ⚠ **뺀 자리를 되메우지 않는다** — drop_promotional의 같은 경고가 그대로 적용된다.
+    ⚠ 주제분에는 걸지 않는다. 위 FALLBACK_MAX_AGE_DAYS 주석 마지막 문단 참조.
+    """
+    kept: list[TaggedVideo] = []
+    dropped: list[TaggedVideo] = []
+    for item in untagged:
+        age = _age_days(item.video.published_at, now)
+        if age is not None and age > max_age_days:
+            dropped.append(item)
+        else:
+            kept.append(item)
+    return kept, dropped
+
+
+# =============================================================================
 # 세분류별 오프셋 (2026-08-20) — [4]가 다른 형태로 되살아난 자리다
 # =============================================================================
 # [4] 폴백 오프셋은 "폴백 겹침 해소"가 목적이었고 보류됐다 — 동일 5쌍 중
@@ -581,12 +648,80 @@ def select_crisis_videos(
     return picked, last, False
 
 
+# =============================================================================
+# 폴백 무작위 (2026-08-28 · 사용자 결정) — 24개 화면이 한 목록을 쓰던 것을 가른다
+# =============================================================================
+# [무엇이 문제였나 — 겹침이 아니라 포함이었다]
+#   배포된 videos.json 실측: 폴백 335항목이 **고유 39건**이었다(같은 영상이 평균
+#   8.6개 화면에 실렸다). 231쌍 전부에서 짧은 목록이 긴 목록에 **통째로** 들어 있었다.
+#   24개 화면의 폴백은 하나의 순서 매겨진 목록을 앞에서부터 자른 것이고,
+#   자르는 길이만 달랐다.
+#
+#   원인은 단순하다 — select_theme_videos는 rotate_for_subcategory(position)를
+#   받는데 **폴백은 position을 받지도 않았다.** day_of_year만 받아 하루 단위로만
+#   갈렸다. 최신순 정렬(2.81 ③)은 순서만 바꿨을 뿐 구성과 무관하다.
+#
+# [왜 회전이 아니라 무작위인가]
+#   회전(rotate_for_subcategory)도 겹침을 풀지만 시작점만 옮기므로 24개 화면이
+#   닿는 영상이 말씀 38 · 찬양 28건에서 멈춘다. 무작위는 채널 안에서 **어느 3건을
+#   고를지**까지 갈라 말씀 174 · 찬양 62건에 닿는다(시드 10벌 평균).
+#
+#       현행(회전 없음)  고유 말씀 20 · 찬양 19   겹침 100% · 100%
+#       회전            고유 말씀 38 · 찬양 28   겹침  80% ·  83%
+#     ★ 무작위          고유 말씀 174 · 찬양 62  겹침 2.7% ·  34%
+#
+# ⚠⚠ **찬양 34%는 알고리즘의 바닥이지 결함이 아니다.**
+#   90일 안에 재고가 3건 이하인 채널이 6개 있고(CBS설교 1 · CGN 1 · C채널 1 ·
+#   광주극동 1 · CBSJOY 2 · 극동방송 3), 이 9자리는 **어느 화면에나 똑같이** 들어간다
+#   (천장 33의 27%). 19건 중 9건이 공통이면 47%이고 측정값이 그 근처다.
+#   ⛔ 이 값을 알고리즘으로 더 내리려 하지 말 것 — **채널 승인 문제다.**
+#     HANDOFF 3절 채널 발굴 항목이 그 자리다. 말씀은 15개 채널이 전부 재고 ≥3이라
+#     2.7%까지 내려간다. 차이를 만드는 것은 규칙이 아니라 재고다.
+#
+# [재현 가능해야 한다 — 무작위지만 결정적이다]
+#   ⛔ 파이썬 내장 hash()를 쓰지 말 것. PYTHONHASHSEED로 프로세스마다 달라져
+#     같은 입력이 매번 다른 결과를 낸다(rotate_for_subcategory 주석과 같은 이유).
+#   ⛔ 시드 없는 random을 쓰지 말 것. 하루 두 번 도는 배치가 서로 다른 목록을 내면
+#     같은 날 사용자가 보는 화면이 이유 없이 바뀐다.
+#   sha256을 명시적으로 써서 (day_of_year, position, target)에서 시드를 만든다.
+#   같은 날 · 같은 화면 · 같은 탭이면 언제나 같은 목록이 나온다.
+_SEED_BITS = 64
+
+
+def _fallback_seed(day_of_year: int, position: int, target: str) -> int:
+    """폴백 무작위의 시드. 같은 (날짜, 화면, 탭)이면 같은 값이어야 한다."""
+    key = f"{day_of_year}:{position}:{target}".encode()
+    return int.from_bytes(hashlib.sha256(key).digest()[: _SEED_BITS // 8], "big")
+
+
+def _shuffled_for_fallback(
+    pool: Sequence[TaggedVideo], day_of_year: int, position: int, target: str
+) -> tuple[list[TaggedVideo], list[str]]:
+    """화면마다 다른 (풀 순서, 채널 순서)를 만든다. **구성만 가르고 상한은 그대로다.**
+
+    두 가지를 함께 섞어야 한다.
+      채널 안의 순서   그 채널에서 **어느 3건**이 뽑히는지가 갈린다
+      채널의 순서      상한 3 × 채널 수 > need일 때 **어느 채널**이 드는지가 갈린다
+    하나만 섞으면 다른 축이 고정되어 겹침이 절반밖에 안 풀린다.
+    """
+    rng = random.Random(_fallback_seed(day_of_year, position, target))
+    shuffled = list(pool)
+    rng.shuffle(shuffled)
+    channels: list[str] = []
+    for tagged in shuffled:
+        if tagged.video.channel_id not in channels:
+            channels.append(tagged.video.channel_id)
+    rng.shuffle(channels)
+    return shuffled, channels
+
+
 def select_fallback_videos(
     untagged: Sequence[TaggedVideo],
     target: str,
     need: int,
     day_of_year: int,
     *,
+    position: int,
     exclude: set[str] | None = None,
 ) -> list[TaggedVideo]:
     """주제 태깅이 안 된 영상으로 화면의 남은 슬롯을 채운다 (PLAN.md 3.3 개정).
@@ -611,11 +746,21 @@ def select_fallback_videos(
       토글이 갈라 주므로 찬양 목록에 말씀이 섞이지도 않는다(visibleVideos).
       ⚠ 반대 형식은 MEDIA_FLOOR까지만이다. 기본 형식이 16/20을 유지해 편집 의도가 남는다.
 
-    [정렬은 주제분과 같은 규칙이다 — 최신순 + 채널 라운드로빈]
-      채널 간 우열을 두지 않는다. 승인 채널은 전원 동등한 자격으로 목록에 있고
+    [화면마다 다르게 뽑는다 — position이 그 축이다 (2026-08-28)]
+      채널 간 우열은 두지 않는다. 승인 채널은 전원 동등한 자격으로 목록에 있고
       (channel_allowlist.yaml), "태깅률이 낮은 채널"은 콘텐츠가 나빠서가 아니라
       제목 관행이 다를 뿐이다 — CGN 성경통독은 태깅률 0%지만 성경 통독 방송이다.
       순위를 매기면 그 관행 차이가 노출 차별이 된다.
+
+      우열 대신 **무작위**로 가른다. position이 없던 시절에는 24개 화면이 같은
+      순서를 받아 폴백이 사실상 한 목록이었다 — 위 무작위 절에 실측이 있다.
+      ⚠ position은 키워드 인자다. day_of_year 자리에 잘못 들어가지 않게 한 것이다.
+
+    [신선도는 호출부가 이미 걸렀다]
+      이 함수는 **drop_stale을 지난 풀**을 받는다(build_subcategories).
+      여기서 다시 날짜를 보지 않는다 — 거르는 자리는 한 곳이어야 한다.
+      ⚠ 컷과 무작위는 짝이다. 무작위만 있고 컷이 없으면 채널의 100건 수집 창을
+        깊이 긁어 1020일짜리가 올라온다. FALLBACK_MAX_AGE_DAYS 주석 참조.
 
     [상한은 호출부가 정한다]
       need는 호출부가 정한다(select_tab_layers). 상한은 FALLBACK_MAX_PER_TAB이고,
@@ -632,9 +777,13 @@ def select_fallback_videos(
         #   전에는 "target + unknown"이었다. unknown이 양쪽 탭에 보이던 시절의 규칙이다.
         if t.video_id not in exclude and t.media.media_type == target
     ]
-    order = _channel_order(pool, day_of_year)
+    # ★ 2026-08-28 — 화면(position)마다 다른 순서로 뽑는다. 위 무작위 절 참조.
+    #   ⚠ _channel_order(day_of_year)를 여기서 더 쓰지 않는다. 그것은 **하루 단위**
+    #     회전이라 같은 날 24개 화면에 같은 순서를 줬고, 그것이 겹침 100%의 원인이었다.
+    #     날짜별 변화는 시드에 day_of_year가 들어가 그대로 유지된다.
+    shuffled, order = _shuffled_for_fallback(pool, day_of_year, position, target)
     used: Counter[str] = Counter()
-    picked = _round_robin(pool, THEME_MAX_PER_CHANNEL, need, order, used)
+    picked = _round_robin(shuffled, THEME_MAX_PER_CHANNEL, need, order, used)
 
     # ★ 2026-08-28 — **누가 뽑히는가와 어떤 순서로 보이는가를 분리한다** (사용자 결정).
     #
@@ -709,7 +858,7 @@ def select_tab_layers(
         # 조일 때 한 줄이면 된다.
         need = min(max(0, TAB_MAX_VIDEOS - have), FALLBACK_MAX_PER_TAB)
         for tagged in select_fallback_videos(
-            untagged, tab, need, day_of_year, exclude=seen
+            untagged, tab, need, day_of_year, position=position, exclude=seen
         ):
             fallback.append(tagged)
             seen.add(tagged.video_id)

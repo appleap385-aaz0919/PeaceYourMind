@@ -29,6 +29,7 @@ from __future__ import annotations
 import inspect
 import sys
 from collections import Counter
+from itertools import combinations
 from dataclasses import replace
 from pathlib import Path
 
@@ -54,8 +55,10 @@ from lib.results import (
 )
 from lib.weekly import weekly_due
 from lib.selection import (
+    FALLBACK_MAX_AGE_DAYS,
     MEDIA_FLOOR,
     PROMO_ANYWHERE,
+    drop_stale,
     rotate_for_subcategory,
     PROMO_HEAD,
     PROMO_SERIES,
@@ -488,7 +491,7 @@ def main() -> int:
         + [_untagged(f"s{i}", "말씀채널", SERMON) for i in range(10)]
         + [_untagged(f"u{i}", "미판별채널", UNKNOWN) for i in range(4)]
     )
-    picked = select_fallback_videos(fb_pool, WORSHIP, 12, day_of_year=0)
+    picked = select_fallback_videos(fb_pool, WORSHIP, 12, day_of_year=0, position=0)
     _check(failures, len(picked) == 12, "요청한 만큼만 채운다", f"{len(picked)}건")
     _check(
         failures,
@@ -509,7 +512,7 @@ def main() -> int:
     )
 
     tagged_in_pool = fb_pool + [_tagged("태깅됨", "찬양채널0", WORSHIP)]
-    picked2 = select_fallback_videos(tagged_in_pool, WORSHIP, 12, day_of_year=0)
+    picked2 = select_fallback_videos(tagged_in_pool, WORSHIP, 12, day_of_year=0, position=0)
     _check(
         failures,
         "태깅됨" not in {t.video_id for t in picked2},
@@ -517,14 +520,14 @@ def main() -> int:
     )
 
     excluded = select_fallback_videos(
-        fb_pool, WORSHIP, 12, day_of_year=0, exclude={t.video_id for t in picked}
+        fb_pool, WORSHIP, 12, day_of_year=0, position=0, exclude={t.video_id for t in picked}
     )
     _check(
         failures,
         not ({t.video_id for t in excluded} & {t.video_id for t in picked}),
         "exclude에 넣은 영상은 다시 나오지 않는다 (위기 풀·주제분 중복 방지)",
     )
-    _check(failures, not select_fallback_videos(fb_pool, WORSHIP, 0, 0), "need가 0이면 빈 목록")
+    _check(failures, not select_fallback_videos(fb_pool, WORSHIP, 0, 0, position=0), "need가 0이면 빈 목록")
 
     # --- 8-b. 탭별 상한 (2026-08-26 · 총량 20 → 탭당 20) --------------------
     print("")
@@ -938,7 +941,7 @@ def main() -> int:
         _tagged_untagged(f"ok-{i}", "채널A", WORSHIP, f"주 은혜라 {i}") for i in range(3)
     ]
     kept, dropped = drop_promotional(promo_pool + clean_pool)
-    picked = select_fallback_videos(kept, WORSHIP, 12, day_of_year=1)
+    picked = select_fallback_videos(kept, WORSHIP, 12, day_of_year=1, position=0)
     _check(
         failures,
         len(dropped) == 10 and len(picked) == 3,
@@ -966,6 +969,159 @@ def main() -> int:
         not [s for s, _ in MUST_KEEP if promo_reason(s)],
         "고장을 되돌리면 다시 통과한다",
     )
+
+    # =========================================================================
+    # 10-b. 폴백 신선도 컷 + 화면별 무작위 (2026-08-28 · 사용자 결정)
+    # =========================================================================
+    # ⚠ 둘은 짝이다. 컷만 넣으면 배포본 954건 중 17건이 줄 뿐이고(폴백은 이미
+    #   최신이었다), 무작위만 넣으면 채널의 100건 수집 창을 긁어 1020일짜리가
+    #   올라온다. 여기서 **둘 다** 검사한다.
+    print("")
+    print("[10-b] 폴백 신선도 컷 + 화면별 무작위")
+
+    NOW = datetime(2026, 8, 28, 2, 0, tzinfo=timezone.utc)
+
+    def _aged(video_id: str, channel: str, media_type: str, days: int) -> TaggedVideo:
+        base = _tagged_untagged(video_id, channel, media_type, f"{channel} 영상 {video_id}")
+        moment = NOW - timedelta(days=days)
+        return replace(
+            base,
+            video=replace(base.video, published_at=moment.strftime("%Y-%m-%dT%H:%M:%SZ")),
+        )
+
+    # --- 컷 -----------------------------------------------------------------
+    age_pool = [
+        _aged("fresh", "채널A", WORSHIP, 0),
+        _aged("edge-in", "채널A", WORSHIP, FALLBACK_MAX_AGE_DAYS),
+        _aged("edge-out", "채널A", WORSHIP, FALLBACK_MAX_AGE_DAYS + 1),
+        _aged("ancient", "채널A", WORSHIP, 1020),
+    ]
+    kept_age, dropped_age = drop_stale(age_pool, NOW)
+    _check(
+        failures,
+        {t.video_id for t in kept_age} == {"fresh", "edge-in"},
+        f"★ 경계는 {FALLBACK_MAX_AGE_DAYS}일이다 — 딱 {FALLBACK_MAX_AGE_DAYS}일은 남고 하루 더는 빠진다",
+        f"남은 것 {sorted(t.video_id for t in kept_age)}",
+    )
+    _check(
+        failures,
+        {t.video_id for t in dropped_age} == {"edge-out", "ancient"},
+        "1020일짜리(옹기장이·mini Music 백로그 유형)가 빠진다",
+    )
+    broken_date = replace(
+        age_pool[0], video=replace(age_pool[0].video, published_at="언제인지 모름")
+    )
+    _check(
+        failures,
+        drop_stale([broken_date], NOW)[0] == [broken_date],
+        "날짜를 못 읽으면 거르지 않는다 — 있는 것을 잃지 않는다",
+    )
+    # 되메우지 않는다 (drop_promotional과 같은 규칙)
+    stale_only = [_aged(f"old-{i}", "채널A", WORSHIP, 200) for i in range(10)]
+    fresh_few = [_aged(f"new-{i}", "채널A", WORSHIP, 3) for i in range(2)]
+    kept_mix, _ = drop_stale(stale_only + fresh_few, NOW)
+    _check(
+        failures,
+        len(select_fallback_videos(kept_mix, WORSHIP, 12, day_of_year=1, position=0)) == 2,
+        "컷으로 뺀 자리를 되메우지 않는다 — 후보가 없으면 그만큼 적게 나간다",
+    )
+
+    # --- 무작위 -------------------------------------------------------------
+    # 채널 8개 × 6건. 상한 3이라 한 화면이 닿는 천장은 24, 필요량은 12다.
+    wide = [
+        _aged(f"w{c}-{i}", f"찬양채널{c}", WORSHIP, i)
+        for c in range(8)
+        for i in range(6)
+    ]
+    lists = {
+        pos: [t.video_id for t in select_fallback_videos(
+            wide, WORSHIP, 12, day_of_year=200, position=pos)]
+        for pos in range(24)
+    }
+    sets = {pos: set(v) for pos, v in lists.items()}
+    identical = sum(
+        1 for a, b in combinations(range(24), 2) if sets[a] == sets[b]
+    )
+    nested = sum(
+        1 for a, b in combinations(range(24), 2)
+        if sets[a] <= sets[b] or sets[b] <= sets[a]
+    )
+    _check(
+        failures,
+        identical == 0,
+        "★ 화면마다 다른 목록이 나온다 — 구성이 완전히 같은 쌍이 없다",
+        f"같은 쌍 {identical}/276",
+    )
+    _check(
+        failures,
+        nested == 0,
+        "★ 포함 관계도 없다 — 짧은 목록이 긴 목록의 앞부분이던 것이 결함이었다",
+        f"포함 쌍 {nested}/276",
+    )
+    _check(
+        failures,
+        len(set().union(*sets.values())) > 24,
+        "24개 화면이 한 화면의 천장(24건)보다 많은 영상에 닿는다",
+        f"고유 {len(set().union(*sets.values()))}건 / 후보 {len(wide)}건",
+    )
+    _check(
+        failures,
+        all(max(_spread(select_fallback_videos(
+            wide, WORSHIP, 12, day_of_year=200, position=p)).values()) <= cap0
+            for p in range(24)),
+        f"무작위여도 채널당 상한 {cap0}은 그대로다",
+    )
+    # 결정적이어야 한다 — 같은 날 두 번 도는 배치가 다른 목록을 내면 안 된다
+    _check(
+        failures,
+        lists[7] == [t.video_id for t in select_fallback_videos(
+            wide, WORSHIP, 12, day_of_year=200, position=7)],
+        "★ 같은 (날짜·화면·탭)이면 언제나 같은 목록이다 (배치가 하루 두 번 돈다)",
+    )
+    _check(
+        failures,
+        lists[7] != [t.video_id for t in select_fallback_videos(
+            wide, WORSHIP, 12, day_of_year=201, position=7)],
+        "날짜가 바뀌면 목록도 바뀐다",
+    )
+    _check(
+        failures,
+        lists[7] != [t.video_id for t in select_fallback_videos(
+            wide, SERMON, 12, day_of_year=200, position=7)]
+        or not [t for t in wide if t.media.media_type == SERMON],
+        "탭이 다르면 시드도 다르다",
+    )
+    # 표시 순서는 여전히 최신순이다 (2.81 ③이 약속한 것)
+    order_ok = all(
+        [t.video.published_at for t in select_fallback_videos(
+            wide, WORSHIP, 12, day_of_year=200, position=p)]
+        == sorted(
+            [t.video.published_at for t in select_fallback_videos(
+                wide, WORSHIP, 12, day_of_year=200, position=p)], reverse=True
+        )
+        for p in range(24)
+    )
+    _check(failures, order_ok, "★ 무작위로 뽑아도 화면 순서는 최신순이다")
+
+    # 고장 주입 — position을 무시하면 24개 화면이 같은 목록으로 돌아간다
+    saved_seed = _sel._fallback_seed
+    try:
+        _sel._fallback_seed = lambda day_of_year, position, target: saved_seed(
+            day_of_year, 0, target
+        )
+        same = {
+            pos: frozenset(t.video_id for t in select_fallback_videos(
+                wide, WORSHIP, 12, day_of_year=200, position=pos))
+            for pos in range(24)
+        }
+        _check(
+            failures,
+            len(set(same.values())) == 1,
+            "고장 주입: 시드에서 position을 빼면 24개 화면이 같은 목록이 된다",
+            f"서로 다른 목록 {len(set(same.values()))}가지",
+        )
+    finally:
+        _sel._fallback_seed = saved_seed
 
     # =========================================================================
     # 11. 세분류별 오프셋 — [4]가 "주제분 순서 분산"으로 되살아난 자리 (2026-08-20)
