@@ -803,12 +803,108 @@ def select_fallback_videos(
     return picked
 
 
+# =============================================================================
+# 주제분 신선도 사다리 (2026-08-28 · 사용자 결정)
+# =============================================================================
+# per_channel_ladder(상한 3→4→5)와 **같은 모양**이다. 좋은 조건으로 먼저 채우고,
+# 정원을 못 채울 때만 한 단계 넓힌다. 여기서 '좋은 조건'은 신선도다.
+#
+# [왜 하드 컷이 아닌가 — 기각한 이유를 남긴다]
+#   하드 컷은 48개 탭의 **건수**를 무너뜨리지 않는다. 폴백이 빈자리를 그대로
+#   메우기 때문이다. 그래서 건수로 판단하면 안전해 보이는데, 실제로는
+#   **주제분(근거가 분명한 층)이 폴백(근거가 없는 층)으로 바뀐다.**
+#
+#     안               주제분  폴백   폴백%  주제분0  나이중앙  75%   90%  최고령
+#     현행(제한 없음)     622   338  35.2%      1     20일    88   489   978
+#     하드 컷  90일      511   449  46.8%    ★6     14일    28    53    88
+#     하드 컷 180일      535   425  44.3%      5     14일    39    86   172
+#     하드 컷 365일      555   405  42.2%      4     15일    45   136   363
+#   ★ 사다리 90→전체     633   327  34.1%      1     17일    53   439   969
+#
+#   ⛔⛔ **하드 컷은 금지다.** 주제분이 0인 탭이 1개 → 6개가 되고, 그 탭에는
+#     "이 마음에 맞춰 고른 영상" 절이 아예 뜨지 않는다(VideoList가 theme.length > 0
+#     일 때만 그린다). **감정 앱에서 감정 근거가 없는 화면은 만들지 않는다**
+#     (사용자 결정 2026-08-28).
+#
+# [사다리는 잃는 것이 측정되지 않았다]
+#   주제분이 622 → **633으로 오히려 는다.** 신선한 것을 먼저 채우면 탭당 20을 더
+#   잘 채우기 때문이다. 폴백 비율도 35.2% → 34.1%로 내려가고, 주제분 0인 탭은
+#   1개 그대로다. 전형적인 나이만 개선된다 — 75분위 88일 → 53일.
+#
+#     사용자 신고 건  anger.irritation [찬양] 최고령 950일 → **86일**
+#     전수            1년 넘은 영상이 보이는 탭 21/48 → **14/48**
+#
+# ⚠⚠ **남는 14개 탭은 재고의 바닥이지 규칙의 실패가 아니다.**
+#   frustration.stuck · frustration.blocked · exhaustion.listless 등으로,
+#   매핑 주제가 quiet_worship 계열뿐이라 **넣을 신선한 찬양이 아예 없다.**
+#   ⛔ 이것을 규칙으로 고치려 하지 말 것 — 단계를 더 넣어도 없는 것은 안 나온다.
+#     HANDOFF 3절 10번 '3차 채널 발굴' 2순위(찬양·연주 채널)가 그 자리다.
+#
+# ⚠ **폴백의 90일 컷과는 다른 축이다.** 저쪽은 후보에서 **빼는** 하드 컷이고
+#   (재고가 넉넉해 빼도 48/48이 유지된다), 이쪽은 **뒤로 미는** 사다리다.
+#   값이 같은 것은 우연이 아니지만(같은 실측에서 나왔다) 상수는 따로 둔다 —
+#   한쪽을 조정할 때 다른 쪽이 조용히 따라 움직이면 안 된다.
+THEME_FRESH_DAYS = 90
+
+# (신선한 단계, 전체). None은 "제한 없음"이다.
+# ⚠ 마지막 단계는 **반드시 None**이어야 한다. 아니면 사다리가 하드 컷이 되고
+#   위에서 기각한 상태로 되돌아간다. 회귀가 이것을 검사한다.
+THEME_FRESHNESS_LADDER: tuple[int | None, ...] = (THEME_FRESH_DAYS, None)
+
+
+def _within_age(item: TaggedVideo, now: datetime, max_age_days: int | None) -> bool:
+    """이 영상이 그 신선도 단계에 드는가. 날짜를 못 읽으면 통과시킨다.
+
+    ⚠ drop_stale과 같은 규칙이다 — **있는 것을 잃지 않는다.** 파싱 실패를
+      제외로 처리하면 날짜 형식이 바뀐 날 목록이 통째로 얇아진다.
+    """
+    if max_age_days is None:
+        return True
+    age = _age_days(item.video.published_at, now)
+    return age is None or age <= max_age_days
+
+
+def _theme_by_freshness(
+    tab_pool: Sequence[TaggedVideo], day_of_year: int, position: int, now: datetime
+) -> list[TaggedVideo]:
+    """탭 하나의 주제분을 신선도 사다리로 채운다.
+
+    ⚠ **select_theme_videos를 단계마다 부른다.** 채널 상한·완화 사다리·정원은
+      그 함수가 단계 안에서 그대로 적용한다 — 사다리가 그것을 건드리지 않는다.
+
+    ⚠⚠ **rotate_for_subcategory도 단계마다 걸린다.** 전에는 전체 목록에 한 번
+      걸렸다. 단계별로 거는 이유는 그래야 **각 단계 안에서** 화면이 갈리기
+      때문이다 — 전체에 한 번 걸면 1단계에서 3건, 2단계에서 17건이 담겼을 때
+      회전이 그 경계를 넘어가 신선한 것이 뒤로 밀린다. 사다리의 목적이 사라진다.
+      ⚠ 1단계 결과가 1건이면 그 한 건은 모든 화면에서 같은 자리다(회전이 성립하지
+        않는다). 재고가 그것뿐이라 감수한다 — 2단계가 갈라 준다.
+    """
+    picked: list[TaggedVideo] = []
+    for step in THEME_FRESHNESS_LADDER:
+        if len(picked) >= TAB_MAX_VIDEOS:
+            break
+        taken = {t.video_id for t in picked}
+        step_pool = [
+            t
+            for t in tab_pool
+            if t.video_id not in taken and _within_age(t, now, step)
+        ]
+        if not step_pool:
+            continue
+        more, _, _ = select_theme_videos(step_pool, day_of_year)
+        picked.extend(
+            rotate_for_subcategory(more, position)[: TAB_MAX_VIDEOS - len(picked)]
+        )
+    return picked
+
+
 def select_tab_layers(
     pool,
     untagged,
     day_of_year: int,
     position: int,
     *,
+    now: datetime,
     exclude: set[str],
 ) -> tuple[list[TaggedVideo], list[TaggedVideo]]:
     """화면 하나를 **탭별로** 채운다 (2026-08-26 · 사용자 결정).
@@ -831,6 +927,13 @@ def select_tab_layers(
       사이에 공유해 3이 상한이었다. 탭이 갈라진 이상 한 탭 안에서 3이면 충분하다 —
       사용자는 두 탭을 겹쳐 보지 않는다.
 
+    ★ 2026-08-28 — 주제분은 **신선도 사다리**로 채운다(_theme_by_freshness).
+      90일 이내로 먼저 채우고 정원을 못 채울 때만 전체로 넓힌다.
+      ⛔ 이것을 하드 컷으로 바꾸지 말 것 — 주제분 0인 탭이 1→6개가 된다.
+        근거는 THEME_FRESHNESS_LADDER 주석에 있다.
+      ⚠ now가 키워드 필수 인자인 것은 의도다. 날짜를 안 넘기면 사다리가 조용히
+        꺼지는 기본값을 두지 않는다.
+
     ⚠ 순서가 결과를 바꾼다. SERMON을 먼저 돌리므로 unknown이 말씀 쪽에 먼저
       담기고, 찬양 탭은 그것을 이미 가진 채로 부족분을 센다. 형식 간 우열이 아니라
       **결정적이어야 해서** 고정한 순서다.
@@ -843,8 +946,7 @@ def select_tab_layers(
         # 2026-08-28 — unknown을 빼면서 그 탭의 형식만 남는다.
         #   ★ 그래서 두 탭이 겹치는 영상을 갖지 않는다 — 초과도 중복도 사라진다.
         tab_pool = [t for t in pool if t.media.media_type == tab]
-        picked, _, _ = select_theme_videos(tab_pool, day_of_year)
-        picked = rotate_for_subcategory(picked, position)
+        picked = _theme_by_freshness(tab_pool, day_of_year, position, now)
         for tagged in picked[:TAB_MAX_VIDEOS]:
             if tagged.video_id in seen:
                 continue

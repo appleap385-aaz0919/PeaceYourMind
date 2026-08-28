@@ -407,9 +407,10 @@ def build_subcategories(
         ]
         # 탭별로 채운다 — 주제분 먼저, 부족분을 그 탭의 폴백이 (2026-08-26).
         # 회전(rotate_for_subcategory)은 select_tab_layers 안에서 탭마다 걸린다.
+        # 주제분은 신선도 사다리(90일 먼저)로, 폴백은 90일 컷 + 화면별 무작위로 채운다.
         media_default = ctx.themes.media_default(sub) or SERMON
         picked, fallback = select_tab_layers(
-            pool, untagged, day_of_year, position, exclude=exclude
+            pool, untagged, day_of_year, position, now=now, exclude=exclude
         )
 
         result = SubcategoryResult(

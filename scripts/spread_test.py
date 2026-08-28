@@ -56,6 +56,8 @@ from lib.results import (
 from lib.weekly import weekly_due
 from lib.selection import (
     FALLBACK_MAX_AGE_DAYS,
+    THEME_FRESH_DAYS,
+    THEME_FRESHNESS_LADDER,
     MEDIA_FLOOR,
     PROMO_ANYWHERE,
     drop_stale,
@@ -91,6 +93,13 @@ from lib.themes import (
 
 ROOT = Path(__file__).resolve().parents[1]
 EXIT_OK, EXIT_FAIL = 0, 1
+
+
+# 테스트 고정 시각. 픽스처의 published_at(2026-08-18)이 **10일 된 것**이 되어
+# 주제분 신선도 사다리의 1단계(90일)에 들어간다 — 기존 검사의 뜻이 그대로 유지된다.
+# ⚠ datetime.now()를 쓰지 말 것. 시간이 흐르면 픽스처가 2단계로 밀려
+#   같은 테스트가 다른 경로를 타게 된다.
+TEST_NOW = datetime(2026, 8, 28, 2, 0, tzinfo=timezone.utc)
 
 
 def _tagged(video_id: str, channel: str, media_type: str) -> TaggedVideo:
@@ -544,7 +553,7 @@ def main() -> int:
         + [_untagged(f"fw{i}", f"찬양채널{i % 8}", WORSHIP) for i in range(40)]
     )
     theme, fall = select_tab_layers(
-        worship_pool, tab_fb, day_of_year=0, position=0, exclude=set()
+        worship_pool, tab_fb, day_of_year=0, position=0, now=TEST_NOW, exclude=set()
     )
     total = theme + fall
     _check(
@@ -575,7 +584,7 @@ def main() -> int:
     # ★ 진짜 천장은 상수가 아니라 **채널 수**다. 폴백에는 완화 사다리가 없다.
     narrow = [_untagged(f"n{i}", f"한채널{i % 2}", SERMON) for i in range(30)]
     _, narrow_fall = select_tab_layers(
-        worship_pool, narrow, day_of_year=0, position=0, exclude=set()
+        worship_pool, narrow, day_of_year=0, position=0, now=TEST_NOW, exclude=set()
     )
     _check(
         failures,
@@ -597,7 +606,7 @@ def main() -> int:
     # 주제분이 늘면 폴백이 자동으로 줄어드는가 — 구조의 핵심 성질이다.
     mixed_pool = worship_pool + _pool([(f"말씀채널{i}", 3, SERMON) for i in range(4)])
     theme2, fall2 = select_tab_layers(
-        mixed_pool, tab_fb, day_of_year=0, position=0, exclude=set()
+        mixed_pool, tab_fb, day_of_year=0, position=0, now=TEST_NOW, exclude=set()
     )
     _check(
         failures,
@@ -615,7 +624,7 @@ def main() -> int:
     # unknown은 양쪽 탭에 세지만 데이터는 한 벌이다.
     unk_pool = [_tagged(f"u{i}", f"미판별{i % 3}", UNKNOWN) for i in range(24)]
     theme3, fall3 = select_tab_layers(
-        unk_pool, tab_fb, day_of_year=0, position=0, exclude=set()
+        unk_pool, tab_fb, day_of_year=0, position=0, now=TEST_NOW, exclude=set()
     )
     both = theme3 + fall3
     _check(
@@ -979,7 +988,7 @@ def main() -> int:
     print("")
     print("[10-b] 폴백 신선도 컷 + 화면별 무작위")
 
-    NOW = datetime(2026, 8, 28, 2, 0, tzinfo=timezone.utc)
+    NOW = TEST_NOW
 
     def _aged(video_id: str, channel: str, media_type: str, days: int) -> TaggedVideo:
         base = _tagged_untagged(video_id, channel, media_type, f"{channel} 영상 {video_id}")
@@ -1190,6 +1199,167 @@ def main() -> int:
     )
 
     # =========================================================================
+    # 11-b. 주제분 신선도 사다리 (2026-08-28 · 사용자 결정)
+    # =========================================================================
+    # ⛔ 하드 컷이 아니다. 하드 컷은 주제분 0인 탭을 1→6개로 만들어 기각됐다.
+    #   사다리는 **뒤로 밀 뿐 빼지 않는다** — 정원을 못 채우면 옛것이 그대로 들어온다.
+    #   그 성질이 2.81 ⑤ 결정을 정정할 수 있게 한 근거이므로 여기서 고정한다.
+    print("")
+    print("[11-b] 주제분 신선도 사다리 — 밀되 빼지 않는다")
+
+    def _fresh(video_id, channel, media_type, days):
+        base = _tagged(video_id, channel, media_type)
+        moment = TEST_NOW - timedelta(days=days)
+        return replace(
+            base,
+            video=replace(base.video, published_at=moment.strftime("%Y-%m-%dT%H:%M:%SZ")),
+        )
+
+    # (가) 신선한 것이 정원을 채우면 옛것은 하나도 안 들어온다
+    plenty = (
+        [_fresh(f"new-{i}", f"채널{i % 8}", WORSHIP, 5) for i in range(24)]
+        + [_fresh(f"old-{i}", f"채널{i % 8}", WORSHIP, 900) for i in range(24)]
+    )
+    th, _ = select_tab_layers(plenty, [], day_of_year=0, position=0,
+                              now=TEST_NOW, exclude=set())
+    _check(
+        failures,
+        all(t.video_id.startswith("new-") for t in th) and len(th) == TAB_MAX_VIDEOS,
+        "★ 신선한 것으로 정원이 차면 옛것은 하나도 안 들어온다",
+        f"{len(th)}건 · 옛것 {sum(1 for t in th if t.video_id.startswith('old-'))}건",
+    )
+
+    # (나) ★ 정원을 못 채우면 옛것이 들어온다 — **통째로 빼지 않는다**
+    #     2.81 ⑤가 "공급이 얇은 채널이 목록에서 통째로 빠진다"고 경고한 그 상황이다.
+    #     하드 컷이면 여기서 3건이 되고, 사다리는 20건을 유지한다.
+    thin = (
+        [_fresh(f"new-{i}", "얇은채널", WORSHIP, 5) for i in range(3)]
+        + [_fresh(f"old-{i}", f"옛채널{i % 6}", WORSHIP, 900) for i in range(30)]
+    )
+    th2, _ = select_tab_layers(thin, [], day_of_year=0, position=0,
+                               now=TEST_NOW, exclude=set())
+    _check(
+        failures,
+        len(th2) == TAB_MAX_VIDEOS,
+        "★ 정원을 못 채우면 옛것이 들어온다 — 사다리는 통째로 빼지 않는다 (2.81 ⑤ 정정)",
+        f"{len(th2)}건 (신선 {sum(1 for t in th2 if t.video_id.startswith('new-'))})",
+    )
+    _check(
+        failures,
+        [t.video_id for t in th2[:3]] == [f"new-{i}" for i in range(3)],
+        "★ 그래도 신선한 것이 먼저다 — 앞 3건이 1단계 결과다",
+        f"{[t.video_id for t in th2[:3]]}",
+    )
+
+    # (다) 경계 — 90일은 1단계, 91일은 2단계
+    edge = (
+        [_fresh("in", "채널A", WORSHIP, THEME_FRESH_DAYS)]
+        + [_fresh("out", "채널B", WORSHIP, THEME_FRESH_DAYS + 1)]
+    )
+    th3, _ = select_tab_layers(edge, [], day_of_year=0, position=0,
+                               now=TEST_NOW, exclude=set())
+    _check(
+        failures,
+        [t.video_id for t in th3] == ["in", "out"],
+        f"★ 경계는 {THEME_FRESH_DAYS}일이다 — 딱 {THEME_FRESH_DAYS}일이 앞, 하루 더는 뒤",
+        f"{[t.video_id for t in th3]}",
+    )
+
+    # (라) ⛔ 마지막 단계는 반드시 제한 없음이어야 한다 (아니면 하드 컷이 된다)
+    _check(
+        failures,
+        THEME_FRESHNESS_LADDER[-1] is None and len(THEME_FRESHNESS_LADDER) >= 2,
+        "⛔ 사다리의 마지막 단계가 '제한 없음'이다 — 아니면 기각된 하드 컷이 된다",
+        str(THEME_FRESHNESS_LADDER),
+    )
+
+    # (마) ★ rotate_for_subcategory와의 상호작용 — 단계마다 걸린다
+    #     같은 풀을 공유하는 화면들이 여전히 갈리는가. 사다리가 회전을 죽이면 안 된다.
+    shared_pool = [_fresh(f"v{i}", f"채널{i % 4}", WORSHIP, 5) for i in range(12)]
+    orders = {
+        pos: [t.video_id for t in select_tab_layers(
+            shared_pool, [], day_of_year=0, position=pos,
+            now=TEST_NOW, exclude=set())[0]]
+        for pos in range(5)
+    }
+    _check(
+        failures,
+        len({tuple(v) for v in orders.values()}) >= 4,
+        "★ 1단계 안에서도 화면마다 순서가 갈린다 (회전이 살아 있다)",
+        f"서로 다른 순서 {len({tuple(v) for v in orders.values()})}가지 / 5화면",
+    )
+    _check(
+        failures,
+        all(set(v) == set(orders[0]) for v in orders.values()),
+        "구성은 그대로다 — 회전은 순서만 바꾼다",
+    )
+
+    # 두 단계에 걸쳐 담길 때도 회전이 산다 (1단계 6건 + 2단계로 채움)
+    two_step = (
+        [_fresh(f"n{i}", f"신선채널{i % 3}", WORSHIP, 5) for i in range(6)]
+        + [_fresh(f"o{i}", f"옛채널{i % 5}", WORSHIP, 400) for i in range(25)]
+    )
+    two = {
+        pos: [t.video_id for t in select_tab_layers(
+            two_step, [], day_of_year=0, position=pos,
+            now=TEST_NOW, exclude=set())[0]]
+        for pos in range(5)
+    }
+    _check(
+        failures,
+        all(set(v[:6]) == {f"n{i}" for i in range(6)} for v in two.values()),
+        "★ 두 단계로 담겨도 1단계(신선)가 앞자리를 지킨다 — 회전이 경계를 넘지 않는다",
+        f"앞 6건 {two[1][:6]}",
+    )
+    _check(
+        failures,
+        len({tuple(v) for v in two.values()}) >= 4,
+        "그 상태에서도 화면마다 순서가 갈린다",
+        f"서로 다른 순서 {len({tuple(v) for v in two.values()})}가지",
+    )
+
+    # (바) 고장 주입 1 — 사다리를 한 단계(하드 컷)로 줄이면 정원을 못 채운다
+    saved_ladder = _sel.THEME_FRESHNESS_LADDER
+    try:
+        _sel.THEME_FRESHNESS_LADDER = (THEME_FRESH_DAYS,)
+        hard, _ = select_tab_layers(thin, [], day_of_year=0, position=0,
+                                    now=TEST_NOW, exclude=set())
+        _check(
+            failures,
+            len(hard) == 3,
+            "고장 주입: 마지막 단계를 없애면(하드 컷) 20건이 3건이 된다",
+            f"{len(hard)}건",
+        )
+    finally:
+        _sel.THEME_FRESHNESS_LADDER = saved_ladder
+
+    # (사) 고장 주입 2 — 회전을 빼면 화면들이 같은 순서가 된다
+    saved_rot = _sel.rotate_for_subcategory
+    try:
+        _sel.rotate_for_subcategory = lambda videos, position: list(videos)
+        flat = {
+            pos: tuple(t.video_id for t in select_tab_layers(
+                shared_pool, [], day_of_year=0, position=pos,
+                now=TEST_NOW, exclude=set())[0])
+            for pos in range(5)
+        }
+        _check(
+            failures,
+            len(set(flat.values())) == 1,
+            "고장 주입: 회전을 빼면 5개 화면이 같은 순서가 된다",
+            f"서로 다른 순서 {len(set(flat.values()))}가지",
+        )
+    finally:
+        _sel.rotate_for_subcategory = saved_rot
+    _check(
+        failures,
+        len({tuple(t.video_id for t in select_tab_layers(
+            shared_pool, [], day_of_year=0, position=p,
+            now=TEST_NOW, exclude=set())[0]) for p in range(5)}) >= 4,
+        "고장을 되돌리면 다시 갈린다",
+    )
+
+    # =========================================================================
     # 12. 주간 진단 게이트 — 배치가 지연돼도 도는가 (2026-08-28)
     # =========================================================================
     # 전에는 워크플로 인라인이 `new Date().getUTCDay() !== 1`로 판정했다.
@@ -1275,7 +1445,7 @@ def main() -> int:
             [("D", SERMON), ("E", WORSHIP), ("F", UNKNOWN), ("G", SERMON), ("H", WORSHIP)] * 6
         )
     ]
-    pk, fb = select_tab_layers(mixed_pool, unt, 0, 0, exclude=set())
+    pk, fb = select_tab_layers(mixed_pool, unt, 0, 0, now=TEST_NOW, exclude=set())
     leaked = [t for t in pk + fb if t.media.media_type == UNKNOWN]
     _check(
         failures,
@@ -1308,7 +1478,7 @@ def main() -> int:
         dated.append(
             replace(base, video=replace(base.video, published_at=f"2026-08-{day:02d}T00:00:00Z"))
         )
-    pk2, fb2 = select_tab_layers([], dated, 0, 0, exclude=set())
+    pk2, fb2 = select_tab_layers([], dated, 0, 0, now=TEST_NOW, exclude=set())
     bad = []
     for side in (SERMON, WORSHIP):
         seq = [t.video.published_at for t in fb2 if t.media.media_type == side]
