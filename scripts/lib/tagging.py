@@ -57,6 +57,8 @@ REASON_SCRIPTURE = "scripture"
 REASON_TITLE = "title"
 # 동점을 곡명 구조로 갈랐다 — 아래 split_conti 참조.
 REASON_CONTI = "conti"
+# 설교자 크레딧 구간을 구조로 읽었다 — 아래 has_speaker_credit 참조.
+REASON_SPEAKER = "speaker"
 REASON_DURATION = "duration"
 REASON_NONE = "none"
 
@@ -324,6 +326,39 @@ def has_scripture_reference(title: str) -> bool:
     return bool(SCRIPTURE_RE.search(title))
 
 
+# --- 설교자 크레딧 (안 A′) -------------------------------------------------
+#
+# **어휘가 아니라 구조를 본다.** 제목을 구간 구분자로 나눴을 때 한 조각이
+# **통째로** "OOO 목사"이면 그 구간은 설교자 크레딧이고, 크레딧을 붙이는 제목은
+# 설교다. `themes.yaml speaker_credit_signal` 절에 근거를 적었다.
+#
+# ⚠ '목사'라는 **낱말**을 신호로 쓰면 안 된다 — 2026-08-27 실측(안 A)에서
+#   정확도 40%였다. 간증 프로그램의 **출연자가 목사**라서
+#   "위암 재발… │장성훈 목사│부르심의 소명 더 콜링 180회"가 걸린다.
+#   그 제목은 여기서도 걸리지만(세그먼트가 "장성훈 목사"다) **판정을 바꾸지
+#   않는다** — 길이 규칙이 이미 sermon으로 확정한 뒤이기 때문이다. 이 규칙이
+#   위험해지는 것은 순서를 **1순위 앞으로** 올릴 때다. ⛔ 올리지 말 것.
+#
+# 구간 구분자는 실측에서 쓰이는 것을 모았다(합집합 1,923건 기준 사용 빈도).
+#   | 985건 · / 220건 · ㅣ 93건 · │ 29건 · ┃ 21건 · ｜ 6건
+# 각 구간의 **말미** `- OOO 목사` · `: OOO 목사`도 한 조각으로 본다 —
+# 사랑의교회("… - 조성환 목사")·연동교회("…: 이성희 목사")의 관행이다.
+_CREDIT_SEPARATORS = re.compile(r"[|｜│┃ㅣ/]")
+_CREDIT_TAIL = re.compile(r"[-–—:：]\s*([^-–—:：]+)$")
+# 이름 2~4음절 + (담임·후임·협동·부)? + 목사. **구간 전체**와 일치해야 한다.
+_SPEAKER_CREDIT = re.compile(r"^[가-힣]{2,4}\s*(?:담임|후임|협동|부)?\s*목사$")
+
+
+def has_speaker_credit(title: str) -> bool:
+    """제목에 설교자 크레딧 구간이 있는가 (안 A′)."""
+    segments = [s.strip() for s in _CREDIT_SEPARATORS.split(title)]
+    for segment in list(segments):
+        tail = _CREDIT_TAIL.search(segment)
+        if tail:
+            segments.append(tail.group(1).strip())
+    return any(_SPEAKER_CREDIT.match(s) for s in segments)
+
+
 # --- 콘티 제목 분해 --------------------------------------------------------
 #
 # 찬양 콘티 제목은 곡명을 +·/로 이어붙인 목록이다.
@@ -439,8 +474,9 @@ def classify_media_type(
         1. 제목 어휘 — **한쪽만** 걸릴 때 확정한다
         1.5 양쪽 다 걸리면(동점) 곡명 구조로 한 번 더 가른다 — _break_media_tie
         2. 본문 장절 — 있으면 sermon
+        2.5 설교자 크레딧 — 구간 하나가 통째로 "OOO 목사"면 sermon (안 A′)
         3. 채널 content_type — sermon·worship·devotion이면 그대로
-        4. 길이 — 30분↑ sermon / 10분↓ worship
+        4. 길이 — 20분↑ sermon / 10분↓ worship
         5. 그래도 못 가리면 unknown
 
     [2026-08-19 개정 — 제목이 채널보다 앞이다. 실측으로 뒤집혔다.]
@@ -461,6 +497,21 @@ def classify_media_type(
       "시편 92편 + 주 이름 찬양 + 나의 기도하는 것보다 | 주일 2부예배 찬양 헤세드"
       찬양 콘티의 **곡명이 시편**인 경우다. 장절을 먼저 보면 설교가 된다.
       제목에 형식 어휘("찬양")가 명시된 이상 그것이 우선한다.
+
+    [2026-08-28 추가 — 설교자 크레딧을 채널보다 앞에 둔다 (안 A′)]
+      길이 규칙이 **단독으로 최종 판정을 내린다**는 사실(2.80 ④)이 드러나면서
+      10분 이하 설교 클립이 찬양으로 **확정**되는 오분류가 남아 있었다.
+      하한을 낮추는 안은 기각됐고(2.82 ③ — 아는 것까지 모르는 것으로 만든다),
+      그 자리를 이 구조 신호가 맡는다.
+
+      ⚠ **채널보다 앞이어야 한다.** 채널 단계는 "제목이 아무 말도 하지 않을 때의
+        기본값"이고(아래 3순위 주석), 설교자 크레딧은 제목이 말하고 있는 것이다.
+        뒤에 두면 worship 채널이 올린 설교 클립을 못 잡는다 — 2026-08-19에
+        "제목이 채널보다 앞"으로 뒤집은 것과 같은 종류의 오류가 된다.
+      ⛔ **1순위(제목 어휘) 앞으로는 올리지 말 것.** 실측에서 크레딧 매치 264건
+        중 현행 worship은 2건뿐이라 지금은 결과가 같지만, 올리면 "제목이 형식을
+        직접 말하는" 증거를 크레딧이 덮는다. 찬양 콘티 제목에도 인도자 크레딧이
+        붙기 시작하면 그날 깨진다.
 
     [2026-08-24 추가 — 동점 구간에서 위 개정이 무효였다]
       "제목이 채널보다 앞"은 **제목이 한쪽만 말할 때만** 적용됐다. 양쪽이 걸리면
@@ -489,6 +540,9 @@ def classify_media_type(
 
     if themes.scripture_reference_signal and has_scripture_reference(title):
         return MediaVerdict(SERMON, REASON_SCRIPTURE)
+
+    if themes.speaker_credit_signal and has_speaker_credit(title):
+        return MediaVerdict(SERMON, REASON_SPEAKER)
 
     direct = CHANNEL_CONTENT_TYPE_MAP.get(str(channel_content_type or "").strip())
     if direct:

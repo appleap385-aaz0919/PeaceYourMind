@@ -21,6 +21,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import sys
 import tempfile
 from pathlib import Path
@@ -208,6 +209,31 @@ MEDIA_CASES = [
     ("어느 쪽도 아닌 제목 C", 1500, "mixed", SERMON, "duration"),
     # 승인 목록에 없는 채널(content_type 미상)도 같은 경로를 탄다
     ("성경통독 창세기 1장", 1200, None, SERMON, "title"),
+    #
+    # --- 설교자 크레딧 (2026-08-28 · 안 A′ · HANDOFF 2.83) -----------------
+    # ★ 두 줄은 **실측에서 판정이 바뀐 전부**다. 둘 다 길이 규칙이 찬양으로
+    #   확정하던 설교이고, 이 신호가 그 앞에서 sermon을 준다.
+    #   ⚠ 근거가 speaker가 아니라 duration으로 되돌아가면 신호가 꺼진 것이다.
+    (
+        "염려 대신 감사를 | 더하는교회 | 최민우 목사 | 더 기프트 #더기프트 #더하는교회 #최민우",
+        180, "mixed", SERMON, "speaker",
+    ),
+    ("[사랑의교회] 하나님은 우리의 피난처 - 조성환 목사", 599, "mixed", SERMON, "speaker"),
+    # 직함이 붙은 형태도 같은 구간이다 (사랑의교회 실측)
+    ("[사랑의교회] 광야에서의 승리 - 윤대혁 후임목사", 599, "mixed", SERMON, "speaker"),
+    ("[사랑의교회] 죄로부터의 해방 - 오정현 담임목사", 599, "mixed", SERMON, "speaker"),
+    # 콜론 관행(연동교회)도 같다
+    ("[아침 예배] 인간의 생명과 돼지의 생명 : 이성희 목사", 599, "mixed", SERMON, "speaker"),
+    #
+    # ⛔ 오탐 방어 — '목사'라는 **낱말**만으로는 걸리면 안 된다.
+    #   구간이 통째로 "OOO 목사"가 아니면 크레딧이 아니다. 안 A(어휘)가
+    #   정확도 40%였던 이유가 이것이다 (간증 프로그램 출연자가 목사다).
+    ("김형민 목사가 전하는 오늘의 이야기", 900, "mixed", UNKNOWN, "none"),
+    ("목사님과 함께 걷는 길", 900, "mixed", UNKNOWN, "none"),
+    # 제목 어휘가 형식을 직접 말하면 크레딧이 그것을 덮지 않는다 (1순위가 앞이다)
+    ("주일 찬양 콘티 | 홍길동 목사", 900, "mixed", WORSHIP, "title"),
+    # 장절이 있으면 근거는 scripture다 — 크레딧은 그 뒤다
+    ("복 있는 사람 | 시편 1:1-6 | 홍길동 목사", 900, "mixed", SERMON, "scripture"),
 ]
 
 
@@ -428,6 +454,28 @@ def main() -> int:
             f"{content_type or '(미상)':8} {title[:28]:30} → {expected}/{reason}",
             f"실제 {verdict.media_type}/{verdict.reason}",
         )
+
+    # 고장 주입 — 신호를 끄면 두 건이 **길이 규칙으로 되돌아간다**.
+    # 이 확인이 없으면 "speaker로 나온다"가 우연인지 규칙 때문인지 알 수 없다.
+    off = dataclasses.replace(themes, speaker_credit_signal=False)
+    for title, seconds in (
+        ("염려 대신 감사를 | 더하는교회 | 최민우 목사 | 더 기프트", 180),
+        ("[사랑의교회] 하나님은 우리의 피난처 - 조성환 목사", 599),
+    ):
+        back = classify_media_type(title, seconds, "mixed", off)
+        _check(
+            failures,
+            back.media_type == WORSHIP and back.reason == "duration",
+            f"고장 주입: 크레딧을 끄면 길이 규칙이 다시 찬양으로 확정한다 — {title[:24]}",
+            f"실제 {back.media_type}/{back.reason}",
+        )
+    # ⚠ 순서 확인 — 크레딧이 **길이 규칙보다 앞**이어야 효과가 있다.
+    _check(
+        failures,
+        classify_media_type("어느 쪽도 아닌 제목 - 홍길동 목사", 300, "mixed", themes).reason
+        == "speaker",
+        "크레딧이 길이 규칙보다 앞에서 판정한다",
+    )
 
     print("\n5. unknown은 양쪽 토글에 노출된다")
     print("-" * 76)

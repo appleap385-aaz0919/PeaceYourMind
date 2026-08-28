@@ -130,6 +130,7 @@ class Themes:
     media_defaults: dict[str, str]
     duration_signal: DurationSignal
     scripture_reference_signal: bool
+    speaker_credit_signal: bool
     path: Path
 
     @property
@@ -180,6 +181,7 @@ def load_themes(path: Path, *, taxonomy_ids: set[str] | None = None) -> Themes:
         media_defaults=media_defaults,
         duration_signal=duration,
         scripture_reference_signal=bool(raw.get("scripture_reference_signal", False)),
+        speaker_credit_signal=bool(raw.get("speaker_credit_signal", False)),
         path=path,
     )
     validate(parsed, taxonomy_ids=taxonomy_ids)

@@ -15,12 +15,13 @@
  *   prefers-reduced-motion에서도 지연은 유지한다 — 끄는 건 애니메이션이지 뜸이 아니다.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
 import taxonomy from "./data/taxonomy.json";
 import versesData from "./data/verses.json";
 
 import { RESULT, classify, findSubcategory, subcategoriesOf } from "./lib/classify.js";
+import { FLOW, MODE, PHASE, flowReducer, initialFlow } from "./lib/flow.js";
 import { KEYS, getSetting, setSetting } from "./lib/db.js";
 import { usePrefersReducedMotion, withMinDuration } from "./lib/offline.js";
 import {
@@ -93,13 +94,12 @@ function empathyFontSize(verseText) {
 }
 
 export default function App() {
-  const [mode, setMode] = useState("text");
-  const [text, setText] = useState("");
-  const [phase, setPhase] = useState("input");
-  const [result, setResult] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  // 화면 이동은 전부 lib/flow.js가 정한다 — 입력창을 비우는 규칙이 그 안에 있다.
+  // ⚠ 여기서 setText 같은 낱개 세터를 다시 만들지 말 것. 경로가 갈리면
+  //   2026-08-28에 고친 결함(대분류 되묻기에서 글자가 남는 것)이 그대로 돌아온다.
+  const [flow, dispatch] = useReducer(flowReducer, taxonomy.ui.placeholders[0], initialFlow);
+  const { phase, mode, text, result, selectedCategory, placeholder } = flow;
   const [loadingMessage, setLoadingMessage] = useState(taxonomy.ui.loading.messages[0]);
-  const [placeholder, setPlaceholder] = useState(taxonomy.ui.placeholders[0]);
   const [greeting, setGreeting] = useState("");
   const [showAbout, setShowAbout] = useState(false);
   const reducedMotion = usePrefersReducedMotion();
@@ -124,7 +124,10 @@ export default function App() {
 
       dataRef.current = initial;
       setData(initial);
-      setPlaceholder(pickMessage("placeholder", taxonomy.ui.placeholders));
+      dispatch({
+        type: FLOW.PLACEHOLDER,
+        placeholder: pickMessage("placeholder", taxonomy.ui.placeholders),
+      });
       setGreeting(pickGreeting(visit));
 
       if (await shouldCheck()) {
@@ -141,22 +144,30 @@ export default function App() {
     };
   }, []);
 
+  /**
+   * 분류 결과를 화면에 붙인다.
+   *
+   * ⚠ **대분류까지만 맞은 경우도 여기를 지난다.** 그 경로는 결과 화면을 거치지
+   *   않고 곧장 고르는 화면으로 되묻는데, 2026-08-28 전에는 화면만 바꾸고
+   *   입력창을 비우지 않았다 — '다시 적기'로 돌아오면 친 글자가 그대로였다.
+   *   무엇을 비울지는 flowReducer가 정한다(lib/flow.js). 여기서 분기하지 말 것.
+   */
   const show = useCallback((outcome) => {
-    if (outcome.kind === RESULT.CATEGORY) {
-      const category = taxonomy.categories.find((c) => c.id === outcome.category.id);
-      setSelectedCategory(category);
-      setMode("select");
-      setPhase("input");
-      return;
-    }
-    setData(dataRef.current);
-    setResult(outcome);
-    setPhase("result");
+    if (outcome.kind !== RESULT.CATEGORY) setData(dataRef.current);
+    dispatch({
+      type: FLOW.ANSWER,
+      outcome,
+      category:
+        outcome.kind === RESULT.CATEGORY
+          ? taxonomy.categories.find((c) => c.id === outcome.category.id)
+          : null,
+      placeholder: pickMessage("placeholder", taxonomy.ui.placeholders),
+    });
   }, []);
 
   const run = useCallback(
     async (input) => {
-      setPhase("loading");
+      dispatch({ type: FLOW.SUBMIT });
       setLoadingMessage(pickMessage("loading", taxonomy.ui.loading.messages));
       // 분류는 수십 ms에 끝난다. 최소 노출 시간을 두는 것이 요점이다.
       // withMinDuration은 **함수**를 받는다 (프라미스가 아니다) — 시작 시각을
@@ -181,27 +192,23 @@ export default function App() {
   );
 
   /**
-   * 입력 화면으로 되돌린다. **입력창을 비우는 유일한 자리다.**
-   *
-   * [왜 비우는가 — 2026-08-25 사용자 결정]
-   *   마음이 힘들어 적은 문장이 화면에 그대로 남아 있는 것이 이 앱에 맞지 않다.
-   *   결과를 보고 돌아오든 못 알아들어서 돌아오든 같다.
+   * 입력 화면으로 되돌린다. 비우는 규칙은 flowReducer가 갖는다(lib/flow.js).
    *
    * ⚠ 인자를 받지 않는다. Msg·Closing이 `onClick={onBack}`으로 넘기므로
-   *   **클릭 이벤트가 첫 인자로 들어온다.** `reset(mode)` 형태로 두면
-   *   mode 자리에 이벤트 객체가 앉는다. 그래서 목적지별로 함수를 나눈다.
+   *   **클릭 이벤트가 첫 인자로 들어온다.** 목적지를 인자로 받는 함수 하나로
+   *   두면 그 자리에 이벤트 객체가 앉는다. 그래서 목적지별로 나눈다.
    */
-  const resetTo = useCallback((mode) => {
-    setResult(null);
-    setSelectedCategory(null);
-    setText("");
-    setMode(mode);
-    setPhase("input");
-    setPlaceholder(pickMessage("placeholder", taxonomy.ui.placeholders));
-  }, []);
-  const reset = useCallback(() => resetTo("text"), [resetTo]);
+  const goInput = useCallback(
+    (type) =>
+      dispatch({
+        type,
+        placeholder: pickMessage("placeholder", taxonomy.ui.placeholders),
+      }),
+    [],
+  );
+  const reset = useCallback(() => goInput(FLOW.RESET), [goInput]);
   /** 분류 실패에서 나가는 길 — 고르는 화면으로 간다. 비우는 것은 위와 같다. */
-  const resetToPicker = useCallback(() => resetTo("select"), [resetTo]);
+  const resetToPicker = useCallback(() => goInput(FLOW.RESET_TO_PICKER), [goInput]);
 
   if (showAbout) {
     // 떠 있는 버튼과 하단 버튼이 **같은 함수**를 쓴다. 복귀 경로가 둘로
@@ -214,7 +221,7 @@ export default function App() {
     );
   }
 
-  if (phase === "loading") {
+  if (phase === PHASE.LOADING) {
     return (
       <Shell>
         <div style={styles.loadingWrap}>
@@ -227,7 +234,7 @@ export default function App() {
     );
   }
 
-  if (phase === "result" && result) {
+  if (phase === PHASE.RESULT && result) {
     if (result.kind === RESULT.CRISIS) {
       return (
         <Shell onRestart={reset} reducedMotion={reducedMotion}>
@@ -276,13 +283,14 @@ export default function App() {
     <Shell onAbout={() => setShowAbout(true)}>
       <Input
         mode={mode}
-        setMode={setMode}
         text={text}
-        setText={setText}
         placeholder={placeholder}
         greeting={greeting}
         selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
+        onType={(value) => dispatch({ type: FLOW.TYPE, text: value })}
+        onSwitchToPicker={() => dispatch({ type: FLOW.SWITCH_TO_PICKER })}
+        onPickCategory={(category) => dispatch({ type: FLOW.PICK_CATEGORY, category })}
+        onStepBack={() => dispatch({ type: FLOW.BACK })}
         onSubmit={run}
         onChoose={chooseSubcategory}
       />
@@ -500,13 +508,14 @@ function Crisis({ data, onBack }) {
  */
 function Input({
   mode,
-  setMode,
   text,
-  setText,
   placeholder,
   greeting,
   selectedCategory,
-  setSelectedCategory,
+  onType,
+  onSwitchToPicker,
+  onPickCategory,
+  onStepBack,
   onSubmit,
   onChoose,
 }) {
@@ -520,19 +529,19 @@ function Input({
         </div>
       </div>
 
-      {mode === "select" ? (
+      {mode === MODE.SELECT ? (
         <SelectMode
           selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
-          setMode={setMode}
+          onPickCategory={onPickCategory}
+          onStepBack={onStepBack}
           onChoose={onChoose}
         />
       ) : (
         <TextMode
           text={text}
-          setText={setText}
+          onType={onType}
           placeholder={placeholder}
-          setMode={setMode}
+          onSwitchToPicker={onSwitchToPicker}
           onSubmit={onSubmit}
         />
       )}
@@ -540,7 +549,7 @@ function Input({
   );
 }
 
-function TextMode({ text, setText, placeholder, setMode, onSubmit }) {
+function TextMode({ text, onType, placeholder, onSwitchToPicker, onSubmit }) {
   return (
     <div style={styles.modeBlock}>
       {/* 한 줄 입력이다. textarea 4줄 상자였던 것을 바꿨다 —
@@ -549,7 +558,7 @@ function TextMode({ text, setText, placeholder, setMode, onSubmit }) {
           FYM도 같은 이유로 input 한 줄이다. */}
       <input
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => onType(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && onSubmit(text)}
         placeholder={placeholder}
         aria-label="지금 마음"
@@ -558,7 +567,7 @@ function TextMode({ text, setText, placeholder, setMode, onSubmit }) {
       <button type="button" onClick={() => onSubmit(text)} style={styles.submit}>
         마음 들여다보기
       </button>
-      <button type="button" onClick={() => setMode("select")} style={styles.switch}>
+      <button type="button" onClick={onSwitchToPicker} style={styles.switch}>
         {taxonomy.ui.select_mode.switch_to_select}
       </button>
     </div>
@@ -572,7 +581,7 @@ function TextMode({ text, setText, placeholder, setMode, onSubmit }) {
  * 1단계에서는 텍스트 입력으로, 2단계에서는 대분류 목록으로 돌아간다 —
  * 사용자 입장에서는 "한 걸음 뒤로"라는 같은 동작이라 자리가 같아야 한다.
  */
-function SelectMode({ selectedCategory, setSelectedCategory, setMode, onChoose }) {
+function SelectMode({ selectedCategory, onPickCategory, onStepBack, onChoose }) {
   const items = selectedCategory
     ? subcategoriesOf(taxonomy, selectedCategory.id)
     : taxonomy.categories;
@@ -590,7 +599,7 @@ function SelectMode({ selectedCategory, setSelectedCategory, setMode, onChoose }
             key={item.id}
             type="button"
             onClick={() =>
-              selectedCategory ? onChoose(item.id) : setSelectedCategory(item)
+              selectedCategory ? onChoose(item.id) : onPickCategory(item)
             }
             style={styles.chip}
           >
@@ -600,7 +609,7 @@ function SelectMode({ selectedCategory, setSelectedCategory, setMode, onChoose }
       </div>
       <button
         type="button"
-        onClick={() => (selectedCategory ? setSelectedCategory(null) : setMode("text"))}
+        onClick={onStepBack}
         style={styles.back}
       >
         {selectedCategory ? "← 다시 고르기" : taxonomy.ui.select_mode.switch_to_text}

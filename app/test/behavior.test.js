@@ -28,6 +28,15 @@ import {
   toggleCounts,
   visibleVideos,
 } from "../src/lib/videos.js";
+import {
+  ANSWER_ACTIONS,
+  FLOW,
+  MODE,
+  PHASE,
+  flowReducer,
+  initialFlow,
+  inputBoxVisible,
+} from "../src/lib/flow.js";
 import { isCompleteVideosPayload } from "../src/lib/payload.js";
 import { revisitSlot, sameDayGreetingPool, visitNumberOf } from "../src/lib/messages.js";
 import { withMinDuration } from "../src/lib/offline.js";
@@ -882,36 +891,169 @@ test("소스를 읽는 테스트는 전부 readSource()를 지난다 (같은 함
   }
 });
 
-/* --- 분류 실패에서 나올 때 입력창을 비운다 (2026-08-25 사용자 결정) ---------
+/* --- 입력창을 비우는 규칙 — **동작으로 검사한다** (2026-08-28 개정) ---------
  *
- * 마음이 힘들어 적은 문장이 화면에 그대로 남아 있는 것이 이 앱에 맞지 않다.
- * 결과를 보고 돌아오든(reset) 못 알아들어서 돌아오든(resetToPicker) 같다.
+ * 마음이 힘들어 적은 문장이 화면에 그대로 남아 있는 것이 이 앱에 맞지 않다
+ * (2026-08-25 사용자 결정).
  *
- * ⚠ 전에는 분류 실패 경로만 인라인 핸들러였고 setText("")가 없었다.
- *   성공 경로는 처음부터 비우고 있었다 — **두 경로가 갈려 있었다는 것이 결함이다.**
- * ⚠ Msg는 onClick={onBack}으로 넘긴다 — 클릭 이벤트가 첫 인자로 들어온다.
- *   목적지를 인자로 받는 함수를 onBack에 그대로 두면 그 자리에 이벤트 객체가 앉는다.
+ * ⚠⚠ **여기 있던 검사는 소스 문자열을 봤고, 그래서 결함을 놓쳤다.**
+ *   `setText("")`가 한 곳인지, `onBack={resetToPicker}`인지를 확인했다.
+ *   전부 통과한 채로 **세 번째 경로**가 고장나 있었다 — 분류가 대분류까지만
+ *   맞으면(RESULT.CATEGORY) 결과 화면을 거치지 않고 곧장 고르는 화면으로
+ *   되묻는데, 그 경로에는 비우는 코드가 아예 없었다. 검사가 볼 수 있는 것은
+ *   "어떻게 적혀 있는가"였고 결함은 "어디를 안 지나는가"였다.
+ *
+ * ★ 그래서 이동을 값으로 꺼냈다(src/lib/flow.js). 아래 검사는 상태 기계를
+ *   **실제로 걸어 다니며** 불변식을 확인한다. 새 경로가 생겨도 함께 검사된다.
+ * ⛔ 이 자리에 소스 문자열 검사를 다시 넣지 말 것 — 그것이 놓친 결함이다.
  */
+
 const appSrc = readSource("App.jsx");
 
-test("입력창을 비우는 자리가 하나뿐이고, 두 복귀 경로가 그것을 함께 쓴다", () => {
-  const setters = appSrc.match(/setText\(""\)/g) || [];
+const CATEGORY = taxonomy.categories[0];
+const ACTIONS = [
+  { type: FLOW.TYPE, text: "오늘 너무 힘들어" },
+  { type: FLOW.SWITCH_TO_PICKER },
+  { type: FLOW.PICK_CATEGORY, category: CATEGORY },
+  { type: FLOW.BACK },
+  { type: FLOW.SUBMIT },
+  { type: FLOW.ANSWER, outcome: { kind: RESULT.OK }, category: null },
+  { type: FLOW.ANSWER, outcome: { kind: RESULT.CRISIS }, category: null },
+  { type: FLOW.ANSWER, outcome: { kind: RESULT.EMPTY }, category: null },
+  { type: FLOW.ANSWER, outcome: { kind: RESULT.NO_MATCH }, category: null },
+  // ★ 놓쳤던 경로 — 대분류까지만 맞으면 결과 화면 없이 되묻는다.
+  { type: FLOW.ANSWER, outcome: { kind: RESULT.CATEGORY }, category: CATEGORY },
+  { type: FLOW.RESET },
+  { type: FLOW.RESET_TO_PICKER },
+];
+
+/**
+ * 도달 가능한 상태를 넓이 우선으로 전부 모은다.
+ * `answered`는 "앱이 한 번 응답한 뒤"라는 표시다 — TYPE이 그 표를 지운다
+ * (그때부터 글자는 다시 사용자가 직접 넣은 것이다).
+ */
+function walkFlow(seed) {
+  const key = (s, answered) =>
+    [s.phase, s.mode, s.text, s.result ? s.result.kind : "-",
+     s.selectedCategory ? s.selectedCategory.id : "-", answered].join("|");
+  const first = { state: seed, answered: false };
+  const seen = new Map([[key(seed, false), first]]);
+  const queue = [first];
+  while (queue.length) {
+    const node = queue.shift();
+    for (const action of ACTIONS) {
+      const next = flowReducer(node.state, action);
+      const answered =
+        action.type === FLOW.TYPE
+          ? false
+          : node.answered || ANSWER_ACTIONS.includes(action.type);
+      const k = key(next, answered);
+      if (seen.has(k)) continue;
+      const entry = { state: next, answered };
+      seen.set(k, entry);
+      queue.push(entry);
+    }
+  }
+  return [...seen.values()];
+}
+
+test("앱이 응답한 뒤에는 입력창이 보이는 어느 상태에서도 글자가 남지 않는다", () => {
+  const nodes = walkFlow(initialFlow("여기에 적어보세요"));
+  const leaks = nodes.filter(
+    (n) => n.answered && inputBoxVisible(n.state) && n.state.text !== "",
+  );
   assert.equal(
-    setters.length,
-    1,
-    `setText("")가 ${setters.length}곳이다 — 비우는 자리는 resetTo 하나여야 한다`,
+    leaks.length,
+    0,
+    `응답 뒤 입력창에 글자가 남는 상태 ${leaks.length}개 — 예: ${JSON.stringify(leaks[0])}`,
   );
+  // 검사가 실제로 그래프를 걷고 있는지 본다. 상태가 몇 개뿐이면 아무것도 못 봤다.
+  assert.ok(nodes.length > 20, `걸은 상태가 ${nodes.length}개뿐이다 — 그래프를 못 걷고 있다`);
   assert.ok(
-    /const resetTo = useCallback\(\(mode\) => \{[\s\S]*?setText\(""\)/.test(appSrc),
-    "resetTo가 입력창을 비우지 않는다",
+    nodes.some((n) => n.answered && inputBoxVisible(n.state)),
+    "응답 뒤에 입력창이 보이는 상태를 하나도 안 지났다 — 검사가 헛돌고 있다",
   );
+});
+
+test("★ 대분류까지만 맞았을 때 — 되묻는 화면을 거쳐 돌아와도 비어 있다", () => {
+  // 2026-08-28 이전에 실제로 고장나 있던 경로다. 한 걸음씩 그대로 밟는다.
+  let s = flowReducer(initialFlow(""), { type: FLOW.TYPE, text: "불안해" });
+  s = flowReducer(s, { type: FLOW.SUBMIT });
+  s = flowReducer(s, {
+    type: FLOW.ANSWER,
+    outcome: { kind: RESULT.CATEGORY },
+    category: CATEGORY,
+  });
+  assert.equal(s.mode, MODE.SELECT, "세분류를 고르는 화면으로 가지 않았다");
+  assert.equal(s.selectedCategory.id, CATEGORY.id, "고른 대분류가 화면에 안 실렸다");
+  s = flowReducer(s, { type: FLOW.BACK }); // 2단계 → 1단계
+  s = flowReducer(s, { type: FLOW.BACK }); // 1단계 → 직접 적기
+  assert.ok(inputBoxVisible(s), "직접 적기 화면으로 돌아오지 않았다");
+  assert.equal(s.text, "", "되묻고 돌아왔는데 친 글자가 남아 있다");
+});
+
+test("고장 주입: 되묻기가 비우지 않으면 불변식이 실제로 깨진다", () => {
+  // 검사가 살아 있는지 본다 — 2026-08-28 이전 동작을 그대로 재현한다.
+  const broken = (state, action) =>
+    action.type === FLOW.ANSWER && action.outcome.kind === RESULT.CATEGORY
+      ? { ...state, phase: PHASE.INPUT, mode: MODE.SELECT, selectedCategory: action.category }
+      : flowReducer(state, action);
+  let s = broken(initialFlow(""), { type: FLOW.TYPE, text: "불안해" });
+  s = broken(s, { type: FLOW.SUBMIT });
+  s = broken(s, { type: FLOW.ANSWER, outcome: { kind: RESULT.CATEGORY }, category: CATEGORY });
+  s = broken(s, { type: FLOW.BACK });
+  s = broken(s, { type: FLOW.BACK });
+  assert.equal(s.text, "불안해", "고장을 주입했는데도 비어 있다 — 검사가 무엇도 못 본다");
+});
+
+test("결과·위기·빈 입력·분류 실패 — 네 복귀 경로가 모두 비운다", () => {
+  for (const kind of [RESULT.OK, RESULT.CRISIS, RESULT.EMPTY, RESULT.NO_MATCH]) {
+    let s = flowReducer(initialFlow(""), { type: FLOW.TYPE, text: "짜증나" });
+    s = flowReducer(s, { type: FLOW.SUBMIT });
+    s = flowReducer(s, { type: FLOW.ANSWER, outcome: { kind }, category: null });
+    assert.equal(s.phase, PHASE.RESULT, `${kind}이 결과 화면으로 가지 않았다`);
+    for (const back of [FLOW.RESET, FLOW.RESET_TO_PICKER]) {
+      const done = flowReducer(s, { type: back });
+      assert.equal(done.text, "", `${kind} → ${back}에서 글자가 남는다`);
+      assert.equal(done.result, null, `${kind} → ${back}에서 결과가 안 지워진다`);
+      assert.equal(done.selectedCategory, null, `${kind} → ${back}에서 대분류가 남는다`);
+    }
+  }
+});
+
+test("사용자가 직접 옮겨 다닌 것만으로는 자기 문장을 잃지 않는다", () => {
+  // 치고 → 고르는 화면 구경 → 되돌아오면 그대로 있어야 한다. 앱이 응답한 적이 없다.
+  let s = flowReducer(initialFlow(""), { type: FLOW.TYPE, text: "불안해" });
+  s = flowReducer(s, { type: FLOW.SWITCH_TO_PICKER });
+  s = flowReducer(s, { type: FLOW.BACK });
+  assert.equal(s.text, "불안해", "스스로 다녀온 것뿐인데 문장이 지워졌다");
+  assert.ok(inputBoxVisible(s), "입력 화면으로 돌아오지 않았다");
+});
+
+test("App이 상태 기계를 우회하지 않는다 — 낱개 세터가 없다", () => {
+  // ⚠ 이동이 흐름 밖에서 일어나면 위 그래프 검사가 그 경로를 못 본다.
+  //   결함이 그렇게 생겼다 — 검사가 닿지 않는 경로가 하나 있었다.
+  for (const setter of ["setText(", "setMode(", "setPhase(", "setResult(", "setSelectedCategory("]) {
+    assert.ok(
+      !appSrc.includes(setter),
+      `${setter}가 App.jsx에 남아 있다 — flowReducer를 우회하는 경로다`,
+    );
+  }
+  assert.ok(appSrc.includes("useReducer(flowReducer"), "App이 flowReducer를 쓰지 않는다");
+});
+
+test("복귀 함수는 인자를 받지 않는다 (onClick이 이벤트를 넘긴다)", () => {
+  // ⚠ Msg·Closing이 onClick={onBack}으로 넘기므로 클릭 이벤트가 첫 인자로 들어온다.
+  //   목적지를 인자로 받는 함수를 그대로 넘기면 그 자리에 이벤트 객체가 앉는다.
+  for (const name of ["reset", "resetToPicker"]) {
+    assert.ok(
+      appSrc.includes(`const ${name} = useCallback(() =>`),
+      `${name}이 인자를 받는다 — onBack에 그대로 넘길 수 없다`,
+    );
+  }
   assert.ok(
-    /const reset = useCallback\(\(\) => resetTo\("text"\)/.test(appSrc),
-    "reset이 resetTo를 거치지 않는다 — 경로가 갈리면 한쪽만 고쳐지는 날이 온다",
-  );
-  assert.ok(
-    /const resetToPicker = useCallback\(\(\) => resetTo\("select"\)/.test(appSrc),
-    "resetToPicker가 resetTo를 거치지 않는다",
+    !appSrc.includes("onBack={goInput}") && !appSrc.includes("onAlt={goInput}"),
+    "목적지를 인자로 받는 goInput을 onBack/onAlt에 직접 넘겼다",
   );
 });
 
@@ -919,24 +1061,10 @@ test("분류 실패 화면이 인라인 핸들러가 아니라 resetToPicker를 
   const block = appSrc.slice(appSrc.indexOf("taxonomy.ui.no_match"));
   const msg = block.slice(0, block.indexOf("/>"));
   assert.ok(
-    /onBack=\{resetToPicker\}/.test(msg),
+    msg.includes("onBack={resetToPicker}"),
     "분류 실패 복귀가 resetToPicker가 아니다 — 입력창이 안 비워진다",
   );
-  assert.ok(
-    !/setPhase\("input"\)/.test(msg),
-    "인라인 핸들러가 남아 있다 — 비우는 자리를 우회한다",
-  );
-});
-
-test("복귀 함수는 인자를 받지 않는다 (onClick이 이벤트를 넘긴다)", () => {
-  for (const name of ["reset", "resetToPicker"]) {
-    const decl = new RegExp(`const ${name} = useCallback\\(\\(\\) =>`);
-    assert.ok(decl.test(appSrc), `${name}이 인자를 받는다 — onBack에 그대로 넘길 수 없다`);
-  }
-  assert.ok(
-    !/onBack=\{resetTo\}/.test(appSrc),
-    "resetTo(mode)를 onBack에 직접 넘겼다 — mode 자리에 이벤트 객체가 앉는다",
-  );
+  assert.ok(!msg.includes("dispatch("), "인라인 dispatch가 남아 있다 — 비우는 자리를 우회한다");
 });
 
 /* --- `구려`·`구질` 계열 — 어절 결합으로만 넣었다 (2026-08-25) ---------------
