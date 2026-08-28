@@ -1,22 +1,11 @@
 {
-  "version": "2026-08-28T01:43:30Z",
+  "version": "2026-08-28T05:07:10Z",
   "untagged_ratio": 0.663,
   "unknown_ratio": 0.014,
   "unknown_kept": 25,
-  "tabs_over_cap": [
-    "anger.rage [sermon]",
-    "anger.unfair [sermon]",
-    "anxiety.tension [sermon]",
-    "boredom.dull [sermon]",
-    "boredom.novelty [sermon]",
-    "exhaustion.burnout [sermon]",
-    "flutter.thrill [sermon]",
-    "frustration.suppressed [sermon]",
-    "joy.delight [sermon]",
-    "sadness.loss [sermon]"
-  ],
-  "tab_max_exposed": 21,
-  "kept": 1770,
+  "tabs_over_cap": [],
+  "tab_max_exposed": 20,
+  "kept": 1769,
   "themes_empty": [
     "self_control"
   ],
@@ -46,13 +35,12 @@
     "anger.rage",
     "anger.unfair",
     "anxiety.tension",
-    "boredom.dull",
     "boredom.novelty"
   ],
   "screens_below_target": [],
   "screens_below_min": [],
-  "total_exposed": 954,
-  "from_fallback": 335,
+  "total_exposed": 960,
+  "from_fallback": 327,
   "channels_zero_yield": [],
   "allowlist_size": 22,
   "theme_pool": {
