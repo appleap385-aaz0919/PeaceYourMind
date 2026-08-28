@@ -58,6 +58,86 @@ export function layersFor(videos, mediaType) {
 }
 
 /**
+ * 씨앗 하나로 결정되는 난수 — 같은 씨앗이면 언제나 같은 순열이다 (mulberry32).
+ *
+ * Math.random()을 직접 쓰지 않는 이유: 스크롤·탭 전환으로 리렌더될 때마다
+ * 순서가 바뀌면 안 된다. 씨앗을 화면 진입 때 한 번 뽑고, 섞기는 그 씨앗에 대해
+ * **순수 함수**여야 몇 번을 다시 계산해도 같은 목록이 나온다.
+ */
+function seededRandom(seed) {
+  let a = (seed >>> 0) || 1;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * 주제분을 **개별 영상 단위로** 섞는다 (2026-08-28 · 사용자 결정).
+ *
+ * [왜 — 배치가 주는 순서는 채널 묶음이다]
+ *   videos.json의 주제분은 "채널 묶음 + 채널 안에서만 최신순"으로 온다.
+ *   배치가 채널을 차례로 돌며 수집하기 때문이다(lib/selection.fill_balanced 주석).
+ *   실측(anger.irritation [찬양] 2026-08-27): ANOINTING 3건 → 옹기장이 1건 →
+ *   택피아노 3건 → mini Music 3건 … 한 채널이 연속으로 3건씩 붙어 나왔다.
+ *   사용자에게는 "이 채널 것만 계속 나온다"로 읽힌다.
+ *
+ * [언제 섞는가 — 화면에 들어갈 때 한 번]
+ *   씨앗은 결과 화면이 뜰 때 한 번 뽑는다(App.jsx의 Result). 그래서
+ *     · 스크롤해도 안 바뀐다
+ *     · [말씀]↔[찬양] 토글을 오가도 각 탭의 순서는 그대로다
+ *     · 감정을 다시 입력하면 Result가 새로 떠서 새 씨앗을 받는다
+ *   ⛔ 이 함수 안에서 Math.random()을 부르지 말 것. 그 순간 위 세 가지가 깨진다.
+ *
+ * [같은 채널이 연속으로 붙지 않게]
+ *   섞은 뒤 인접한 같은 채널을 한 번 흩는다. 완전히 없애지는 못한다 —
+ *   한 채널이 목록의 절반을 차지하면 어디엔가는 붙는다. 그때는 **그대로 둔다**
+ *   (억지로 떼려고 순서를 더 흔들면 무작위성의 의미가 없다).
+ *
+ * ⚠ 폴백 층에는 쓰지 않는다. 그쪽은 배치가 **전체 최신순**으로 주고
+ *   "요즘 올라온 것들"이라는 헤더가 그 순서를 약속한다.
+ */
+export function shuffleThemeLayer(videos, seed) {
+  if (!Array.isArray(videos) || videos.length < 2) return videos || [];
+  const rnd = seededRandom(seed);
+  const out = videos.slice();
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rnd() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  // 인접 중복 흩기 — 섞인 순서를 지키되 다음 자리에 직전과 다른 채널을 놓는다.
+  //
+  // ★ **남은 개수가 많은 채널을 먼저 낸다.** 그냥 "직전과 다른 첫 번째"를 집으면
+  //   많이 남은 채널이 끝에 몰려 마지막에 붙는다 (실측: 8건 표본 씨앗 4에서
+  //   `CBCBADAA` — 끝의 AA가 그것이다). 많은 쪽을 먼저 흘려보내야 끝까지 풀린다.
+  //   한 채널이 과반이 아니면 이 방식은 인접 중복을 0으로 만든다.
+  //
+  // ⚠ 동률이면 **섞인 순서**가 가른다 — 그래서 씨앗이 여전히 순서를 정한다.
+  // ⚠ 한 채널이 목록의 절반을 넘으면 어떻게 놓아도 붙는다. 그때는 감수한다.
+  const rest = out.map((v, i) => ({ v, i }));
+  const left = new Map();
+  for (const { v } of rest) left.set(v.channel, (left.get(v.channel) || 0) + 1);
+
+  const spread = [];
+  while (rest.length) {
+    const prev = spread.length ? spread[spread.length - 1].channel : null;
+    let best = -1;
+    for (let k = 0; k < rest.length; k += 1) {
+      const ch = rest[k].v.channel;
+      if (ch === prev) continue;
+      if (best < 0 || left.get(ch) > left.get(rest[best].v.channel)) best = k;
+    }
+    if (best < 0) best = 0; // 남은 것이 전부 직전과 같은 채널이다
+    const [taken] = rest.splice(best, 1);
+    left.set(taken.v.channel, left.get(taken.v.channel) - 1);
+    spread.push(taken.v);
+  }
+  return spread;
+}
+
+/**
  * 이 세분류에서 각 토글에 몇 건이 보이는가.
  *
  * 한쪽이 0이어도 **버튼을 비활성화하지 않는다** (PLAN.md 3.4).

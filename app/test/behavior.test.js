@@ -23,6 +23,7 @@ import {
   formatDuration,
   getCrisisVideos,
   layersFor,
+  shuffleThemeLayer,
   screenFor,
   toggleCounts,
   visibleVideos,
@@ -1011,4 +1012,108 @@ test("보조 버튼은 주 버튼과 위계가 갈린다", () => {
     /#ffffff66/.test(body) && /fontSize: 12\.5/.test(body),
     "보조 버튼이 Closing의 조용한 텍스트 버튼과 같은 모양이 아니다",
   );
+});
+
+/* ===========================================================================
+ * 주제분 섞기 (2026-08-28) — 화면 진입 때 한 번, 그 뒤로는 고정
+ * ======================================================================== */
+
+const shuffleSample = [
+  { videoId: "a1", channel: "채널A", source: "theme" },
+  { videoId: "a2", channel: "채널A", source: "theme" },
+  { videoId: "a3", channel: "채널A", source: "theme" },
+  { videoId: "b1", channel: "채널B", source: "theme" },
+  { videoId: "b2", channel: "채널B", source: "theme" },
+  { videoId: "c1", channel: "채널C", source: "theme" },
+  { videoId: "c2", channel: "채널C", source: "theme" },
+  { videoId: "d1", channel: "채널D", source: "theme" },
+];
+
+test("★ 같은 씨앗이면 언제나 같은 순서다 (스크롤·탭 전환에 안 흔들린다)", () => {
+  const a = shuffleThemeLayer(shuffleSample, 12345).map((v) => v.videoId);
+  const b = shuffleThemeLayer(shuffleSample, 12345).map((v) => v.videoId);
+  assert.deepEqual(a, b, "같은 씨앗인데 순서가 달라졌다 — 리렌더마다 목록이 뒤집힌다");
+});
+
+test("씨앗이 다르면 순서가 달라진다 (감정을 다시 입력하면 새로 섞인다)", () => {
+  const seen = new Set();
+  for (const seed of [1, 2, 3, 4, 5, 6]) {
+    seen.add(shuffleThemeLayer(shuffleSample, seed).map((v) => v.videoId).join(","));
+  }
+  assert.ok(seen.size > 1, "씨앗을 바꿔도 순서가 하나뿐이다 — 섞이지 않는다");
+});
+
+test("구성은 그대로다 — 섞기가 영상을 잃거나 더하지 않는다", () => {
+  for (const seed of [7, 77, 777]) {
+    const out = shuffleThemeLayer(shuffleSample, seed);
+    assert.equal(out.length, shuffleSample.length);
+    assert.deepEqual(
+      out.map((v) => v.videoId).sort(),
+      shuffleSample.map((v) => v.videoId).sort(),
+    );
+  }
+});
+
+test("★ 같은 채널이 연속으로 붙는 것을 줄인다", () => {
+  // 배치가 주는 순서는 채널 묶음이다 — 그대로면 인접 중복이 4건이다
+  const grouped = shuffleSample;
+  let before = 0;
+  for (let i = 1; i < grouped.length; i += 1) {
+    if (grouped[i].channel === grouped[i - 1].channel) before += 1;
+  }
+  assert.equal(before, 4, "표본 전제가 바뀌었다");
+
+  for (const seed of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+    const out = shuffleThemeLayer(grouped, seed);
+    let after = 0;
+    for (let i = 1; i < out.length; i += 1) {
+      if (out[i].channel === out[i - 1].channel) after += 1;
+    }
+    assert.equal(after, 0, `씨앗 ${seed}에서 인접 중복이 ${after}건 남았다`);
+  }
+});
+
+test("한 채널이 절반을 넘으면 붙는 것을 감수한다 (구성은 지킨다)", () => {
+  // 6건 중 5건이 같은 채널이면 어떻게 놓아도 붙는다 — 그때 목록을 망가뜨리지 않는지
+  const skewed = [
+    { videoId: "x1", channel: "채널X" },
+    { videoId: "x2", channel: "채널X" },
+    { videoId: "x3", channel: "채널X" },
+    { videoId: "x4", channel: "채널X" },
+    { videoId: "x5", channel: "채널X" },
+    { videoId: "y1", channel: "채널Y" },
+  ];
+  const out = shuffleThemeLayer(skewed, 42);
+  assert.equal(out.length, 6, "영상이 사라졌다");
+  assert.deepEqual(
+    out.map((v) => v.videoId).sort(),
+    skewed.map((v) => v.videoId).sort(),
+    "구성이 바뀌었다",
+  );
+});
+
+test("1건 이하는 그대로 돌려준다", () => {
+  assert.deepEqual(shuffleThemeLayer([], 1), []);
+  const one = [shuffleSample[0]];
+  assert.deepEqual(shuffleThemeLayer(one, 1), one);
+  assert.deepEqual(shuffleThemeLayer(null, 1), []);
+});
+
+test("⛔ 섞기 안에서 Math.random을 쓰지 않는다 (씨앗이 유일한 입력이다)", () => {
+  // readSource()로 읽는다 — 주석에 Math.random이 인용돼 있어 원문으로 보면 거짓 실패한다
+  const src = readSource("lib", "videos.js");
+  const from = src.indexOf("export function shuffleThemeLayer");
+  const next = src.indexOf("export function", from + 10);
+  const body = src.slice(from, next < 0 ? undefined : next);
+  assert.ok(
+    !body.includes("Math.random"),
+    "shuffleThemeLayer가 Math.random을 부른다 — 리렌더마다 순서가 바뀐다",
+  );
+});
+
+test("폴백 층은 섞지 않는다 — 배치의 최신순을 그대로 쓴다", () => {
+  const app = readSource("App.jsx");
+  const call = app.slice(app.indexOf("const layers = useMemo"), app.indexOf("const layers = useMemo") + 400);
+  assert.ok(call.includes("theme: shuffleThemeLayer"), "주제분에 섞기가 안 걸려 있다");
+  assert.ok(!call.includes("fallback: shuffleThemeLayer"), "폴백까지 섞고 있다");
 });

@@ -49,6 +49,7 @@ import {
   getCrisisVideos,
   layersFor,
   screenFor,
+  shuffleThemeLayer,
   toggleCounts,
 } from "./lib/videos.js";
 
@@ -345,7 +346,25 @@ function Result({ result, data, onBack }) {
   const screen = screenFor(data, subcategory.id);
   const videos = screen?.videos ?? [];
   const counts = toggleCounts(videos);
-  const layers = layersFor(videos, mediaType);
+
+  /**
+   * 주제분 섞기 씨앗 — **이 화면이 뜰 때 한 번만** 뽑는다 (2026-08-28 결정).
+   *
+   * 배치가 주는 주제분 순서는 채널 묶음이라(lib/videos.js shuffleThemeLayer 주석)
+   * 한 채널이 연속 3건씩 붙어 나온다. 개별 영상 단위로 섞어 그것을 흩는다.
+   *
+   * ⛔ 씨앗을 렌더마다 새로 뽑으면 안 된다. useState 초기화 함수라 **마운트당
+   *   한 번**만 실행된다 — 그래서 스크롤·탭 전환에 순서가 흔들리지 않는다.
+   *   섞기 자체도 씨앗에 대해 순수 함수라 몇 번을 다시 계산해도 결과가 같다.
+   * ★ 감정을 다시 입력하면 App이 result를 null로 되돌려 이 컴포넌트가 사라졌다
+   *   다시 뜬다. 그때 새 씨앗을 받는다 — 그것이 "다시 입력하면 새로 섞인다"다.
+   */
+  const [shuffleSeed] = useState(() => Math.floor(Math.random() * 0x100000000));
+  const layers = useMemo(() => {
+    const split = layersFor(videos, mediaType);
+    // 폴백은 섞지 않는다 — 배치가 전체 최신순으로 주고 헤더가 그 순서를 약속한다
+    return { ...split, theme: shuffleThemeLayer(split.theme, shuffleSeed) };
+  }, [videos, mediaType, shuffleSeed]);
 
   /**
    * 탭 하나가 두 가지 일을 한다 — 본문으로 가거나, 영상 형식을 고르거나.

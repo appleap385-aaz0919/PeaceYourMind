@@ -457,10 +457,20 @@ def fill_balanced(
       반대 형식이 애초에 없기 때문이다. 남는 것은 **채널 분산과 상한 사다리**다.
       ⚠ 위기 풀 선정은 여전히 형식을 섞은 풀을 넘기므로 균형 코드는 살려 둔다.
 
-    [순서]
-      선정은 라운드로빈(채널 분산)으로 하고, **출력 순서는 최신순으로 되돌린다.**
-      선정 순서 그대로 내보내면 목록 앞쪽에 말씀이 뭉치는데, 토글로 걸러 보는
-      화면에서는 그 뭉침이 의미가 없고 최신순이 사용자에게 읽히는 순서다.
+    [순서 — ⚠ 정정 (2026-08-28)]
+      여기 원래 "출력 순서는 **최신순**으로 되돌린다"고 적혀 있었다. **사실이 아니다.**
+      되돌리는 것은 **풀 순서**이고, 풀 순서는 전역 최신순이 아니라
+      **채널 묶음 + 채널 안에서만 최신순**이다(collect_uploads가 채널을 차례로
+      돌며 각 채널의 uploads를 최신순 100건씩 붙이기 때문이다).
+
+      실측(anger.irritation [찬양] 2026-08-27): ANOINTING 3건(136일) → 옹기장이
+      1건(949일) → 택피아노 3건(0·7·14일) → … 채널이 묶여 나오고 묶음 안에서만
+      최신순이었다. 최신순 역전 5건.
+
+      ★ **화면 순서는 이제 앱이 정한다** — 결과 화면에 들어갈 때 개별 영상 단위로
+        한 번 섞는다(app/src/lib/videos.js `shuffleThemeLayer`). 여기서 되돌리는
+        풀 순서는 **어떤 20건을 담을지**를 정하는 데만 쓰이고 표시 순서가 아니다.
+        ⚠ 그러니 이 정렬을 "사용자가 보는 순서"로 착각하지 말 것.
     """
     order = _channel_order(pool, day_of_year)
     used: Counter[str] = Counter()
@@ -594,7 +604,24 @@ def select_fallback_videos(
     ]
     order = _channel_order(pool, day_of_year)
     used: Counter[str] = Counter()
-    return _round_robin(pool, THEME_MAX_PER_CHANNEL, need, order, used)
+    picked = _round_robin(pool, THEME_MAX_PER_CHANNEL, need, order, used)
+
+    # ★ 2026-08-28 — **누가 뽑히는가와 어떤 순서로 보이는가를 분리한다** (사용자 결정).
+    #
+    #   전에는 라운드로빈의 픽 순서가 그대로 화면 순서였다. 채널을 한 바퀴씩 도는
+    #   순서라 화면에는 "채널1 → 채널2 → … → 채널16 → 채널1(2바퀴째)"로 나왔다.
+    #   실측(anger.irritation [말씀] 20건)에서 최신순 역전이 8건이었고
+    #   경과일이 0~246일로 뒤섞여 있었다.
+    #
+    #   폴백 층의 헤더는 "요즘 올라온 것들"이라고 말한다. 그 문장과 목록이
+    #   어긋나 있었던 것이다. **채널 분산은 선정에서 이미 끝났으므로**(위 상한 3)
+    #   순서까지 채널을 따라갈 이유가 없다.
+    #
+    # ⚠ 정렬만 바꾼다. 채널당 상한은 그대로다 — 무엇이 목록에 들어가는지는
+    #   달라지지 않고, 같은 20건이 다른 순서로 나온다.
+    # ⚠ published_at은 ISO-8601 Z 문자열이라 사전순 정렬이 곧 시간순이다.
+    picked.sort(key=lambda t: t.video.published_at, reverse=True)
+    return picked
 
 
 def select_tab_layers(
