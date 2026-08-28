@@ -930,15 +930,17 @@ def main() -> int:
         "같은 '주년'이라도 머리에 있을 때만 뺀다",
     )
 
-    # 폴백 전용이다 — 주제분에는 걸지 않는다는 것을 호출 구조로 고정한다
+    # ⛔⛔ 2026-08-28 정정 — 여기 있던 "폴백 전용이다"를 고정하는 검사는 **없앴다.**
+    #   사용자 결정으로 제3범주 필터를 **주제분에도** 걸기로 했다(2.89 안 C).
+    #   그 새 계약은 아래 [10-c]가 고정한다. 되돌리려면 그쪽을 보고 판단할 것.
     src = inspect.getsource(build_subcategories)
     body = "\n".join(
         line for line in src.splitlines() if not line.lstrip().startswith("#")
     )
     _check(
         failures,
-        body.count("drop_promotional") == 1 and "is_untagged" in body,
-        "미태깅(=폴백 후보)에만 적용한다",
+        "is_untagged" in body,
+        "폴백 후보(미태깅)와 주제 태깅분을 갈라서 거른다",
     )
 
     # 되메우지 않는다 — 풀을 줄이면 결과도 줄어야 한다
@@ -978,6 +980,47 @@ def main() -> int:
         not [s for s, _ in MUST_KEEP if promo_reason(s)],
         "고장을 되돌리면 다시 통과한다",
     )
+
+    # --- [10-c] 안 C: 제3범주 필터를 주제분에도 적용한다 (2026-08-28 · 사용자 결정) --
+    # ⚠ 2.77 ④가 "경계를 옮길지 판단 필요"로 열어 둔 항목을 닫은 자리다.
+    #   사용자 판단: **"주제어가 걸렸어도 인터뷰는 인터뷰다."**
+    body_sub = inspect.getsource(build_subcategories)
+    _check(
+        failures,
+        body_sub.count("drop_promotional") == 2,
+        "★ drop_promotional을 두 번 부른다 — 폴백 후보와 **주제 태깅분** 양쪽",
+        f"{body_sub.count('drop_promotional')}회",
+    )
+    _check(
+        failures,
+        "for t in themed" in body_sub
+        and "any(x in t.themes for x in theme_ids)" in body_sub.split("for t in themed")[1][:200],
+        "★ 화면 풀이 tagged가 아니라 themed다 (제3범주를 뺀 주제 태깅분)",
+    )
+    # 실제 동작 — 주제 태깅된 제3범주가 실제로 빠지는가
+    THIRD_TAGGED = [
+        "세 자녀와 함께 심은 소망의 씨앗 | 네팔 김순종, 소하은 선교사 | 땅끝에서 온 편지 시즌3",
+        "성령의 바람 | CBS TV '예수 영광의 면류관' 중에서",
+        "[Full] 일상과 신앙 사이에서 흔들리는 당신을 위한 위로 | 김현정 사모 | 원더풀우먼",
+    ]
+    kept_third, dropped_third = drop_promotional(
+        [_tagged_untagged(f"t{i}", "채널A", WORSHIP, s) for i, s in enumerate(THIRD_TAGGED)]
+    )
+    _check(
+        failures,
+        not kept_third and len(dropped_third) == len(THIRD_TAGGED),
+        f"★ 주제 태깅된 제3범주 {len(THIRD_TAGGED)}종을 전부 뺀다 (사전 2개 추가분 포함)",
+        f"남은 것 {len(kept_third)}건",
+    )
+    # ⛔ 사전 확장이 정상 콘텐츠로 번지지 않는지 — MUST_KEEP과 같은 방어
+    for keep in ("땅끝까지 이르러 내 증인이 되리라 (사도행전 1:8 강해)",
+                 "영광의 면류관 - 새찬송가 25장"):
+        _check(
+            failures,
+            not promo_reason(keep),
+            f"⛔ 사전 확장이 정상 콘텐츠를 물지 않는다: {keep[:26]}",
+            promo_reason(keep) or "-",
+        )
 
     # =========================================================================
     # 10-b. 폴백 신선도 컷 + 화면별 무작위 (2026-08-28 · 사용자 결정)

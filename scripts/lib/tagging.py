@@ -34,7 +34,7 @@ from dataclasses import dataclass
 
 from lib.krv_source import BOOK_KEYS
 from lib.normalize import normalize
-from lib.themes import Themes
+from lib.themes import MediaType, Themes
 
 # media_type 판정값. themes.yaml media_types의 id와 같아야 하며,
 # unknown만 여기서 정의한다 (사전이 없는 "판별 실패" 상태이기 때문).
@@ -57,6 +57,9 @@ REASON_SCRIPTURE = "scripture"
 REASON_TITLE = "title"
 # 동점을 곡명 구조로 갈랐다 — 아래 split_conti 참조.
 REASON_CONTI = "conti"
+# 어휘가 하나도 안 걸렸는데 제목 자체가 곡명 나열이었다 — 아래 is_conti_structure 참조.
+# ⚠ REASON_CONTI와 다른 값이다. 저쪽은 **동점을 가른** 것이고 이쪽은 **단독 판정**이다.
+REASON_SONGLIST = "songlist"
 # 설교자 크레딧 구간을 구조로 읽었다 — 아래 has_speaker_credit 참조.
 REASON_SPEAKER = "speaker"
 REASON_DURATION = "duration"
@@ -463,6 +466,107 @@ def _break_media_tie(title: str, themes: Themes) -> str | None:
     return WORSHIP if WORSHIP in hit_ids else None
 
 
+# --- 설교자 크레딧이 붙은 제목의 '찬양' (안 B · 2026-08-28) -----------------
+#
+# ★ **새 규칙을 앞에 놓지 않는다. 어휘 매칭만 좁힌다.** 이 안의 요점이 그것이다.
+#   판정은 기존 채널 규칙이 낸다 — 순서를 건드리지 않으므로 2026-08-19의
+#   "제목이 채널보다 앞" 개정과 충돌하지 않는다.
+#
+# [무엇을 고치나 — '찬양'이 설교의 주제인 제목]
+#   2035s  수원은혜교회 황유석 목사 | 인생의 밤에 … 하나님을 찬양합니다 [C채널] 비전메시지
+#   2084s  빛의자녀교회 김형민 목사(빛의자녀 472회) - 무릎 꿇고 찬양하세요(샤인영성)
+#   둘 다 '찬양' 하나가 1순위에서 worship을 **확정**하고 있었다. 어휘를 빼면
+#   어느 쪽도 안 걸려 3순위로 내려가고, 채널(C채널방송:설교 · CBS설교)이 답한다.
+#
+# [왜 이 문맥에서만인가]
+#   'OOO교회 OOO 목사'는 **설교자 크레딧**이다. 찬양 콘티 제목에는 이 형태가
+#   붙지 않는다(합집합 1,927건에서 0건). 크레딧이 붙은 제목의 '찬양'은
+#   곡명이 아니라 설교의 주제일 가능성이 높다.
+#
+# [실측 — 7일치 합집합 1,927건]
+#   'OOO교회 OOO 목사' 매치           211건
+#   그중 worship 어휘가 걸리는 것        3건
+#     · 위 2건 (판정이 바뀐다 — 둘 다 목표)
+#     · 꿈의교회 김학중 목사(주일예배 실황 707회) — '예배실황'이 걸려 영향 없음
+#   판정 변화 2건 · 근거만 바뀌는 것 0건 · **오탐 0**
+#
+# ⛔ 이 목록을 늘리지 말 것. '찬양' 하나만 뺀다. '경배'·'특송' 등은 설교 제목에
+#   쓰이는 빈도가 다르고, 늘리려면 오탐을 다시 재야 한다(2.14 원칙).
+# ⚠ has_speaker_credit(안 A′)과 다른 규칙이다. 저쪽은 구간이 **통째로** "OOO 목사"인
+#   것을 보고 sermon을 **주장**한다. 이쪽은 교회명이 앞에 붙은 더 좁은 형태를 보고
+#   어휘 하나를 **버릴** 뿐이다. 둘을 합치지 말 것 — 주장의 세기가 다르다.
+_CHURCH_SPEAKER = re.compile(
+    r"(?:^|[|｜│┃ㅣ/(\[])\s*[가-힣]{2,10}(?:교회|성결교회|침례교회)\s+"
+    r"[가-힣]{2,4}\s*(?:담임|후임|협동|부)?\s*목사"
+)
+
+# 설교의 **주제**로 쓰이는 형식 어휘. 설교자 크레딧이 붙은 제목에서만 무시한다.
+SERMON_TOPIC_WORDS = ("찬양",)
+
+
+def has_church_speaker_credit(title: str) -> bool:
+    """제목에 'OOO교회 OOO 목사' 형태의 설교자 크레딧이 있는가 (안 B)."""
+    return bool(_CHURCH_SPEAKER.search(title))
+
+
+def _effective_keywords(title: str, media: MediaType) -> tuple[str, ...]:
+    """이 제목에 대해 실제로 셀 형식 어휘. 위 안 B가 여기서만 작동한다."""
+    if media.id != WORSHIP or not has_church_speaker_credit(title):
+        return media.title_keywords
+    return tuple(k for k in media.title_keywords if k not in SERMON_TOPIC_WORDS)
+
+
+# --- 곡명 나열 구조 (안 A · 2026-08-28) ------------------------------------
+#
+# ★ 곡명을 '/'·'+'로 이어붙인 제목은 그 자체가 **콘티라는 증거**다.
+#   지금까지 이 구조는 _break_media_tie에서 **동점일 때만** 쓰였다. 그런데
+#   어휘가 **하나도 안 걸리는** 콘티가 있고, 그러면 동점이 성립하지 않아
+#   구조를 아예 안 본 채 길이 규칙까지 내려간다.
+#
+#     1248s  [사랑의교회] 예수 피를 힘입어/문들아 머리 들어라/나는 주만 높이리/…  → sermon (길이)
+#     1226s  [사랑의교회] 두 손 들고/성령이여 내 영혼을/기뻐하며 승리의 노래 부르리/…  → sermon (길이)
+#   둘 다 찬양 콘티인데 **말씀 탭**에 나가고 있었다(사용자 신고).
+#
+# ⛔ **자리는 동점 판정 뒤 · 장절 앞이다. 1순위 앞으로 올리지 말 것.**
+#     동점 뒤    판정 변화 6건 · 근거가 이 규칙으로 옮겨가는 것 **2건**
+#     1순위 앞   판정 변화 7건 · 근거가 옮겨가는 것 **110건**
+#   1건을 더 얻으려고 110건의 근거를 새 규칙에 매다는 거래다. 남는 것이 없다.
+#
+# ⛔ **임계는 3이다. 2로 내리지 말 것.** 실측에서 곡명 2개는 가짜를 문다 —
+#     "꿈의교회 실시간 _ 천고덕 목사 설교 2026/8/23 _ …"   ← 날짜가 '/'로 잘린다
+#     "내가 죽고 예수님으로 사는 삶 (분당한신교회 / 윤교희 목사)"
+#     "[풀리는 복음 01] 예수 + a는 가짜 - 홍민기 목사"
+#   곡명≥2는 오탐 25건, 곡명≥3은 가드까지 걸면 **오탐 0**이다.
+#
+# [가드 두 개를 **모두** 건다 — 하나로는 부족하다]
+#   G1  나머지 구간에 sermon 어휘가 없을 것
+#   G2  곡명 조각에 장절·설교자 크레딧이 없을 것
+#   각각 단독으로도 실측 오탐 0이지만 둘 다 건다. 막는 대상이 같기 때문이다 —
+#   우리들교회 사역자설교의 '/' 관행이다.
+#     "[사역자설교] 하나님의 율법을 따라 / 에스라 7:11-20 - 이성훈 목사 / 김형진 평원지기"
+#       G1이 막는다: 나머지에 '[사역자설교]'의 **설교**가 있다
+#       G2가 막는다: 곡명 자리에 **에스라 7:11-20**(장절)과 **이성훈 목사**(크레딧)가 있다
+#
+# ⚠⚠ **확인되지 않은 취약점 — 두 가드가 한 채널의 현재 제목 관행에 기대고 있다.**
+#   우리들교회가 '[사역자설교]' 접두사를 떼고 장절 표기를 바꾸면 7건이 한꺼번에
+#   오탐이 된다. 그래서 그 7건 제목을 spread_test의 MUST_KEEP_SERMON에 박아 뒀다 —
+#   관행이 바뀌어 오분류가 생기면 **게이트가 실패한다.**
+CONTI_STRUCTURE_MIN_SONGS = 3
+
+
+def is_conti_structure(title: str, themes: Themes) -> bool:
+    """제목이 곡명 나열 구조인가 (안 A). 가드 둘을 모두 통과해야 참이다."""
+    songs, rest = split_conti(title)
+    if len(songs) < CONTI_STRUCTURE_MIN_SONGS:
+        return False
+    for media in themes.media_types:
+        if media.id == SERMON and matched_keywords(rest, media.title_keywords):
+            return False  # G1 — 나머지 구간이 설교라고 말한다
+    if any(has_scripture_reference(s) or has_speaker_credit(s) for s in songs):
+        return False  # G2 — 곡명 자리에 장절이나 크레딧이 있다
+    return True
+
+
 def classify_media_type(
     title: str,
     duration_seconds: int,
@@ -473,6 +577,7 @@ def classify_media_type(
 
         1. 제목 어휘 — **한쪽만** 걸릴 때 확정한다
         1.5 양쪽 다 걸리면(동점) 곡명 구조로 한 번 더 가른다 — _break_media_tie
+        1.6 어휘가 아무것도 안 걸려도 제목이 곡명 나열이면 worship (안 A)
         2. 본문 장절 — 있으면 sermon
         2.5 설교자 크레딧 — 구간 하나가 통째로 "OOO 목사"면 sermon (안 A′)
         3. 채널 content_type — sermon·worship·devotion이면 그대로
@@ -525,10 +630,12 @@ def classify_media_type(
     (PLAN.md 3.4) — 판별 실패로 영상이 사라지는 것보다 낫고, unknown 비율이
     사전을 고칠 근거가 된다. 주제 태깅의 untagged와는 성격이 다르다.
     """
+    # ⚠ media.title_keywords를 그대로 쓰지 않는다 — 안 B가 여기서 '찬양'을 뺀다.
+    #   설교자 크레딧이 붙은 제목에서만이고, 그 근거는 _effective_keywords 위에 있다.
     hit_ids = [
         media.id
         for media in themes.media_types
-        if matched_keywords(title, media.title_keywords)
+        if matched_keywords(title, _effective_keywords(title, media))
     ]
     if len(hit_ids) == 1:
         return MediaVerdict(hit_ids[0], REASON_TITLE)
@@ -537,6 +644,11 @@ def classify_media_type(
         broken = _break_media_tie(title, themes)
         if broken:
             return MediaVerdict(broken, REASON_CONTI)
+
+    # 안 A — 곡명 나열 구조. ⛔ 이 자리를 1순위 앞으로 올리지 말 것
+    #   (is_conti_structure 위 주석의 근거 표 참조).
+    if is_conti_structure(title, themes):
+        return MediaVerdict(WORSHIP, REASON_SONGLIST)
 
     if themes.scripture_reference_signal and has_scripture_reference(title):
         return MediaVerdict(SERMON, REASON_SCRIPTURE)

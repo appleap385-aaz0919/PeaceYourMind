@@ -385,6 +385,19 @@ def build_subcategories(
         for reason, item in promo_dropped[:PROMO_LOG_SAMPLE]:
             logger.info("  제외 [%s] %s", reason, item.video.title[:70])
 
+    # ★ 2026-08-28 — 제3범주 필터를 **주제분에도** 건다 (사용자 결정 · 2.89).
+    #   "주제어가 걸렸어도 인터뷰는 인터뷰다." 말씀 탭에서도 찬양 탭에서도 뺀다.
+    #   ⚠ 2.77 ④가 "경계를 옮길지 판단 필요"로 열어 둔 항목을 여기서 닫는다.
+    themed, themed_dropped = drop_promotional([t for t in tagged if not t.is_untagged])
+    if themed_dropped:
+        logger.info(
+            "주제분에서도 제3범주 %d건 제외 — 남은 주제 태깅 %d건",
+            len(themed_dropped),
+            len(themed),
+        )
+        for reason, item in themed_dropped[:PROMO_LOG_SAMPLE]:
+            logger.info("  제외 [%s] %s", reason, item.video.title[:70])
+
     # 신선도 컷 (2026-08-28) — 폴백 후보를 거르는 **두 번째이자 마지막 자리**다.
     # ⚠ 주제분에는 걸지 않는다. 이 컷은 폴백 전용이고, 근거는
     #   selection.FALLBACK_MAX_AGE_DAYS 주석에 있다.
@@ -400,9 +413,10 @@ def build_subcategories(
         )
 
     for position, (sub, theme_ids) in enumerate(ctx.themes.mapping.items()):
+        # ⚠ tagged가 아니라 themed다 — 제3범주를 뺀 주제 태깅분이다(위 참조).
         pool = [
             t
-            for t in tagged
+            for t in themed
             if t.video_id not in exclude and any(x in t.themes for x in theme_ids)
         ]
         # 탭별로 채운다 — 주제분 먼저, 부족분을 그 탭의 폴백이 (2026-08-26).
