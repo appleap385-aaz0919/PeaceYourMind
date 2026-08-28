@@ -433,19 +433,41 @@ jobs:
               core.info(`기존 Issue에 코멘트 (#${existing.number}): ${alert.title}`);
             }
 
-      - name: 주간 진단 요약 (월요일 저녁 슬롯 · 악화 시에만)
-        # ★ 저녁 슬롯(09:30 UTC 예약)에서만 돈다. 아래 "주간 기준선 갱신"과
-        #   **반드시 같은 조건**이어야 한다 — 둘이 어긋나면 비교 대상과 기준선이
-        #   따로 놀아 경보가 무의미해진다.
+      - name: 주간 진단 실행 여부 판정
+        id: weekly
+        # ★★ **판정을 한 곳에서 하고 두 스텝이 그 결과를 공유한다.**
+        #   전에는 아래 두 스텝이 각자 월요일을 판정했다(JS의 getUTCDay ·
+        #   bash의 date -u +%u). 같은 값을 두 번 계산하는 구조라 어긋날 수 있었고,
+        #   무엇보다 **둘 다 실행 시각을 봤다.**
         #
-        # [왜 슬롯을 가르는가 — 하루 2회로 늘리면서 생긴 조건]
-        #   게이트가 날짜(getUTCDay)뿐이면 월요일에 두 슬롯이 모두 통과한다.
-        #   그러면 1회차가 기준선을 오늘 값으로 덮어쓰고, 2회차는 "지난주"가 아니라
-        #   **12시간 전(오늘 1회차)** 과 비교하게 된다. 아래 [무엇과 비교하는가]가
-        #   통째로 깨지므로, 주 1회 판정은 한 슬롯에만 맡긴다.
-        #   수동 실행(workflow_dispatch)도 제외된다 — 임의 실행이 기준선을
-        #   말없이 갈아치우면 안 되기 때문이다.
+        # [왜 실행 시각을 보면 안 되나 — 2026-08-28 지연 실측]
+        #   09:30Z 예약이 19:55Z에 시작했다(10시간 25분, HANDOFF 2.78).
+        #   월요일 실행이 14시간 30분 이상 밀리면 UTC 화요일이 되어 게이트에 걸리고
+        #   **주간 진단과 기준선 갱신이 통째로 건너뛰어진다.** 실패도 로그도 없다.
+        #   그 주 악화 판정이 사라지고, 기준선이 안 밀려 다음 주는 2주 전과 비교한다.
+        #
+        # [무엇으로 바꿨나 — 두 축이다. 하나만 두지 말 것]
+        #   1. **예약 발동 시각**  실행 시각 이전의 가장 가까운 09:30Z.
+        #      24시간 미만의 지연을 전부 흡수한다.
+        #   2. **기준선 이후 경과일**  GitHub이 월요일 회차를 통째로 흘려보내면
+        #      1번으로는 못 잡는다(2026-08-27 21:30Z 슬롯이 실제로 그랬다).
+        #      8일이 넘으면 요일과 무관하게 돌려 그 주를 건너뛰지 않게 한다.
+        #   규칙은 scripts/lib/weekly.py에 있고 spread_test [12]가 고정한다.
+        #
+        # 슬롯 가르기는 그대로다 — 저녁 슬롯에서만 판정한다. 월요일에 두 슬롯이
+        # 모두 통과하면 1회차가 기준선을 덮어쓰고 2회차는 12시간 전과 비교하게 된다.
+        # 수동 실행도 제외된다 — 임의 실행이 기준선을 말없이 갈아치우면 안 된다.
         if: success() && env.DRY_RUN != 'true' && github.event.schedule == '30 9 * * *'
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+        run: python scripts/weekly_gate.py
+
+      - name: 주간 진단 요약 (악화 시에만)
+        # ★ 아래 "주간 기준선 갱신"과 **반드시 같은 조건**이어야 한다 — 둘이
+        #   어긋나면 비교는 했는데 기준선이 안 밀리거나(매주 같은 주와 비교)
+        #   비교 없이 기준선만 밀린다(악화를 영영 못 봄).
+        #   이제 둘 다 **같은 출력값 하나**를 본다. 따로 계산하지 말 것.
+        if: success() && env.DRY_RUN != 'true' && steps.weekly.outputs.due == 'true'
         # [왜 주 1회인가]
         #   진단은 매일 같은 값이 뜬다. 매일 알리면 소음이고, 아예 안 알리면
         #   나빠지는 것을 놓친다. 그래서 **악화됐을 때만** 주 1회 알린다.
@@ -457,11 +479,10 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            // 요일 판정은 여기서 하지 않는다 — 앞의 'weekly' 스텝이 이미 정했고
+            // 이 스텝은 그 결과로만 돈다. 여기에 날짜 검사를 다시 넣지 말 것
+            // (실행 시각 기준 판정이 지연에 무너진 것이 이 구조의 이유다).
             const fs = require('fs');
-            if (new Date().getUTCDay() !== 1) {
-              core.info('월요일 실행이 아니므로 주간 요약을 건너뜁니다.');
-              return;
-            }
             const curPath = 'dist/diagnostics.json';
             const basePath = '_previous/data/diagnostics.weekly.json';
             if (!fs.existsSync(curPath)) { core.info('진단 스냅샷 없음'); return; }
@@ -524,20 +545,16 @@ jobs:
             });
             core.info(`주간 진단 요약 Issue 생성 (악화 ${worse.length}건)`);
 
-      - name: 주간 기준선 갱신 (월요일 저녁 슬롯)
-        # ★ 위 "주간 진단 요약"과 **같은 조건이어야 한다.** 한쪽만 돌면
-        #   비교는 했는데 기준선이 안 밀리거나(매주 같은 주와 비교),
-        #   비교 없이 기준선만 밀린다(악화를 영영 못 봄).
-        if: success() && env.DRY_RUN != 'true' && github.event.schedule == '30 9 * * *'
-        # 월요일에만 기준선을 새로 쓴다. 다른 날은 쓰지 않으므로 gh-pages의
-        # 기존 파일이 keep_files: true로 그대로 남는다.
+      - name: 주간 기준선 갱신
+        # ★ 위 "주간 진단 요약"과 **같은 출력값**을 본다. 조건을 따로 쓰지 말 것 —
+        #   전에는 여기서 `date -u +%u`로 다시 판정했고, 그것이 실행 시각이라
+        #   지연에 무너졌다(HANDOFF 2.78 ②).
+        if: success() && env.DRY_RUN != 'true' && steps.weekly.outputs.due == 'true'
+        # 돌지 않는 날은 쓰지 않으므로 gh-pages의 기존 파일이
+        # keep_files: true로 그대로 남는다.
         run: |
-          if [ "$(date -u +%u)" = "1" ]; then
-            cp dist/diagnostics.json dist/diagnostics.weekly.json
-            echo "주간 기준선 갱신"
-          else
-            echo "월요일이 아니므로 기준선을 유지합니다"
-          fi
+          cp dist/diagnostics.json dist/diagnostics.weekly.json
+          echo "주간 기준선 갱신 — ${{ steps.weekly.outputs.due }}" 
 
       - name: 공개 배포 대상만 남기기
         if: env.DRY_RUN != 'true'

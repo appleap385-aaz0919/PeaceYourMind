@@ -20,6 +20,7 @@
   9. 경보가 Issue/Summary로 올바르게 갈린다 (2026-08-19 정책)
  10. 폴백 품질 필터가 공고·행사·홍보·제3범주만 빼고 찬양 콘티는 남긴다 (2026-08-20·27)
  11. 세분류별 오프셋이 같은 풀을 공유하는 화면을 갈라 준다 (2026-08-20)
+ 12. 주간 진단 게이트가 배치 지연·중복·누락에 흔들리지 않는다 (2026-08-28)
 """
 
 from __future__ import annotations
@@ -32,7 +33,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from build_videos import (
     IntegrityError,
@@ -50,6 +51,7 @@ from lib.results import (
     TaggedVideo,
     ThemeResult,
 )
+from lib.weekly import weekly_due
 from lib.selection import (
     MEDIA_FLOOR,
     PROMO_ANYWHERE,
@@ -1025,6 +1027,78 @@ def main() -> int:
         == set(t.video_id for t in rotate_for_subcategory(base, 7)),
         "⚠ 세트는 같다 — 공급이 늘기 전에는 여기까지다 (HANDOFF 3절 10번)",
     )
+
+    # =========================================================================
+    # 12. 주간 진단 게이트 — 배치가 지연돼도 도는가 (2026-08-28)
+    # =========================================================================
+    # 전에는 워크플로 인라인이 `new Date().getUTCDay() !== 1`로 판정했다.
+    # **실행 시각을 보므로 지연에 무너진다** — 09:30Z 예약이 19:55Z에 시작한
+    # 실측이 있고(HANDOFF 2.78), 14시간 30분을 넘기면 UTC 화요일이 되어
+    # 주간 진단과 기준선 갱신이 통째로 건너뛰어진다. 실패도 로그도 안 남는다.
+    print()
+    print("[12] 주간 진단 게이트 — 지연·중복·누락")
+
+    MON = datetime(2026, 8, 31, 9, 30, tzinfo=timezone.utc)   # 월요일 예약 시각
+    LAST = "2026-08-24T09:30:00Z"                             # 직전 월요일 기준선
+    KO = "월화수목금토일"
+
+    _check(failures, weekly_due(MON, LAST).due, "정상 — 월요일 정시 실행은 돈다")
+
+    # ★ 이 절의 이유. 2026-08-27 실측 지연(10시간 25분)을 그대로 재현한다.
+    d = weekly_due(MON + timedelta(hours=10, minutes=25), LAST)
+    _check(
+        failures, d.due,
+        "★ 지연 10h25m (같은 날) — 여전히 돈다",
+        f"{d.occurrence:%m-%d %H:%M}Z 회차로 판정",
+    )
+
+    # ★★ 자정을 넘겨 UTC 화요일이 된 경우 — 옛 게이트가 깨지던 바로 그 지점이다.
+    crossed = MON + timedelta(hours=16)     # 화요일 01:30Z
+    d = weekly_due(crossed, LAST)
+    _check(
+        failures, d.due and d.occurrence.weekday() == 0,
+        "★★ 지연 16h (자정 넘김) — 실행일은 화요일이지만 월요일 회차로 돈다",
+        f"실행 {KO[crossed.weekday()]} / 회차 {KO[d.occurrence.weekday()]}",
+    )
+
+    # 중복 방지 — 기준선을 방금 갱신했으면 같은 회차가 또 돌지 않는다
+    _check(
+        failures,
+        not weekly_due(MON + timedelta(hours=2), "2026-08-31T09:30:00Z").due,
+        "중복 방지 — 기준선이 방금 갱신됐으면 다시 돌지 않는다",
+    )
+    _check(
+        failures,
+        not weekly_due(
+            datetime(2026, 9, 2, 9, 30, tzinfo=timezone.utc), "2026-08-31T09:30:00Z"
+        ).due,
+        "평일 — 수요일 회차는 돌지 않는다",
+    )
+
+    # ★ 누락 안전망 — GitHub이 월요일 회차를 통째로 흘려보낸 경우.
+    #   2026-08-27 21:30Z 슬롯이 실제로 그랬다(HANDOFF 2.78).
+    d = weekly_due(datetime(2026, 9, 1, 9, 30, tzinfo=timezone.utc), LAST)   # 화요일
+    _check(
+        failures, d.due,
+        "★ 누락 안전망 — 월요일을 놓치면 다음 실행이 이어받는다",
+        f"기준선 이후 {d.elapsed_days:.1f}일",
+    )
+    _check(failures, weekly_due(MON, None).due, "기준선이 없으면 이번 값을 첫 기준선으로 삼는다")
+
+    # 두 스텝이 **같은 값 하나**를 쓰는지, 실행 시각 판정이 살아 있지 않은지.
+    # ⚠ 주석은 빼고 본다 — 왜 없앴는지를 적어 둔 자리에 그 이름이 남아 있다.
+    wf = (ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8")
+    live = "\n".join(
+        line for line in wf.splitlines() if not line.lstrip().startswith("#")
+    )
+    stale = [k for k in ("getUTCDay", "date -u +%u") if k in live]
+    _check(
+        failures,
+        wf.count("steps.weekly.outputs.due == 'true'") == 2 and not stale,
+        "두 스텝이 같은 출력값을 쓰고, 실행 시각 판정이 살아 있지 않다",
+        f"잔존: {', '.join(stale)}" if stale else "-",
+    )
+
 
     print("\n" + "=" * 76)
     if failures:
