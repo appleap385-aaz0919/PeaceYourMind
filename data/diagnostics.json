@@ -1,11 +1,11 @@
 {
-  "version": "2026-08-29T03:15:55Z",
-  "untagged_ratio": 0.664,
+  "version": "2026-08-29T14:38:59Z",
+  "untagged_ratio": 0.665,
   "unknown_ratio": 0.012,
-  "unknown_kept": 21,
+  "unknown_kept": 22,
   "tabs_over_cap": [],
   "tab_max_exposed": 20,
-  "kept": 1774,
+  "kept": 1776,
   "themes_empty": [
     "self_control"
   ],
@@ -54,7 +54,7 @@
     "patience": 8,
     "lament": 12,
     "comfort": 7,
-    "love": 31,
+    "love": 32,
     "presence": 11,
     "renewal": 17,
     "rest": 5,
@@ -64,7 +64,7 @@
     "new_thing": 3,
     "quiet_worship": 247,
     "creation": 2,
-    "daily_word": 169,
+    "daily_word": 167,
     "bible_story": 14,
     "hope": 26
   },
