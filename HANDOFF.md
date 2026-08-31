@@ -9152,7 +9152,29 @@ Phase 4  사전 보강 · UI 개정 · 구절 확장                            
 ```
 <!-- STATS:END -->
 
+**앱 사실** — ⛔ 손으로 적지 않는다. 아래 블록이 코드에서 읽어 채운다.
+
+<!-- STATS:BEGIN 앱 -->
+<!-- scripts/stats.py --write 로 생성한다. 손으로 고치지 말 것. -->
+```
+앱 아이디    io.github.appleap385.peaceinmind
+표시 이름    Peace in Mind
+버전        0.1.0  (versionCode 100)
+SDK        min 24 · compile 36 · target 36
+권한 선언    INTERNET
+권한 제거    SCHEDULE_EXACT_ALARM   (tools:node=remove)
+           ⚠ 플러그인이 병합해 넣는 것은 여기 없다 — APK로 확인한다(2.92)
+알림 채널    id morning_verse · importance 3 · vibration true · sound 지정 안 함
+           ⛔ 채널은 한 번 만들어지면 코드로 못 바꾼다(2.94)
+알림 예약    id 4100~4113 (14일 창) · 기본 시각 09:00 · 기본값 켜짐 true
+운영자       개인 개발자가 만들어 운영합니다
+문의처       appleap385@gmail.com
+```
+<!-- STATS:END -->
+
 게이트는 전부 종료 코드 0 · API 소모 0이다.
+⚠ `stats.py --check`는 **로컬 게이트다** — CI(build.yml)는 verify_verses ·
+  tagging_test · spread_test만 돈다. 커밋 전에 손으로 돌려야 한다.
 
 ---
 
@@ -9464,7 +9486,30 @@ calm.ease          creation 2        · quiet_worship 246
 
 ---
 
-**🔴 판단 — 무엇을 할 것인가**
+**✅ 적용 — A와 C를 했다 (2026-08-31 · 사용자 승인). B는 보류.**
+
+```
+A   stats.py에 두 번째 블록 「앱」을 넣었다. 3절에 자리가 있고 --check가 게이트다.
+    읽는 것  appId · 표시 이름 · 버전/versionCode · SDK 3종 · 권한(선언/제거) ·
+            알림 채널(id·importance·vibration·sound) · 알림 id 대역/창 ·
+            기본 시각/기본값 · OPERATOR · CONTACT
+    ⛔ 커밋된 파일만 읽는다. node_modules·빌드 산출물은 보지 않는다 —
+      같은 커밋이면 언제나 같은 답이어야 --check가 게이트로 성립한다
+    ★ 만들자마자 값을 하나 틀렸다 — WINDOW_DAYS 정규식이 SEEN_WINDOW_DAYS(30)를
+      먼저 물어 "30일 창"이 나왔다(정답 14). **조용히 틀린 값이 문서에 박히는 것이
+      바로 이 블록이 막으려던 일이다.** \b를 넣어 고쳤고 주석에 남겼다
+C   값은 블록에만 적고 산문은 블록을 가리킨다. 13절 Capacitor 블록에서
+    중복 값을 걷어냈다
+B   보류. 규칙을 손으로 유지하는 장치라 "규칙을 잊는" 실패로 되돌아온다
+```
+
+⚠ **정정** — 앞서 "게이트가 이미 CI에 있어 추가 배선이 없다"고 적었는데 **틀렸다.**
+  `stats.py --check`는 CI(build.yml)에 없다 — 로컬 게이트다. CI는 verify_verses ·
+  tagging_test · spread_test만 돈다. 🔴 CI에 넣을지는 따로 판단할 것.
+
+---
+
+**🔴 판단 — 무엇을 할 것인가 (2026-08-31 판단 완료. 아래는 그때의 정리다)**
 
 ```
 권한다  A를 한다. ④⑤ 같은 값 불일치가 **다시 일어날 수 없게** 되고,
@@ -10493,14 +10538,13 @@ PYM이 쓴 6개와 작성 기준 5항을 그대로 가져가면 된다
 왜 Capacitor  이미 PWA로 완성돼 있어 웹뷰를 그대로 싣는 방식이 가장 적은 변경이다
               (React Native·Flutter는 앱을 다시 쓰는 일이다)
 
-✅ 정해졌다   앱 아이디       io.github.appleap385.peaceinmind
-             표시 이름       Peace in Mind  (short_name 13자 · 2.58 ⑥)
+✅ 정해졌다   앱 아이디 · 표시 이름 · SDK · 권한 · 알림 채널
+             ⛔ **값은 여기 적지 않는다.** 3절 「앱 사실」 블록이 코드에서 읽어
+               채운다(stats.py --check가 게이트다). 두 곳에 적으면 갈라진다
              아이콘·스플래시  03-c "끊긴 원 · 숨" — gen_icons.py가 생성한다 (2.91)
-             최소 지원 OS    minSdk 24 (Capacitor 8.5.0 하한) · compile/target 36
              웹뷰 급전 방식   ⛔ server.url을 쓰지 않는다. 번들로 돈다 (2.90)
-             권한            INTERNET · POST_NOTIFICATIONS ·
-                            RECEIVE_BOOT_COMPLETED · WAKE_LOCK
-                            ⛔ SCHEDULE_EXACT_ALARM은 걷어냈다 (2.92)
+             권한 병합       플러그인이 POST_NOTIFICATIONS · RECEIVE_BOOT_COMPLETED ·
+                            WAKE_LOCK을 넣는다. 병합 결과는 APK로 확인했다(2.92)
 
 🔴 남은 미결   **iOS도 낼 것인가 — 이것 하나뿐이다.**
              Apple 개발자 계정 연 US$99 · 심사 기준이 다르다
