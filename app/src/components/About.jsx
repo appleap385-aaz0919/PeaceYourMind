@@ -150,7 +150,7 @@ export function About({ attribution, onBack }) {
           <h2 style={styles.heading}>광고</h2>
           <p style={styles.note}>
             이 앱은 무료로 운영됩니다. 무료 서비스 제공을 위해 영상 목록에 광고를
-            최소한으로 싣습니다. 성경 본문을 읽는 자리에는 광고를 두지 않습니다.
+            최소한으로 싣습니다. 위급할 때 보는 화면과 알림으로 열린 구절에는 광고를 두지 않습니다.
           </p>
         </section>
       ) : null}
