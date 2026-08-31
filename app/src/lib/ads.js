@@ -30,8 +30,24 @@ export const AD_CLIENT = "ca-pub-5074778849873789";
  * ⚠ 비어 있으면 광고 요소를 아예 그리지 않는다(AdSlot.jsx).
  *   빈 박스를 배포하지 않기 위해서다 — 자리만 잡아 둔 회색 상자는
  *   "고장난 화면"으로 읽히고, 위계 실측(2.35·2.36)도 헛것을 재게 된다.
+ *
+ * ⛔ **승인이 나면 WEB_AD_SLOT에만 값을 넣는다.** 아래 IS_APP 분기가
+ *   앱에서는 그 값을 무시한다 — AdSense 프로그램 정책이 앱 안의 AdSense를
+ *   금지하기 때문이다("Integrated into a software application ...").
+ *   ⚠ 여기를 고쳐 앱에도 값이 가게 만들지 말 것. 앱 광고는 AdMob으로 따로 간다.
  */
-export const AD_SLOT = "";
+const WEB_AD_SLOT = "";
+
+/**
+ * 앱(Capacitor) 빌드인가. vite define이 넣는다.
+ *
+ * ⚠ `typeof` 가드가 필요하다 — 이 모듈은 노드 테스트(ads.test.js)가 직접
+ *   import하고, 거기에는 vite의 치환이 없다. chapters.js가 __KRV_BASE__에
+ *   쓰는 것과 같은 형태다. 기본값은 웹(false)이다.
+ */
+const IS_APP = typeof __IS_APP__ === "boolean" ? __IS_APP__ : false;
+
+export const AD_SLOT = IS_APP ? "" : WEB_AD_SLOT;
 
 /** 규격. 320은 우연이 아니라 App.jsx의 좌우 여백 20px에서 나온 값이다(2.51). */
 export const AD_WIDTH = 320;

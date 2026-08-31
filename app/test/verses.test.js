@@ -190,10 +190,26 @@ for (const [file, why] of AD_FREE_SCREENS) {
 
 test("개인정보처리방침으로 가는 길이 앱에 있다", () => {
   // 방침이 배포돼 있어도 앱에서 갈 수 없으면 고지가 되지 않는다 (출처 표기와 같은 논리).
+  //
+  // [매체마다 주소가 다르다 — 2026-08-31]
+  //   웹은 같은 오리진의 상대 경로, 앱(Capacitor)은 오리진이 https://localhost/ 라
+  //   그 경로가 404다. 그래서 배포된 절대 주소를 연다. **둘 다** 비면 안 되므로
+  //   한쪽만 검사하지 않는다 — 앱만 빈 채로 배포되는 것이 가장 놓치기 쉽다.
   assert.ok(aboutSrc.includes("PRIVACY_URL"), "방침 링크 상수가 없다");
+  for (const name of ["PRIVACY_URL_WEB", "PRIVACY_URL_APP"]) {
+    assert.ok(
+      new RegExp(`const ${name} = "[^"]+"`).test(aboutSrc),
+      `${name}이 비어 있다 — 빈 문자열이면 링크가 그려지지 않는다`,
+    );
+  }
+  // 앱 쪽은 반드시 절대 URL이어야 한다. 상대 경로면 앱에서 404가 난다.
   assert.ok(
-    /const PRIVACY_URL = "[^"]+"/.test(aboutSrc),
-    "PRIVACY_URL이 비어 있다 — 빈 문자열이면 링크가 그려지지 않는다",
+    /const PRIVACY_URL_APP = "https:\/\/[^"]+"/.test(aboutSrc),
+    "PRIVACY_URL_APP이 절대 https 주소가 아니다 — 앱 오리진에서 열리지 않는다",
+  );
+  assert.ok(
+    /const PRIVACY_URL = __IS_APP__ \? PRIVACY_URL_APP : PRIVACY_URL_WEB;/.test(aboutSrc),
+    "매체 분기가 없다 — 한쪽 주소가 양쪽에 쓰인다",
   );
   assert.ok(aboutSrc.includes("개인정보처리방침"), "링크 문구가 없다");
 });
@@ -717,9 +733,17 @@ test("이름을 바꿔도 경로·식별자는 구명 그대로다 (심사·PWA�
   );
   assert.equal(manifest.start_url, BASE_PATH, "start_url이 바뀌면 설치된 PWA가 깨진다");
   assert.equal(manifest.scope, BASE_PATH, "scope가 바뀌면 서비스워커가 페이지를 못 잡는다");
+  // ⚠ 매체마다 상수가 둘이다(2026-08-31). **둘 다** 이 경로를 품어야 한다 —
+  //   웹은 상대 경로, 앱은 같은 경로를 붙인 절대 URL이다. 한쪽만 검사하면
+  //   이름을 바꿀 때 앱 쪽이 조용히 404가 된다.
   assert.ok(
-    aboutSrc.includes('const PRIVACY_URL = "' + BASE_PATH + 'privacy/"'),
-    "About의 방침 링크 경로가 바뀌었다 — 404가 난다",
+    aboutSrc.includes('const PRIVACY_URL_WEB = "' + BASE_PATH + 'privacy/"'),
+    "About의 웹 방침 링크 경로가 바뀌었다 — 404가 난다",
+  );
+  assert.ok(
+    aboutSrc.includes('const PRIVACY_URL_APP = "https://') &&
+      aboutSrc.includes(BASE_PATH + 'privacy/"'),
+    "About의 앱 방침 링크 경로가 바뀌었다 — 앱에서 404가 난다",
   );
   // 이름 쪽 오염 방지: 표시명은 공백을 포함한다. 경로 자리에 끼어들면 URL이 깨진다.
   for (const [where, text] of [

@@ -1,0 +1,8 @@
+{
+  "appId": "io.github.appleap385.peaceinmind",
+  "appName": "Peace in Mind",
+  "webDir": "dist-app",
+  "android": {
+    "backgroundColor": "#0B1216"
+  }
+}

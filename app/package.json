@@ -9,16 +9,22 @@
     "dev": "vite",
     "prebuild": "npm run gen:data",
     "build": "vite build",
+    "prebuild:app": "npm run gen:data",
+    "build:app": "vite build --mode capacitor",
+    "sync:app": "npm run build:app && cap sync android",
     "preview": "vite preview",
     "pretest": "npm run gen:data",
-    "test": "node --test test/behavior.test.js test/normalize.parity.test.js test/verses.test.js test/chapters.test.js test/ads.test.js"
+    "test": "node --test test/behavior.test.js test/normalize.parity.test.js test/verses.test.js test/chapters.test.js test/ads.test.js test/appbuild.test.js"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
     "idb": "^8.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
     "@vitejs/plugin-react": "^4.3.1",
     "vite": "^5.4.0"
   }

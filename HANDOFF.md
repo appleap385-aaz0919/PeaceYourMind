@@ -75,7 +75,7 @@ self_control 0 · rest 0
 감정 분류   대분류 9 · 세분류 24 · 키워드 923
 채널       allowlist 22 (하한 15까지 여유 7)
            blocklist 0 · reviewed_out 13
-게이트      파이썬 5종 + 앱 164건
+게이트      파이썬 5종 + 앱 185건
 ```
 <!-- STATS:END -->
 
@@ -8865,7 +8865,7 @@ Phase 4  사전 보강 · UI 개정 · 구절 확장                            
 감정 분류   대분류 9 · 세분류 24 · 키워드 923
 채널       allowlist 22 (하한 15까지 여유 7)
            blocklist 0 · reviewed_out 13
-게이트      파이썬 5종 + 앱 164건
+게이트      파이썬 5종 + 앱 185건
 ```
 <!-- STATS:END -->
 

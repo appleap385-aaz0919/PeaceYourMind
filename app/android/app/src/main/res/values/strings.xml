@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Peace in Mind</string>
+    <string name="title_activity_main">Peace in Mind</string>
+    <string name="package_name">io.github.appleap385.peaceinmind</string>
+    <string name="custom_url_scheme">io.github.appleap385.peaceinmind</string>
+</resources>

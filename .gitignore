@@ -41,6 +41,11 @@ venv/
 node_modules/
 app/dist/
 
+# 앱(Capacitor) 번들. dist와 **반드시 갈라 둔다** —
+# deploy-app.yml이 app/dist를 웹에 올리므로 같은 자리에 쓰면
+# 앱 번들이 웹으로 배포될 수 있다 (vite.config.js 주석).
+app/dist-app/
+
 # themes.yaml에서 빌드 때마다 생성한다.
 # 사본을 커밋하면 원본과 반드시 어긋난다 — 단일 소스를 지킨다.
 app/src/data/themes.json

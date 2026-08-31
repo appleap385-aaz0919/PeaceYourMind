@@ -1,0 +1,80 @@
+apply plugin: 'com.android.application'
+
+/*
+ * 버전 — package.json이 단일 소스다. 손으로 적지 않는다.
+ *
+ * [왜 두 값을 계산으로 뽑는가]
+ *   versionName  사용자와 "이 앱에 대해" 화면이 보는 값. package.json 그대로다
+ *   versionCode  스토어가 보는 값. **정수여야 하고 단조 증가해야 한다.**
+ *                올리는 것을 잊으면 업로드가 거부되고, 손으로 적으면
+ *                versionName과 어긋난다 — 둘이 갈리면 어느 빌드인지 알 수 없다.
+ *
+ * 규칙  major*10000 + minor*100 + patch      0.1.0 -> 100
+ *       ⚠ minor·patch가 99를 넘으면 자리가 겹친다. 그 전에 규칙을 바꿀 것.
+ *
+ * ⚠ vite.config.js도 같은 package.json에서 __APP_VERSION__을 읽는다.
+ *   세 곳(앱 화면·versionName·versionCode)이 한 파일에서 나온다.
+ */
+def pkg = new groovy.json.JsonSlurper().parse(file("../../package.json"))
+def parts = pkg.version.tokenize('.').collect { it.toInteger() }
+if (parts.size() != 3) {
+    throw new GradleException("package.json version이 major.minor.patch 형태가 아닙니다: ${pkg.version}")
+}
+if (parts[1] > 99 || parts[2] > 99) {
+    throw new GradleException("minor/patch가 99를 넘어 versionCode 자리가 겹칩니다: ${pkg.version}")
+}
+def pymVersionName = pkg.version
+def pymVersionCode = parts[0] * 10000 + parts[1] * 100 + parts[2]
+
+android {
+    namespace = "io.github.appleap385.peaceinmind"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "io.github.appleap385.peaceinmind"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode pymVersionCode
+        versionName pymVersionName
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

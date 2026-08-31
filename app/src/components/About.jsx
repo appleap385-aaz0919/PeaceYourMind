@@ -50,7 +50,19 @@ const OPERATOR = "개인 개발자가 만들어 운영합니다";
 const CONTACT = "appleap385@gmail.com";
 // 개인정보처리방침 — app/public/privacy/index.html 이 이 주소로 배포된다.
 // 앱과 같은 오리진의 정적 페이지라 앱을 설치하지 않아도 열린다(스토어 심사 요건).
-const PRIVACY_URL = "/PeaceYourMind/privacy/";
+//
+// [앱에서는 배포된 절대 주소를 연다 — 2026-08-31]
+//   앱의 오리진은 https://localhost/ 이므로 위 상대 경로는 404다. 그리고
+//   ⚠ **번들에 사본을 넣지 않는다**(vite.config.js가 dist-app/privacy를 지운다):
+//     ① 방침 페이지에도 소유권 확인용 AdSense 태그가 있다 — 앱에서 광고 코드를
+//        빼기로 한 결정과 정면으로 부딪힌다
+//     ② 스토어가 요구하는 것은 **앱 밖에서 열리는 URL**이고, 사본을 함께 두면
+//        고칠 곳이 둘이 되어 언젠가 갈린다
+//   Capacitor는 외부 URL을 기본적으로 시스템 브라우저로 연다(server.allowNavigation
+//   기본값 []). 유튜브로 나가는 흐름과 같은 방식이다.
+const PRIVACY_URL_WEB = "/PeaceYourMind/privacy/";
+const PRIVACY_URL_APP = "https://appleap385-aaz0919.github.io/PeaceYourMind/privacy/";
+const PRIVACY_URL = __IS_APP__ ? PRIVACY_URL_APP : PRIVACY_URL_WEB;
 
 /**
  * 하단 고정 "돌아가기"의 id — 떠 있는 버튼이 이것을 찾아 겹침을 피한다.
