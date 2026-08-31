@@ -68,7 +68,11 @@ KRV_PATH = ROOT / "data" / "krv" / "bible_1961_krv.json"
 DEFAULT_OUT = ROOT / "app" / "src" / "data" / "verses.json"
 
 # 앱 번들에 남기는 필드. 이 목록에 없는 것은 전부 제거된다.
-APP_FIELDS = ("id", "ref", "text", "emotion_tags", "theme")
+# notify는 **제외된 구절에만** 있다(notify: false). 없으면 알림 대상이라는 뜻이고,
+# 앱은 `verse.notify !== false`로 읽는다. 빠진 값을 기본값으로 쓰는 이 형태가
+# 293건 중 23건에만 표시를 남겨 번들도 작고 diff도 읽힌다.
+# ⚠ notify_note는 여기 없다 — note와 같은 큐레이션 메타이고 앱이 쓰지 않는다.
+APP_FIELDS = ("id", "ref", "text", "emotion_tags", "theme", "notify")
 # read_from은 여기 없다 — 큐레이션 입력이고, 결과는 read.from에 이미 반영된다
 CRISIS_APP_FIELDS = ("id", "ref", "text")
 
@@ -229,6 +233,49 @@ def validate(
     if empty:
         problems.append(f"text가 빈 구절 {len(empty)}건 — {', '.join(empty[:5])}")
 
+    problems.extend(check_notify_pool(verses_file))
+
+    return problems
+
+
+# 아침 알림이 고를 수 있는 구절 수. 시편 전체와 notify: false를 뺀 나머지다.
+# ⚠ 큐레이션이 늘면 이 값도 늘어야 한다 — 게이트가 알려 주면 그때 함께 올린다.
+EXPECT_NOTIFY_POOL = 107
+
+
+def check_notify_pool(verses_file: VersesFile) -> list[str]:
+    """알림 풀이 설계대로 남는지 본다 (2026-08-31).
+
+    [왜 게이트인가]
+      알림 구절은 **화면과 다른 기준**으로 걸러진다. 시편 전체를 빼고(1인칭
+      고백이 감정을 넘겨짚는다) 서사·탄식 등 23건을 더 뺀다. 이 규칙은 코드가
+      아니라 데이터에 있으므로, 큐레이션을 손대다 풀이 조용히 비거나 넘칠 수
+      있다. 여기서 세어 두면 그날 바로 걸린다.
+
+    ⛔ 위기 풀(crisis)은 애초에 세지 않는다 — 알림이 그 배열을 읽지 않는다.
+    """
+    problems: list[str] = []
+    flagged = [v["id"] for v in verses_file.verses if v.get("notify") is False]
+    no_reason = [
+        v["id"] for v in verses_file.verses
+        if v.get("notify") is False and not str(v.get("notify_note", "")).strip()
+    ]
+    if no_reason:
+        problems.append(
+            f"notify: false인데 notify_note가 없는 구절 {len(no_reason)}건 — "
+            f"{', '.join(no_reason[:5])}  (왜 뺐는지 남기지 않으면 되살릴 수 없다)"
+        )
+
+    pool = [
+        v for v in verses_file.verses
+        if v.get("notify") is not False and not str(v["ref"]).startswith("시편 ")
+    ]
+    if len(pool) != EXPECT_NOTIFY_POOL:
+        problems.append(
+            f"알림 풀 {len(pool)}건 — 기대 {EXPECT_NOTIFY_POOL}건과 다르다 "
+            f"(시편 제외 · notify: false {len(flagged)}건 제외). "
+            "큐레이션이 늘었다면 EXPECT_NOTIFY_POOL을 함께 올릴 것"
+        )
     return problems
 
 

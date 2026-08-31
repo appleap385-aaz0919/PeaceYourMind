@@ -299,7 +299,20 @@ def main() -> int:
         emit(RES / f"mipmap-{name}" / "ic_launcher.png", cropped(full, legacy, "squircle"))
         emit(RES / f"mipmap-{name}" / "ic_launcher_round.png", cropped(full, legacy, "circle"))
 
-    # --- 배경색 -------------------------------------------------------------
+    # --- 테마 색 ------------------------------------------------------------
+    # ⚠ 주석으로 "theme.js와 맞추세요"라고만 두면 언젠가 갈라진다. 아이콘과
+    #   같은 출처에서 같이 뽑아 --check가 함께 지키게 한다 (2026-08-31).
+    emit(RES / "values" / "colors.xml", text=(
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        "<!-- scripts/gen_icons.py가 app/src/theme.js에서 생성한다. 손으로 고치지 말 것. -->\n"
+        "<resources>\n"
+        '    <color name="pym_ink_deep">#%02X%02X%02X</color>\n'
+        '    <color name="pym_ink">#%02X%02X%02X</color>\n'
+        '    <color name="pym_jade">#%02X%02X%02X</color>\n'
+        "</resources>\n" % (INKDEEP + INK + JADE)
+    ))
+
+    # --- 아이콘 배경색 -------------------------------------------------------
     emit(RES / "values" / "ic_launcher_background.xml", text=(
         '<?xml version="1.0" encoding="utf-8"?>\n'
         "<!-- scripts/gen_icons.py가 생성한다. theme.js의 inkDeep이다. -->\n"

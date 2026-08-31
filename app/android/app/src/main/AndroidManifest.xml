@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -38,4 +39,23 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
+      [SCHEDULE_EXACT_ALARM을 걷어낸다 — 2026-08-31]
+        @capacitor/local-notifications의 매니페스트가 이 권한을 선언해 자동으로
+        병합된다. 우리에게는 필요 없고, 두면 손해만 있다.
+
+          · 매일 정한 시각의 알림은 Google 자신이 **inexact를 권하는** 용도다.
+            정확한 알람은 알람시계·캘린더의 것이다
+          · Android 14 신규 설치에는 **자동 부여되지 않는다.** 있으나 마나다
+          · 스토어 권한 목록에 한 줄이 더 늘어난다
+
+        ★ 플러그인이 스스로 우아하게 떨어진다 — canScheduleExactAlarms()로
+          판정해 없으면 setAndAllowWhileIdle/set(inexact)로 예약한다
+          (LocalNotificationManager.kt:357-371). 알림이 몇 분 늦게 올 수 있고,
+          이 앱에는 오히려 그편이 맞다 — 알람시계의 감각은 우리 것이 아니다.
+      ⛔ 이 줄을 지우면 권한이 조용히 다시 들어온다.
+    -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        tools:node="remove" />
 </manifest>

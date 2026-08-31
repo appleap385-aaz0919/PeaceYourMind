@@ -26,11 +26,21 @@
  *   단정형("아닙니다", "이용해 주세요")을 쓴다.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AD_SLOT } from "../lib/ads.js";
 import { clearAllLocalData, clearBrowsingTraces } from "../lib/db.js";
+import {
+  DEFAULT_TIME,
+  ensurePermission,
+  readSettings,
+  refreshSchedule,
+  setEnabled,
+  setTime,
+} from "../lib/notify.js";
 import { T, SERIF } from "../theme.js";
+
+const IS_APP = typeof __IS_APP__ === "boolean" ? __IS_APP__ : false;
 
 // vite.config.js가 package.json에서 주입한다. 손으로 적지 않는다.
 const VERSION = typeof __APP_VERSION__ === "string" ? __APP_VERSION__ : "";
@@ -75,6 +85,11 @@ export function About({ attribution, onBack }) {
   return (
     <div className="rise">
       <h1 style={styles.title}>이 앱에 대해</h1>
+
+      {/* 알림 설정을 **위쪽에** 둔다. 이 화면은 절이 일곱이라 길고, 조작하는
+          것이 아래에 있으면 찾지 못한다. 읽는 절보다 누르는 절이 먼저다.
+          ⚠ 앱에서만 그린다 — 웹에는 로컬 알림이 없다. */}
+      {IS_APP ? <NotifySettings /> : null}
 
       <section style={styles.block}>
         <h2 style={styles.heading}>성경 본문</h2>
@@ -213,6 +228,120 @@ export function About({ attribution, onBack }) {
  *     3) "지웠어요"           → 상태만 바뀐다. 화면을 가로막지 않는다
  *   물러설 길을 함께 둔다 — 2)에서 "아니요"가 옆에 있다.
  */
+/**
+ * 아침 알림 설정 — 토글 하나와 시각 하나.
+ *
+ * [권한은 켜는 순간에만 묻는다]
+ *   ⛔ 첫 실행에 묻지 않는다. 이 앱의 첫 화면은 "지금 마음이 어떠세요"이고,
+ *     거기에 시스템 팝업을 얹으면 첫인상이 다이얼로그가 된다.
+ *   거부하면 토글을 되돌리고 문장 하나로만 말한다 — 앱을 실패로 말하지
+ *   않는다(offline.js "오프라인은 오류가 아니다"와 같은 태도).
+ *   ⚠ Android 13+는 두 번 거부하면 다시 묻지 못한다. 그때 설정으로 보낸다.
+ */
+function NotifySettings() {
+  const [on, setOn] = useState(false);
+  const [time, setTimeText] = useState(DEFAULT_TIME);
+  const [denied, setDenied] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  /**
+   * [⚠ 기본값이 켜짐이라 생기는 구멍을 여기서 막는다 — 2026-08-31 실측]
+   *   설계는 "기본값 켜짐" + "권한은 토글을 켜는 순간에만"이었다. 그런데 둘을
+   *   같이 두면 **사용자가 토글을 누를 일이 없다.** 실기기에서 확인한 상태:
+   *     토글 "켜짐" · permission "prompt" · 예약 0건
+   *   스위치가 켜졌다고 말하는데 아무것도 오지 않는다. 스위치가 거짓말을 한다.
+   *
+   *   그래서 **이 화면을 열 때** 묻는다. 첫 실행에 묻지 않는다는 약속은
+   *   그대로다 — 입력 화면은 건드리지 않고, 사용자가 설정이 있는 자리로
+   *   직접 들어온 순간이다.
+   *   ⛔ 거부하면 설정도 꺼진다. 스위치와 저장값이 어긋나면 안 된다.
+   */
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const s = await readSettings();
+      if (!alive) return;
+      // ⚠ **먼저 그린다.** 권한 팝업을 기다리는 동안 ready를 잡아 두면 이 절이
+      //   통째로 사라진다 — 실기기에서 그렇게 나왔다(2026-08-31). 사용자는
+      //   About을 열었는데 알림 설정이 없는 화면을 보게 된다.
+      setTimeText(s.time);
+      setOn(s.on);
+      setReady(true);
+      if (!s.on) return;
+
+      const ok = await ensurePermission(); // 이미 있으면 팝업 없이 통과한다
+      if (!alive) return;
+      setOn(ok);
+      setDenied(!ok);
+      if (ok) {
+        await refreshSchedule();
+      } else {
+        await setEnabled(false); // 저장값도 함께 끈다
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const toggle = async () => {
+    const next = !on;
+    setOn(next); // 먼저 움직인다 — 누른 것이 반응해야 한다
+    const ok = await setEnabled(next);
+    if (!ok) {
+      setOn(false); // 권한을 못 받았다. 되돌린다
+      setDenied(true);
+    } else {
+      setDenied(false);
+    }
+  };
+
+  const changeTime = async (value) => {
+    setTimeText(value);
+    await setTime(value);
+  };
+
+  if (!ready) return null;
+
+  return (
+    <section style={styles.block}>
+      <h2 style={styles.heading}>아침 알림</h2>
+      <p style={styles.note}>
+        정한 시각에 구절 한 절을 보냅니다. 기기 안에서만 동작하며 아무것도
+        전송하지 않습니다.
+      </p>
+      <div style={styles.notifyRow}>
+        <button
+          type="button"
+          onClick={toggle}
+          role="switch"
+          aria-checked={on}
+          style={{ ...styles.toggle, ...(on ? styles.toggleOn : null) }}
+        >
+          {on ? "켜짐" : "꺼짐"}
+        </button>
+        {on ? (
+          <label style={styles.timeLabel}>
+            <span style={styles.timeText}>시각</span>
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => changeTime(e.target.value)}
+              style={styles.timeInput}
+            />
+          </label>
+        ) : null}
+      </div>
+      {denied ? (
+        <p style={styles.note}>
+          알림 권한이 없어 보낼 수 없어요. 기기 설정에서 이 앱의 알림을 켜면
+          다시 받을 수 있습니다.
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
 function EraseRecords() {
   const [step, setStep] = useState("idle"); // idle → asking → done
 
@@ -274,6 +403,33 @@ const styles = {
     textDecoration: "underline",
     textUnderlineOffset: 3,
   },
+  // --- 아침 알림 --------------------------------------------------------
+  // 이 화면의 조용한 기준선(13px · T.muted)을 따른다. 조작하는 자리라
+  // 토글에만 테두리를 준다 — 누를 수 있다는 신호는 그것으로 충분하다.
+  notifyRow: { display: "flex", alignItems: "center", gap: 16, margin: "10px 0 0" },
+  toggle: {
+    padding: "7px 16px",
+    background: "none",
+    border: `1px solid ${T.muted}59`,
+    borderRadius: 99,
+    color: T.muted,
+    fontSize: 13,
+    fontFamily: "inherit",
+  },
+  toggleOn: { borderColor: `${T.jade}80`, color: T.jade },
+  timeLabel: { display: "flex", alignItems: "center", gap: 8 },
+  timeText: { fontSize: 13, color: T.muted },
+  timeInput: {
+    background: "none",
+    border: "none",
+    borderBottom: `1px solid ${T.muted}40`,
+    color: T.mist,
+    fontSize: 14,
+    fontFamily: "inherit",
+    padding: "2px 0",
+    colorScheme: "dark", // ⚠ 없으면 시간 선택기가 흰 바탕으로 뜬다
+  },
+
   back: {
     display: "block",
     margin: "20px auto 0",

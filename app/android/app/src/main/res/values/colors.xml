@@ -1,12 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  앱 색 — app/src/theme.js의 토큰을 옮긴 것이다.
-
-  ⚠ 여기는 **손으로 유지한다.** 아이콘 배경색(ic_launcher_background.xml)은
-    scripts/gen_icons.py가 생성하지만, 테마 색은 안드로이드 리소스 참조가
-    걸려 있어 생성물로 만들면 스크립트가 테마까지 알아야 한다.
-    theme.js를 고치면 이 파일도 함께 고칠 것.
--->
+<!-- scripts/gen_icons.py가 app/src/theme.js에서 생성한다. 손으로 고치지 말 것. -->
 <resources>
     <color name="pym_ink_deep">#0B1216</color>
     <color name="pym_ink">#141E24</color>

@@ -146,4 +146,13 @@ export const KEYS = {
   VISIT_DATE: "visit_date",
   LAST_SUBCATEGORY_ID: "last_subcategory_id",
   MESSAGE_INDEXES: "message_indexes", // 직전에 보여준 문구 인덱스 (문구 회전용)
+
+  // --- 아침 알림 (2026-08-31) ---------------------------------------------
+  NOTIFY_ON: "notify_on", // 켜짐 여부
+  NOTIFY_TIME: "notify_time", // "09:00"
+  // ⛔ VERSE_INDEXES를 재사용하지 않는다. 그것은 "화면이 마지막으로 보여준
+  //   구절"이고 목적이 다르다 — 섞으면 알림 때문에 화면의 구절 회전이
+  //   건너뛰어진다. 알림은 제 기록을 따로 갖는다.
+  NOTIFY_SEEN: "notify_seen", // {verseId: ISO 날짜}. 30일 지나면 버린다
+  NOTIFY_LAST_BOOK: "notify_last_book", // 창을 이어 붙일 때 연속 금지용
 };
