@@ -93,7 +93,14 @@ export function verseFontSize(text) {
 }
 
 
-export function VerseCard({ verse, onNext, canRotate }) {
+/**
+ * @param {boolean} hideRef 참조를 그리지 않는다.
+ *   알림 화면(DailyVerse)이 참조를 **머리 줄로 올려** 쓰기 때문이다. 거기서는
+ *   "다른 구절" 버튼이 없어 참조만 외따로 남고, 바로 아래 이어서 읽기 헤더와
+ *   같은 색·같은 서체로 연달아 나와 경쟁했다(2026-08-31 실기기 비교).
+ *   ⛔ 결과 화면에서는 쓰지 않는다 — 거기 참조는 "다른 구절"과 한 몫이다.
+ */
+export function VerseCard({ verse, onNext, canRotate, hideRef = false }) {
   if (!verse) return null;
 
   return (
@@ -103,7 +110,7 @@ export function VerseCard({ verse, onNext, canRotate }) {
       <p style={{ ...styles.text, fontSize: verseFontSize(verse.text) }}>{verse.text}</p>
 
       <p style={styles.meta}>
-        <span style={styles.ref}>{verse.ref}</span>
+        {hideRef ? null : <span style={styles.ref}>{verse.ref}</span>}
         {canRotate ? (
           <>
             <span style={styles.dot}>·</span>

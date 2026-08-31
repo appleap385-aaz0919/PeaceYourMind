@@ -1,5 +1,5 @@
 /**
- * 아침 알림 — 고르는 규칙과 알림 계약.
+ * 구절 알림 — 고르는 규칙과 알림 계약.
  *
  * 여기서 지키는 것
  *   · 풀이 설계대로 걸러진다 (시편 전체 · notify: false · 위기 격리)
@@ -18,6 +18,7 @@ import { dirname, join } from "node:path";
 
 import {
   SEEN_WINDOW_DAYS,
+  dropScheduled,
   WINDOW_DAYS,
   notificationContent,
   notifyPool,
@@ -35,7 +36,7 @@ const verses = JSON.parse(
 const notifySrc = readSource("lib", "notify.js");
 const selectSrc = readSource("lib", "notifySelect.js");
 const aboutSrc = readSource("components", "About.jsx");
-const morningSrc = readSource("components", "MorningVerse.jsx");
+const dailySrc = readSource("components", "DailyVerse.jsx");
 const appSrc = readSource("App.jsx");
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -222,17 +223,17 @@ test("권한을 첫 실행에 묻지 않는다 — 토글을 켤 때만 묻는�
 
 test("알림 화면에 영상과 광고가 없다", () => {
   for (const token of ["VideoList", "AdSlot", "adsbygoogle", "layersFor"]) {
-    assert.ok(!morningSrc.includes(token), `알림 화면에 ${token}이 들어왔다`);
+    assert.ok(!dailySrc.includes(token), `알림 화면에 ${token}이 들어왔다`);
   }
-  assert.ok(morningSrc.includes("ChapterReader"), "이어서 읽기가 없다");
-  assert.ok(morningSrc.includes("지금 마음을 적어볼까요"), "입력으로 가는 문이 없다");
+  assert.ok(dailySrc.includes("ChapterReader"), "이어서 읽기가 없다");
+  assert.ok(dailySrc.includes("지금 마음을 적어볼까요"), "입력으로 가는 문이 없다");
 });
 
 test("알림 화면이 다른 모든 분기보다 먼저다", () => {
-  const morning = appSrc.indexOf("if (morningVerse)");
+  const daily = appSrc.indexOf("if (dailyVerse)");
   const about = appSrc.indexOf("if (showAbout)");
-  assert.ok(morning > 0, "알림 화면 분기가 없다");
-  assert.ok(morning < about, "알림 화면이 다른 화면 뒤에 있다");
+  assert.ok(daily > 0, "알림 화면 분기가 없다");
+  assert.ok(daily < about, "알림 화면이 다른 화면 뒤에 있다");
 });
 
 test("설정은 About 안 위쪽 절에 있다", () => {
@@ -311,4 +312,52 @@ test("⛔ 플러그인 프록시를 async 함수에서 그대로 돌려주지 �
     notifySrc.includes("const { ln } = box"),
     "호출부가 상자에서 꺼내 쓰지 않는다",
   );
+});
+
+test("⛔ 앱을 여러 번 열어도 보낸 기록이 누적되지 않는다", () => {
+  // 2026-08-31 실측: refreshSchedule이 창을 다시 짤 때마다 14건을 누적 기록해
+  // 여덟 번쯤 열자 107건 풀 전체가 "최근 보냄"이 됐다(notify_seen 107건).
+  // 30일 중복 회피가 무의미해지고 매번 폴백 경로로 고르게 된다.
+  const now = Date.parse("2026-09-01T09:00:00");
+  const seen = {
+    delivered: "2026-08-30T09:00:00.000Z",   // 지나간 것 — 남아야 한다
+    scheduled1: "2026-09-05T00:00:00.000Z",  // 아직 안 온 것 — 버려야 한다
+    scheduled2: "2026-09-10T00:00:00.000Z",
+  };
+  assert.deepEqual(Object.keys(dropScheduled(seen, now)), ["delivered"]);
+
+  // 창을 다시 짜도 크기가 자라지 않는다
+  let store = {};
+  for (let round = 0; round < 10; round += 1) {
+    store = dropScheduled(store, now);
+    for (let i = 0; i < 14; i += 1) store[`v${round}-${i}`] = new Date(now + (i + 1) * DAY).toISOString();
+  }
+  assert.equal(Object.keys(store).length, 14, "다시 짤 때마다 기록이 누적된다");
+
+  assert.ok(
+    notifySrc.includes("dropScheduled(pruneSeen("),
+    "refreshSchedule이 미래 예약 기록을 버리지 않는다",
+  );
+});
+
+test("알림 화면은 참조를 머리 줄에 한 번만 그린다", () => {
+  // 2026-08-31 실기기 비교로 정한 구조(ㄱ안). 구절 아래 참조와 이어서 읽기
+  // 헤더가 같은 T.sand·세리프로 연달아 나와 경쟁하던 것을 없앴다.
+  assert.ok(
+    /오늘의 구절 <span style=\{styles\.eyebrowRef\}>· \{verse\.ref\}<\/span>/.test(dailySrc),
+    "참조가 머리 줄에 없다",
+  );
+  assert.ok(
+    /<VerseCard verse=\{verse\} canRotate=\{false\} hideRef \/>/.test(dailySrc),
+    "구절 아래 참조를 끄지 않았다 — 참조가 두 번 나온다",
+  );
+  // 결과 화면은 그대로다 — 거기 참조는 "다른 구절" 버튼과 한 몫이다.
+  assert.ok(!/hideRef/.test(appSrc), "결과 화면에서도 참조를 껐다");
+});
+
+test("시안 비교용 임시 코드가 남지 않았다", () => {
+  for (const src of [dailySrc, readSource("components", "ChapterReader.jsx")]) {
+    assert.ok(!src.includes("__pymVariant"), "변주 스위치가 남았다");
+    assert.ok(!src.includes("progressOnly"), "변주 분기가 남았다");
+  }
 });

@@ -1,5 +1,5 @@
 /**
- * 아침 구절 고르기 — **순수 함수만 둔다.** 플러그인도 DOM도 모른다.
+ * 알림 구절 고르기 — **순수 함수만 둔다.** 플러그인도 DOM도 모른다.
  *
  * [왜 화면과 다른 기준으로 고르는가 — 2026-08-31]
  *   결과 화면은 사용자가 감정을 말한 **뒤에** 구절을 고른다. 그래서 1인칭
@@ -55,6 +55,29 @@ export function recentlySent(seen, now = Date.now()) {
   for (const [id, at] of Object.entries(seen || {})) {
     const t = new Date(at).getTime();
     if (Number.isFinite(t) && t >= cutoff) out.add(id);
+  }
+  return out;
+}
+
+/**
+ * **아직 오지 않은 예약 기록을 버린다.**
+ *
+ * [왜 필요한가 — 2026-08-31 실측으로 찾았다]
+ *   NOTIFY_SEEN은 예약 **시점**에 적는다(실제 발송을 앱이 알 수 없다).
+ *   그런데 refreshSchedule은 앱을 열 때마다 창을 통째로 다시 짠다 —
+ *   그때마다 14건이 **누적**되어, 여덟 번쯤 열면 107건 풀 전체가
+ *   "최근 보냄"이 된다. 실기기에서 notify_seen이 107건까지 찼다.
+ *   그러면 30일 중복 회피가 무의미해지고 매번 폴백 경로로 고른다.
+ *
+ *   ★ 다시 짤 때는 옛 예약을 **취소**하므로, 아직 오지 않은 것은 보낸 적이
+ *     없다. 그래서 미래 날짜 기록은 버리고 다시 채운다. 지나간 것만 남는다 —
+ *     그것이 "실제로 받은 구절"이고 30일 창이 겨냥하는 대상이다.
+ */
+export function dropScheduled(seen, now = Date.now()) {
+  const out = {};
+  for (const [id, at] of Object.entries(seen || {})) {
+    const t = new Date(at).getTime();
+    if (Number.isFinite(t) && t <= now) out[id] = at;
   }
   return out;
 }

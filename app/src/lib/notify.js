@@ -1,5 +1,5 @@
 /**
- * 아침 알림 — 플러그인을 다루는 쪽. 고르는 규칙은 notifySelect.js에 있다.
+ * 구절 알림 — 플러그인을 다루는 쪽. 고르는 규칙은 notifySelect.js에 있다.
  *
  * [구조적 제약 — 미리 예약해야 한다]
  *   서버 푸시도 백그라운드 실행도 없다. 그래서 알림 **내용이 예약 시점에
@@ -28,6 +28,7 @@ import versesData from "../data/verses.json";
 import { KEYS, getSetting, setSetting } from "./db.js";
 import {
   WINDOW_DAYS,
+  dropScheduled,
   notificationContent,
   notifyPool,
   pickSequence,
@@ -38,7 +39,14 @@ import {
 
 const IS_APP = typeof __IS_APP__ === "boolean" ? __IS_APP__ : false;
 
-/** 알림 채널. 안드로이드가 설정 화면에서 이 이름으로 보여준다. */
+/**
+ * 알림 채널.
+ *
+ * ⚠ **id는 morning_verse 그대로 둔다.** 사용자가 보는 것은 name("구절 알림")이고
+ *   id는 안드로이드가 기기에 저장하는 내부 키다. 바꾸면 이미 설치된 기기에
+ *   채널이 하나 더 생기고 옛 채널이 설정 화면에 유령으로 남는다 — 사용자가
+ *   얻는 것은 없고 잃는 것만 있다. 시각을 밤으로 바꿔도 id는 보이지 않는다.
+ */
 const CHANNEL_ID = "morning_verse";
 
 /**
@@ -111,7 +119,7 @@ async function ensureChannel(ln) {
   try {
     await ln.createChannel({
       id: CHANNEL_ID,
-      name: "아침 구절",
+      name: "구절 알림",
       description: "정한 시각에 구절 한 절을 보냅니다.",
       importance: 3, // 기본. 소리는 울리되 화면을 가로채지 않는다
       visibility: 1,
@@ -169,7 +177,11 @@ export async function refreshSchedule(now = new Date()) {
   if (!pool.length) return 0;
 
   const seenRaw = await getSetting(KEYS.NOTIFY_SEEN, {});
-  const seen = pruneSeen(seenRaw, now.getTime());
+  // ⚠ 순서가 중요하다. 30일을 넘긴 것을 버리고(pruneSeen), 그다음 **아직 오지
+  //   않은 예약**을 버린다(dropScheduled) — 바로 위에서 그것들을 취소했으므로
+  //   보낸 적이 없다. 이 한 줄이 없으면 앱을 열 때마다 기록이 누적되어
+  //   풀 전체가 "최근 보냄"으로 굳는다(실기기에서 107건까지 찼다).
+  const seen = dropScheduled(pruneSeen(seenRaw, now.getTime()), now.getTime());
   const lastBook = await getSetting(KEYS.NOTIFY_LAST_BOOK, null);
 
   const verses = pickSequence(

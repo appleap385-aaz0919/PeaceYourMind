@@ -22,14 +22,32 @@ import { ChapterReader } from "./ChapterReader.jsx";
 import { VerseCard } from "./VerseCard.jsx";
 import { T } from "../theme.js";
 
-export function MorningVerse({ verse, onWrite }) {
+export function DailyVerse({ verse, onWrite }) {
   if (!verse) return null;
 
   return (
     <div className="rise">
-      <p style={styles.eyebrow}>오늘 아침의 구절</p>
+      {/*
+        [참조를 머리 줄에 둔다 — 2026-08-31 실기기 비교로 정했다]
+          결과 화면은 구절 **아래**에 참조를 두지만, 거기서는
+          `전도서 3:1 · 다른 구절`로 버튼과 한 몫을 이룬다.
+          알림 화면에는 "다른 구절"이 없어(canRotate={false}) 참조만 외따로
+          남고, 바로 아래 이어서 읽기 헤더(같은 T.sand · 같은 세리프)와
+          **연달아 나와 경쟁했다.** 실기기에서 네 안을 찍어 비교했다.
 
-      <VerseCard verse={verse} canRotate={false} />
+          머리 줄로 올리면 세 가지가 함께 좋아진다.
+            · 구절과 본문 사이가 비어 위계가 갈린다
+            · "오늘의 구절 · 전도서 3:1"이 라벨과 출처로 한 줄에 읽힌다
+            · 남은 sand 한 줄(장 헤더)이 유일해져 "여기부터 이어서 읽기"를
+              분명히 알린다
+        ⚠ 두 화면의 결이 갈리는 것은 감수한다 — 애초에 구조가 다르다.
+      */}
+      <p style={styles.eyebrow}>
+        오늘의 구절 <span style={styles.eyebrowRef}>· {verse.ref}</span>
+      </p>
+
+      {/* ⛔ 참조를 두 번 그리지 않는다. 위 머리 줄이 그 일을 한다. */}
+      <VerseCard verse={verse} canRotate={false} hideRef />
 
       {/* read는 293건 전부에 있다(gen_verses_json.py가 붙인다). 그래도 없을 때
           조용히 비우는 쪽을 택한다 — 위기 구절에는 read가 없고, 데이터가
@@ -44,6 +62,7 @@ export function MorningVerse({ verse, onWrite }) {
 }
 
 const styles = {
+  eyebrowRef: { color: T.sand },
   eyebrow: {
     margin: "6px 0 18px",
     fontSize: 12.5,

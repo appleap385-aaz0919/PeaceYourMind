@@ -147,7 +147,7 @@ export const KEYS = {
   LAST_SUBCATEGORY_ID: "last_subcategory_id",
   MESSAGE_INDEXES: "message_indexes", // 직전에 보여준 문구 인덱스 (문구 회전용)
 
-  // --- 아침 알림 (2026-08-31) ---------------------------------------------
+  // --- 구절 알림 (2026-08-31) ---------------------------------------------
   NOTIFY_ON: "notify_on", // 켜짐 여부
   NOTIFY_TIME: "notify_time", // "09:00"
   // ⛔ VERSE_INDEXES를 재사용하지 않는다. 그것은 "화면이 마지막으로 보여준

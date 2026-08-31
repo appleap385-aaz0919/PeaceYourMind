@@ -62,7 +62,7 @@ import { READING, ResultTabs } from "./components/ResultTabs.jsx";
 import { VerseCard, verseFontSize } from "./components/VerseCard.jsx";
 import { VideoList } from "./components/VideoList.jsx";
 import { ABOUT_BACK_ID, About } from "./components/About.jsx";
-import { MorningVerse } from "./components/MorningVerse.jsx";
+import { DailyVerse } from "./components/DailyVerse.jsx";
 import { T, SERIF } from "./theme.js";
 
 const MIN_DURATION_MS = taxonomy.ui.loading.min_duration_ms;
@@ -105,7 +105,7 @@ export default function App() {
   const [greeting, setGreeting] = useState("");
   const [showAbout, setShowAbout] = useState(false);
   // 알림을 탭해서 들어온 구절. 있으면 그 화면이 다른 모든 것보다 먼저다.
-  const [morningVerse, setMorningVerse] = useState(null);
+  const [dailyVerse, setDailyVerse] = useState(null);
   const reducedMotion = usePrefersReducedMotion();
 
   const [data, setData] = useState(null);
@@ -114,7 +114,7 @@ export default function App() {
   // 화면이 바뀌면 항상 맨 위에서 시작한다 (FYM과 같은 이유).
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
-  }, [phase, mode, selectedCategory, result, showAbout, morningVerse]);
+  }, [phase, mode, selectedCategory, result, showAbout, dailyVerse]);
 
   useEffect(() => {
     let cancelled = false;
@@ -143,7 +143,7 @@ export default function App() {
         });
       }
 
-      // 아침 알림 — 14일치를 다시 채운다.
+      // 구절 알림 — 14일치를 다시 채운다.
       // ⚠ 앱을 열 때가 유일한 시점이다. 크론도 백그라운드 실행도 없다.
       //   그래서 14일간 안 열면 알림이 멎는다 — 떠난 사람을 계속 부르지 않는
       //   것이 맞다고 판단했다(notify.js 머리말).
@@ -165,7 +165,7 @@ export default function App() {
     let stop = () => {};
     listenForTaps((verseId) => {
       const found = (versesData.verses || []).find((v) => v.id === verseId);
-      if (found) setMorningVerse(found);
+      if (found) setDailyVerse(found);
     }).then((off) => {
       stop = off;
     });
@@ -246,13 +246,13 @@ export default function App() {
    * 그것이 입력 화면으로 보낸다 — 알림이 입구가 되게 하는 문이다.
    * ⛔ 떠 있는 버튼(onRestart)을 주지 않는다. 돌아갈 "이전 화면"이 없다.
    */
-  if (morningVerse) {
+  if (dailyVerse) {
     return (
       <Shell>
-        <MorningVerse
-          verse={morningVerse}
+        <DailyVerse
+          verse={dailyVerse}
           onWrite={() => {
-            setMorningVerse(null);
+            setDailyVerse(null);
             reset();
           }}
         />

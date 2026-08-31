@@ -229,7 +229,7 @@ export function About({ attribution, onBack }) {
  *   물러설 길을 함께 둔다 — 2)에서 "아니요"가 옆에 있다.
  */
 /**
- * 아침 알림 설정 — 토글 하나와 시각 하나.
+ * 구절 알림 설정 — 토글 하나와 시각 하나.
  *
  * [권한은 켜는 순간에만 묻는다]
  *   ⛔ 첫 실행에 묻지 않는다. 이 앱의 첫 화면은 "지금 마음이 어떠세요"이고,
@@ -305,7 +305,7 @@ function NotifySettings() {
 
   return (
     <section style={styles.block}>
-      <h2 style={styles.heading}>아침 알림</h2>
+      <h2 style={styles.heading}>구절 알림</h2>
       <p style={styles.note}>
         정한 시각에 구절 한 절을 보냅니다. 기기 안에서만 동작하며 아무것도
         전송하지 않습니다.
@@ -403,7 +403,7 @@ const styles = {
     textDecoration: "underline",
     textUnderlineOffset: 3,
   },
-  // --- 아침 알림 --------------------------------------------------------
+  // --- 구절 알림 --------------------------------------------------------
   // 이 화면의 조용한 기준선(13px · T.muted)을 따른다. 조작하는 자리라
   // 토글에만 테두리를 준다 — 누를 수 있다는 신호는 그것으로 충분하다.
   notifyRow: { display: "flex", alignItems: "center", gap: 16, margin: "10px 0 0" },
