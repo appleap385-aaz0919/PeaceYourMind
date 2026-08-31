@@ -1,22 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  [흰 번쩍임을 막는 자리 — 2026-08-31]
+    앱을 열면 창 배경이 세 번 바뀐다.
+
+      1. 런처 → AppTheme.NoActionBarLaunch  (스플래시)
+      2. BridgeActivity.onCreate()가 setTheme(AppTheme_NoActionBar)로 갈아탄다
+      3. 웹뷰가 그려진다 (capacitor.config.json 의 backgroundColor)
+
+    ⚠ 2번이 문제였다. AppTheme.NoActionBar의 부모가 DayNight라
+      **라이트 모드 기기에서 windowBackground가 흰색**이고, 웹뷰가 첫 프레임을
+      그리기 전까지 그 흰 화면이 보인다. 스플래시만 어둡게 해도 소용이 없다.
+      세 자리를 전부 inkDeep으로 묶어야 이어진다.
+-->
 <resources>
 
-    <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+    <!-- 애플리케이션 테마. 대화상자 등 시스템 표면이 이걸 본다. -->
+    <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/pym_ink</item>
+        <item name="colorPrimaryDark">@color/pym_ink_deep</item>
+        <item name="colorAccent">@color/pym_jade</item>
     </style>
 
+    <!-- 액티비티가 실제로 쓰는 테마 (BridgeActivity가 여기로 갈아탄다). -->
     <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- ★ 이 한 줄이 흰 번쩍임을 없앤다. 지우지 말 것. -->
+        <item name="android:windowBackground">@color/pym_ink_deep</item>
     </style>
 
-
+    <!-- 런처가 처음 띄우는 테마. -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <!-- API 30 이하 — 창 배경으로 스플래시 그림을 깐다. -->
         <item name="android:background">@drawable/splash</item>
+        <!-- API 31+ — 시스템 스플래시가 쓰는 색. 그림 대신 이 색이 먼저 뜬다. -->
+        <item name="windowSplashScreenBackground">@color/pym_ink_deep</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
+
 </resources>
