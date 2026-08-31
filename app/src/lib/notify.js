@@ -115,6 +115,16 @@ export async function ensurePermission() {
   }
 }
 
+/**
+ * 채널을 만든다. 앱을 열 때마다 부르지만, 만들어지는 것은 처음 한 번뿐이다.
+ *
+ * ⛔ **여기 적힌 값은 "처음 설치된 기기"에만 적용된다.**
+ *   안드로이드는 이미 존재하는 채널의 importance·sound·vibration을
+ *   코드로 바꾸지 못한다. 갱신되는 것은 name·description·group뿐이고,
+ *   importance는 사용자가 손대지 않았을 때 **낮추는 것만** 된다.
+ *   같은 id로 지웠다 다시 만드는 우회도 막혀 있다 — 옛 설정이 복원된다.
+ *   → 이 값을 고치면 **재설치한 기기에서만** 반영된다. 출시 전에 확정할 것.
+ */
 async function ensureChannel(ln) {
   try {
     await ln.createChannel({
@@ -123,6 +133,19 @@ async function ensureChannel(ln) {
       description: "정한 시각에 구절 한 절을 보냅니다.",
       importance: 3, // 기본. 소리는 울리되 화면을 가로채지 않는다
       visibility: 1,
+      // ⚠ **넘기지 않으면 플러그인이 false를 박는다.** 우리가 안 정하면
+      //   "진동 없음"이 정해진다 — NotificationChannelManager.kt의
+      //   getBoolean("vibration", false)가 기본값이다. 2026-08-31 실기기에서
+      //   mVibrationEnabled=false로 굳어 있었고, 그것이 진동이 없던 원인이다.
+      vibration: true,
+      // ⛔ sound는 넘기지 않는다 — 이것이 **의도한 상태**다.
+      //   넘길 수 있는 값은 res/raw의 파일명뿐이고, 비워 두면 안드로이드가
+      //   **기기 기본 알림음**을 쓴다. 사용자가 자기 기기에서 이미 고른 소리다.
+      //   앱이 자기 소리를 강요하지 않는 것이 이 앱의 태도에 맞다.
+      //   ⚠ 플러그인 타입 문서(definitions.d.ts)는 "sound를 안 주면 소리가
+      //     없다"고 적혀 있으나 **구현과 다르다.** 실기기 dumpsys가
+      //     mSound=content://settings/system/notification_sound로 확인해 준다.
+      //     문서를 믿고 여기에 파일명을 넣지 말 것.
     });
   } catch {
     /* 채널 생성 실패는 치명적이지 않다 — 기본 채널로 나간다 */

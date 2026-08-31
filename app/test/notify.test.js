@@ -361,3 +361,51 @@ test("시안 비교용 임시 코드가 남지 않았다", () => {
     assert.ok(!src.includes("progressOnly"), "변주 분기가 남았다");
   }
 });
+
+/* --- 채널 -----------------------------------------------------------------
+ *
+ * ⛔ 이 절이 게이트다. 안드로이드는 한 번 만들어진 채널의 importance·sound·
+ *   vibration을 코드로 바꾸지 못한다(같은 id로 지웠다 다시 만들어도 옛 설정이
+ *   복원된다). 그래서 이 인자들이 조용히 사라지면 **재설치 없이는 되돌릴 수
+ *   없다.** 값이 아니라 "값이 거기 있다"는 것을 지킨다.
+ */
+
+/** createChannel에 실제로 넘기는 인자. 주석은 지운다 — 주석으로 통과하면 게이트가 아니다. */
+const channelArgs = (() => {
+  const m = /createChannel\(\{([\s\S]*?)\n\s*\}\);/.exec(notifySrc);
+  assert.ok(m, "notify.js에서 createChannel 호출을 찾지 못했다");
+  return m[1]
+    .split("\n")
+    .map((line) => line.replace(/\/\/.*$/, ""))
+    .join("\n");
+})();
+
+test("채널을 진동과 함께 만든다 (플러그인 기본값은 vibration:false다)", () => {
+  // 넘기지 않으면 NotificationChannelManager.kt의 getBoolean("vibration", false)가
+  // 이긴다. 2026-08-31 실기기에서 mVibrationEnabled=false로 굳어 있었다.
+  assert.match(channelArgs, /\bvibration:\s*true\b/, "채널 진동이 꺼졌다");
+});
+
+test("채널 중요도는 3이다 (소리는 나되 화면을 가로채지 않는다)", () => {
+  // 4(HIGH)로 올리면 헤드업 팝업이 뜬다 — 하던 일을 끊는다. 이 앱의 태도가 아니다.
+  // 2 이하로 내리면 소리도 진동도 죽는다 — 안드로이드는 3 미만에서 알리지 않는다.
+  assert.match(channelArgs, /\bimportance:\s*3\b/, "중요도가 3이 아니다");
+});
+
+test("⛔ 채널에 sound를 지정하지 않는다 (기기 기본 알림음을 쓴다)", () => {
+  // 넘길 수 있는 값은 res/raw의 파일명뿐이다. 비워 두면 안드로이드가 사용자가
+  // 자기 기기에서 고른 알림음을 쓴다 — 앱이 자기 소리를 강요하지 않는다.
+  // ⚠ 플러그인 타입 문서는 "안 주면 소리가 없다"고 적혀 있으나 구현과 다르다.
+  assert.ok(
+    !/\bsound\s*:/.test(channelArgs),
+    "채널에 sound를 지정했다 — 기기 기본 알림음을 덮어쓴다",
+  );
+});
+
+test("⛔ 채널 id는 morning_verse 그대로다 (바꾸면 유령 채널이 남는다)", () => {
+  assert.match(channelArgs, /\bid:\s*CHANNEL_ID\b/, "채널 id를 상수로 넘기지 않는다");
+  assert.ok(
+    notifySrc.includes('const CHANNEL_ID = "morning_verse"'),
+    "채널 id가 morning_verse가 아니다 — 이미 설치된 기기에 옛 채널이 유령으로 남는다",
+  );
+});
