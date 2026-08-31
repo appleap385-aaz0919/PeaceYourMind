@@ -90,11 +90,27 @@ jobs:
         #   배포하고 배치 진입점은 앱 배포 경로에 없다. 그 스모크는 build.yml
         #   게이트에 있다. 대신 이 워크플로의 진입점 커버리지는 아래가 맡는다 —
         #   gen:data(생성기 3종 실제 실행) · npm test · vite build.
+        #
+        # [2026-08-31에 둘을 더했다]
+        #   fill_verses --verify  로컬에서만 돌던 게이트다. API를 쓰지 않고
+        #                         data/krv 원문만 읽는다(커밋돼 있다).
+        #   stats.py --check      HANDOFF의 실측 블록이 코드와 같은지 본다.
+        #     ★ 이 워크플로에 붙이는 이유 — 「앱」 블록이 읽는 파일이 **전부
+        #       app/ 아래**에 있고(capacitor.config.json · package.json ·
+        #       variables.gradle · AndroidManifest · notify.js · notifySelect.js ·
+        #       About.jsx), 이 워크플로의 paths 필터가 app/** 를 포함한다.
+        #       즉 **문서를 낡게 만들 수 있는 커밋은 반드시 여기를 지난다.**
+        #     ⚠ 남는 구멍 하나 — HANDOFF.md만 고치는 커밋은 이 워크플로를
+        #       깨우지 않는다. 블록을 손으로 고치면 다음 app/ 커밋까지 안 걸린다.
+        #       (블록 머리의 "손으로 고치지 말 것"이 그것을 막는 유일한 장치다)
+        #   ⛔ 이 목록에 API를 쓰는 것을 넣지 말 것 — 이 워크플로에는 키가 없다.
         run: |
           python scripts/verify_verses.py --check > /dev/null && echo "구절 원문 대조 통과"
+          python scripts/fill_verses.py --verify > /dev/null && echo "추출 경로 검증 통과"
           python scripts/messages_test.py > /dev/null && echo "문구 원칙 통과"
           python scripts/tagging_test.py > /dev/null && echo "태깅·판별 통과"
           python scripts/spread_test.py > /dev/null && echo "선정·폴백 통과"
+          python scripts/stats.py --check && echo "HANDOFF 실측 블록 일치"
 
       - name: 앱 번들 생성 (taxonomy.json · verses.json)
         working-directory: app
