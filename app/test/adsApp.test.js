@@ -67,7 +67,8 @@ test("⛔ 광고가 안 채워지면 자리를 0으로 접는다", () => {
   assert.equal(bannerSpace({ screen: SCREEN.RESULT }), 0, "filled 기본값이 true다");
   assert.equal(
     bannerSpace({ screen: SCREEN.RESULT, filled: true }),
-    BANNER_HEIGHT + BANNER_GAP,
+    BANNER_HEIGHT + BANNER_GAP.insetUnknown,
+    "safeArea 없이 부르면 인셋을 모르는 쪽으로 간다",
   );
 });
 
@@ -92,20 +93,60 @@ test("네이티브 adSize가 BANNER_HEIGHT와 짝이다", () => {
   );
 });
 
-test("간격 상수가 띠 높이와 별개다", () => {
-  // ⛔ 전에는 비워 두는 값이 곧 배너 높이였고, 그래서 하단 요소가 배너 상단선에
-  //   **정확히 붙었다**(실기기 관측 · 2.104).
-  // ★ 배너 높이가 바뀌어도 간격이 유지되어야 한다 — 그래서 값을 가른다.
-  assert.ok(BANNER_GAP > 0, "간격이 0이면 하단 요소가 띠에 붙는다");
-  assert.notEqual(BANNER_GAP, BANNER_HEIGHT, "간격이 높이를 따라가면 가른 뜻이 없다");
-  // ⚠ 배너는 하단 인셋만큼 위에 앉고 그 인셋을 웹에서 못 읽는다(2.103).
-  //   실제 간격 = 24(떠 있는 버튼 오프셋) + BANNER_GAP − 인셋.
-  //   3버튼 내비게이션(48dp)에서도 양수여야 한다.
-  const MAX_BOTTOM_INSET = 48;
+test("★ 간격이 둘이다 — 인셋을 읽을 수 있는가로 갈린다", () => {
+  // ⛔ 갈래 A는 safeArea가 실제 인셋이라 **위 여백이 GAP으로 고정된다**(인셋 무관).
+  //   갈래 B는 safeArea가 0으로 주입되어 인셋을 모르므로 상한을 가정해야 한다.
+  assert.ok(BANNER_GAP.insetKnown > 0, "인셋을 아는 쪽 간격이 0이다");
   assert.ok(
-    24 + BANNER_GAP - MAX_BOTTOM_INSET > 0,
-    "최악의 인셋에서 간격이 0 이하가 된다 — 하단 요소가 다시 띠에 붙는다",
+    BANNER_GAP.insetUnknown >= 48,
+    `인셋을 모르는 쪽이 3버튼 48dp를 못 흡수한다 (${BANNER_GAP.insetUnknown})`,
   );
+  assert.ok(
+    BANNER_GAP.insetUnknown > BANNER_GAP.insetKnown,
+    "모를 때가 알 때보다 크지 않다 — 상한을 가정하는 쪽이 더 커야 한다",
+  );
+  assert.notEqual(BANNER_GAP.insetKnown, BANNER_HEIGHT, "간격이 높이를 따라가면 가른 뜻이 없다");
+});
+
+test("★ 위 여백이 어느 조건에서도 음수가 되지 않는다", () => {
+  // 위 여백 = safeArea + GAP − 인셋.
+  // ⛔ 이것이 2.112가 고친 결함이다 — 인셋 48에서 −8이라 배너가 면 위로 튀어나왔다.
+  const space = (sa) => bannerSpace({ screen: SCREEN.RESULT, filled: true, safeAreaBottom: sa });
+  const topGap = (sa, inset) => space(sa) - (inset + BANNER_HEIGHT);
+
+  // 갈래 A — safeArea = 인셋. 위 여백이 인셋과 무관하게 고정된다
+  // ⚠ 인셋 0은 뺀다 — **"인셋이 0"과 "못 읽는다"를 구분할 수 없다.**
+  //   0이면 항상 모르는 쪽(48)으로 가고, 그것이 안전한 방향이다(아래 단언).
+  for (const inset of [16, 24, 48, 64, 96]) {
+    assert.equal(
+      topGap(inset, inset),
+      BANNER_GAP.insetKnown,
+      `갈래 A 인셋 ${inset}에서 위 여백이 고정값이 아니다`,
+    );
+  }
+  // 갈래 B — safeArea = 0. 알려진 인셋에서 음수가 아니어야 한다
+  for (const inset of [24, 48]) {
+    assert.ok(topGap(0, inset) >= 0, `갈래 B 인셋 ${inset}에서 위 여백이 음수다`);
+  }
+  // 인셋이 0인 기기(하단 바가 없다)도 음수가 아니다
+  assert.equal(topGap(0, 0), BANNER_GAP.insetUnknown, "인셋 0에서 모르는 쪽으로 가지 않는다");
+  // ⚠ 갈래 B에서 인셋이 상한을 넘으면 음수가 된다 — 그것이 남는 한계다(2.112)
+  assert.ok(topGap(0, 64) < 0, "상한을 넘는 인셋에서 음수가 되는 성질이 사라졌다 — 문서와 어긋난다");
+});
+
+test("safeArea를 못 읽으면(0) 더 넉넉한 쪽으로 간다 — 오판이 안전한 방향이다", () => {
+  const known = bannerSpace({ screen: SCREEN.RESULT, filled: true, safeAreaBottom: 24 });
+  const unknown = bannerSpace({ screen: SCREEN.RESULT, filled: true, safeAreaBottom: 0 });
+  // 인셋 24를 0으로 오판해도 자리가 줄지 않는다
+  assert.ok(unknown >= known, "0으로 오판할 때 오히려 자리가 줄어든다 — 위험한 방향이다");
+  // 이상한 입력에 끌려가지 않는다
+  for (const bad of [-10, NaN, undefined, "48"]) {
+    assert.equal(
+      bannerSpace({ screen: SCREEN.RESULT, filled: true, safeAreaBottom: bad }),
+      BANNER_HEIGHT + BANNER_GAP.insetUnknown,
+      `이상한 safeArea(${String(bad)})가 그대로 더해진다`,
+    );
+  }
 });
 
 test("배경면이 bottomInset에 묶여 있다 (광고가 없으면 안 그린다)", () => {

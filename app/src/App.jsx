@@ -134,7 +134,10 @@ export default function App() {
     phase,
     resultKind: result?.kind,
   });
-  const bottomInset = bannerSpace({ screen, filled: bannerFilled });
+  // ★ 인셋을 읽을 수 있으면 배경면이 그만큼 커져 배너를 담는다 (HANDOFF 2.112).
+  //   못 읽으면(갈래 B) bannerSpace가 상한을 가정한다 — 판정은 그 함수 안에 있다.
+  const safeAreaBottom = useSafeAreaBottom();
+  const bottomInset = bannerSpace({ screen, filled: bannerFilled, safeAreaBottom });
 
   useEffect(() => {
     setBannerShown(bannerVisible(screen));
@@ -673,6 +676,58 @@ function Input({
  *   그런 자리에서는 이 훅이 **조용히 아무 일도 하지 않는다.** 증상은 지금과 같아진다.
  *   ⛔ 그것을 웹에서 고칠 방법이 없다. 한계로 적어 둔다.
  */
+/**
+ * 하단 시스템 인셋을 **웹이 읽을 수 있으면** 읽는다 (2026-09-02 · HANDOFF 2.112).
+ *
+ * [★ 이 값이 갈래를 가른다]
+ *   갈래 A(WebView ≥140 + viewport-fit=cover)  Capacitor가 실제 인셋을 넘긴다.
+ *     태블릿 실측 — env/변수 둘 다 **48px**(하단 taskbar), 상단 24px
+ *   갈래 B(WebView <140)  Capacitor가 인셋을 **0으로 만들어 주입한다**(2.103 실측).
+ *     0이 온다 = "모른다"는 뜻이고, bannerSpace가 그때만 상한(48)을 가정한다
+ *
+ * ⚠ 둘을 **함께** 본다 — Capacitor가 넣는 CSS 변수와 브라우저의 env()다.
+ *   갈래·기기에 따라 한쪽만 채워질 수 있으므로 **큰 쪽**을 쓴다.
+ *   ⛔ 0으로 잘못 읽는 것은 안전하다(여백이 넉넉해진다). 반대가 위험하다
+ * ⚠ 회전·키보드로 바뀌므로 resize에 다시 읽는다.
+ */
+function readSafeAreaBottom() {
+  if (typeof document === "undefined") return 0;
+  let envPx = 0;
+  try {
+    const probe = document.createElement("div");
+    probe.style.cssText =
+      "position:absolute;left:-9999px;visibility:hidden;height:env(safe-area-inset-bottom,0px)";
+    document.body.appendChild(probe);
+    envPx = parseFloat(getComputedStyle(probe).height) || 0;
+    probe.remove();
+  } catch {
+    envPx = 0;
+  }
+  const varPx =
+    parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue("--safe-area-inset-bottom"),
+    ) || 0;
+  return Math.max(envPx, varPx, 0);
+}
+
+function useSafeAreaBottom() {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    const read = () => setValue(readSafeAreaBottom());
+    read();
+    const vp = window.visualViewport;
+    vp?.addEventListener("resize", read);
+    window.addEventListener("resize", read);
+    window.addEventListener("orientationchange", read);
+    return () => {
+      vp?.removeEventListener("resize", read);
+      window.removeEventListener("resize", read);
+      window.removeEventListener("orientationchange", read);
+    };
+  }, []);
+  return value;
+}
+
 const KEYBOARD_SHRINK_MIN = 120;
 
 /**

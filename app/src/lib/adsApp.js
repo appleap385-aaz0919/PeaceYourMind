@@ -56,25 +56,35 @@ export const SCREEN = Object.freeze({
 export const BANNER_HEIGHT = 50;
 
 /**
- * 띠 **위로** 비워 두는 간격. ⛔ 배너 높이와 **별개의 상수다.**
+ * 띠 **위로** 비워 두는 간격 — ⛔ **둘이다.** 인셋을 읽을 수 있는가로 갈린다.
  *
- * [왜 별개여야 하나 — 2026-09-02]
- *   전에는 비워 두는 값이 곧 배너 높이였다. 그래서 하단 요소가 배너 상단선에
- *   **정확히 붙었다** — 실기기에서 "이 앱에 대해"와 "다시 적기"가 띠에 닿았다.
- *   ★ 배너 높이가 50이든 100이든 간격은 유지되어야 한다. 그래서 값을 가른다.
- *
- * [⚠⚠ 이 값은 「간격」이자 「인셋 흡수분」이다 — 40이 그래서 나왔다]
+ * [왜 둘인가 — 2026-09-02 · HANDOFF 2.112]
  *   배너는 화면 맨 아래가 아니라 **하단 시스템 인셋만큼 위에** 앉는다.
- *   그런데 그 인셋을 웹에서 읽을 수 없다(HANDOFF 2.103 — 갈래에 따라 0px이다).
- *   그래서 최악(3버튼 내비게이션 48dp)을 이 값이 흡수한다.
+ *   배경면 높이 = 50 + safeArea + GAP 이므로
+ *     위 여백 = (50 + safeArea + GAP) − (인셋 + 50) = **safeArea + GAP − 인셋**
  *
- *     실제 간격 = 24(떠 있는 버튼 자체 오프셋) + BANNER_GAP − 인셋
- *              = 64 − 인셋  →  제스처 40dp · 3버튼 16dp
+ *   ★ 갈래 A(WebView ≥140)는 safeArea = 인셋이라 **위 여백이 GAP으로 고정된다** —
+ *     인셋이 24든 48이든 상관없다. 상한을 가정할 필요가 없다
+ *   ⛔ 갈래 B(WebView <140)는 safeArea가 **0으로 주입된다**(2.103 실측).
+ *     인셋을 모르므로 GAP이 최악(3버튼 48dp)을 흡수해야 음수가 안 된다
  *
- *   ⛔ 어느 갈래에서도 0이 되지 않는 것이 이 값을 고른 기준이다.
- *     줄이려면 그 부등식을 먼저 다시 풀 것 — 눈으로 정하지 말 것.
+ * ⚠ 판정이 틀려도 **안전한 방향이다** — safeArea를 0으로 잘못 읽으면
+ *   UNKNOWN(48)이 적용되어 여백이 넉넉해진다. 반대 방향(갈래 B인데 safeArea가
+ *   실제 인셋보다 작게 잡히는 경우)만 음수가 될 수 있는데, 그러려면 Capacitor가
+ *   0이 아닌 값을 주입해야 한다 — 갈래 B에서는 코드가 0을 넣는다
  */
-export const BANNER_GAP = 40;
+const BANNER_GAP_INSET_KNOWN = 24;
+const BANNER_GAP_INSET_UNKNOWN = 48;
+
+/**
+ * ⛔ **두 상수를 밖에서 못 바꾸게 묶어 둔다.** 회귀가 관계식을 단언한다.
+ * ⚠ UNKNOWN은 "갈래 B에서 가정하는 인셋 상한"이다. 알려진 최대는 3버튼 48dp이고,
+ *   그보다 큰 기기가 없다고 **보장할 수 없다** — 갈래 A는 읽으니 이 가정이 필요 없다
+ */
+export const BANNER_GAP = Object.freeze({
+  insetKnown: BANNER_GAP_INSET_KNOWN,
+  insetUnknown: BANNER_GAP_INSET_UNKNOWN,
+});
 
 /**
  * 지금 어느 화면인가. **App.jsx의 분기 순서를 그대로 옮긴 것이다.**
@@ -133,6 +143,9 @@ export function bannerVisible(screen) {
  *
  * @param {{screen: string, filled?: boolean}} state
  */
-export function bannerSpace({ screen, filled = false } = {}) {
-  return bannerVisible(screen) && filled ? BANNER_HEIGHT + BANNER_GAP : 0;
+export function bannerSpace({ screen, filled = false, safeAreaBottom = 0 } = {}) {
+  if (!bannerVisible(screen) || !filled) return 0;
+  const sa = Number.isFinite(safeAreaBottom) && safeAreaBottom > 0 ? safeAreaBottom : 0;
+  const gap = sa > 0 ? BANNER_GAP.insetKnown : BANNER_GAP.insetUnknown;
+  return BANNER_HEIGHT + sa + gap;
 }
