@@ -62,6 +62,26 @@ if (!(pymAdmobAppId ==~ /ca-app-pub-\d+~\d+/)) {
 }
 
 /*
+ * 배너 광고 단위 ID — 2026-09-02에 환경변수에서 이 파일로 옮겼다 (HANDOFF 2.102).
+ *
+ * [⚠⚠ App ID와 실패의 모양이 정반대다]
+ *   App ID가 없으면 앱이 **즉시 죽는다.** 단위가 없으면 **아무 일도 안 일어난다** —
+ *   adsEnabled가 false가 되어 광고도 고지도 없는 앱이 조용히 나가고,
+ *   데모 검사는 "데모가 있는가"만 보므로 **게이트가 전부 통과한다.**
+ *   ★ 데모가 남는 실패보다 신호가 더 없다. 화면에 배너만 없을 뿐이다.
+ *   → 그래서 여기서도 형식을 검사한다. 빈 값으로 조용히 가지 않는다.
+ */
+def pymAdmobBannerId = admobProps.getProperty("admob.bannerId", "").trim()
+if (!(pymAdmobBannerId ==~ /ca-app-pub-\d+\/\d+/)) {
+    throw new GradleException(
+        "admob.bannerId 형식이 틀렸습니다: '${pymAdmobBannerId}'\n" +
+        "  ca-app-pub-<숫자>/<숫자> 여야 합니다 (빗금 / 로 구분되는 광고 단위 ID).\n" +
+        "  물결 ~ 로 구분되는 것은 단위가 아니라 App ID입니다 — admob.appId 쪽입니다.\n" +
+        "  고칠 곳  android/admob.properties  의  admob.bannerId"
+    )
+}
+
+/*
  * 릴리스에 **데모 광고 ID가 실리는 것**을 막는다 (2026-09-02 · HANDOFF 2.99).
  *
  * [왜 필요한가 — 이 값은 틀려도 화면이 멀쩡하다]
@@ -115,6 +135,27 @@ def verifyNoDemoAdIds = tasks.register("verifyNoDemoAdIds") {
       무엇으로  AdMob 콘솔에서 만든 배너 광고 단위 ID (빗금 / 로 구분되는 값)
       다시 하기  ADMOB_BANNER_ID=<실제 단위> npm run sync:app
                 ⚠ sync를 다시 해야 번들이 바뀝니다. gradle만 다시 돌리면 그대로입니다."""
+        }
+
+        // ③ ★ **실제 단위가 번들에 실렸는가.** ①②의 반대 방향이다.
+        //   ①②는 "데모가 남았는가"를 본다 — 값이 아예 없으면 둘 다 통과한다.
+        //   그것이 2.101이 찾은 구멍이고, 사람이 알아챌 신호가 하나도 없다.
+        //   admob.properties의 값과 **같은 값**을 찾는다. 그래야
+        //   "값은 고쳤는데 cap sync를 안 돌렸다"까지 함께 걸린다.
+        if (!assetsDir.exists()) {
+            problems << """  [3] 앱 번들(src/main/assets/public)이 없습니다.
+      다시 하기  npm run sync:app"""
+        } else {
+            def hasUnit = fileTree(dir: assetsDir, includes: ["**/*.js", "**/*.html", "**/*.json"])
+                .any { it.text.contains(pymAdmobBannerId) }
+            if (!hasUnit) {
+                problems << """  [3] 앱 번들에 **배너 광고 단위가 없습니다.**
+      있어야 할 것  admob.properties 의 admob.bannerId 와 같은 값
+      이대로 나가면 adsEnabled가 false가 되어 **광고도 고지도 없는 앱**이 됩니다.
+      화면에는 배너만 없을 뿐이라 아무도 알아채지 못합니다.
+      다시 하기  npm run sync:app
+                값을 고쳤어도 sync를 다시 해야 번들이 바뀝니다."""
+            }
         }
 
         if (!problems.isEmpty()) {

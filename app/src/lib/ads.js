@@ -53,7 +53,10 @@ export const AD_SLOT = IS_APP ? "" : WEB_AD_SLOT;
  * 앱(AdMob) 배너 단위 ID — **저장소에는 비어 있다.**
  *
  * ⛔ 데모 단위 ID를 여기 적지 말 것. 실제 단위로 바꿀 때 빠뜨릴 자리가 된다.
- *   시험할 때는 환경변수로 넣는다(vite define · 3절 실행 환경 참조).
+ *   값은 App ID와 **같은 파일**에서 온다 — app/android/admob.properties 의
+ *   admob.bannerId 를 vite가 읽어 define으로 넣는다(2026-09-02 · HANDOFF 2.102).
+ *   ⚠ 환경변수(ADMOB_BANNER_ID)였던 것을 옮겼다. 잊으면 광고도 고지도 없는
+ *     앱이 나가는데 게이트가 전부 통과했기 때문이다.
  * ⚠ WEB_AD_SLOT과 짝이다 — 매체마다 자기 값을 갖고, 서로를 모른다.
  */
 const APP_AD_UNIT =

@@ -133,3 +133,56 @@ test("앱은 영상 데이터만 원격에서 받는다", () => {
     "장 본문 경로가 앱 기준이 아니다",
   );
 });
+
+/* --- AdMob 배너 단위: 잊을 자리를 없앤 뒤에도 가드가 남아 있는가 -------------
+ *
+ * [무엇을 막는가 — 2026-09-02 · HANDOFF 2.102]
+ *   배너 단위 ID가 환경변수(ADMOB_BANNER_ID)였을 때, 그것을 빠뜨리고 릴리스를
+ *   말면 값이 빈 문자열이 되어 **광고도 고지도 없는 앱**이 나가고
+ *   **게이트가 전부 통과했다.** 데모 검사는 "데모가 있는가"만 보고,
+ *   verses.test.js는 "소스에 값이 없는가"라는 **반대 방향**만 보기 때문이다.
+ *
+ * ⛔ 그래서 값을 App ID와 같은 파일로 옮겼고(가), 빌드가 없으면 선다(나).
+ *   여기서는 그 두 장치가 **지워지지 않았는지**를 본다 —
+ *   이 파일의 다른 검사들과 같은 이유다. 가드가 가려지는 것은 없는 것보다 나쁘다.
+ */
+test("배너 단위 ID를 환경변수가 아니라 admob.properties에서 읽는다", () => {
+  assert.ok(
+    viteConfig.includes("readAdmobBannerId"),
+    "배너 단위를 읽는 함수가 없다",
+  );
+  assert.ok(
+    viteConfig.includes('new URL("./android/admob.properties"'),
+    "App ID와 같은 파일을 읽지 않는다 — 값 둘이 갈리면 되돌릴 때 퍼블리셔가 어긋난다",
+  );
+  assert.ok(
+    !viteConfig.includes("process.env.ADMOB_BANNER_ID"),
+    "환경변수가 되살아났다 — 잊을 자리를 없앤 것이 이 변경의 요점이다",
+  );
+});
+
+test("배너 단위가 비면 앱 빌드가 선다", () => {
+  // ⛔ 빈 값으로 조용히 가지 않는다. 실패를 빌드로 당겨 오는 것이 요점이다.
+  assert.ok(
+    /admob\.bannerId[\s\S]{0,400}?throw new Error/.test(viteConfig),
+    "형식 검사 뒤에 throw가 없다 — 빈 값이 조용히 통과한다",
+  );
+  assert.ok(
+    // String.raw 를 쓴다 — 보통 문자열이면 \d 가 d 로 뭉개져
+    //   **검사가 조용히 통과한다.** vite.config.js의 [\s\S] 사고와 같은 모양이다.
+    viteConfig.includes(String.raw`ca-app-pub-\d+\/\d+`),
+    "단위 ID 형식 검사가 없다 — App ID(~)를 넣어도 통과한다",
+  );
+});
+
+test("릴리스 게이트가 '실제 단위가 있는가'도 본다", () => {
+  const gradle = read("android", "app", "build.gradle");
+  assert.ok(
+    gradle.includes("pymAdmobBannerId"),
+    "gradle이 배너 단위를 읽지 않는다",
+  );
+  assert.ok(
+    gradle.includes("hasUnit"),
+    "번들에 실제 단위가 실렸는지 보는 검사가 없다 — 값이 없으면 데모 검사는 통과한다",
+  );
+});

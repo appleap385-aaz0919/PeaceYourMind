@@ -55,12 +55,10 @@ export default defineConfig(({ mode }) => {
       //   기본값을 웹(false)으로 두어 **앱 쪽이 명시적으로 켜져야** 하게 했다.
       __IS_APP__: JSON.stringify(IS_APP),
       // AdMob 배너 단위 ID — ⛔ **저장소에는 값을 두지 않는다.**
-      //   ⚠ 데모 ID를 소스에 적으면 실제 단위로 바꿀 때 빠뜨릴 자리가 된다.
-      //   시험할 때만 환경변수로 넣는다 —
-      //     ADMOB_BANNER_ID=... npm run sync:app
-      //   ★ 비어 있으면 adsEnabled가 false다. 광고도 고지도 나가지 않는다 —
-      //     웹에서 AD_SLOT이 비면 요소를 안 그리는 것과 같은 원칙이다.
-      __ADMOB_BANNER_ID__: JSON.stringify(process.env.ADMOB_BANNER_ID || ""),
+      //   App ID와 **같은 파일**(android/admob.properties)에서 읽는다.
+      //   ⚠ 환경변수였던 것을 여기로 옮겼다 (2026-09-02 · HANDOFF 2.102).
+      //     잊으면 광고도 고지도 없는 앱이 나가는데 게이트가 전부 통과했다.
+      __ADMOB_BANNER_ID__: JSON.stringify(IS_APP ? readAdmobBannerId() : ""),
     },
     build: {
       outDir: IS_APP ? "dist-app" : "dist",
@@ -69,6 +67,55 @@ export default defineConfig(({ mode }) => {
     },
   };
 });
+
+/**
+ * AdMob 배너 단위 ID를 `android/admob.properties`에서 읽는다.
+ *
+ * [⛔ 왜 환경변수를 걷어냈나 — 2026-09-02 (HANDOFF 2.102)]
+ *   `ADMOB_BANNER_ID=...`를 빠뜨리고 릴리스를 말면 값이 빈 문자열이 되고,
+ *   adsEnabled가 false가 되어 **광고도 고지도 없는 앱**이 나간다.
+ *   그런데 게이트는 전부 통과한다 — 데모 검사는 "데모가 있는가"만 보고,
+ *   회귀는 "소스에 값이 없는가"라는 **반대 방향**만 보기 때문이다.
+ *   ★ 3절 「일하는 방식」 ⓪-2의 "실패가 성공처럼 보이는" 자리이고,
+ *     데모가 남는 실패보다 신호가 더 없다 — 화면에 배너만 없을 뿐이다.
+ *   → 잊을 자리를 없앤다. App ID와 한 파일에 두면 **둘이 함께 움직인다.**
+ *     (데모로 되돌릴 때 하나만 바꿔 퍼블리셔가 갈리던 문제도 같이 닫힌다.)
+ *
+ * ⚠ 웹 빌드는 이 파일을 보지 않는다. 웹은 AdSense이고 AdMob 값을 갖지 않는다 —
+ *   그래서 gh-pages CI에 이 파일이 없어도 웹 빌드는 선다.
+ */
+function readAdmobBannerId() {
+  const file = new URL("./android/admob.properties", import.meta.url);
+  if (!existsSync(file)) {
+    throw new Error(
+      "[pym] AdMob 값이 없습니다: app/android/admob.properties\n" +
+        "  android/admob.properties.example 을 복사하고 값 둘을 채우세요.\n" +
+        "  ⛔ 이 파일은 .gitignore 대상입니다. 저장소에 값을 두지 않습니다.",
+    );
+  }
+
+  // .properties 최소 파서 — key=value 이고 # 와 ! 는 주석이다.
+  const props = new Map();
+  for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
+    const t = line.trim();
+    if (!t || t.startsWith("#") || t.startsWith("!")) continue;
+    const eq = t.indexOf("=");
+    if (eq > 0) props.set(t.slice(0, eq).trim(), t.slice(eq + 1).trim());
+  }
+
+  // ⛔ 빈 값으로 조용히 가지 않는다. **빌드를 세우는 것**이 이 함수의 요점이다.
+  //   형식까지 보는 이유는 App ID와 단위를 서로 바꿔 넣는 실수가 잦기 때문이다.
+  const id = props.get("admob.bannerId") || "";
+  if (!/^ca-app-pub-\d+\/\d+$/.test(id)) {
+    throw new Error(
+      `[pym] admob.bannerId 형식이 틀렸습니다: '${id}'\n` +
+        "  ca-app-pub-<숫자>/<숫자> 여야 합니다 (빗금 / 로 구분되는 광고 단위 ID).\n" +
+        "  ⚠ 물결 ~ 로 구분되는 것은 단위가 아니라 App ID입니다 — admob.appId 쪽입니다.\n" +
+        "  고칠 곳  app/android/admob.properties  의  admob.bannerId",
+    );
+  }
+  return id;
+}
 
 /**
  * 앱 빌드에서 AdSense를 **물리적으로 들어내는** 플러그인.

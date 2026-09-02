@@ -1,4 +1,4 @@
-# AdMob App ID — 이 파일을 admob.properties 로 복사하고 값을 채운다.
+# AdMob 값 둘 — 이 파일을 admob.properties 로 복사하고 값을 채운다.
 #
 # ⛔ admob.properties 는 .gitignore 대상이다. **저장소에 값을 두지 않는다.**
 #   데모 ID를 커밋하면 실제 단위로 바꿀 때 빠뜨릴 자리가 된다.
@@ -12,6 +12,21 @@
 #   ca-app-pub-3940256099942544~3347511713
 # ⛔ 출시 전에 실제 App ID로 바꾼다. 절차는 HANDOFF 2.98을 볼 것.
 #
-# ★ App ID(~ 로 구분)와 광고 단위 ID(/ 로 구분)는 다른 것이다. 여기는 App ID다.
+# ★ App ID(~ 로 구분)와 광고 단위 ID(/ 로 구분)는 **다른 것이다.**
+#   두 값이 한 파일에 있는 것이 요점이다 — 되돌릴 때 하나만 바꾸면
+#   App ID와 단위의 퍼블리셔가 갈린다 (HANDOFF 2.101).
 
 admob.appId=ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY
+
+# 배너 광고 단위 ID — 2026-09-02에 환경변수(ADMOB_BANNER_ID)에서 여기로 옮겼다.
+#
+# ⚠⚠ App ID와 **실패의 모양이 정반대다.**
+#   App ID가 없으면 앱이 즉시 죽는다. 단위가 없으면 아무 일도 안 일어난다 —
+#   adsEnabled가 false가 되어 **광고도 고지도 없는 앱**이 조용히 나간다.
+#   그래서 이 값도 빌드가 검사한다 (vite.config.js · build.gradle).
+#
+# 시험용(구글 공식 데모)
+#   ca-app-pub-3940256099942544/9214589741
+# ⛔ App ID를 데모로 되돌릴 때는 **이 값도 함께** 되돌린다.
+
+admob.bannerId=ca-app-pub-XXXXXXXXXXXXXXXX/ZZZZZZZZZZ
