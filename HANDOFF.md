@@ -76,7 +76,7 @@ self_control 0 · rest 0
 감정 분류   대분류 9 · 세분류 24 · 키워드 923
 채널       allowlist 22 (하한 15까지 여유 7)
            blocklist 0 · reviewed_out 13
-게이트      파이썬 5종 + 앱 233건
+게이트      파이썬 5종 + 앱 234건
 ```
 <!-- STATS:END -->
 
@@ -9914,7 +9914,7 @@ Phase 4  사전 보강 · UI 개정 · 구절 확장                            
 감정 분류   대분류 9 · 세분류 24 · 키워드 923
 채널       allowlist 22 (하한 15까지 여유 7)
            blocklist 0 · reviewed_out 13
-게이트      파이썬 5종 + 앱 233건
+게이트      파이썬 5종 + 앱 234건
 ```
 <!-- STATS:END -->
 
@@ -9927,7 +9927,7 @@ Phase 4  사전 보강 · UI 개정 · 구절 확장                            
 표시 이름    Peace in Mind
 버전        0.1.0  (versionCode 100)
 SDK        min 24 · compile 36 · target 36
-권한 선언    INTERNET
+권한 선언    INTERNET · AD_ID
 권한 제거    SCHEDULE_EXACT_ALARM   (tools:node=remove)
            ⚠ 플러그인이 병합해 넣는 것은 여기 없다 — APK로 확인한다(2.92)
 알림 채널    id morning_verse · importance 3 · vibration true · sound 지정 안 함

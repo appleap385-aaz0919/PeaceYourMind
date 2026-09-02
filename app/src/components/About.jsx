@@ -28,7 +28,7 @@
 
 import { useEffect, useState } from "react";
 
-import { AD_SLOT } from "../lib/ads.js";
+import { adsEnabled } from "../lib/ads.js";
 import { clearAllLocalData, clearBrowsingTraces } from "../lib/db.js";
 import {
   DEFAULT_TIME,
@@ -145,7 +145,7 @@ export function About({ attribution, onBack }) {
             자체는 코드와 방침이 그대로 지킨다 — 말하지 않을 뿐 바뀐 것이 없다.
           회귀가 이 문구를 고정한다 (verses.test.js).
       */}
-      {AD_SLOT ? (
+      {adsEnabled ? (
         <section style={styles.block}>
           <h2 style={styles.heading}>광고</h2>
           <p style={styles.note}>

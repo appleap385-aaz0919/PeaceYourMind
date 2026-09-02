@@ -292,13 +292,39 @@ test("About 광고 문단이 확정 문구 그대로다", () => {
 });
 
 test("About 광고 문단은 광고가 실제로 나갈 때만 그려진다", () => {
+  // 지키는 것은 **고지와 광고가 같은 값으로 움직인다**는 것이다.
+  //
+  // [2026-09-02 · 묶는 값이 바뀌었다]
+  //   웹만 있던 동안에는 AD_SLOT이 그 값이었다. 앱이 AdMob으로 갈리면서
+  //   AD_SLOT은 앱에서 **항상 빈 문자열**이 됐고, 그대로 두면 앱에서
+  //   고지가 사라진 채 광고만 나간다. 매체가 둘로 갈렸으니 값도 매체를
+  //   아는 값이어야 한다 → adsEnabled (HANDOFF 2.97 ④).
   assert.ok(
-    /\{AD_SLOT \? \(/.test(aboutSrc),
-    "광고 문단이 AD_SLOT에 묶여 있지 않다 — 광고가 없는데 있다고 말하게 된다",
+    /\{adsEnabled \? \(/.test(aboutSrc),
+    "광고 문단이 adsEnabled에 묶여 있지 않다 — 광고가 없는데 있다고 말하게 된다",
   );
   assert.ok(
-    aboutSrc.includes('import { AD_SLOT } from "../lib/ads.js"'),
-    "AD_SLOT을 광고 설정 단일 출처에서 읽지 않는다",
+    aboutSrc.includes('import { adsEnabled } from "../lib/ads.js"'),
+    "광고 여부를 단일 출처에서 읽지 않는다",
+  );
+  // ⛔ 옛 결합으로 되돌리지 못하게 막는다. 되돌리면 **앱에서만** 고지가 사라지고,
+  //   웹 테스트로는 아무것도 걸리지 않는다 — 조용히 새는 종류다.
+  assert.ok(
+    !/\{AD_SLOT \? \(/.test(aboutSrc),
+    "광고 문단이 다시 AD_SLOT에 묶였다 — 앱에서 고지가 사라진다(2.97 ④)",
+  );
+});
+
+test("⛔ adsEnabled가 매체마다 자기 값을 본다", () => {
+  const src = readSource("lib", "ads.js");
+  assert.ok(
+    /adsEnabled = IS_APP \? Boolean\(APP_AD_UNIT\) : Boolean\(AD_SLOT\)/.test(src),
+    "adsEnabled가 매체별로 갈리지 않는다",
+  );
+  // ⛔ 데모 단위 ID가 저장소에 남으면 실제 단위로 바꿀 때 빠뜨릴 자리가 된다.
+  assert.ok(
+    !/ca-app-pub-\d/.test(src),
+    "ads.js에 AdMob 단위 ID가 박혔다 — 환경변수로 넣을 것",
   );
 });
 

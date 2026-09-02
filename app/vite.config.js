@@ -54,6 +54,13 @@ export default defineConfig(({ mode }) => {
       // ⛔ 앱인가. 광고·서비스워커·방침 링크가 이 하나로 갈린다.
       //   기본값을 웹(false)으로 두어 **앱 쪽이 명시적으로 켜져야** 하게 했다.
       __IS_APP__: JSON.stringify(IS_APP),
+      // AdMob 배너 단위 ID — ⛔ **저장소에는 값을 두지 않는다.**
+      //   ⚠ 데모 ID를 소스에 적으면 실제 단위로 바꿀 때 빠뜨릴 자리가 된다.
+      //   시험할 때만 환경변수로 넣는다 —
+      //     ADMOB_BANNER_ID=... npm run sync:app
+      //   ★ 비어 있으면 adsEnabled가 false다. 광고도 고지도 나가지 않는다 —
+      //     웹에서 AD_SLOT이 비면 요소를 안 그리는 것과 같은 원칙이다.
+      __ADMOB_BANNER_ID__: JSON.stringify(process.env.ADMOB_BANNER_ID || ""),
     },
     build: {
       outDir: IS_APP ? "dist-app" : "dist",

@@ -49,6 +49,34 @@ const IS_APP = typeof __IS_APP__ === "boolean" ? __IS_APP__ : false;
 
 export const AD_SLOT = IS_APP ? "" : WEB_AD_SLOT;
 
+/**
+ * 앱(AdMob) 배너 단위 ID — **저장소에는 비어 있다.**
+ *
+ * ⛔ 데모 단위 ID를 여기 적지 말 것. 실제 단위로 바꿀 때 빠뜨릴 자리가 된다.
+ *   시험할 때는 환경변수로 넣는다(vite define · 3절 실행 환경 참조).
+ * ⚠ WEB_AD_SLOT과 짝이다 — 매체마다 자기 값을 갖고, 서로를 모른다.
+ */
+const APP_AD_UNIT =
+  typeof __ADMOB_BANNER_ID__ === "string" ? __ADMOB_BANNER_ID__ : "";
+
+/**
+ * ★ **광고를 그리는가 — 매체가 갈려도 답은 이 값 하나다.**
+ *
+ * [왜 값을 하나로 모으는가 — 2026-09-02]
+ *   About의 광고 고지가 `AD_SLOT`에 묶여 있었다. 웹만 있던 동안에는 그것이
+ *   맞았다 — 고지와 광고가 **같은 값**으로 움직여 갈라질 수 없었다.
+ *   그런데 앱이 AdMob으로 갈리면서 `AD_SLOT`은 앱에서 항상 빈 문자열이 됐고,
+ *   그대로 두면 **앱에서 고지가 사라진 채 광고만 나간다.**
+ *   ⛔ 매체가 둘로 갈렸으니 값도 **매체를 아는 값**이 되어야 한다.
+ *
+ * ⚠ 이것은 "광고가 실제로 채워졌는가"가 아니다. 그쪽은 adsApp.js의
+ *   bannerSpace가 본다. 여기는 **광고를 켰는가**만 말한다.
+ */
+export const adsEnabled = IS_APP ? Boolean(APP_AD_UNIT) : Boolean(AD_SLOT);
+
+/** 앱 배너 단위 ID. ⚠ adsEnabled가 false면 부를 일이 없다. */
+export const APP_BANNER_UNIT = APP_AD_UNIT;
+
 /** 규격. 320은 우연이 아니라 App.jsx의 좌우 여백 20px에서 나온 값이다(2.51). */
 export const AD_WIDTH = 320;
 export const AD_HEIGHT = 100;
