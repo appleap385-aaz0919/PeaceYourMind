@@ -267,7 +267,9 @@ def render_app(m: dict[str, Any]) -> str:
         f"SDK        min {m['min_sdk']} · compile {m['compile_sdk']} · target {m['target_sdk']}",
         f"권한 선언    {' · '.join(short)}",
         f"권한 제거    {' · '.join(gone)}   (tools:node=remove)",
-        "           ⚠ 플러그인이 병합해 넣는 것은 여기 없다 — APK로 확인한다(2.92)",
+        "           ⛔ **이 줄은 우리가 선언한 것만이다.**",
+        "             SDK·플러그인이 병합하는 권한은 여기 보이지 않는다 —",
+        "             전부로 읽지 말 것. 실제 목록은 APK로 확인한다(2.92·2.98)",
         f"알림 채널    id {m['channel_id']} · importance {m['channel_importance']}"
         f" · vibration {m['channel_vibration']} · sound {m['channel_sound']}",
         "           ⛔ 채널은 한 번 만들어지면 코드로 못 바꾼다(2.94)",
