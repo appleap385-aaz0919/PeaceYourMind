@@ -66,3 +66,7 @@ app/public/krv/
 #            (verses.yaml 헤더 참조), 구절 본문 대조의 기준이 된다.
 #            이 파일이 바뀌면 모든 verified 판정의 근거가 바뀌므로
 #            버전 관리 대상이다. 무결성은 data/krv/SOURCE.md의 sha256으로 확인한다.
+
+# AdMob App ID — 값은 저장소에 두지 않는다 (app/android/admob.properties.example 참조).
+#   ⚠⚠ 없거나 틀리면 앱이 시작하자마자 죽는 값이라 빌드가 서게 해 두었다.
+app/android/admob.properties

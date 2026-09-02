@@ -26,6 +26,41 @@ if (parts[1] > 99 || parts[2] > 99) {
 def pymVersionName = pkg.version
 def pymVersionCode = parts[0] * 10000 + parts[1] * 100 + parts[2]
 
+/*
+ * AdMob App ID — **저장소에 값을 두지 않는다.**
+ *
+ * [⚠⚠ 이 값이 왜 위험한가]
+ *   없거나 형식이 틀리면 **앱이 시작하자마자 죽는다.** 광고가 안 나오는 것이
+ *   아니라 앱이 죽는다. JS가 광고를 안 켜도 같다 — Mobile Ads SDK가 앱 시작
+ *   시점에 매니페스트의 meta-data를 읽기 때문이다("Missing application ID").
+ *
+ * [⛔ 그래서 조용히 빈 값으로 가지 않는다 — 빌드가 선다]
+ *   빈 문자열을 넣으면 빌드는 성공하고 **실행할 때 죽는다.** 실패를 빌드로
+ *   당겨 온다. 2026-09-02에 작업 스케줄러가 조용히 실패한 직후에 정한 원칙이다.
+ *
+ * ⚠ 새로 clone하면 이 파일이 없어 빌드가 선다. 그것이 의도다 —
+ *   메시지가 무엇을 하라고 말한다. HANDOFF 3절 실행 환경 참조.
+ */
+def admobFile = rootProject.file("admob.properties")
+if (!admobFile.exists()) {
+    throw new GradleException(
+        "AdMob App ID가 없습니다.\n" +
+        "  android/admob.properties.example 을 android/admob.properties 로 복사하고 값을 채우세요.\n" +
+        "  시험용 데모 ID(계정 불필요): ca-app-pub-3940256099942544~3347511713\n" +
+        "  ⛔ admob.properties는 저장소에 커밋하지 않습니다."
+    )
+}
+def admobProps = new Properties()
+admobFile.withInputStream { admobProps.load(it) }
+def pymAdmobAppId = admobProps.getProperty("admob.appId", "").trim()
+if (!(pymAdmobAppId ==~ /ca-app-pub-\d+~\d+/)) {
+    throw new GradleException(
+        "admob.appId 형식이 틀렸습니다: '${pymAdmobAppId}'\n" +
+        "  ca-app-pub-<숫자>~<숫자> 여야 합니다. (~ 앞뒤를 확인하세요 —\n" +
+        "  / 로 구분되는 것은 App ID가 아니라 광고 단위 ID입니다.)"
+    )
+}
+
 android {
     namespace = "io.github.appleap385.peaceinmind"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -35,6 +70,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode pymVersionCode
         versionName pymVersionName
+        // 매니페스트의 @string/admob_app_id 를 여기서 채운다.
+        // ⛔ res/values에 파일로 두지 않는다 — 그러면 값이 저장소에 남는다.
+        resValue "string", "admob_app_id", pymAdmobAppId
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
