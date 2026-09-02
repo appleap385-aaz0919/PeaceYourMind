@@ -1259,3 +1259,68 @@ test("폴백 층은 섞지 않는다 — 배치의 최신순을 그대로 쓴다
   assert.ok(call.includes("theme: shuffleThemeLayer"), "주제분에 섞기가 안 걸려 있다");
   assert.ok(!call.includes("fallback: shuffleThemeLayer"), "폴백까지 섞고 있다");
 });
+
+/* --- 키보드가 올라올 때 입력란을 끌어온다 (2026-09-02 · HANDOFF 2.107) ------
+ *
+ * ⚠⚠ **이 검사들이 지킬 수 있는 것과 못 하는 것을 먼저 적는다.**
+ *   여기서 보는 것은 **소스의 모양**뿐이다. 이 기능의 성패는 레이아웃 값이라
+ *   (뷰포트가 얼마나 줄고, 그때 셋이 보이는가) 노드 테스트로는 단언할 수 없다.
+ *
+ *   ✅ 단언할 수 있다
+ *      · 훅이 있고 TextMode가 쓴다 (다른 화면으로 새지 않는다)
+ *      · 방아쇠가 focus가 아니라 **축소**다 — 임계 상수와 resize 구독이 있다
+ *      · visualViewport와 window를 **둘 다** 듣는다
+ *      · 포커스가 그 입력란일 때만 움직인다
+ *      · block "center"다 ("nearest"로 되돌아가면 「골라서 찾을래요」가 잘린다)
+ *      · 커질 때는 아무것도 하지 않는다 (되돌리는 코드가 없다)
+ *   ⛔ 단언할 수 없다 — **실측으로만 안다** (HANDOFF 2.107에 수치가 있다)
+ *      · 키보드가 뜬 뒤 셋이 실제로 보이는가
+ *      · 입력란이 화면 위로 사라지지 않는가
+ *      · 갈래 A(WebView ≥140)에서 동작하는가  ← 시험할 방법이 없다
+ *      · 뷰포트가 안 줄어드는 구성에서 조용히 아무 일도 안 하는 것
+ */
+test("키보드 훅이 입력 화면에만 있다", () => {
+  // ⛔ 결과 화면·About으로 새면 안 된다. TextMode가 언마운트되면 리스너도 사라진다.
+  const calls = appSrc.match(/useKeyboardReveal\(/g) || [];
+  assert.equal(calls.length, 2, `정의 1 + 호출 1이어야 한다 (${calls.length}곳)`);
+  const textMode = appSrc.slice(appSrc.indexOf("function TextMode("));
+  assert.ok(
+    textMode.slice(0, 400).includes("useKeyboardReveal(inputRef)"),
+    "TextMode가 훅을 쓰지 않는다",
+  );
+});
+
+test("방아쇠가 focus가 아니라 뷰포트 축소다", () => {
+  // ⚠ focus 시점에는 뷰포트가 아직 안 줄어 스크롤할 것이 없다 — 그래서 resize다.
+  const hook = appSrc.slice(appSrc.indexOf("function useKeyboardReveal("));
+  assert.ok(!/onFocus|addEventListener\("focus"/.test(hook), "focus에 걸려 있다");
+  assert.ok(hook.includes("KEYBOARD_SHRINK_MIN"), "축소 임계값이 없다");
+  assert.ok(
+    hook.includes('vp?.addEventListener("resize"') &&
+      hook.includes('window.addEventListener("resize"'),
+    "visualViewport와 window를 둘 다 듣지 않는다",
+  );
+});
+
+test("포커스가 그 입력란일 때만 · 커질 때는 아무것도 안 한다", () => {
+  const hook = appSrc.slice(appSrc.indexOf("function useKeyboardReveal("));
+  assert.ok(
+    hook.includes("document.activeElement !== el"),
+    "포커스 확인이 없다 — 회전 같은 다른 축소에 끌려간다",
+  );
+  assert.ok(
+    /if \(shrank < KEYBOARD_SHRINK_MIN\) return;/.test(hook),
+    "축소량 판정이 없다 — 커질 때도 움직인다",
+  );
+  // ⛔ 되돌리는 코드를 넣지 않는다. 문서가 뷰포트만 해지면 브라우저가
+  //   scrollY를 스스로 0으로 되돌린다 (실측 99 → 0).
+  assert.ok(!/scrollTo\(0, *0\)/.test(hook), "되돌리는 코드가 들어왔다 — 브라우저가 한다");
+});
+
+test('block "center"다 — "nearest"로 내려가지 않는다', () => {
+  // ⛔ "nearest"는 30px만 올려 「골라서 찾을래요」가 잘린 채 남는다. 그 버튼은
+  //   자연어로 옮기기 어려운 사람이 키워드 선택으로 가는 통로다 (사용자 판단).
+  const hook = appSrc.slice(appSrc.indexOf("function useKeyboardReveal("));
+  assert.ok(hook.includes('block: "center"'), 'block "center"가 아니다');
+  assert.ok(!hook.includes('block: "nearest"'), '"nearest"로 되돌아갔다');
+});

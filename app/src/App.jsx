@@ -640,7 +640,79 @@ function Input({
   );
 }
 
+/**
+ * 키보드가 올라오면 입력란을 화면 가운데로 끌어온다 (2026-09-02 · HANDOFF 2.107).
+ *
+ * [무엇이 문제였나 — 크기가 아니라 스크롤이었다]
+ *   키보드가 뜨면 뷰포트는 **줄어든다**(실측 592 → 341dp). 그런데 브라우저가
+ *   스크롤을 하지 않아 「마음 들여다보기」가 잘리고 「골라서 찾을래요」는 아예 밖으로 나갔다.
+ *   ⛔ 브라우저 기본 동작은 **포커스된 요소**만 보이게 한다. 그 요소는 입력란이고
+ *     입력란은 이미 보인다(bottom 294 < 341) — 그래서 스크롤할 이유가 없다.
+ *     가려지는 것은 그 **아래 버튼**이고 버튼은 포커스 대상이 아니다.
+ *
+ * [⚠⚠ 타이밍이 요점이다 — focus에 걸면 안 된다]
+ *   focus가 오는 시점에는 뷰포트가 **아직 592다.** 그때는 셋이 다 보이므로
+ *   스크롤할 것이 없다. 줄어든 **뒤에** 해야 하고, 그래서 resize를 듣는다.
+ *
+ * [무엇을 듣는가 — visualViewport와 window를 **둘 다** 듣는다]
+ *   실측(갈래 B)   innerHeight 592→341 · visualViewport.height 592→341. **둘 다 온다**
+ *   갈래 A 예측    Capacitor가 웹뷰 부모에 setPadding(0,0,0,imeInsets.bottom)을 준다.
+ *                그 패딩이 웹뷰를 줄이는 기전이고(실측: 부모 [0,0,1080,1920]는 그대로인데
+ *                웹뷰만 [0,72][1080,1095]로 줄었다), 갈래 A도 **같은 값**을 쓴다
+ *                → 640 → 365dp로 줄 것이다. 역시 둘 다 온다
+ *   ★ 그래도 둘을 다 듣는 이유는 **레이아웃은 그대로인데 IME가 덮기만 하는** 구성이
+ *     있을 수 있기 때문이다. 그때는 visualViewport만 줄어든다.
+ *     하단에서 세운 기준과 같다 — 시험할 수 없는 갈래가 있으면 넓게 잡는다.
+ *   ⚠ 먼저 온 쪽이 prev를 갱신하므로 뒤에 온 쪽은 축소량 0으로 보고 아무것도 안 한다.
+ *
+ * [⛔ 이 훅이 못 하는 것 — 뷰포트가 안 줄면 아무것도 못 한다]
+ *   웹은 키보드를 직접 볼 수 없다. **뷰포트가 줄어드는 것으로만 안다.**
+ *   실제로 줄지 않는 구성을 둘 봤다 —
+ *     · insetsHandling "disable" (2.105 실험): 640 고정
+ *     · 에뮬레이터의 스타일러스 필기 모드: 592 고정
+ *   그런 자리에서는 이 훅이 **조용히 아무 일도 하지 않는다.** 증상은 지금과 같아진다.
+ *   ⛔ 그것을 웹에서 고칠 방법이 없다. 한계로 적어 둔다.
+ */
+const KEYBOARD_SHRINK_MIN = 120;
+
+function useKeyboardReveal(ref) {
+  useEffect(() => {
+    const vp = window.visualViewport;
+    const height = () => (vp ? vp.height : window.innerHeight);
+    let prev = height();
+
+    const onResize = () => {
+      const now = height();
+      const shrank = prev - now;
+      prev = now;
+      // ⚠ 커질 때는 아무것도 하지 않는다. 키보드가 내려가면 문서가 다시 뷰포트만
+      //   해져 스크롤 여유가 0이 되고, **브라우저가 알아서 0으로 되돌린다**
+      //   (실측 scrollY 99 → 0). 돌아오는 쪽에 코드가 필요 없다.
+      if (shrank < KEYBOARD_SHRINK_MIN) return;
+      const el = ref.current;
+      // ⛔ 포커스가 이 입력란에 있을 때만이다. 회전 등 다른 축소에 끌려가지 않는다.
+      if (!el || document.activeElement !== el) return;
+      // block "center"를 고른 이유 — "nearest"는 30px만 올려 버튼은 살리지만
+      // 「골라서 찾을래요」가 잘린 채로 남는다. 그 버튼은 자연어로 옮기기 어려운
+      // 사람이 키워드 선택으로 가는 **통로**라 가려두지 않는다 (사용자 판단).
+      el.scrollIntoView({ block: "center", behavior: "auto" });
+    };
+
+    vp?.addEventListener("resize", onResize);
+    window.addEventListener("resize", onResize);
+    return () => {
+      vp?.removeEventListener("resize", onResize);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [ref]);
+}
+
 function TextMode({ text, onType, placeholder, onSwitchToPicker, onSubmit }) {
+  // ⚠ 이 훅은 **여기에만** 있다. TextMode가 언마운트되면 리스너도 사라지므로
+  //   결과 화면·About·선택 모드에는 이 스크롤이 새지 않는다.
+  const inputRef = useRef(null);
+  useKeyboardReveal(inputRef);
+
   return (
     <div style={styles.modeBlock}>
       {/* 한 줄 입력이다. textarea 4줄 상자였던 것을 바꿨다 —
@@ -648,6 +720,7 @@ function TextMode({ text, onType, placeholder, onSwitchToPicker, onSubmit }) {
           말과 화면이 어긋나고, 큰 상자는 "길게 써야 하나" 하는 부담을 준다.
           FYM도 같은 이유로 input 한 줄이다. */}
       <input
+        ref={inputRef}
         value={text}
         onChange={(e) => onType(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && onSubmit(text)}
