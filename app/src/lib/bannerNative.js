@@ -72,9 +72,13 @@ export async function setBannerShown(shown) {
     await box.ad.initialize({});
     await box.ad.showBanner({
       adId: APP_BANNER_UNIT,
-      // ⛔ LARGE_BANNER(320×100)다. 적응형은 높이를 SDK가 정해서
+      // ⛔ BANNER(320×50 · 표준 배너)다. 적응형은 높이를 SDK가 정해서
       //   하단 조정이 런타임 값이 된다 (HANDOFF 2.96 안 1).
-      adSize: "LARGE_BANNER",
+      // ⚠ adsApp.js의 BANNER_HEIGHT와 **짝이다.** 한쪽만 바꾸면
+      //   비워 둔 자리와 실제 띠 높이가 어긋난다 — 회귀가 둘을 함께 본다.
+      // ★ 100 → 50은 실기기 관측이 뒤집은 것이다 (HANDOFF 2.104).
+      //   콘솔 단위는 새로 만들지 않았다 — 콘솔이 크기를 묻지 않는다(C3).
+      adSize: "BANNER",
       position: "BOTTOM_CENTER",
       margin: 0,
     });

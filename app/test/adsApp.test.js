@@ -18,6 +18,7 @@ import assert from "node:assert/strict";
 
 import {
   BANNER_HEIGHT,
+  BANNER_GAP,
   SCREEN,
   bannerSpace,
   bannerVisible,
@@ -59,17 +60,76 @@ test("⛔ 허용 목록이다 — 모르는 화면은 안 보인다", () => {
 /* --- 빈 띠는 접는다 ------------------------------------------------------- */
 
 test("⛔ 광고가 안 채워지면 자리를 0으로 접는다", () => {
-  // 빈 띠가 하단 100px을 먹는 것은 광고 없이 자리만 차지하는 최악의 상태다.
+  // 빈 띠가 하단을 먹는 것은 광고 없이 자리만 차지하는 최악의 상태다.
   // 웹에서 AD_SLOT이 비면 요소를 아예 안 그리는 것과 같은 원칙이다.
+  // ★ 배경면도 이 값에 묶여 있다 — 0이면 배경면·간격·하단 요소가 함께 사라진다.
   assert.equal(bannerSpace({ screen: SCREEN.RESULT, filled: false }), 0);
   assert.equal(bannerSpace({ screen: SCREEN.RESULT }), 0, "filled 기본값이 true다");
-  assert.equal(bannerSpace({ screen: SCREEN.RESULT, filled: true }), BANNER_HEIGHT);
+  assert.equal(
+    bannerSpace({ screen: SCREEN.RESULT, filled: true }),
+    BANNER_HEIGHT + BANNER_GAP,
+  );
 });
 
-test("띠 높이는 100이다 (LARGE_BANNER 320×100)", () => {
+test("띠 높이는 50이다 (표준 배너 320×50)", () => {
   // 상수인 것이 안 1을 고른 이유다 — 적응형은 높이를 SDK가 정해서
   // 하단 조정이 런타임 값이 되고, 띠 전후로 레이아웃이 한 번 움직인다.
-  assert.equal(BANNER_HEIGHT, 100);
+  // ★ 100 → 50은 실기기 관측이 뒤집었다 (HANDOFF 2.104).
+  assert.equal(BANNER_HEIGHT, 50);
+});
+
+test("네이티브 adSize가 BANNER_HEIGHT와 짝이다", () => {
+  // ⛔ 한쪽만 바꾸면 비워 둔 자리와 실제 띠 높이가 어긋난다.
+  //   그 어긋남은 화면에 "배너 아래 빈 공간"으로 나타난다 — 2.103이 그 모양이다.
+  const native = readSource("lib", "bannerNative.js");
+  assert.ok(
+    native.includes('adSize: "BANNER"'),
+    "네이티브가 320×50을 요청하지 않는다",
+  );
+  assert.ok(
+    !native.includes("LARGE_BANNER"),
+    "LARGE_BANNER(320×100)가 남아 있다 — BANNER_HEIGHT 50과 어긋난다",
+  );
+});
+
+test("간격 상수가 띠 높이와 별개다", () => {
+  // ⛔ 전에는 비워 두는 값이 곧 배너 높이였고, 그래서 하단 요소가 배너 상단선에
+  //   **정확히 붙었다**(실기기 관측 · 2.104).
+  // ★ 배너 높이가 바뀌어도 간격이 유지되어야 한다 — 그래서 값을 가른다.
+  assert.ok(BANNER_GAP > 0, "간격이 0이면 하단 요소가 띠에 붙는다");
+  assert.notEqual(BANNER_GAP, BANNER_HEIGHT, "간격이 높이를 따라가면 가른 뜻이 없다");
+  // ⚠ 배너는 하단 인셋만큼 위에 앉고 그 인셋을 웹에서 못 읽는다(2.103).
+  //   실제 간격 = 24(떠 있는 버튼 오프셋) + BANNER_GAP − 인셋.
+  //   3버튼 내비게이션(48dp)에서도 양수여야 한다.
+  const MAX_BOTTOM_INSET = 48;
+  assert.ok(
+    24 + BANNER_GAP - MAX_BOTTOM_INSET > 0,
+    "최악의 인셋에서 간격이 0 이하가 된다 — 하단 요소가 다시 띠에 붙는다",
+  );
+});
+
+test("배경면이 bottomInset에 묶여 있다 (광고가 없으면 안 그린다)", () => {
+  // ⛔ 어제 안 ②를 기각한 사유가 "광고가 없을 때 배경 띠가 남는다"였다.
+  //   배경을 filled에 묶으면 그 문제가 없어진다 — 여기서 그것을 고정한다.
+  assert.ok(
+    appSrc.includes("{bottomInset > 0 ?"),
+    "배경면이 bottomInset에 걸려 있지 않다 — 광고가 없어도 띠가 남는다",
+  );
+  assert.ok(
+    appSrc.includes("bandStyle(bottomInset)") &&
+      appSrc.includes("bandFadeStyle(bottomInset)"),
+    "배경면 높이가 bottomInset에서 나오지 않는다 — 값 하나로 함께 움직여야 한다",
+  );
+  // ⛔ 전체 폭이어야 한다. 좌우를 띄우면 화면 맨 아래 모서리로 내용이 샌다.
+  assert.ok(
+    /function bandStyle[\s\S]*?left: 0,[\s\S]*?right: 0,[\s\S]*?bottom: 0,/.test(appSrc),
+    "배경면이 화면 아래끝 전체 폭에 붙어 있지 않다",
+  );
+  // ⛔ 1px 실선은 넣지 않는다 (사용자 결정) — 페이드가 그 자리를 대신한다.
+  assert.ok(
+    appSrc.includes("BAND_FADE"),
+    "위쪽 페이드가 없다 — 배너가 면 위로 삐져나올 때 닫을 것이 없다",
+  );
 });
 
 /* --- 화면 판정이 App.jsx와 같은가 ----------------------------------------- */

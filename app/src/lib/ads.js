@@ -80,7 +80,19 @@ export const adsEnabled = IS_APP ? Boolean(APP_AD_UNIT) : Boolean(AD_SLOT);
 /** 앱 배너 단위 ID. ⚠ adsEnabled가 false면 부를 일이 없다. */
 export const APP_BANNER_UNIT = APP_AD_UNIT;
 
-/** 규격. 320은 우연이 아니라 App.jsx의 좌우 여백 20px에서 나온 값이다(2.51). */
+/**
+ * 규격 — ⛔ **여기는 웹(AdSense) 값이다. 앱과 같이 움직이지 않는다.**
+ *
+ * 320은 우연이 아니라 App.jsx의 좌우 여백 20px에서 나온 값이다(2.51).
+ *
+ * [⚠ 앱이 320×50으로 내려갈 때 이 값은 100으로 남겼다 — 사용자 판단 2026-09-02]
+ *   앱의 띠는 화면 **최하단에 떠 있는 것**이고, 웹의 광고는 목록 **항목 사이에
+ *   끼우는 것**이다. 웹은 그 자리를 320×100으로 설계했고, 색·여백 위계 실측
+ *   (2.35·2.36)이 그 값 **위에** 서 있다. 높이를 내리면 그 실측을 다시 해야 한다.
+ *   ★ 매체가 갈린 것을 값에도 반영한다 — 같은 숫자를 두 매체가 공유하면
+ *     한쪽을 고칠 때마다 다른 쪽을 흔든다. adsApp.js의 BANNER_HEIGHT와는
+ *     **일부러 다른 상수다.**
+ */
 export const AD_WIDTH = 320;
 export const AD_HEIGHT = 100;
 

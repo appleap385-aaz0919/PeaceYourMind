@@ -710,6 +710,51 @@ function SelectMode({ selectedCategory, onPickCategory, onStepBack, onChoose }) 
 }
 
 /**
+ * 배경면 위쪽 페이드의 높이(px).
+ *
+ * ★ 이것이 1px 실선을 대신한다 (사용자 결정 · 2026-09-02).
+ *   실선은 배너 윗변이 면의 윗변보다 삐져나올 때 좌우 20dp에만 보인다.
+ *   페이드는 **하드 엣지가 없어** 삐져나와도 티가 나지 않는다 —
+ *   인셋을 못 읽는다는 제약(2.103)이 그대로 이 선택의 근거다.
+ * ⚠ 목록이 배너 뒤로 사라지는 것을 부드럽게 하는 것이 원래 목적이고,
+ *   갈래 불확실성을 흡수하는 것은 덤으로 얻은 성질이다.
+ */
+const BAND_FADE = 24;
+
+/** 띠배너 뒤 배경면. 높이는 bannerSpace가 준다 — 광고가 없으면 그리지 않는다. */
+function bandStyle(bottomInset) {
+  return {
+    position: "fixed",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: bottomInset,
+    // ⚠ inkDeep이 아니라 ink다. 긴 목록의 아래쪽 배경이 이미 inkDeep이라
+    //   같은 색으로 깔면 **면이 있는지 없는지 보이지 않는다.**
+    //   한 단계 밝은 면이 "광고가 그 위에 놓였다"를 만든다.
+    background: T.ink,
+    // ⛔ 그림자는 이 면에만 줄 수 있다. 네이티브 AdView에는 CSS가 닿지 않는다.
+    boxShadow: "0 -6px 20px rgba(0,0,0,.45)",
+    pointerEvents: "none",
+  };
+}
+
+/** 배경면 위로 이어지는 페이드. 목록이 여기서 배너 뒤로 사라진다. */
+function bandFadeStyle(bottomInset) {
+  return {
+    position: "fixed",
+    left: 0,
+    right: 0,
+    // ⚠ 1px 겹친다. 소수점 반올림으로 실틈이 생기면 **그 자리로 내용이 비친다** —
+    //   이 변경이 없애려는 것이 바로 그 증상이다.
+    bottom: bottomInset - 1,
+    height: BAND_FADE + 1,
+    background: `linear-gradient(to top, ${T.ink}, ${T.ink}00)`,
+    pointerEvents: "none",
+  };
+}
+
+/**
  * 셸 — 모든 화면의 바깥틀.
  *
  * [떠 있는 버튼은 **여기서만** 그린다 — 2026-08-19]
@@ -763,6 +808,31 @@ function Shell({
         input:focus{ outline:none; border-bottom-color:${T.jade} !important }
       `}</style>
       <div style={styles.inner}>{children}</div>
+      {/* ★ 띠배너 뒤에 까는 배경면 — ①의 결함을 덮고 ③의 "떠 있는 느낌"을 만든다.
+          (2026-09-02 · HANDOFF 2.104)
+
+          [왜 이것 하나로 둘이 풀리는가]
+            네이티브 AdView는 하단 시스템 인셋만큼 위에 앉는데 **그 인셋을
+            웹에서 읽을 수 없다**(2.103 — 갈래에 따라 0px이다).
+            배경면은 **웹뷰 자기 아래끝**에 붙으므로 인셋 값을 몰라도
+            배너 아래 틈을 덮는다. 그래서 시험할 수 없는 갈래에서도 맞는다.
+          ⛔ 전체 폭이어야 한다. 카드처럼 좌우를 띄우면 화면 맨 아래 모서리로
+            내용이 다시 샌다 — 덮어야 할 것이 화면 아래끝까지이기 때문이다.
+          ★ 배너는 320dp 고정이라 360dp 화면에서 좌우 20dp씩 이 면이 드러난다.
+            그 20dp가 "광고가 목록에서 떨어져 있다"를 만드는 자리다.
+          ⚠ CSS는 AdView에 닿지 않는다. 그림자·모서리는 **이 면에만** 줄 수 있고,
+            배너는 그 위에 얹힌다 — "광고가 카드 위에 놓인" 모양이 한계다.
+          ⛔ 1px 실선은 넣지 않는다. 배너 윗변이 이 면의 윗변보다 위로
+            삐져나올 수 있어(인셋이 클 때) 선이 배너 좌우 20dp에만 보인다.
+            대신 **위쪽 페이드**로 닫는다 — 하드 엣지가 없으면 삐져나와도 티가 안 난다.
+          ⚠ bottomInset이 0이면 **아무것도 그리지 않는다.** 광고가 없을 때
+            배경 띠가 남는 것이 어제 이 안을 기각한 사유였다(2.104 ③). */}
+      {bottomInset > 0 ? (
+        <>
+          <div aria-hidden="true" style={bandFadeStyle(bottomInset)} />
+          <div aria-hidden="true" style={bandStyle(bottomInset)} />
+        </>
+      ) : null}
       {onRestart ? (
         <FloatingRestart
           onClick={onRestart}
