@@ -1317,10 +1317,36 @@ test("포커스가 그 입력란일 때만 · 커질 때는 아무것도 안 한
   assert.ok(!/scrollTo\(0, *0\)/.test(hook), "되돌리는 코드가 들어왔다 — 브라우저가 한다");
 });
 
-test('block "center"다 — "nearest"로 내려가지 않는다', () => {
-  // ⛔ "nearest"는 30px만 올려 「골라서 찾을래요」가 잘린 채 남는다. 그 버튼은
-  //   자연어로 옮기기 어려운 사람이 키워드 선택으로 가는 통로다 (사용자 판단).
+test("★ 입력란 top의 하한이 있고 스크롤이 그것에 걸린다", () => {
+  // ⛔⛔ 이 하한이 설계의 핵심이다. 기준이 "문서를 끝까지 민다"이므로 문서가
+  //   길어지면 그만큼 더 밀리고, 하한이 없으면 어느 날 **입력란이 화면 위로
+  //   사라진다.** 그리고 회귀는 레이아웃 값을 못 보므로 통과하면서 깨진다.
   const hook = appSrc.slice(appSrc.indexOf("function useKeyboardReveal("));
-  assert.ok(hook.includes('block: "center"'), 'block "center"가 아니다');
-  assert.ok(!hook.includes('block: "nearest"'), '"nearest"로 되돌아갔다');
+  assert.ok(
+    /const MIN_INPUT_TOP = (\d+);/.test(appSrc),
+    "MIN_INPUT_TOP 상수가 없다 — 하한 없이 문서 끝까지 밀면 입력란이 사라진다",
+  );
+  const floor = Number(appSrc.match(/const MIN_INPUT_TOP = (\d+);/)[1]);
+  assert.ok(floor >= 60, `하한이 너무 낮다 (${floor}) — 입력란이 화면 끝에 붙는다`);
+  assert.ok(
+    hook.includes("inputTop - MIN_INPUT_TOP"),
+    "스크롤 목표가 하한에 걸려 있지 않다",
+  );
+  assert.ok(
+    /Math\.min\(maxScroll, inputTop - MIN_INPUT_TOP\)/.test(hook),
+    "문서 끝과 하한이 겨루지 않는다 — min으로 둘 중 작은 쪽을 골라야 한다",
+  );
+  assert.ok(/Math\.max\(0,/.test(hook), "음수 스크롤을 막지 않는다");
+});
+
+test("아래쪽 요소에 ref를 달지 않는다 (구조 결합을 만들지 않는다)", () => {
+  // ⛔ 「이 앱에 대해」는 Shell이 그린다. TextMode에서 ref로 잡으려 하면
+  //   구조가 얽히고, 그 얽힘이 이 저장소가 반복해서 겪은 모양이다.
+  //   기준을 **문서 끝**으로 두면 아래에 요소가 추가돼도 자동으로 포함된다.
+  const hook = appSrc.slice(appSrc.indexOf("function useKeyboardReveal("));
+  assert.ok(
+    hook.includes("document.documentElement.scrollHeight"),
+    "문서 끝을 기준으로 삼지 않는다",
+  );
+  assert.ok(!hook.includes("scrollIntoView"), "요소 기준(scrollIntoView)으로 되돌아갔다");
 });
