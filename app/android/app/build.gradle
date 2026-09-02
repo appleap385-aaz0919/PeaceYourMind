@@ -61,6 +61,80 @@ if (!(pymAdmobAppId ==~ /ca-app-pub-\d+~\d+/)) {
     )
 }
 
+/*
+ * 릴리스에 **데모 광고 ID가 실리는 것**을 막는다 (2026-09-02 · HANDOFF 2.99).
+ *
+ * [왜 필요한가 — 이 값은 틀려도 화면이 멀쩡하다]
+ *   데모 ID를 그대로 두고 출시해도 **광고가 잘 나온다.** 구글의 시험 광고가
+ *   뜨기 때문이다. 수익만 0이고 아무 신호가 없다 —
+ *   3절 「일하는 방식」 ⓪-2가 말하는 "실패가 성공처럼 보이는" 자리다.
+ *   ⚠ 값이 **없거나 형식이 틀릴 때**는 반대로 앱이 즉시 죽는다(위 형식 검사).
+ *     두 실패의 모양이 정반대라 장치도 둘이 필요하다.
+ *
+ * [왜 테스트가 아니라 여기인가]
+ *   ⛔ npm test로는 못 잡는다 — 데모 ID는 **debug에서는 있어야 정상**이고,
+ *     build:app에는 debug/release 구분이 없다.
+ *   ⛔ appbuild.test.js도 반쪽이다 — dist-app(웹 자산)만 보므로 배너 단위는
+ *     잡아도 App ID는 못 본다(APK의 resValue다).
+ *   ★ 릴리스 산출물을 만드는 것은 로컬 gradle뿐이다. 막아야 할 자리가 여기다.
+ *
+ * ★ assembleRelease와 **bundleRelease를 함께** 막는다.
+ *   Play가 받는 것은 AAB다 — assemble만 막으면 정작 올리는 산출물이 안 걸린다.
+ */
+def DEMO_AD_PUBLISHER = "3940256099942544"
+
+def verifyNoDemoAdIds = tasks.register("verifyNoDemoAdIds") {
+    description = "릴리스 산출물에 구글 데모 광고 ID가 남아 있지 않은지 본다"
+    doLast {
+        def problems = []
+
+        // ① App ID — gradle이 이미 admob.properties에서 읽어 두었다.
+        if (pymAdmobAppId.contains(DEMO_AD_PUBLISHER)) {
+            problems << """  [1] App ID가 아직 **구글 데모 값**입니다.
+      지금 값   ${pymAdmobAppId}
+      고칠 곳   android/admob.properties  의  admob.appId
+      무엇으로  AdMob 콘솔에서 이 앱을 등록하고 받은 App ID (물결 ~ 로 구분되는 값)
+      ⚠ 광고 단위 ID(빗금 / 로 구분)를 여기 넣지 마세요. 다른 값입니다."""
+        }
+
+        // ② 배너 단위 ID — cap sync가 넣어 둔 웹 자산을 훑는다.
+        def assetsDir = file("src/main/assets/public")
+        def hits = []
+        if (assetsDir.exists()) {
+            fileTree(dir: assetsDir, includes: ["**/*.js", "**/*.html", "**/*.json"])
+                .each { f ->
+                    if (f.text.contains(DEMO_AD_PUBLISHER)) {
+                        hits << f.name
+                    }
+                }
+        }
+        if (!hits.isEmpty()) {
+            problems << """  [2] 앱 번들에 **구글 데모 광고 단위**가 남아 있습니다.
+      걸린 파일  ${hits.join(', ')}
+      고칠 곳   빌드할 때 넘기는 환경변수  ADMOB_BANNER_ID
+      무엇으로  AdMob 콘솔에서 만든 배너 광고 단위 ID (빗금 / 로 구분되는 값)
+      다시 하기  ADMOB_BANNER_ID=<실제 단위> npm run sync:app
+                ⚠ sync를 다시 해야 번들이 바뀝니다. gradle만 다시 돌리면 그대로입니다."""
+        }
+
+        if (!problems.isEmpty()) {
+            throw new GradleException(
+                "릴리스에 데모 광고 ID가 남아 있습니다 — 이대로 출시하면 " +
+                "**시험 광고가 나가고 수익이 0이 됩니다.**\n" +
+                "화면은 멀쩡해 보이므로 사람이 알아채지 못합니다. 그래서 여기서 세웁니다.\n\n" +
+                problems.join("\n\n") + "\n\n" +
+                "  고친 뒤 확인   설치해서 **앱이 뜨는지부터** 봅니다(App ID가 틀리면 즉시 죽습니다).\n" +
+                "                그다음 logcat에서 bannerAdLoaded를 봅니다. (HANDOFF 2.98)"
+            )
+        }
+    }
+}
+
+// ★ AAB를 함께 막는다. Play가 받는 것은 AAB다.
+tasks.matching { it.name in ["assembleRelease", "bundleRelease"] }.configureEach {
+    dependsOn verifyNoDemoAdIds
+}
+
 android {
     namespace = "io.github.appleap385.peaceinmind"
     compileSdk = rootProject.ext.compileSdkVersion
