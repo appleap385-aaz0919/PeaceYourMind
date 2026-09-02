@@ -120,3 +120,61 @@ test("⛔ 판단 파일에 네이티브 호출이 없다", () => {
     assert.ok(!adsAppSrc.includes(token), `adsApp.js에 네이티브 호출(${token})이 들어왔다`);
   }
 });
+
+/* --- 배선 ----------------------------------------------------------------
+ *
+ * ⚠ 위 순수 함수가 맞아도 **App이 그것을 안 쓰면 아무 일도 일어나지 않는다.**
+ *   여기서 배선을 본다. 소스를 읽는 검사이지만 대상이 화면 파일의 광고 토큰이
+ *   아니라 **연결 구조**라, 띠배너를 못 보던 그 구멍과는 다른 것을 본다.
+ */
+
+test("App이 화면 판정과 자리 계산을 직접 쓴다", () => {
+  for (const token of ["currentScreen({", "bannerSpace({", "bannerVisible(screen)"]) {
+    assert.ok(appSrc.includes(token), `App.jsx가 ${token}을 쓰지 않는다`);
+  }
+});
+
+test("⛔ Shell 호출마다 bottomInset이 간다 (한 곳이라도 빠지면 그 화면만 어긋난다)", () => {
+  // ⚠ 여는 태그 **안쪽만** 본다. 문서 전체의 bottomInset을 세면
+  //   Shell이 떠 있는 버튼에 넘기는 것까지 섞여 수가 맞아 보인다.
+  const openings = [...appSrc.matchAll(/<Shell(?=[\s>])[^>]*>/g)].map((m) => m[0]);
+  assert.ok(openings.length > 0, "Shell 호출을 찾지 못했다");
+  const missing = openings.filter((tag) => !tag.includes("bottomInset={bottomInset}"));
+  assert.equal(
+    missing.length,
+    0,
+    `Shell ${openings.length}곳 중 ${missing.length}곳에 bottomInset이 빠졌다`,
+  );
+});
+
+test("Shell의 아래 여백이 조건부다 (띠가 없으면 늘리지 않는다)", () => {
+  // 늘리기만 하면 띠가 없는 화면에 빈 여백이 생긴다.
+  assert.ok(
+    /paddingBottom: `calc\(40px \+ \$\{bottomInset\}px\)`/.test(appSrc),
+    "Shell이 bottomInset으로 아래 여백을 늘리지 않는다",
+  );
+});
+
+test("★ 떠 있는 버튼 둘이 같은 함수로 올라간다", () => {
+  // floatingStyle 하나를 공유하므로 한 곳만 고치면 둘 다 옮겨진다.
+  // 갈라지면 한쪽만 띠에 가린다.
+  const common = readSource("components", "common.jsx");
+  assert.ok(
+    /function floatingStyle\(shown, reducedMotion, bottomInset = 0\)/.test(common),
+    "floatingStyle이 bottomInset을 받지 않는다",
+  );
+  assert.ok(
+    /bottom: 24 \+ bottomInset/.test(common),
+    "floatingStyle이 bottomInset만큼 올라가지 않는다",
+  );
+  const calls = common.match(/floatingStyle\(shown, reducedMotion, bottomInset\)/g) || [];
+  assert.equal(calls.length, 2, `두 버튼이 함께 쓰지 않는다 (${calls.length}곳)`);
+});
+
+test("⛔ 네이티브 어댑터가 화면을 판단하지 않는다", () => {
+  // 판단이 두 곳에 있으면 갈라지고, 갈라지는 순간 위기 화면에 광고가 뜬다.
+  const native = readSource("lib", "bannerNative.js");
+  for (const token of ["SCREEN", "currentScreen", "bannerVisible", "crisis", "dailyVerse"]) {
+    assert.ok(!native.includes(token), `bannerNative.js가 화면을 판단한다 (${token})`);
+  }
+});

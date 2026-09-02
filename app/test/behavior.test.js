@@ -848,8 +848,11 @@ test("떠 있는 돌아가기는 하단 버튼과 같은 복귀 함수를 쓴다
   // 경로가 둘로 갈리면 한쪽만 고쳐지는 날이 온다.
   const src = readSource("App.jsx");
   assert.ok(src.includes("const closeAbout ="), "복귀 함수를 따로 두지 않았다");
+  // ⚠ prop **순서**에 묶지 않는다. 지키려는 것은 "같은 함수를 쓰는가"이지
+  //   "onAboutBack이 첫 prop인가"가 아니다. 2026-09-02에 bottomInset이 앞에
+  //   붙으면서 이 회귀가 뜻과 무관하게 깨졌다.
   assert.ok(
-    /<Shell onAboutBack=\{closeAbout\}/.test(src),
+    /<Shell[^>]*onAboutBack=\{closeAbout\}/.test(src),
     "떠 있는 버튼이 closeAbout을 쓰지 않는다",
   );
   assert.ok(

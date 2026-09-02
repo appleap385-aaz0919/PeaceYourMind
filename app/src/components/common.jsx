@@ -164,11 +164,16 @@ const REVEAL_AFTER_PX = 100;
  * 둘은 하는 일이 다르지만 **같은 자리에 같은 모양으로** 나타나야 한다.
  * 한쪽만 고치면 화면에 두 종류의 떠 있는 버튼이 생긴다.
  */
-function floatingStyle(shown, reducedMotion) {
+function floatingStyle(shown, reducedMotion, bottomInset = 0) {
   return {
     position: "fixed",
     right: 20,
-    bottom: 24,
+    // ★ 띠배너가 뜨면 그만큼 올라간다. **두 버튼이 이 함수 하나를 쓰므로
+    //   여기 한 줄이 둘을 다 옮긴다** — 한쪽만 올라가는 날이 없다.
+    // ⚠ bottomInset은 "보일 화면인가"만으로 정해지지 않는다. 광고가 실제로
+    //   채워졌을 때만 100이고, 미채움이면 0으로 돌아온다(adsApp.js bannerSpace).
+    //   그래서 띠가 접히면 버튼도 **함께 내려온다.**
+    bottom: 24 + bottomInset,
     padding: "10px 16px",
     borderRadius: 99,
     border: `1px solid ${T.jade}33`,
@@ -202,7 +207,7 @@ function floatingStyle(shown, reducedMotion) {
  *     정렬이고 떠 있는 버튼은 우측이라 픽셀이 겹치지 않을 수도 있지만,
  *     피하려는 것은 충돌이 아니라 **중복 노출**이다.
  */
-export function FloatingBack({ onClick, reducedMotion, anchorId }) {
+export function FloatingBack({ onClick, reducedMotion, anchorId, bottomInset = 0 }) {
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
@@ -235,14 +240,14 @@ export function FloatingBack({ onClick, reducedMotion, anchorId }) {
       onClick={onClick}
       aria-hidden={!shown}
       tabIndex={shown ? 0 : -1}
-      style={floatingStyle(shown, reducedMotion)}
+      style={floatingStyle(shown, reducedMotion, bottomInset)}
     >
       돌아가기
     </button>
   );
 }
 
-export function FloatingRestart({ onClick, reducedMotion }) {
+export function FloatingRestart({ onClick, reducedMotion, bottomInset = 0 }) {
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
@@ -260,7 +265,7 @@ export function FloatingRestart({ onClick, reducedMotion }) {
       onClick={onClick}
       aria-hidden={!shown}
       tabIndex={shown ? 0 : -1}
-      style={floatingStyle(shown, reducedMotion)}
+      style={floatingStyle(shown, reducedMotion, bottomInset)}
     >
       다시 적기
     </button>

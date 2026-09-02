@@ -62,6 +62,8 @@ import { READING, ResultTabs } from "./components/ResultTabs.jsx";
 import { VerseCard, verseFontSize } from "./components/VerseCard.jsx";
 import { VideoList } from "./components/VideoList.jsx";
 import { ABOUT_BACK_ID, About } from "./components/About.jsx";
+import { bannerSpace, bannerVisible, currentScreen } from "./lib/adsApp.js";
+import { setBannerShown, watchBannerFill } from "./lib/bannerNative.js";
 import { DailyVerse } from "./components/DailyVerse.jsx";
 import { T, SERIF } from "./theme.js";
 
@@ -115,6 +117,44 @@ export default function App() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [phase, mode, selectedCategory, result, showAbout, dailyVerse]);
+
+  /**
+   * 고정 띠배너 — **판단은 adsApp.js가 하고 여기서는 그것을 따르기만 한다.**
+   *
+   * ⛔ 기본이 숨김이다. "화면을 떠날 때 숨긴다"로 짜면 브리지 왕복 지연 동안
+   *   띠가 남고, 고정 띠는 화면이 바뀌어도 자리를 지키므로 그 한 프레임이
+   *   실제 노출이다. 그래서 **허용 화면일 때만 보인다**(HANDOFF 2.96 ②).
+   * ⚠ 콜드 스타트도 이것으로 풀린다 — 알림을 탭해 앱이 처음 뜰 때 첫 화면이
+   *   DailyVerse다. 기본이 숨김이면 배너를 아예 만들지 않는다.
+   */
+  const [bannerFilled, setBannerFilled] = useState(false);
+  const screen = currentScreen({
+    dailyVerse,
+    showAbout,
+    phase,
+    resultKind: result?.kind,
+  });
+  const bottomInset = bannerSpace({ screen, filled: bannerFilled });
+
+  useEffect(() => {
+    setBannerShown(bannerVisible(screen));
+  }, [screen]);
+
+  useEffect(() => {
+    let alive = true;
+    let release = () => {};
+    (async () => {
+      const off = await watchBannerFill((filled) => {
+        if (alive) setBannerFilled(filled);
+      });
+      if (alive) release = off;
+      else off();
+    })();
+    return () => {
+      alive = false;
+      release();
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -248,7 +288,7 @@ export default function App() {
    */
   if (dailyVerse) {
     return (
-      <Shell>
+      <Shell bottomInset={bottomInset}>
         <DailyVerse
           verse={dailyVerse}
           onWrite={() => {
@@ -265,7 +305,7 @@ export default function App() {
     // 갈리면 한쪽만 고쳐지는 날이 온다.
     const closeAbout = () => setShowAbout(false);
     return (
-      <Shell onAboutBack={closeAbout} reducedMotion={reducedMotion}>
+      <Shell bottomInset={bottomInset} onAboutBack={closeAbout} reducedMotion={reducedMotion}>
         <About attribution={attributionOf(versesData)} onBack={closeAbout} />
       </Shell>
     );
@@ -273,7 +313,7 @@ export default function App() {
 
   if (phase === PHASE.LOADING) {
     return (
-      <Shell>
+      <Shell bottomInset={bottomInset}>
         <div style={styles.loadingWrap}>
           {/* 호흡 애니메이션이 한 사이클 도는 동안 기다린다. reduced-motion에서는
               애니메이션만 꺼지고 지연(1000ms)은 유지된다 — 뜸은 시간에서 나온다. */}
@@ -287,7 +327,7 @@ export default function App() {
   if (phase === PHASE.RESULT && result) {
     if (result.kind === RESULT.CRISIS) {
       return (
-        <Shell onRestart={reset} reducedMotion={reducedMotion}>
+        <Shell bottomInset={bottomInset} onRestart={reset} reducedMotion={reducedMotion}>
           <Crisis data={data} onBack={reset} />
         </Shell>
       );
@@ -295,6 +335,7 @@ export default function App() {
     if (result.kind === RESULT.OK) {
       return (
         <Shell
+          bottomInset={bottomInset}
           onAbout={() => setShowAbout(true)}
           onRestart={reset}
           reducedMotion={reducedMotion}
@@ -305,7 +346,7 @@ export default function App() {
     }
     if (result.kind === RESULT.EMPTY) {
       return (
-        <Shell>
+        <Shell bottomInset={bottomInset}>
           <Msg
             title={taxonomy.ui.empty_input[0]}
             sub={taxonomy.ui.empty_input[1] || ""}
@@ -316,7 +357,7 @@ export default function App() {
       );
     }
     return (
-      <Shell>
+      <Shell bottomInset={bottomInset}>
         <Msg
           title={taxonomy.ui.no_match[0]}
           sub={taxonomy.ui.no_match[1] || ""}
@@ -330,7 +371,7 @@ export default function App() {
   }
 
   return (
-    <Shell onAbout={() => setShowAbout(true)}>
+    <Shell bottomInset={bottomInset} onAbout={() => setShowAbout(true)}>
       <Input
         mode={mode}
         text={text}
@@ -681,9 +722,28 @@ function SelectMode({ selectedCategory, onPickCategory, onStepBack, onChoose }) 
  *   이 자리를 고정해 두면 호출부가 실수할 여지가 없다.
  *   ⚠ 화면 컴포넌트 안으로 옮기지 말 것.
  */
-function Shell({ children, onAbout, onAboutBack, onRestart, reducedMotion }) {
+function Shell({
+  children,
+  onAbout,
+  onAboutBack,
+  onRestart,
+  reducedMotion,
+  bottomInset = 0,
+}) {
   return (
-    <div style={styles.shell}>
+    /**
+     * ⚠ padding-bottom은 **조건부다.** 띠가 없는 화면에서 늘리면 빈 여백만
+     *   생긴다. bottomInset이 0이면 원래 값(styles.shell) 그대로다.
+     * ★ 이 한 값이 셋을 함께 움직인다 — 문서 끝("이 앱에 대해" · About의
+     *   하단 "돌아가기" · 목록 마지막 항목)을 밀어 올리고, 떠 있는 버튼
+     *   둘을 올린다. 띠가 접히면 셋 다 함께 내려온다.
+     */
+    <div
+      style={{
+        ...styles.shell,
+        paddingBottom: `calc(40px + ${bottomInset}px)`,
+      }}
+    >
       <style>{`
         @keyframes breathe { 0%,100%{transform:scale(1);opacity:.30} 45%{transform:scale(1.20);opacity:.55} }
         @keyframes rise { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
@@ -704,7 +764,11 @@ function Shell({ children, onAbout, onAboutBack, onRestart, reducedMotion }) {
       `}</style>
       <div style={styles.inner}>{children}</div>
       {onRestart ? (
-        <FloatingRestart onClick={onRestart} reducedMotion={reducedMotion} />
+        <FloatingRestart
+          onClick={onRestart}
+          reducedMotion={reducedMotion}
+          bottomInset={bottomInset}
+        />
       ) : null}
       {/* "이 앱에 대해"의 떠 있는 돌아가기. FloatingRestart와 같은 이유로
           **여기서** 그린다 — .rise 안에 두면 fixed가 죽는다(HANDOFF 4.8).
@@ -714,6 +778,7 @@ function Shell({ children, onAbout, onAboutBack, onRestart, reducedMotion }) {
           onClick={onAboutBack}
           reducedMotion={reducedMotion}
           anchorId={ABOUT_BACK_ID}
+          bottomInset={bottomInset}
         />
       ) : null}
       {onAbout ? (
