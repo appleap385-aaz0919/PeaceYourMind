@@ -45,6 +45,9 @@ public class MainActivity extends BridgeActivity {
     /** 웹이 읽는 이름. ⛔ App.jsx의 readInsetBottomReal()과 짝이다. */
     private static final String CSS_VAR = "--inset-bottom-real";
 
+    /** 값이 바뀌었다고 웹에 알린다. ⛔ App.jsx의 useInsetBottomReal()과 짝이다. */
+    private static final String JS_EVENT = "pym:inset";
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -89,8 +92,12 @@ public class MainActivity extends BridgeActivity {
             final String value = dp + "px";
             if (value.equals(lastPushed)) return;
             lastPushed = value;
+            // ⛔ 값만 넣으면 **웹이 모른다.** 주입은 마운트 뒤에 오는데 리액트는
+            //   resize에서만 다시 읽으므로, 알리지 않으면 폴백에 머문다 —
+            //   실기기에서 배경면이 82가 아니라 122로 남는 것으로 드러났다.
             final String js =
-                "document.documentElement.style.setProperty('" + CSS_VAR + "','" + value + "')";
+                "document.documentElement.style.setProperty('" + CSS_VAR + "','" + value + "');"
+                    + "window.dispatchEvent(new Event('" + JS_EVENT + "'))";
             v.post(() -> {
                 WebView web = getBridge() == null ? null : getBridge().getWebView();
                 if (web != null) web.evaluateJavascript(js, null);

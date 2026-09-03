@@ -806,16 +806,25 @@ function readInsetBottomReal() {
   return Number.isFinite(px) && px >= 0 ? px : null;
 }
 
+/**
+ * ⛔ 네이티브가 값을 넣은 뒤 쏘는 이벤트 이름. **MainActivity의 JS_EVENT와 짝이다.**
+ *   주입은 마운트 뒤에 오므로 이것이 없으면 리액트가 폴백에 머문다 —
+ *   실기기에서 배경면이 82가 아니라 122dp로 남는 것으로 드러났다(2026-09-03).
+ */
+const INSET_EVENT = "pym:inset";
+
 function useInsetBottomReal() {
   const [value, setValue] = useState(() => readInsetBottomReal());
   useEffect(() => {
     const read = () => setValue(readInsetBottomReal());
     read();
     const vp = window.visualViewport;
+    window.addEventListener(INSET_EVENT, read);
     vp?.addEventListener("resize", read);
     window.addEventListener("resize", read);
     window.addEventListener("orientationchange", read);
     return () => {
+      window.removeEventListener(INSET_EVENT, read);
       vp?.removeEventListener("resize", read);
       window.removeEventListener("resize", read);
       window.removeEventListener("orientationchange", read);
