@@ -26,7 +26,13 @@
 
 import versesData from "../data/verses.json";
 import { KEYS, getSetting, setSetting } from "./db.js";
-import { OFF_BY, PERMISSION, permissionOutcome, shouldTurnOff } from "./notifyPermission.js";
+import {
+  OFF_BY,
+  PERMISSION,
+  enableDecision,
+  permissionOutcome,
+  shouldTurnOff,
+} from "./notifyPermission.js";
 import {
   WINDOW_DAYS,
   dropScheduled,
@@ -345,22 +351,16 @@ export async function setEnabled(next, { userInitiated = false } = {}) {
      * ⛔ 자동 경로(About 진입 등)에서는 여전히 막는다. 우리가 사용자 대신
      *   팝업을 소모하지 않는다는 원칙은 그대로다.
      */
-    if (
-      !userInitiated &&
-      (await getSetting(KEYS.NOTIFY_OFF_BY, null)) === OFF_BY.PERMISSION
-    ) {
-      return false;
-    }
-    const outcome = await ensurePermission();
-    if (outcome !== PERMISSION.GRANTED) {
-      // ⚠ **거부일 때만** 표식을 남긴다. unknown(못 읽음)은 아무것도 안 건드린다.
-      if (outcome === PERMISSION.DENIED) {
-        await setSetting(KEYS.NOTIFY_OFF_BY, OFF_BY.PERMISSION);
-      }
-      return false; // 호출부가 토글을 되돌린다
-    }
+    const offBy = await getSetting(KEYS.NOTIFY_OFF_BY, null);
+    // ⛔ 판단은 **enableDecision 한 곳**이다. 여기서 조건을 늘리지 말 것 —
+    //   갈래가 코드에 흩어지면 "어디서 막혔는지"를 값으로 확인할 수 없다.
+    let d = enableDecision({ userInitiated, offBy });
+    if (!d.ask) return false;
+    d = enableDecision({ userInitiated, offBy, outcome: await ensurePermission() });
+    if (d.mark === "permission") await setSetting(KEYS.NOTIFY_OFF_BY, OFF_BY.PERMISSION);
+    if (!d.ok) return false; // 호출부가 토글을 되돌린다
     await setSetting(KEYS.NOTIFY_ON, true);
-    await setSetting(KEYS.NOTIFY_OFF_BY, null); // 켜면 이유가 없다
+    if (d.mark === "clear") await setSetting(KEYS.NOTIFY_OFF_BY, null);
     await refreshSchedule();
     return true;
   }

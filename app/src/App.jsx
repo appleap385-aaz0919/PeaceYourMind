@@ -170,10 +170,17 @@ export default function App() {
       alive = false;
     };
   }, []);
+  const [toastLeaving, setToastLeaving] = useState(false);
   useEffect(() => {
     if (!toast) return undefined;
-    const id = setTimeout(() => setToast(""), TOAST_MS);
-    return () => clearTimeout(id);
+    setToastLeaving(false);
+    // ⚠ 떠 있는 시간이 먼저, 그 뒤에 나가는 움직임이 얹힌다.
+    const hide = setTimeout(() => setToastLeaving(true), TOAST_MS);
+    const gone = setTimeout(() => setToast(""), TOAST_MS + TOAST_OUT_MS);
+    return () => {
+      clearTimeout(hide);
+      clearTimeout(gone);
+    };
   }, [toast]);
   /**
    * 결과 화면 토글 — About 토글과 **같은 함수**를 쓴다 (2.119).
@@ -182,7 +189,18 @@ export default function App() {
    *   그 promise는 시스템 권한 팝업이 닫혀야 끝나므로 팝업 위에 뜰 수 없다.
    *   거부면 false라 안 뜬다. ⛔ 끌 때도 안 띄운다.
    */
+  // ⛔ 재진입을 막는다. 연타하면 두 호출이 IndexedDB 쓰기에서 엇갈린다.
+  const notifyBusy = useRef(false);
   const toggleNotify = async () => {
+    if (notifyBusy.current) return;
+    notifyBusy.current = true;
+    try {
+      await runToggleNotify();
+    } finally {
+      notifyBusy.current = false;
+    }
+  };
+  const runToggleNotify = async () => {
     const next = !notifyOn;
     setNotifyOn(next);
     // ⛔ 사용자가 직접 누른 것이다 — 거부 표식이 있어도 통과시킨다(막다른 길 방지).
@@ -347,7 +365,7 @@ export default function App() {
    */
   if (dailyVerse) {
     return (
-      <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast}>
+      <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast} toastLeaving={toastLeaving}>
         <DailyVerse
           verse={dailyVerse}
           onWrite={() => {
@@ -364,7 +382,7 @@ export default function App() {
     // 갈리면 한쪽만 고쳐지는 날이 온다.
     const closeAbout = () => setShowAbout(false);
     return (
-      <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast} onAboutBack={closeAbout} reducedMotion={reducedMotion}>
+      <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast} toastLeaving={toastLeaving} onAboutBack={closeAbout} reducedMotion={reducedMotion}>
         <About attribution={attributionOf(versesData)} onBack={closeAbout} />
       </Shell>
     );
@@ -372,7 +390,7 @@ export default function App() {
 
   if (phase === PHASE.LOADING) {
     return (
-      <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast}>
+      <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast} toastLeaving={toastLeaving}>
         <div style={styles.loadingWrap}>
           {/* 호흡 애니메이션이 한 사이클 도는 동안 기다린다. reduced-motion에서는
               애니메이션만 꺼지고 지연(1000ms)은 유지된다 — 뜸은 시간에서 나온다. */}
@@ -386,7 +404,7 @@ export default function App() {
   if (phase === PHASE.RESULT && result) {
     if (result.kind === RESULT.CRISIS) {
       return (
-        <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast} onRestart={reset} reducedMotion={reducedMotion}>
+        <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast} toastLeaving={toastLeaving} onRestart={reset} reducedMotion={reducedMotion}>
           <Crisis data={data} onBack={reset} />
         </Shell>
       );
@@ -397,6 +415,7 @@ export default function App() {
           bottomInset={bottomInset}
           band={{ h: bandHeight, lift: bandLift }}
           toast={toast}
+          toastLeaving={toastLeaving}
           onAbout={() => setShowAbout(true)}
           onRestart={reset}
           reducedMotion={reducedMotion}
@@ -407,7 +426,7 @@ export default function App() {
     }
     if (result.kind === RESULT.EMPTY) {
       return (
-        <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast}>
+        <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast} toastLeaving={toastLeaving}>
           <Msg
             title={taxonomy.ui.empty_input[0]}
             sub={taxonomy.ui.empty_input[1] || ""}
@@ -418,7 +437,7 @@ export default function App() {
       );
     }
     return (
-      <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast}>
+      <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast} toastLeaving={toastLeaving}>
         <Msg
           title={taxonomy.ui.no_match[0]}
           sub={taxonomy.ui.no_match[1] || ""}
@@ -432,7 +451,7 @@ export default function App() {
   }
 
   return (
-    <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast} onAbout={() => setShowAbout(true)}>
+    <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast} toastLeaving={toastLeaving} onAbout={() => setShowAbout(true)}>
       <Input
         mode={mode}
         text={text}
@@ -843,28 +862,59 @@ function useInsetBottomReal() {
  *   14일 창이 차면 스스로 멎는 설계와 어긋난다.
  *   「정한 시각에」는 **값이 아니라 관계**라 무엇으로 바꿔도 참이다.
  */
-const TOAST_TEXT = "정한 시각에 구절 한 절을 보내드릴게요";
+const TOAST_TEXT = "정해진 시각에 구절 한 절을 보내드릴게요";
+/** 떠 있는 시간. 나가는 움직임(TOAST_OUT_MS)이 그 뒤에 얹힌다. */
 const TOAST_MS = 2600;
+const TOAST_OUT_MS = 500;
 
 /**
  * ★ bottom을 **떠 있는 버튼에서 파생시킨다.** 배경면 높이·페이드에서 쌓아
  *   올리면 배경면이 82dp로 바뀔 때 따라가지 못한다.
  */
-function toastStyle(bottomInset, reducedMotion) {
+/**
+ * ★ **상단 중앙**이다 (2026-09-03 · 사용자 확정). 하단은 배경면·페이드·떠 있는
+ *   버튼으로 이미 차 있고, 구절을 잠시 가리는 것은 괜찮다고 정했다.
+ *
+ * [상단 인셋 — 네이티브가 필요 없다]
+ *   `env(safe-area-inset-top)`이 **세 갈래에서 모두 맞는다.**
+ *     갈래 A  웹뷰가 상태바 밑까지 간다  → env 24  → 그만큼 내린다
+ *     갈래 B·C 웹뷰가 이미 상태바 아래   → env 0   → 내릴 것이 없다
+ *   ⛔ 하단(--inset-bottom-real)과 달리 여기는 주입이 필요 없다.
+ *     배너는 네이티브가 인셋 위에 앉히지만 토스트는 웹 요소이기 때문이다.
+ *
+ * [모양 — 「다시 적기」와 같은 언어]
+ *   테두리 + 블러로 "떠 있는 것"을 만든다. ⛔ 그림자를 새로 도입하지 않는다 —
+ *   그림자는 배경면(bandStyle) 하나에만 쓰고 있고, 떠 있는 버튼은 테두리·블러다.
+ *   ★ 눈에 더 띄게 하려고 테두리를 33 → 55로 올렸다.
+ */
+function toastStyle(reducedMotion, leaving) {
   return {
     position: "fixed",
-    left: 24,
-    right: 24,
-    bottom: FLOATING_BOTTOM + bottomInset + FLOATING_HEIGHT + 12,
-    padding: "12px 16px",
-    borderRadius: 8,
-    background: "rgba(20,30,36,.96)",
-    border: "1px solid rgba(255,255,255,.10)",
+    top: "calc(env(safe-area-inset-top, 0px) + 12px)",
+    left: 0,
+    right: 0,
+    margin: "0 auto",
+    width: "fit-content",
+    maxWidth: "calc(100% - 48px)",
+    padding: "11px 18px",
+    borderRadius: 999,
+    background: `${T.ink}f2`,
+    border: `1px solid ${T.jade}55`,
+    backdropFilter: "blur(6px)",
+    WebkitBackdropFilter: "blur(6px)",
     color: T.mist,
     fontSize: 13,
     lineHeight: 1.5,
+    textAlign: "center",
     pointerEvents: "none",
-    transition: reducedMotion ? "none" : "opacity .24s ease",
+    zIndex: 10,
+    // ★ .rise의 **거울**이다 — 아래에서 떠오르는 대신 위에서 내려앉는다.
+    //   새 결을 만들지 않고 이미 쓰는 결(0.7s ease)을 뒤집는다.
+    animation: reducedMotion
+      ? "none"
+      : leaving
+        ? `toastOut ${TOAST_OUT_MS}ms ease both`
+        : "toastIn .7s ease both",
   };
 }
 
@@ -1129,6 +1179,7 @@ function Shell({
   bottomInset = 0,
   band = { h: 0, lift: 0 },
   toast = "",
+  toastLeaving = false,
 }) {
   return (
     /**
@@ -1147,6 +1198,9 @@ function Shell({
       <style>{`
         @keyframes breathe { 0%,100%{transform:scale(1);opacity:.30} 45%{transform:scale(1.20);opacity:.55} }
         @keyframes rise { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        /* ★ rise의 거울 — 위에서 내려앉는다. 같은 0.7s ease다. */
+        @keyframes toastIn { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes toastOut { from{opacity:1;transform:translateY(0)} to{opacity:0;transform:translateY(-6px)} }
         .rise{animation:rise .7s ease both}
         .orb{animation:breathe 10s ease-in-out infinite}
         @media (prefers-reduced-motion: reduce){ .orb{animation:none} .rise{animation:none} }
@@ -1194,7 +1248,7 @@ function Shell({
       ) : null}
       {/* ⛔ 켤 때만 뜬다. 끄거나 거부되면 App이 아예 값을 넣지 않는다. */}
       {toast ? (
-        <div role="status" aria-live="polite" style={toastStyle(bottomInset, reducedMotion)}>
+        <div role="status" aria-live="polite" style={toastStyle(reducedMotion, toastLeaving)}>
           {toast}
         </div>
       ) : null}

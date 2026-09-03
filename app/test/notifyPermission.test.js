@@ -14,6 +14,7 @@ import assert from "node:assert/strict";
 import {
   OFF_BY,
   PERMISSION,
+  enableDecision,
   permissionOutcome,
   shouldTurnOff,
 } from "../src/lib/notifyPermission.js";
@@ -106,4 +107,52 @@ test("⛔ 꺼진 이유를 남긴다 — 사용자가 끈 것과 권한이 없�
   );
   assert.equal(OFF_BY.USER, "user");
   assert.equal(OFF_BY.PERMISSION, "permission");
+});
+
+/* --- 끄고 다시 켜는 길 — **값으로** 못 박는다 (2026-09-03) ------------------
+ *
+ * ⛔ "끄고 다시 켜면 안 켜진다"가 두 번 나왔다. 게이트로 고정한다.
+ */
+
+test("★★ 끈 뒤(OFF_BY=user)에 사용자가 켜면 **막히지 않는다**", () => {
+  const d = enableDecision({ userInitiated: true, offBy: OFF_BY.USER });
+  assert.equal(d.ask, true, "사용자가 껐다는 표식이 다시 켜는 것을 막는다");
+});
+
+test("★★ 거부 표식이 있어도 **사용자가 누르면** 묻는다 (막다른 길 방지)", () => {
+  const d = enableDecision({ userInitiated: true, offBy: OFF_BY.PERMISSION });
+  assert.equal(d.ask, true);
+});
+
+test("⛔ 자동 경로에서 거부 표식이 있으면 묻지 않는다", () => {
+  const d = enableDecision({ userInitiated: false, offBy: OFF_BY.PERMISSION });
+  assert.deepEqual(d, { ask: false, ok: false, mark: "keep" });
+});
+
+test("자동 경로라도 표식이 user면 묻는다 — 끈 것과 거부는 다르다", () => {
+  assert.equal(enableDecision({ userInitiated: false, offBy: OFF_BY.USER }).ask, true);
+  assert.equal(enableDecision({ userInitiated: false, offBy: null }).ask, true);
+});
+
+test("허용되면 켜고 표식을 지운다", () => {
+  const d = enableDecision({ userInitiated: true, offBy: OFF_BY.USER, outcome: PERMISSION.GRANTED });
+  assert.deepEqual(d, { ask: true, ok: true, mark: "clear" });
+});
+
+test("거부되면 못 켜고 표식을 남긴다", () => {
+  const d = enableDecision({ userInitiated: true, offBy: null, outcome: PERMISSION.DENIED });
+  assert.deepEqual(d, { ask: true, ok: false, mark: "permission" });
+});
+
+test("⛔ unknown이면 못 켜되 **표식을 건드리지 않는다**", () => {
+  const d = enableDecision({ userInitiated: true, offBy: OFF_BY.USER, outcome: PERMISSION.UNKNOWN });
+  assert.deepEqual(d, { ask: true, ok: false, mark: "keep" });
+});
+
+test("⛔ notify.js가 판단을 흩뜨리지 않는다 — enableDecision 한 곳이다", () => {
+  assert.ok(notifySrc.includes("enableDecision("), "setEnabled가 판단 함수를 안 쓴다");
+  assert.ok(
+    !/offBy === OFF_BY\.PERMISSION/.test(notifySrc),
+    "notify.js가 표식을 직접 비교한다 — 갈래가 두 곳으로 흩어진다",
+  );
 });

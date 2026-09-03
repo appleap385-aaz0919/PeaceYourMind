@@ -276,16 +276,12 @@ test("★ 떠 있는 버튼 둘이 같은 함수로 올라간다", () => {
     /bottom: FLOATING_BOTTOM \+ bottomInset/.test(common),
     "floatingStyle이 bottomInset만큼 올라가지 않는다",
   );
-  // ★ 토스트가 이 둘에서 자기 자리를 계산한다 (2.119). 배경면 높이에서 쌓으면
-  //   배경면이 98→82로 바뀔 때 따라가지 못한다.
+  // ⚠ 토스트는 2026-09-03에 **상단 중앙**으로 옮겼다(사용자 확정). 더 이상
+  //   떠 있는 버튼에서 파생시키지 않는다 — 상단은 파생시킬 요소가 없다.
   assert.ok(
     /export const FLOATING_BOTTOM = \d+;/.test(common) &&
       /export const FLOATING_HEIGHT = \d+;/.test(common),
-    "떠 있는 버튼의 자리 상수가 밖으로 나와 있지 않다 — 토스트가 파생시킨다",
-  );
-  assert.ok(
-    /bottom: FLOATING_BOTTOM \+ bottomInset \+ FLOATING_HEIGHT \+ \d+/.test(appSrc),
-    "토스트가 떠 있는 버튼에서 자기 자리를 파생시키지 않는다",
+    "떠 있는 버튼의 자리 상수가 밖으로 나와 있지 않다",
   );
   const calls = common.match(/floatingStyle\(shown, reducedMotion, bottomInset\)/g) || [];
   assert.equal(calls.length, 2, `두 버튼이 함께 쓰지 않는다 (${calls.length}곳)`);
@@ -408,4 +404,24 @@ test("⛔ 배경면을 띄우면 그 **아래 틈을 덮는다** (콘텐츠가 �
   const cover = appSrc.indexOf("bandCoverStyle(band.lift)");
   const band = appSrc.indexOf("bandStyle(band.h, band.lift)");
   assert.ok(cover > -1 && band > -1 && cover < band, "덮개가 배경면 뒤에 그려진다");
+});
+
+test("★ 토스트는 상단 인셋을 env로 흡수한다 — 갈래별 주입이 필요 없다", () => {
+  // 갈래 A는 웹뷰가 상태바 밑까지 가고(env 24) B·C는 이미 아래에 있다(env 0).
+  // ⛔ 하단(--inset-bottom-real)과 달리 여기는 네이티브가 필요 없다.
+  assert.ok(
+    /top: "calc\(env\(safe-area-inset-top, 0px\) \+ \d+px\)"/.test(appSrc),
+    "토스트가 상단 인셋을 env로 다루지 않는다",
+  );
+  assert.ok(
+    /width: "fit-content"/.test(appSrc) && /margin: "0 auto"/.test(appSrc),
+    "토스트 상자가 내용 폭으로 가운데 놓이지 않는다",
+  );
+});
+
+test("⛔ 토스트 움직임이 앱의 결을 따른다 — .rise의 거울이고 reduced-motion을 지킨다", () => {
+  assert.ok(/@keyframes toastIn \{ from\{opacity:0;transform:translateY\(-10px\)\}/.test(appSrc),
+    "toastIn이 rise의 거울(위에서 내려앉기)이 아니다");
+  assert.ok(/reducedMotion\s*\?\s*"none"/.test(appSrc),
+    "reduced-motion에서 움직임을 빼지 않는다");
 });

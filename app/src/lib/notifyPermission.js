@@ -75,3 +75,31 @@ export const OFF_BY = Object.freeze({
   USER: "user", // About 토글로 직접 껐다 — ⛔ D는 다시 묻지 않는다
   PERMISSION: "permission", // 권한이 없어 내려갔다 — D가 물을 수 있다
 });
+
+/**
+ * **켤 때의 판단** — 순수 함수. 값으로 단언할 수 있게 꺼냈다 (2026-09-03).
+ *
+ * [왜 꺼냈나]
+ *   "끄고 다시 켜면 안 켜진다"가 두 번 나왔다. 한 번은 가드가 사용자를 가둔 것이었고
+ *   (⛔ 표식 permission), 두 번째는 재현하지 못했다. 판단이 setEnabled 안에 섞여
+ *   있으면 **어느 갈래에서 막혔는지 값으로 확인할 수 없다.**
+ *   ★ 그래서 갈래를 이름으로 만든다. 회귀가 갈래마다 값을 단언한다.
+ *
+ * @param {{userInitiated:boolean, offBy:string|null, outcome?:string}} state
+ *   outcome은 **물어본 뒤**의 결과다. ask가 false면 묻지 않았으므로 무시된다.
+ * @returns {{ask:boolean, ok:boolean, mark:"clear"|"permission"|"keep"}}
+ *   ask   시스템에 물어도 되는가
+ *   ok    켜도 되는가
+ *   mark  OFF_BY 표식을 어떻게 할 것인가 — clear 지운다 · permission 남긴다 · keep 그대로
+ */
+export function enableDecision({ userInitiated = false, offBy = null, outcome } = {}) {
+  // ⛔ 가드는 **자동 경로에만** 건다. 사용자가 누른 것은 통과시킨다 —
+  //   막으면 한 번 거부한 사람이 영영 켤 수 없다(2026-09-03 실사용 결함).
+  if (!userInitiated && offBy === OFF_BY.PERMISSION) {
+    return { ask: false, ok: false, mark: "keep" };
+  }
+  if (outcome === PERMISSION.GRANTED) return { ask: true, ok: true, mark: "clear" };
+  // ⚠ 거부일 때만 표식을 남긴다. unknown(못 읽음)은 아무것도 안 건드린다.
+  if (outcome === PERMISSION.DENIED) return { ask: true, ok: false, mark: "permission" };
+  return { ask: true, ok: false, mark: "keep" };
+}

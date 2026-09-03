@@ -51,17 +51,10 @@ test("⛔ 알림 기본값이 꺼짐이다 — OS에 따라 첫 화면이 갈리
   );
 });
 
-test("⛔ 자동 경로에서만 팝업을 막는다 — 사용자가 누른 것은 통과시킨다", () => {
-  // ⛔ 무조건 막았더니 **한 번 거부한 사용자가 켤 수 없었다**(막다른 길).
-  //   실기기에서 사용자가 먼저 발견했다 — 2026-09-03. 가드는 자동 경로에만 건다.
-  const guard = notifySrc.indexOf("!userInitiated");
-  const ask = notifySrc.indexOf("await ensurePermission()");
-  assert.ok(guard > -1, "가드에 userInitiated 조건이 없다 — 사용자가 갇힌다");
-  assert.ok(ask > -1, "ensurePermission 호출이 없다");
-  assert.ok(
-    guard < ask,
-    "가드가 ensurePermission 뒤에 있다 — 자동 경로에서 팝업을 한 번 더 소모한다",
-  );
+test("⛔ 켜기 판단을 setEnabled가 직접 하지 않는다 — enableDecision 한 곳이다", () => {
+  // ⚠ 갈래가 코드에 흩어지면 "어디서 막혔는지"를 값으로 확인할 수 없다.
+  //   판정의 내용은 notifyPermission.test.js가 값으로 단언한다.
+  assert.ok(notifySrc.includes("enableDecision("), "setEnabled가 판단 함수를 안 쓴다");
   assert.ok(
     /setEnabled\(next, \{ userInitiated: true \}\)/.test(appSrc),
     "결과 화면 토글이 userInitiated를 안 넘긴다",
@@ -72,10 +65,21 @@ test("⛔ 자동 경로에서만 팝업을 막는다 — 사용자가 누른 것
   );
 });
 
-test("⛔ 거부일 때만 표식을 남긴다 — unknown에서는 아무것도 안 건드린다", () => {
+test("⛔ 토글이 재진입을 막는다 — 연타하면 쓰기가 엇갈린다", () => {
   assert.ok(
-    /outcome === PERMISSION\.DENIED/.test(notifySrc),
-    "표식을 남기는 조건이 denied로 좁혀져 있지 않다",
+    /notifyBusy\.current/.test(appSrc),
+    "toggleNotify에 재진입 방어가 없다",
+  );
+});
+
+test("⛔ 표식은 판단이 permission이라고 말할 때만 남긴다", () => {
+  assert.ok(
+    /d\.mark === "permission"/.test(notifySrc),
+    "표식을 남기는 조건이 판단 결과에 묶여 있지 않다",
+  );
+  assert.ok(
+    /d\.mark === "clear"/.test(notifySrc),
+    "켤 때 표식을 지우는 조건이 판단 결과에 묶여 있지 않다",
   );
 });
 
