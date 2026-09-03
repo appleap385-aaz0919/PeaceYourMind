@@ -77,6 +77,25 @@ const BANNER_GAP_INSET_KNOWN = 24;
 const BANNER_GAP_INSET_UNKNOWN = 48;
 
 /**
+ * ★ **상하 여백 m** — 배너가 배경면 **가운데** 놓이게 하는 값 (2026-09-03 · 2.118 안 2).
+ *
+ * [요구 사양 ④] 배경면의 위·아래 여백이 같다. 그래서 배경면 높이 = 50 + 2m 이다.
+ * ⛔ **네이티브 배너의 margin과 같은 값이다** (bannerNative.js가 이 값을 넘긴다).
+ *   둘이 갈리면 배너가 가운데에서 벗어난다 — 회귀가 그것을 단언한다.
+ * ★ **상수여야 한다.** 인셋에서 계산하면 showBanner 첫 호출 값이 굳는다.
+ *   인셋은 배경면(웹)이 lift로 흡수하므로 이 값은 인셋과 무관하다.
+ * ⚠ m에 **기하적 상한은 없다** — 세 갈래 어디서도 음수가 생기지 않는다.
+ *   남는 상한은 심미 판단이다: 배경면(50+2m)이 화면의 몇 %를 먹는가.
+ *   m=12 → 74dp(휴대폰 878.7dp의 8.4%) · m=16 → 82dp(9.3%) · m=24 → 98dp(11.2%)
+ */
+export const BANNER_MARGIN = 16;
+
+/** 주입된 참 인셋이 쓸 만한 값인가. ⛔ 모르면 폴백으로 간다 — 그쪽이 음수가 안 된다. */
+function usableInset(v) {
+  return typeof v === "number" && Number.isFinite(v) && v >= 0;
+}
+
+/**
  * ⛔ **두 상수를 밖에서 못 바꾸게 묶어 둔다.** 회귀가 관계식을 단언한다.
  * ⚠ UNKNOWN은 "갈래 B에서 가정하는 인셋 상한"이다. 알려진 최대는 3버튼 48dp이고,
  *   그보다 큰 기기가 없다고 **보장할 수 없다** — 갈래 A는 읽으니 이 가정이 필요 없다
@@ -143,9 +162,43 @@ export function bannerVisible(screen) {
  *
  * @param {{screen: string, filled?: boolean}} state
  */
-export function bannerSpace({ screen, filled = false, safeAreaBottom = 0 } = {}) {
+export function bannerSpace({
+  screen,
+  filled = false,
+  safeAreaBottom = 0,
+  insetBottomReal = null,
+} = {}) {
   if (!bannerVisible(screen) || !filled) return 0;
+  // ★ 참 인셋이 오면 **대칭**이다. 갈래를 가리지 않는다 (2.118 안 2).
+  if (usableInset(insetBottomReal)) return BANNER_HEIGHT + 2 * BANNER_MARGIN;
+  // ⛔ 폴백 — 2.112의 옛 비대칭식. 대칭식은 상한 방어가 없어 음수가 될 수 있다.
   const sa = Number.isFinite(safeAreaBottom) && safeAreaBottom > 0 ? safeAreaBottom : 0;
   const gap = sa > 0 ? BANNER_GAP.insetKnown : BANNER_GAP.insetUnknown;
   return BANNER_HEIGHT + sa + gap;
+}
+
+/**
+ * 배경면을 웹 좌표계 바닥에서 **얼마나 띄우는가**(X · dp).
+ *
+ * [왜 띄우는가 — 2.118 안 2]
+ *   배너는 화면 아래끝에서 `인셋 + margin` 위에 앉는다. 배경면이 바닥(bottom:0)에
+ *   붙어 있으면 아래 여백이 `인셋 + margin`이 되어 위와 같아질 수 없다.
+ *   배경면을 **인셋만큼 띄우면** 아래 여백이 정확히 margin이 된다.
+ *     아래 여백 = (I + m) − (P + X) = m      ← X = I − P (= 웹 좌표계 안의 인셋)
+ *     위 여백  = (P + X + H) − (I + m + 50) = m
+ *   ★ 두 값 모두 **인셋과 무관해진다.** 갈래 구분이 사라지는 자리가 여기다.
+ *
+ * ⛔ 폴백에서는 **m을 그대로 띄운다.** 네이티브 margin이 상수라 항상 m만큼
+ *   올라가 있는데, 폴백 식(옛 식)은 margin이 0이던 시절의 값이기 때문이다.
+ *   X = m 이 그 m을 상쇄해 **2026-09-03 이전과 정확히 같은 기하**가 된다.
+ *   ⚠ 이 상쇄가 없으면 갈래 B 3버튼에서 위 여백이 음수가 된다 — 폴백이
+ *     지켜야 할 단 하나가 그것이다.
+ */
+export function bannerLift({
+  screen,
+  filled = false,
+  insetBottomReal = null,
+} = {}) {
+  if (!bannerVisible(screen) || !filled) return 0;
+  return usableInset(insetBottomReal) ? insetBottomReal : BANNER_MARGIN;
 }

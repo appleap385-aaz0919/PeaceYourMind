@@ -20,6 +20,7 @@
  */
 
 import { APP_BANNER_UNIT } from "./ads.js";
+import { BANNER_MARGIN } from "./adsApp.js";
 
 const IS_APP = typeof __IS_APP__ === "boolean" ? __IS_APP__ : false;
 
@@ -80,7 +81,14 @@ export async function setBannerShown(shown) {
       //   콘솔 단위는 새로 만들지 않았다 — 콘솔이 크기를 묻지 않는다(C3).
       adSize: "BANNER",
       position: "BOTTOM_CENTER",
-      margin: 0,
+      // ★ 배너를 배경면 **가운데**에 놓기 위해 아래로 m만큼 띄운다 (2.118 안 2).
+      //   ⛔ adsApp.js의 BANNER_MARGIN과 **같은 값이어야 한다.** 갈리면 배너가
+      //     가운데에서 벗어난다 — pluginPins.test.js가 둘을 함께 본다.
+      //   ⛔ **상수다.** 인셋에서 계산하지 말 것 — showBanner는 처음 한 번만
+      //     불리므로 그때 값이 굳는다. 인셋은 배경면(웹)이 lift로 흡수한다.
+      //   ★ 플러그인은 Android 15+ 에서만 여기에 인셋을 더하는데, 그것도
+      //     **리스너**라 회전에 스스로 따라간다 (BannerExecutor.java 실측).
+      margin: BANNER_MARGIN,
     });
     created = true;
   } catch {

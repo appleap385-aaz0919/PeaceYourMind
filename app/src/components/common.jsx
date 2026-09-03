@@ -164,6 +164,17 @@ const REVEAL_AFTER_PX = 100;
  * 둘은 하는 일이 다르지만 **같은 자리에 같은 모양으로** 나타나야 한다.
  * 한쪽만 고치면 화면에 두 종류의 떠 있는 버튼이 생긴다.
  */
+/**
+ * 떠 있는 버튼의 자리 — **다른 것이 이 위에 얹힐 때 여기서 파생시킨다.**
+ *
+ * ⛔ 토스트가 이 둘로 자기 bottom을 계산한다 (2.119). 배경면 높이·페이드에서
+ *   쌓아 올리면 배경면이 98→82로 바뀔 때 따라가지 못한다.
+ * ⚠ FLOATING_HEIGHT는 실측값이다(패딩 10 + 글자 12.5 + 패딩 10 ≈ 40dp).
+ *   패딩이나 글자 크기를 바꾸면 여기도 바꾼다 — 회귀가 토스트와의 관계만 본다.
+ */
+export const FLOATING_BOTTOM = 24;
+export const FLOATING_HEIGHT = 40;
+
 function floatingStyle(shown, reducedMotion, bottomInset = 0) {
   return {
     position: "fixed",
@@ -173,7 +184,7 @@ function floatingStyle(shown, reducedMotion, bottomInset = 0) {
     // ⚠ bottomInset은 "보일 화면인가"만으로 정해지지 않는다. 광고가 실제로
     //   채워졌을 때만 100이고, 미채움이면 0으로 돌아온다(adsApp.js bannerSpace).
     //   그래서 띠가 접히면 버튼도 **함께 내려온다.**
-    bottom: 24 + bottomInset,
+    bottom: FLOATING_BOTTOM + bottomInset,
     padding: "10px 16px",
     borderRadius: 99,
     border: `1px solid ${T.jade}33`,

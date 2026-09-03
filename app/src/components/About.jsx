@@ -269,7 +269,7 @@ function NotifySettings() {
       setReady(true);
       if (!s.on) return;
 
-      const ok = await ensurePermission(); // 이미 있으면 팝업 없이 통과한다
+      const ok = (await ensurePermission()) === "granted"; // 이미 있으면 팝업 없이 통과한다
       if (!alive) return;
       setOn(ok);
       setDenied(!ok);

@@ -155,4 +155,9 @@ export const KEYS = {
   //   건너뛰어진다. 알림은 제 기록을 따로 갖는다.
   NOTIFY_SEEN: "notify_seen", // {verseId: ISO 날짜}. 30일 지나면 버린다
   NOTIFY_LAST_BOOK: "notify_last_book", // 창을 이어 붙일 때 연속 금지용
+  // ⛔ 왜 꺼졌는지를 남긴다 (2026-09-03 · HANDOFF 2.116 ②).
+  //   "user"       About 토글로 사용자가 직접 껐다
+  //   "permission" 권한이 없어 refreshSchedule이 내렸다
+  //   ⚠ 가르지 않으면 A′가 내린 것을 D가 "사용자가 껐다"로 읽고 영영 안 묻는다
+  NOTIFY_OFF_BY: "notify_off_by",
 };

@@ -92,7 +92,7 @@ self_control 0 · rest 0
 감정 분류   대분류 9 · 세분류 24 · 키워드 923
 채널       allowlist 22 (하한 15까지 여유 7)
            blocklist 0 · reviewed_out 13
-게이트      파이썬 5종 + 앱 249건
+게이트      파이썬 5종 + 앱 272건
 ```
 <!-- STATS:END -->
 
@@ -13265,7 +13265,7 @@ Phase 4  사전 보강 · UI 개정 · 구절 확장                            
 감정 분류   대분류 9 · 세분류 24 · 키워드 923
 채널       allowlist 22 (하한 15까지 여유 7)
            blocklist 0 · reviewed_out 13
-게이트      파이썬 5종 + 앱 249건
+게이트      파이썬 5종 + 앱 272건
 ```
 <!-- STATS:END -->
 
@@ -13285,7 +13285,7 @@ SDK        min 24 · compile 36 · target 36
              전부로 읽지 말 것. 실제 목록은 APK로 확인한다(2.92·2.98)
 알림 채널    id morning_verse · importance 3 · vibration true · sound 지정 안 함
            ⛔ 채널은 한 번 만들어지면 코드로 못 바꾼다(2.94)
-알림 예약    id 4100~4113 (14일 창) · 기본 시각 09:00 · 기본값 켜짐 true
+알림 예약    id 4100~4113 (14일 창) · 기본 시각 09:00 · 기본값 켜짐 false
 운영자       개인 개발자가 만들어 운영합니다
 문의처       appleap385@gmail.com
 ```

@@ -26,6 +26,7 @@
 
 import versesData from "../data/verses.json";
 import { KEYS, getSetting, setSetting } from "./db.js";
+import { OFF_BY, PERMISSION, permissionOutcome, shouldTurnOff } from "./notifyPermission.js";
 import {
   WINDOW_DAYS,
   dropScheduled,
@@ -56,8 +57,22 @@ const CHANNEL_ID = "morning_verse";
 const ID_BASE = 4100;
 
 export const DEFAULT_TIME = "09:00";
-/** ⚠ 기본값은 **켜짐**이다(사용자 결정). 권한은 그래도 토글에서만 묻는다. */
-export const DEFAULT_ON = true;
+/**
+ * ⚠ 기본값은 **꺼짐**이다 (2026-09-03 · 사용자 확정 · HANDOFF 2.119).
+ *
+ * [왜 켜짐에서 내렸나]
+ *   Android 13+ 는 POST_NOTIFICATIONS가 런타임 권한이라, 기본이 켜짐이면
+ *   신규 설치에서 **화면은 「켜짐」인데 예약은 0건**이 된다(2.116 ②).
+ *   A′가 그것을 꺼짐으로 내리므로 13+ 에서는 어차피 꺼짐으로 보인다.
+ *   그런데 12 이하만 켜짐으로 남으면 **OS에 따라 첫 화면이 갈린다** — 혼란스럽다.
+ *   그래서 전 버전을 꺼짐으로 통일한다.
+ * ⚠ 대가 — Android 12 이하 신규 사용자는 **잘 되던 알림이 꺼진 채 시작한다.**
+ *   감수한 대가다. 12 이하는 토글을 켜면 시스템 팝업 없이 바로 켜지므로
+ *   진입 비용이 낮다는 것이 근거다.
+ * ⛔ **기존 사용자는 영향이 없다.** 이 값은 저장값이 없을 때만 쓰인다 —
+ *   이미 켜 둔 사람의 notify_on 은 그대로다.
+ */
+export const DEFAULT_ON = false;
 
 let boxed = null;
 
@@ -100,18 +115,36 @@ export function parseTime(text) {
 
 /**
  * 권한을 확인하고, 없으면 묻는다.
- * @returns {Promise<boolean>} 보낼 수 있는가
+ *
+ * ⚠ **boolean이 아니라 3값을 돌려준다** (2026-09-03 · HANDOFF 2.119).
+ *   호출부가 "거부됐다"와 "못 읽었다"를 갈라야 하기 때문이다 —
+ *   거부일 때만 표식을 남기고, 그 표식이 있으면 **다시는 시스템에 묻지 않는다.**
+ *   안드로이드는 두 번 거절하면 영구 거절이라 팝업을 최대 1회만 소모한다.
+ *
+ * @returns {Promise<"granted"|"denied"|"unknown">}
  */
 export async function ensurePermission() {
   const box = await api();
-  if (!box) return false;
+  if (!box) return PERMISSION.UNKNOWN;
   const { ln } = box;
+  // ⛔ 판정은 **permissionOutcome 한 곳**이다. 여기서 display를 직접 비교하면
+  //   판정이 두 곳으로 갈리고, 나중에 한쪽만 고쳐진다 (회귀가 이것을 막는다).
+  let raw = null;
+  let threw = false;
   try {
-    let status = await ln.checkPermissions();
-    if (status.display !== "granted") status = await ln.requestPermissions();
-    return status.display === "granted";
+    raw = await ln.checkPermissions();
   } catch {
-    return false;
+    threw = true;
+  }
+  const first = permissionOutcome(raw, threw);
+  if (first !== PERMISSION.DENIED) return first; // granted면 통과, unknown이면 묻지 않는다
+  // ⚠ 못 읽었으면 **묻지 않는다.** 상태를 모르는 채로 시스템 팝업을 소모하면
+  //   안드로이드의 "두 번 거절이면 영구 거절"을 헛되이 쓴다.
+  // ⛔ 이미 거부 표식이 있으면 여기까지 오지 않는다 — setEnabled가 막는다.
+  try {
+    return permissionOutcome(await ln.requestPermissions());
+  } catch {
+    return PERMISSION.UNKNOWN;
   }
 }
 
@@ -188,11 +221,25 @@ export async function refreshSchedule(now = new Date()) {
   await cancelOurs(ln);
   if (!on) return 0;
 
-  // 권한이 없으면 조용히 멈춘다. 여기서 묻지 않는다 — 토글이 묻는 자리다.
+  // 권한을 **셋으로** 읽는다 (2026-09-03 · HANDOFF 2.116 ②).
+  //   ⛔ 여기서 묻지 않는 것은 그대로다 — 토글과 D가 묻는 자리다.
+  //   ★ 바뀐 것은 **denied일 때 저장값을 함께 내리는 것**이다.
+  //     그래야 화면의 「켜짐」이 거짓말을 멈춘다.
+  //   ⛔ unknown(못 읽음)에서는 **아무것도 건드리지 않는다.**
+  //     일시적 실패에 사용자 설정이 꺼지면 알림이 조용히 영영 멎는다.
+  let raw = null;
+  let threw = false;
   try {
-    const status = await ln.checkPermissions();
-    if (status.display !== "granted") return 0;
+    raw = await ln.checkPermissions();
   } catch {
+    threw = true;
+  }
+  const outcome = permissionOutcome(raw, threw);
+  if (outcome !== PERMISSION.GRANTED) {
+    if (shouldTurnOff({ outcome, storedOn: on })) {
+      await setSetting(KEYS.NOTIFY_ON, false);
+      await setSetting(KEYS.NOTIFY_OFF_BY, OFF_BY.PERMISSION);
+    }
     return 0;
   }
 
@@ -276,13 +323,25 @@ export async function refreshSchedule(now = new Date()) {
 /** 토글을 켜고 끈다. 켤 때만 권한을 묻는다. */
 export async function setEnabled(next) {
   if (next) {
-    const ok = await ensurePermission();
-    if (!ok) return false; // 호출부가 토글을 되돌린다
+    // ⛔ **팝업은 최대 1회다.** 거부 표식이 이미 있으면 시스템에 다시 묻지 않는다 —
+    //   안드로이드는 두 번 거절하면 영영 안 띄운다. 호출부가 시스템 알림 설정으로 보낸다.
+    if ((await getSetting(KEYS.NOTIFY_OFF_BY, null)) === OFF_BY.PERMISSION) return false;
+    const outcome = await ensurePermission();
+    if (outcome !== PERMISSION.GRANTED) {
+      // ⚠ **거부일 때만** 표식을 남긴다. unknown(못 읽음)은 아무것도 안 건드린다.
+      if (outcome === PERMISSION.DENIED) {
+        await setSetting(KEYS.NOTIFY_OFF_BY, OFF_BY.PERMISSION);
+      }
+      return false; // 호출부가 토글을 되돌린다
+    }
     await setSetting(KEYS.NOTIFY_ON, true);
+    await setSetting(KEYS.NOTIFY_OFF_BY, null); // 켜면 이유가 없다
     await refreshSchedule();
     return true;
   }
   await setSetting(KEYS.NOTIFY_ON, false);
+  // ⛔ 사용자가 직접 껐다는 표식. D가 이 값을 보고 다시 묻지 않는다.
+  await setSetting(KEYS.NOTIFY_OFF_BY, OFF_BY.USER);
   await cancelAll();
   return true;
 }

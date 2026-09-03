@@ -33,7 +33,7 @@ import {
   sameDayGreetingPool,
 } from "./lib/messages.js";
 import { loadInitialData, shouldCheck, syncInBackground } from "./lib/sync.js";
-import { listenForTaps, refreshSchedule } from "./lib/notify.js";
+import { listenForTaps, readSettings, refreshSchedule, setEnabled } from "./lib/notify.js";
 import {
   CRISIS_POOL_KEY,
   attributionOf,
@@ -56,13 +56,20 @@ import {
 } from "./lib/videos.js";
 
 import { ChapterReader } from "./components/ChapterReader.jsx";
-import { Closing, FloatingBack, FloatingRestart, Msg } from "./components/common.jsx";
+import {
+  Closing,
+  FLOATING_BOTTOM,
+  FLOATING_HEIGHT,
+  FloatingBack,
+  FloatingRestart,
+  Msg,
+} from "./components/common.jsx";
 import { CrisisScreen } from "./components/CrisisScreen.jsx";
 import { READING, ResultTabs } from "./components/ResultTabs.jsx";
 import { VerseCard, verseFontSize } from "./components/VerseCard.jsx";
 import { VideoList } from "./components/VideoList.jsx";
 import { ABOUT_BACK_ID, About } from "./components/About.jsx";
-import { bannerSpace, bannerVisible, currentScreen } from "./lib/adsApp.js";
+import { bannerLift, bannerSpace, bannerVisible, currentScreen } from "./lib/adsApp.js";
 import { setBannerShown, watchBannerFill } from "./lib/bannerNative.js";
 import { DailyVerse } from "./components/DailyVerse.jsx";
 import { T, SERIF } from "./theme.js";
@@ -137,7 +144,55 @@ export default function App() {
   // ★ 인셋을 읽을 수 있으면 배경면이 그만큼 커져 배너를 담는다 (HANDOFF 2.112).
   //   못 읽으면(갈래 B) bannerSpace가 상한을 가정한다 — 판정은 그 함수 안에 있다.
   const safeAreaBottom = useSafeAreaBottom();
-  const bottomInset = bannerSpace({ screen, filled: bannerFilled, safeAreaBottom });
+  // ★ 네이티브가 넣어 주는 **참 인셋**(2.118 안 2). 오면 배경면이 대칭이 되고
+  //   갈래 구분이 사라진다. 안 오면 bannerSpace가 옛 비대칭식으로 떨어진다.
+  const insetBottomReal = useInsetBottomReal();
+  const bandHeight = bannerSpace({
+    screen,
+    filled: bannerFilled,
+    safeAreaBottom,
+    insetBottomReal,
+  });
+  // 배경면을 웹 바닥에서 띄우는 양. 배너 아래에 여백을 만드는 것이 이 값이다.
+  const bandLift = bannerLift({ screen, filled: bannerFilled, insetBottomReal });
+  /**
+   * ⚠ 문서와 떠 있는 버튼이 비켜야 하는 높이는 **배경면 높이 + 띄운 양**이다.
+   *   배경면이 바닥에서 떠 있으므로 둘을 더해야 그 위에 선다.
+   */
+  const bottomInset = bandHeight + bandLift;
+
+  const [notifyOn, setNotifyOn] = useState(false);
+  const [toast, setToast] = useState("");
+  useEffect(() => {
+    let alive = true;
+    readSettings().then((s) => alive && setNotifyOn(s.on));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (!toast) return undefined;
+    const id = setTimeout(() => setToast(""), TOAST_MS);
+    return () => clearTimeout(id);
+  }, [toast]);
+  /**
+   * 결과 화면 토글 — About 토글과 **같은 함수**를 쓴다 (2.119).
+   *
+   * ⛔ 토스트는 setEnabled가 true를 돌려준 **뒤에만** 띄운다.
+   *   그 promise는 시스템 권한 팝업이 닫혀야 끝나므로 팝업 위에 뜰 수 없다.
+   *   거부면 false라 안 뜬다. ⛔ 끌 때도 안 띄운다.
+   */
+  const toggleNotify = async () => {
+    const next = !notifyOn;
+    setNotifyOn(next);
+    const ok = await setEnabled(next);
+    if (next && !ok) {
+      setNotifyOn(false); // 권한을 못 받았다. 되돌린다
+      return;
+    }
+    if (next && ok) setToast(TOAST_TEXT);
+  };
+  const notify = { on: notifyOn, onToggle: toggleNotify };
 
   useEffect(() => {
     setBannerShown(bannerVisible(screen));
@@ -291,7 +346,7 @@ export default function App() {
    */
   if (dailyVerse) {
     return (
-      <Shell bottomInset={bottomInset}>
+      <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast}>
         <DailyVerse
           verse={dailyVerse}
           onWrite={() => {
@@ -308,7 +363,7 @@ export default function App() {
     // 갈리면 한쪽만 고쳐지는 날이 온다.
     const closeAbout = () => setShowAbout(false);
     return (
-      <Shell bottomInset={bottomInset} onAboutBack={closeAbout} reducedMotion={reducedMotion}>
+      <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast} onAboutBack={closeAbout} reducedMotion={reducedMotion}>
         <About attribution={attributionOf(versesData)} onBack={closeAbout} />
       </Shell>
     );
@@ -316,7 +371,7 @@ export default function App() {
 
   if (phase === PHASE.LOADING) {
     return (
-      <Shell bottomInset={bottomInset}>
+      <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast}>
         <div style={styles.loadingWrap}>
           {/* 호흡 애니메이션이 한 사이클 도는 동안 기다린다. reduced-motion에서는
               애니메이션만 꺼지고 지연(1000ms)은 유지된다 — 뜸은 시간에서 나온다. */}
@@ -330,7 +385,7 @@ export default function App() {
   if (phase === PHASE.RESULT && result) {
     if (result.kind === RESULT.CRISIS) {
       return (
-        <Shell bottomInset={bottomInset} onRestart={reset} reducedMotion={reducedMotion}>
+        <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast} onRestart={reset} reducedMotion={reducedMotion}>
           <Crisis data={data} onBack={reset} />
         </Shell>
       );
@@ -339,17 +394,19 @@ export default function App() {
       return (
         <Shell
           bottomInset={bottomInset}
+          band={{ h: bandHeight, lift: bandLift }}
+          toast={toast}
           onAbout={() => setShowAbout(true)}
           onRestart={reset}
           reducedMotion={reducedMotion}
         >
-          <Result result={result} data={data} onBack={reset} />
+          <Result result={result} data={data} onBack={reset} notify={notify} />
         </Shell>
       );
     }
     if (result.kind === RESULT.EMPTY) {
       return (
-        <Shell bottomInset={bottomInset}>
+        <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast}>
           <Msg
             title={taxonomy.ui.empty_input[0]}
             sub={taxonomy.ui.empty_input[1] || ""}
@@ -360,7 +417,7 @@ export default function App() {
       );
     }
     return (
-      <Shell bottomInset={bottomInset}>
+      <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast}>
         <Msg
           title={taxonomy.ui.no_match[0]}
           sub={taxonomy.ui.no_match[1] || ""}
@@ -374,7 +431,7 @@ export default function App() {
   }
 
   return (
-    <Shell bottomInset={bottomInset} onAbout={() => setShowAbout(true)}>
+    <Shell bottomInset={bottomInset} band={{ h: bandHeight, lift: bandLift }} toast={toast} onAbout={() => setShowAbout(true)}>
       <Input
         mode={mode}
         text={text}
@@ -393,7 +450,7 @@ export default function App() {
 }
 
 /** 결과 화면 — 공감 문구 → 구절 → 토글 → 영상(2층) → 마무리 */
-function Result({ result, data, onBack }) {
+function Result({ result, data, onBack, notify }) {
   const subcategory = result.subcategory;
   const pool = useMemo(() => versesFor(versesData, subcategory.id), [subcategory.id]);
   const [verse, setVerse] = useState(() =>
@@ -517,6 +574,7 @@ function Result({ result, data, onBack }) {
         value={pane === "reading" ? READING : mediaType}
         counts={counts}
         onChange={chooseTab}
+        notify={notify}
       />
       {/* [완전 연동 — key 하나가 그 일을 전부 한다. 2026-08-20 결정 A]
             "다른 구절"을 누르면 verse.id가 바뀌고, key가 바뀌면 React가
@@ -728,6 +786,78 @@ function useSafeAreaBottom() {
   return value;
 }
 
+/**
+ * 네이티브가 넣어 주는 **참 하단 인셋**(dp) — 없으면 null이다 (2.118 안 2).
+ *
+ * ⛔ env(safe-area-inset-bottom)와 **다른 값이다.** env()는 갈래 A에서만 참이고
+ *   B·C에서는 0을 준다. 이 변수는 MainActivity가 WindowInsets를 읽어
+ *   `--inset-bottom-real`로 넣는다 — 세 갈래에서 모두 참이다.
+ * ⚠ **null과 0을 갈라야 한다.** 갈래 C의 참값이 실제로 0이라, "안 왔다"를
+ *   0으로 뭉개면 폴백으로 못 떨어진다.
+ * ⚠ 회전·멀티윈도우에서 네이티브가 다시 넣으므로 resize에 다시 읽는다.
+ */
+function readInsetBottomReal() {
+  if (typeof document === "undefined") return null;
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue("--inset-bottom-real")
+    .trim();
+  if (!raw) return null;
+  const px = parseFloat(raw);
+  return Number.isFinite(px) && px >= 0 ? px : null;
+}
+
+function useInsetBottomReal() {
+  const [value, setValue] = useState(() => readInsetBottomReal());
+  useEffect(() => {
+    const read = () => setValue(readInsetBottomReal());
+    read();
+    const vp = window.visualViewport;
+    vp?.addEventListener("resize", read);
+    window.addEventListener("resize", read);
+    window.addEventListener("orientationchange", read);
+    return () => {
+      vp?.removeEventListener("resize", read);
+      window.removeEventListener("resize", read);
+      window.removeEventListener("orientationchange", read);
+    };
+  }, []);
+  return value;
+}
+
+/**
+ * 토글을 켠 직후의 짧은 응답 (2026-09-03 · HANDOFF 2.119).
+ *
+ * ⛔ **설명이 아니라 응답이다.** 「구절 알림」 다섯 글자로는 무엇을 받는지가
+ *   부족한데 탭 행에는 문장을 넣을 자리가 없다. 켠 뒤에 한 번 알린다.
+ * ⛔ 시각을 넣지 않는다 — 사용자가 About에서 바꾼다. 「매일」도 넣지 않는다 —
+ *   14일 창이 차면 스스로 멎는 설계와 어긋난다.
+ *   「정한 시각에」는 **값이 아니라 관계**라 무엇으로 바꿔도 참이다.
+ */
+const TOAST_TEXT = "정한 시각에 구절 한 절을 보내드릴게요";
+const TOAST_MS = 2600;
+
+/**
+ * ★ bottom을 **떠 있는 버튼에서 파생시킨다.** 배경면 높이·페이드에서 쌓아
+ *   올리면 배경면이 82dp로 바뀔 때 따라가지 못한다.
+ */
+function toastStyle(bottomInset, reducedMotion) {
+  return {
+    position: "fixed",
+    left: 24,
+    right: 24,
+    bottom: FLOATING_BOTTOM + bottomInset + FLOATING_HEIGHT + 12,
+    padding: "12px 16px",
+    borderRadius: 8,
+    background: "rgba(20,30,36,.96)",
+    border: "1px solid rgba(255,255,255,.10)",
+    color: T.mist,
+    fontSize: 13,
+    lineHeight: 1.5,
+    pointerEvents: "none",
+    transition: reducedMotion ? "none" : "opacity .24s ease",
+  };
+}
+
 const KEYBOARD_SHRINK_MIN = 120;
 
 /**
@@ -907,13 +1037,15 @@ function SelectMode({ selectedCategory, onPickCategory, onStepBack, onChoose }) 
 const BAND_FADE = 24;
 
 /** 띠배너 뒤 배경면. 높이는 bannerSpace가 준다 — 광고가 없으면 그리지 않는다. */
-function bandStyle(bottomInset) {
+function bandStyle(height, lift = 0) {
   return {
     position: "fixed",
     left: 0,
     right: 0,
-    bottom: 0,
-    height: bottomInset,
+    // ★ 바닥이 아니라 **인셋 위**다 (2.118 안 2). 이 한 줄이 배너 아래 여백을 만든다.
+    //   ⛔ 0으로 되돌리면 아래 여백이 사라져 배너가 바닥에 붙는다.
+    bottom: lift,
+    height,
     // ⚠ inkDeep이 아니라 ink다. 긴 목록의 아래쪽 배경이 이미 inkDeep이라
     //   같은 색으로 깔면 **면이 있는지 없는지 보이지 않는다.**
     //   한 단계 밝은 면이 "광고가 그 위에 놓였다"를 만든다.
@@ -925,14 +1057,14 @@ function bandStyle(bottomInset) {
 }
 
 /** 배경면 위로 이어지는 페이드. 목록이 여기서 배너 뒤로 사라진다. */
-function bandFadeStyle(bottomInset) {
+function bandFadeStyle(height, lift = 0) {
   return {
     position: "fixed",
     left: 0,
     right: 0,
     // ⚠ 1px 겹친다. 소수점 반올림으로 실틈이 생기면 **그 자리로 내용이 비친다** —
     //   이 변경이 없애려는 것이 바로 그 증상이다.
-    bottom: bottomInset - 1,
+    bottom: lift + height - 1,
     height: BAND_FADE + 1,
     background: `linear-gradient(to top, ${T.ink}, ${T.ink}00)`,
     pointerEvents: "none",
@@ -959,6 +1091,8 @@ function Shell({
   onRestart,
   reducedMotion,
   bottomInset = 0,
+  band = { h: 0, lift: 0 },
+  toast = "",
 }) {
   return (
     /**
@@ -1012,11 +1146,17 @@ function Shell({
             대신 **위쪽 페이드**로 닫는다 — 하드 엣지가 없으면 삐져나와도 티가 안 난다.
           ⚠ bottomInset이 0이면 **아무것도 그리지 않는다.** 광고가 없을 때
             배경 띠가 남는 것이 어제 이 안을 기각한 사유였다(2.104 ③). */}
-      {bottomInset > 0 ? (
+      {band.h > 0 ? (
         <>
-          <div aria-hidden="true" style={bandFadeStyle(bottomInset)} />
-          <div aria-hidden="true" style={bandStyle(bottomInset)} />
+          <div aria-hidden="true" style={bandFadeStyle(band.h, band.lift)} />
+          <div aria-hidden="true" style={bandStyle(band.h, band.lift)} />
         </>
+      ) : null}
+      {/* ⛔ 켤 때만 뜬다. 끄거나 거부되면 App이 아예 값을 넣지 않는다. */}
+      {toast ? (
+        <div role="status" aria-live="polite" style={toastStyle(bottomInset, reducedMotion)}>
+          {toast}
+        </div>
       ) : null}
       {onRestart ? (
         <FloatingRestart

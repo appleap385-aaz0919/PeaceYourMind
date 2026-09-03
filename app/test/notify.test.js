@@ -41,6 +41,35 @@ const appSrc = readSource("App.jsx");
 
 const DAY = 24 * 60 * 60 * 1000;
 
+/* --- 기본값과 팝업 소모 (2026-09-03 · HANDOFF 2.119) ---------------------- */
+
+test("⛔ 알림 기본값이 꺼짐이다 — OS에 따라 첫 화면이 갈리지 않게 한다", () => {
+  assert.ok(
+    /export const DEFAULT_ON = false;/.test(notifySrc),
+    "DEFAULT_ON이 false가 아니다 — 켜짐이면 Android 13+ 에서 화면만 「켜짐」이고 " +
+      "예약은 0건인 상태가 생기고, 12 이하와 첫 화면이 갈린다",
+  );
+});
+
+test("⛔ 시스템 팝업은 최대 1회다 — 거부 표식을 ensurePermission보다 **먼저** 본다", () => {
+  const guard = notifySrc.indexOf("OFF_BY.PERMISSION) return false");
+  const ask = notifySrc.indexOf("await ensurePermission()");
+  assert.ok(guard > -1, "거부 표식을 확인하는 자리가 없다");
+  assert.ok(ask > -1, "ensurePermission 호출이 없다");
+  assert.ok(
+    guard < ask,
+    "표식 확인이 ensurePermission 뒤에 있다 — 그러면 팝업을 한 번 더 소모하고, " +
+      "안드로이드는 두 번 거절이면 영영 안 띄운다",
+  );
+});
+
+test("⛔ 거부일 때만 표식을 남긴다 — unknown에서는 아무것도 안 건드린다", () => {
+  assert.ok(
+    /outcome === PERMISSION\.DENIED/.test(notifySrc),
+    "표식을 남기는 조건이 denied로 좁혀져 있지 않다",
+  );
+});
+
 /* --- 알람 계약 (두 축을 함께 못박는다) ------------------------------------ */
 
 /**

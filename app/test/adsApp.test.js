@@ -17,6 +17,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  BANNER_MARGIN,
+  bannerLift,
   BANNER_HEIGHT,
   BANNER_GAP,
   SCREEN,
@@ -153,18 +155,24 @@ test("배경면이 bottomInset에 묶여 있다 (광고가 없으면 안 그린�
   // ⛔ 어제 안 ②를 기각한 사유가 "광고가 없을 때 배경 띠가 남는다"였다.
   //   배경을 filled에 묶으면 그 문제가 없어진다 — 여기서 그것을 고정한다.
   assert.ok(
-    appSrc.includes("{bottomInset > 0 ?"),
-    "배경면이 bottomInset에 걸려 있지 않다 — 광고가 없어도 띠가 남는다",
+    appSrc.includes("{band.h > 0 ?"),
+    "배경면이 높이에 걸려 있지 않다 — 광고가 없어도 띠가 남는다",
   );
   assert.ok(
-    appSrc.includes("bandStyle(bottomInset)") &&
-      appSrc.includes("bandFadeStyle(bottomInset)"),
-    "배경면 높이가 bottomInset에서 나오지 않는다 — 값 하나로 함께 움직여야 한다",
+    appSrc.includes("bandStyle(band.h, band.lift)") &&
+      appSrc.includes("bandFadeStyle(band.h, band.lift)"),
+    "배경면과 페이드가 같은 기하(높이·띄움)를 쓰지 않는다 — 갈라지면 실틈이 생긴다",
   );
   // ⛔ 전체 폭이어야 한다. 좌우를 띄우면 화면 맨 아래 모서리로 내용이 샌다.
+  // ⛔ 전체 폭은 그대로다. 바닥에서 **띄우는** 것만 바뀌었다 (2.118 안 2) —
+  //   lift가 배너 아래 여백을 만든다. 0으로 되돌리면 배너가 바닥에 붙는다.
   assert.ok(
-    /function bandStyle[\s\S]*?left: 0,[\s\S]*?right: 0,[\s\S]*?bottom: 0,/.test(appSrc),
-    "배경면이 화면 아래끝 전체 폭에 붙어 있지 않다",
+    /function bandStyle\(height, lift = 0\)/.test(appSrc),
+    "bandStyle이 높이와 띄움을 따로 받지 않는다",
+  );
+  assert.ok(
+    /left: 0,[\s\S]*?right: 0,[\s\S]*?bottom: lift,/.test(appSrc),
+    "배경면이 전체 폭이 아니거나 lift만큼 띄우지 않는다",
   );
   // ⛔ 1px 실선은 넣지 않는다 (사용자 결정) — 페이드가 그 자리를 대신한다.
   assert.ok(
@@ -265,8 +273,19 @@ test("★ 떠 있는 버튼 둘이 같은 함수로 올라간다", () => {
     "floatingStyle이 bottomInset을 받지 않는다",
   );
   assert.ok(
-    /bottom: 24 \+ bottomInset/.test(common),
+    /bottom: FLOATING_BOTTOM \+ bottomInset/.test(common),
     "floatingStyle이 bottomInset만큼 올라가지 않는다",
+  );
+  // ★ 토스트가 이 둘에서 자기 자리를 계산한다 (2.119). 배경면 높이에서 쌓으면
+  //   배경면이 98→82로 바뀔 때 따라가지 못한다.
+  assert.ok(
+    /export const FLOATING_BOTTOM = \d+;/.test(common) &&
+      /export const FLOATING_HEIGHT = \d+;/.test(common),
+    "떠 있는 버튼의 자리 상수가 밖으로 나와 있지 않다 — 토스트가 파생시킨다",
+  );
+  assert.ok(
+    /bottom: FLOATING_BOTTOM \+ bottomInset \+ FLOATING_HEIGHT \+ \d+/.test(appSrc),
+    "토스트가 떠 있는 버튼에서 자기 자리를 파생시키지 않는다",
   );
   const calls = common.match(/floatingStyle\(shown, reducedMotion, bottomInset\)/g) || [];
   assert.equal(calls.length, 2, `두 버튼이 함께 쓰지 않는다 (${calls.length}곳)`);
@@ -278,4 +297,94 @@ test("⛔ 네이티브 어댑터가 화면을 판단하지 않는다", () => {
   for (const token of ["SCREEN", "currentScreen", "bannerVisible", "crisis", "dailyVerse"]) {
     assert.ok(!native.includes(token), `bannerNative.js가 화면을 판단한다 (${token})`);
   }
+});
+
+/* --- 안 2: 배너가 배경면 가운데에 놓인다 (2026-09-03 · HANDOFF 2.118) -------
+ *
+ * ⛔ 여기 있는 것은 **기하 모형**이다. 실제 배너가 그 자리에 앉는지는
+ *   실측으로만 안다 — 이 검사는 "우리가 계산한 값이 대칭인가"만 본다.
+ *
+ *   화면 아래끝을 0으로, 위를 +로 센다.
+ *     I  하단 시스템 인셋      P  웹뷰가 아래에서 잘린 양 (A·B=0 · C=I)
+ *     배너 아래끝  = I + m     배경면 아래끝 = P + X
+ */
+
+function geometry({ I, P, injected = null, safeAreaBottom = 0 }) {
+  const state = {
+    screen: SCREEN.RESULT,
+    filled: true,
+    safeAreaBottom,
+    insetBottomReal: injected,
+  };
+  const H = bannerSpace(state);
+  const X = bannerLift(state);
+  const bandBottom = P + X;
+  const bannerBottom = I + BANNER_MARGIN;
+  return {
+    H,
+    X,
+    below: bannerBottom - bandBottom,
+    above: bandBottom + H - (bannerBottom + BANNER_HEIGHT),
+  };
+}
+
+const BRANCHES = [
+  { name: "갈래 A 태블릿(48)", I: 48, P: 0, injected: 48, safeAreaBottom: 48 },
+  { name: "갈래 A 폰 제스처(24)", I: 24, P: 0, injected: 24, safeAreaBottom: 24 },
+  { name: "갈래 B 제스처(24)", I: 24, P: 0, injected: 24, safeAreaBottom: 0 },
+  { name: "갈래 B 3버튼(48)", I: 48, P: 0, injected: 48, safeAreaBottom: 0 },
+  { name: "갈래 C 3버튼(48)", I: 48, P: 48, injected: 0, safeAreaBottom: 0 },
+  { name: "갈래 C 제스처(24)", I: 24, P: 24, injected: 0, safeAreaBottom: 0 },
+];
+
+for (const b of BRANCHES) {
+  test(`★ ${b.name} — 위·아래 여백이 m으로 같다`, () => {
+    const g = geometry(b);
+    assert.equal(g.above, BANNER_MARGIN, `위 여백이 m이 아니다 (${g.above})`);
+    assert.equal(g.below, BANNER_MARGIN, `아래 여백이 m이 아니다 (${g.below})`);
+    assert.equal(g.H, BANNER_HEIGHT + 2 * BANNER_MARGIN, "배경면 높이가 50+2m이 아니다");
+  });
+}
+
+test("★ 배경면 높이는 인셋과 무관하다 — 주입값이 오면 갈래 구분이 사라진다", () => {
+  const heights = BRANCHES.map((b) => geometry(b).H);
+  assert.deepEqual(new Set(heights).size, 1, `갈래마다 높이가 다르다: ${heights}`);
+});
+
+test("⛔ 폴백(주입값 없음)에서 **음수가 생기지 않는다**", () => {
+  const cases = [
+    { I: 24, P: 0, safeAreaBottom: 24 },
+    { I: 48, P: 0, safeAreaBottom: 48 },
+    { I: 24, P: 0, safeAreaBottom: 0 },
+    { I: 48, P: 0, safeAreaBottom: 0 },
+    { I: 48, P: 48, safeAreaBottom: 0 },
+    { I: 24, P: 24, safeAreaBottom: 0 },
+    { I: 64, P: 0, safeAreaBottom: 64 },
+  ];
+  for (const c of cases) {
+    const g = geometry({ ...c, injected: null });
+    assert.ok(g.above >= 0, `폴백에서 위 여백이 음수다 (${g.above}) — ${JSON.stringify(c)}`);
+    assert.ok(g.below >= 0, `폴백에서 아래 여백이 음수다 (${g.below}) — ${JSON.stringify(c)}`);
+  }
+});
+
+test("⛔ 폴백은 2026-09-03 이전과 **같은 기하**다 (lift가 margin을 상쇄한다)", () => {
+  // 갈래 C 3버튼 — 옛 값: 배경면 98 · 위 48 · 아래 0
+  const g = geometry({ I: 48, P: 48, injected: null, safeAreaBottom: 0 });
+  assert.equal(g.H, 98);
+  assert.equal(g.above, 48);
+  assert.equal(g.below, 0);
+});
+
+test("⛔ 못 쓸 주입값은 폴백으로 간다 (음수·NaN·문자열·null)", () => {
+  for (const bad of [null, undefined, -1, NaN, "48", {}]) {
+    const g = geometry({ I: 48, P: 48, injected: bad, safeAreaBottom: 0 });
+    assert.equal(g.H, 98, `${String(bad)} 가 대칭식으로 갔다`);
+  }
+});
+
+test("광고가 안 채워지면 높이도 lift도 0이다", () => {
+  const off = { screen: SCREEN.RESULT, filled: false, insetBottomReal: 48 };
+  assert.equal(bannerSpace(off), 0);
+  assert.equal(bannerLift(off), 0);
 });

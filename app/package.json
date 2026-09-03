@@ -14,7 +14,7 @@
     "sync:app": "npm run build:app && cap sync android",
     "preview": "vite preview",
     "pretest": "npm run gen:data",
-    "test": "node --test test/behavior.test.js test/normalize.parity.test.js test/verses.test.js test/chapters.test.js test/ads.test.js test/appbuild.test.js test/notify.test.js test/adsApp.test.js"
+    "test": "node --test test/behavior.test.js test/normalize.parity.test.js test/verses.test.js test/chapters.test.js test/ads.test.js test/appbuild.test.js test/notify.test.js test/adsApp.test.js test/notifyPermission.test.js test/pluginPins.test.js"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.1.0",

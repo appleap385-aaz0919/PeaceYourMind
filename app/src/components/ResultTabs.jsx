@@ -45,7 +45,10 @@ import { T } from "../theme.js";
 export const READING = "reading";
 
 const LABELS = {
-  [READING]: "이어서 읽기",
+  // ⚠ 「이어서 읽기」에서 한 글자를 줄였다 (2026-09-03 · 2.119).
+  //   오른쪽에 「구절 알림」 토글이 들어오면서 자리를 만들어야 했다.
+  //   실측 — 탭 끝이 225.2 → 212dp가 되고 360dp에서 줄바꿈이 없다.
+  [READING]: "이어 읽기",
   [MEDIA.SERMON]: "말씀",
   [MEDIA.WORSHIP]: "찬양",
 };
@@ -53,7 +56,13 @@ const LABELS = {
 // 구분선은 **말씀 앞에만** 넣는다. 본문 묶음과 영상 형식 묶음의 경계다.
 const GROUPS = [[READING], [MEDIA.SERMON, MEDIA.WORSHIP]];
 
-export function ResultTabs({ value, counts, onChange }) {
+/**
+ * @param {{value:string, counts?:object, onChange:Function,
+ *          notify?:{on:boolean, onToggle:Function}}} props
+ *   notify를 안 주면 토글을 그리지 않는다 — 이 컴포넌트를 다른 화면이
+ *   재사용하게 되어도 설정이 따라가지 않는다.
+ */
+export function ResultTabs({ value, counts, onChange, notify }) {
   return (
     <div role="tablist" aria-label="결과 보기" style={styles.row}>
       {GROUPS.map((group, groupIndex) => (
@@ -89,6 +98,35 @@ export function ResultTabs({ value, counts, onChange }) {
           })}
         </span>
       ))}
+      {/* ★ 구절 알림 토글 — 오른쪽 정렬 (2026-09-03 · HANDOFF 2.119).
+          [왜 여기인가]
+            새 요소를 만들지 않고 **이미 있는 행**을 쓴다. 결과 화면에 층이
+            늘지 않고, About에 들어가야만 있던 알림 설정이 여기서 바로 보인다.
+          ★ 문구가 「구절 알림」인 것은 **안드로이드 알림 채널 이름과 같기**
+            때문이다. 시스템 설정에서 그 항목을 찾을 때 이름이 일치한다.
+          ⛔ 시각은 여기 두지 않는다. About에만 있다 — 결과 화면이 설정
+            화면이 되면 안 된다.
+          ⚠ 세로 구분선을 하나 더 쓴다. 앞 세 항목은 **화면을 바꾸는 탭**이고
+            이것은 **설정**이라 성격이 다르다. 오른쪽 정렬만으로는 약해서
+            이 행이 이미 쓰는 관용(묶음을 선으로 가른다)을 한 번 더 쓴다.
+          ★ 규칙 2(2.36)는 스위치가 이미 만족한다 — **형태**를 가진 컨트롤이라
+            글자만인 탭들과 종류가 다르게 보인다. */}
+      {notify ? (
+        <span style={styles.notifyCell}>
+          <span style={styles.divider} />
+          <span style={styles.notifyLabel}>구절 알림</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={notify.on}
+            aria-label="구절 알림"
+            onClick={notify.onToggle}
+            style={{ ...styles.track, ...(notify.on ? styles.trackOn : null) }}
+          >
+            <span style={{ ...styles.knob, ...(notify.on ? styles.knobOn : null) }} />
+          </button>
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -130,6 +168,31 @@ const styles = {
     paddingTop: 18,
   },
   cell: { display: "inline-flex", alignItems: "center" },
+  // 오른쪽 끝으로 민다. 탭 묶음과 설정 묶음이 한 행에서 갈린다.
+  notifyCell: { display: "inline-flex", alignItems: "center", marginLeft: "auto" },
+  notifyLabel: { color: `${T.muted}d9`, fontSize: 13, lineHeight: 1, marginRight: 8 },
+  // ⚠ 스위치는 **형태**가 컨트롤 표시다(2.36 규칙 2). 글자만인 탭과 갈린다.
+  track: {
+    position: "relative",
+    display: "inline-block",
+    width: 34,
+    height: 20,
+    borderRadius: 10,
+    background: "#ffffff1f",
+    border: "none",
+    padding: 0,
+  },
+  trackOn: { background: `${T.jade}8c` },
+  knob: {
+    position: "absolute",
+    top: 2,
+    left: 2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    background: T.muted,
+  },
+  knobOn: { left: 16, background: T.jade },
   divider: {
     width: 1,
     height: 11,
