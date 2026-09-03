@@ -65,11 +65,33 @@ public class MainActivity extends BridgeActivity {
         web.addOnLayoutChangeListener(
             (v, l, t, r, b, ol, ot, or_, ob) -> pushInset(v)
         );
-        web.post(() -> pushInset(web));
+        schedulePushes();
     }
 
-    /** 마지막으로 넣은 값. 같은 값을 반복해 넣지 않는다(레이아웃마다 불린다). */
-    private String lastPushed = null;
+    /**
+     * ⚠⚠ **같은 값을 다시 넣지 않는 최적화를 두지 않는다.** 두 번 데었다 —
+     *   ① 웹이 로드되면 넣어 둔 CSS 변수가 **사라진다.** 그때 레이아웃은 안 바뀌므로
+     *     리스너가 안 불리고, "이미 넣었다"고 기억하면 다시 넣지 않는다.
+     *   ② 그래서 값이 없는 채로 웹이 폴백(옛 비대칭식)에 머문다 —
+     *     실측에서 배경면이 82가 아니라 **98dp**로 나왔다(2026-09-03).
+     * ★ 그래서 **여러 번 넣는다.** 짧은 JS 한 줄이라 비용이 없고, 페이지 로드가
+     *   언제 끝나든 마지막 푸시가 살아남는다.
+     */
+    private static final long[] RETRY_MS = { 0L, 400L, 1200L, 3000L };
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        schedulePushes();
+    }
+
+    private void schedulePushes() {
+        final WebView web = getBridge() == null ? null : getBridge().getWebView();
+        if (web == null) return;
+        for (long delay : RETRY_MS) {
+            web.postDelayed(() -> pushInset(web), delay);
+        }
+    }
 
     private void pushInset(View v) {
         try {
@@ -90,8 +112,6 @@ public class MainActivity extends BridgeActivity {
             float dp = Math.max(0, inset - cut) / density;
 
             final String value = dp + "px";
-            if (value.equals(lastPushed)) return;
-            lastPushed = value;
             // ⛔ 값만 넣으면 **웹이 모른다.** 주입은 마운트 뒤에 오는데 리액트는
             //   resize에서만 다시 읽으므로, 알리지 않으면 폴백에 머문다 —
             //   실기기에서 배경면이 82가 아니라 122로 남는 것으로 드러났다.
