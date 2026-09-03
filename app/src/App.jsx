@@ -33,7 +33,13 @@ import {
   sameDayGreetingPool,
 } from "./lib/messages.js";
 import { loadInitialData, shouldCheck, syncInBackground } from "./lib/sync.js";
-import { listenForTaps, readSettings, refreshSchedule, setEnabled } from "./lib/notify.js";
+import {
+  isPermissionBlocked,
+  listenForTaps,
+  readSettings,
+  refreshSchedule,
+  setEnabled,
+} from "./lib/notify.js";
 import {
   CRISIS_POOL_KEY,
   attributionOf,
@@ -207,6 +213,18 @@ export default function App() {
     const ok = await setEnabled(next, { userInitiated: true });
     if (next && !ok) {
       setNotifyOn(false); // 권한을 못 받았다. 되돌린다
+      /**
+       * ⛔ **막다른 길에만 말한다** (2026-09-03 · HANDOFF 2.119b).
+       *   두 번 거절하면 시스템이 팝업을 더 안 띄운다. 그 상태에서 이 자리는
+       *   **아무 일도 안 일어난 것처럼** 보였다 — 기능이 죽은 것으로 읽힌다.
+       * ★ 여기서 부르는 것이 중요하다. setEnabled가 막 물어보고 왔으므로
+       *   Capacitor 캐시가 **새로 쓰인 뒤**다. 그 전에 물으면 낡은 값을 읽고
+       *   팝업이 뜰 수 있는 상태에 "설정으로 가라"고 말하게 된다(실측).
+       * ⛔ 아직 물어볼 수 있는 상태(한 번 거절·아직 안 물음)에서는 **말하지 않는다.**
+       *   다시 누르면 팝업이 뜨는데 설정으로 보내면 사용자가 헤맨다.
+       * ⛔ 설정 화면으로 보내지 않는다 — 알려만 준다(사용자 확정).
+       */
+      if (await isPermissionBlocked()) setToast(TOAST_BLOCKED);
       return;
     }
     if (next && ok) setToast(TOAST_TEXT);
@@ -863,9 +881,62 @@ function useInsetBottomReal() {
  *   「정한 시각에」는 **값이 아니라 관계**라 무엇으로 바꿔도 참이다.
  */
 const TOAST_TEXT = "정해진 시각에 구절 한 절을 보내드릴게요";
-/** 떠 있는 시간. 나가는 움직임(TOAST_OUT_MS)이 그 뒤에 얹힌다. */
-const TOAST_MS = 2600;
-const TOAST_OUT_MS = 500;
+/**
+ * ⛔ **영구 거절 뒤의 탈출구** (2026-09-03 · 사용자 확정 · HANDOFF 2.119b).
+ *
+ * 두 번 거절하면 안드로이드가 팝업을 더 안 띄운다. 그때 토글을 누르면
+ * **아무 일도 일어나지 않았다** — 기능이 죽은 것처럼 보인다.
+ * ⛔ 시스템 알림 설정으로 **보내지 않는다.** 알려만 준다(사용자 확정).
+ * ⛔ 토글은 OFF로 남는다 — 켜지지 않았으므로 켜진 것처럼 보이면 안 된다.
+ * ★ 어휘를 About의 확정 문구에서 가져왔다 —
+ *   "기기 설정에서 이 앱의 알림을 켜면 다시 받을 수 있습니다"(About.jsx).
+ *   두 자리가 다른 말을 쓰면 한쪽만 고쳐지는 날이 온다.
+ * ⛔ 「휴대폰」이라고 쓰지 않는다 — 태블릿에서 틀린 말이 된다.
+ *   ⚠ 기기 종류·설정 경로는 **바뀔 수 있는 값**이라 문구에 박지 않는다.
+ */
+const TOAST_BLOCKED = "기기 설정에서 알림을 켜 주세요";
+
+/**
+ * 떠 있는 시간. 나가는 움직임(TOAST_OUT_MS)이 **그 뒤에** 얹힌다.
+ *
+ * ⚠ 총 노출 = TOAST_MS + TOAST_OUT_MS = 4600 + 450 = **5050ms**.
+ *   정지해 있는 구간은 4600 − 450(들어옴) = 4150ms다.
+ * ★ 2600 → 4600 (2026-09-03 · 사용자). 2.6초는 읽기 전에 사라졌다.
+ */
+const TOAST_MS = 4600;
+/**
+ * 들어오고 나가는 시간 — **같다.** 대칭이 이 움직임의 규칙이기 때문이다.
+ *
+ * [★ 0.7s → 0.45s — .rise와 갈라도 되는 이유]
+ *   .rise(0.7s)는 **화면 진입**이다. 콘텐츠가 자리를 잡는 움직임이고 사용자는
+ *   그 화면에 머문다. 느린 것이 이 앱의 결(호흡 10초)과 맞는다.
+ *   토스트는 **알림**이다. 방금 누른 것에 대한 응답이라 늦으면 "눌렸나?"를
+ *   의심하게 된다. ★ 차분함은 **머무는 시간**(4.6초)이 만들고, 등장은
+ *   응답성이 만든다 — 역할이 갈리므로 값이 갈리는 것이 맞다.
+ *   ⚠ 대신 **곡선은 그대로 둔다**(ease). 속도만 다르고 성격은 안 다르게 한다.
+ */
+const TOAST_IN_MS = 450;
+const TOAST_OUT_MS = 450;
+/**
+ * 나가는 곡선 — **들어오는 곡선(ease)의 정확한 거울**이다.
+ *
+ * [⛔ 왜 ease를 그대로 쓰면 안 되나 — 실측이 이유다 (2026-09-03)]
+ *   ease는 앞이 빠른 곡선이라 opacity와 transform이 **같은 속도로** 진행한다.
+ *   옛 값(6px · ease)을 실기기에서 프레임 단위로 재 보니
+ *     opacity 0.5가 되는 시점에 이동은 **3.08px**뿐이었다.
+ *   거의 다 사라진 **뒤에** 나머지가 움직이므로, 눈에는 페이드로만 보인다.
+ *   사용자 신고가 정확했다 — "사라질 때는 움직임이 없다".
+ *
+ * [★ 거울을 어떻게 얻나]
+ *   cubic-bezier(x1,y1,x2,y2)의 거울은 (1−x2, 1−y2, 1−x1, 1−y1)이다.
+ *   ease = cubic-bezier(.25,.1,.25,1)
+ *     → (1−.25, 1−1, 1−.25, 1−.1) = **cubic-bezier(.75, 0, .75, .9)**
+ *   ⚠ 손으로 뒤집지 말 것. 위 식이 유일한 근거다.
+ *   ⛔ 이 값은 **가속**이 아니라 감속의 거울이다 — 들어올 때 빠르게 들어와
+ *     부드럽게 앉았으므로, 나갈 때는 부드럽게 떠서 빠르게 사라진다.
+ *   ★ 그래서 opacity가 높은 동안 더 멀리 움직인다. 움직임이 읽힌다.
+ */
+const TOAST_OUT_EASE = "cubic-bezier(.75,0,.75,.9)";
 
 /**
  * ★ bottom을 **떠 있는 버튼에서 파생시킨다.** 배경면 높이·페이드에서 쌓아
@@ -909,12 +980,14 @@ function toastStyle(reducedMotion, leaving) {
     pointerEvents: "none",
     zIndex: 10,
     // ★ .rise의 **거울**이다 — 아래에서 떠오르는 대신 위에서 내려앉는다.
-    //   새 결을 만들지 않고 이미 쓰는 결(0.7s ease)을 뒤집는다.
+    //   이미 쓰는 결(ease)을 뒤집되 **속도는 갈랐다**(TOAST_IN_MS 주석).
+    // ★ 나가는 것은 들어오는 것의 거울이다 — 같은 거리(10px) · 같은 시간(450ms) ·
+    //   거울 곡선(TOAST_OUT_EASE). 내려앉았으니 올라가며 사라진다.
     animation: reducedMotion
       ? "none"
       : leaving
-        ? `toastOut ${TOAST_OUT_MS}ms ease both`
-        : "toastIn .7s ease both",
+        ? `toastOut ${TOAST_OUT_MS}ms ${TOAST_OUT_EASE} both`
+        : `toastIn ${TOAST_IN_MS}ms ease both`,
   };
 }
 
@@ -1200,7 +1273,9 @@ function Shell({
         @keyframes rise { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         /* ★ rise의 거울 — 위에서 내려앉는다. 같은 0.7s ease다. */
         @keyframes toastIn { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes toastOut { from{opacity:1;transform:translateY(0)} to{opacity:0;transform:translateY(-6px)} }
+        /* ⛔ 나갈 때도 **10px**이다. 6px이던 것을 고쳤다 — 들어온 거리와 같아야
+           대칭이고, 짧으면 페이드에 묻혀 움직임이 안 읽힌다(2026-09-03 실측). */
+        @keyframes toastOut { from{opacity:1;transform:translateY(0)} to{opacity:0;transform:translateY(-10px)} }
         .rise{animation:rise .7s ease both}
         .orb{animation:breathe 10s ease-in-out infinite}
         @media (prefers-reduced-motion: reduce){ .orb{animation:none} .rise{animation:none} }

@@ -425,3 +425,59 @@ test("⛔ 토스트 움직임이 앱의 결을 따른다 — .rise의 거울이�
   assert.ok(/reducedMotion\s*\?\s*"none"/.test(appSrc),
     "reduced-motion에서 움직임을 빼지 않는다");
 });
+
+test("★ 나가는 움직임이 들어오는 것의 **거울**이다 — 거리·시간이 같다", () => {
+  // ⛔ 실측이 만든 규칙이다 (2026-09-03). 나갈 때 6px이던 시절에는
+  //   opacity 0.5 시점의 이동이 3.08px뿐이라 페이드로만 보였다.
+  assert.ok(
+    /@keyframes toastOut \{ from\{opacity:1;transform:translateY\(0\)\} to\{opacity:0;transform:translateY\(-10px\)\}/.test(appSrc),
+    "toastOut의 거리가 toastIn과 다르다 — 대칭이 깨졌다",
+  );
+  assert.ok(
+    /const TOAST_IN_MS = 450;/.test(appSrc) && /const TOAST_OUT_MS = 450;/.test(appSrc),
+    "들어오고 나가는 시간이 같지 않다",
+  );
+  // ease = cubic-bezier(.25,.1,.25,1)의 거울은 (1−x2,1−y2,1−x1,1−y1)이다.
+  assert.ok(
+    /const TOAST_OUT_EASE = "cubic-bezier\(\.75,0,\.75,\.9\)";/.test(appSrc),
+    "나가는 곡선이 ease의 거울이 아니다",
+  );
+  assert.ok(
+    /toastIn \$\{TOAST_IN_MS\}ms ease both/.test(appSrc),
+    "들어오는 곡선이 ease가 아니다 — 결이 갈렸다",
+  );
+});
+
+test("★ 머무는 시간과 총 노출 — 나가는 움직임이 그 뒤에 얹힌다", () => {
+  assert.ok(/const TOAST_MS = 4600;/.test(appSrc), "머무는 시간이 4.6초가 아니다");
+  // ⛔ 구조를 못 박는다 — hide는 TOAST_MS에, 제거는 TOAST_MS + TOAST_OUT_MS에.
+  //   더하는 구조가 깨지면 나가는 움직임이 잘린다.
+  assert.ok(
+    /setToastLeaving\(true\), TOAST_MS\)/.test(appSrc),
+    "나가는 시작이 머무는 시간에 걸려 있지 않다",
+  );
+  assert.ok(
+    /setToast\(""\), TOAST_MS \+ TOAST_OUT_MS\)/.test(appSrc),
+    "제거가 머무는 시간 + 나가는 시간이 아니다 — 움직임이 잘린다",
+  );
+});
+
+test("⛔ 영구 거절 안내는 **물어본 뒤에만** 뜬다 · 설정으로 보내지 않는다", () => {
+  // ★ 물어보기 전 값은 낡을 수 있다(2026-09-03 실측). setEnabled가 false를
+  //   돌려준 **뒤**라야 Capacitor 캐시가 새로 쓰인 상태다.
+  const fail = appSrc.indexOf("if (next && !ok) {");
+  const ask = appSrc.indexOf("await isPermissionBlocked()");
+  assert.ok(fail > -1 && ask > fail, "안내 판정이 켜기 실패 뒤에 있지 않다");
+  assert.ok(
+    /const TOAST_BLOCKED = "기기 설정에서 알림을 켜 주세요";/.test(appSrc),
+    "안내 문구가 확정값과 다르다",
+  );
+  // ⛔ 사용자 확정 — 시스템 설정 화면으로 **보내지 않는다.** 알려만 준다.
+  assert.ok(
+    !/APP_NOTIFICATION_SETTINGS|openSettings|App\.openUrl/.test(appSrc),
+    "설정 화면으로 보내는 코드가 생겼다 — 사용자가 기각한 방식이다",
+  );
+  // ⛔ 토글은 OFF로 남는다. 실패 갈래에서 다시 켜면 안 된다.
+  const revert = appSrc.indexOf("setNotifyOn(false);", fail);
+  assert.ok(revert > fail && revert < ask, "실패했는데 토글을 먼저 되돌리지 않는다");
+});

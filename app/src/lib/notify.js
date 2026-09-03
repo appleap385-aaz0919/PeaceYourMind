@@ -30,6 +30,7 @@ import {
   OFF_BY,
   PERMISSION,
   enableDecision,
+  isBlocked,
   permissionOutcome,
   shouldTurnOff,
 } from "./notifyPermission.js";
@@ -151,6 +152,25 @@ export async function ensurePermission() {
     return permissionOutcome(await ln.requestPermissions());
   } catch {
     return PERMISSION.UNKNOWN;
+  }
+}
+
+/**
+ * **영구 거절인가** — 켜기가 실패한 뒤 호출부가 안내를 띄울지 정할 때 쓴다.
+ *
+ * ⛔⛔ **setEnabled가 false를 돌려준 직후에만 부른다.** 그때는 requestPermissions가
+ *   막 끝나 Capacitor 캐시가 새로 쓰인 상태다. 그 전에 부르면 낡은 값을 읽고,
+ *   **팝업이 뜰 수 있는 상태에 "설정으로 가세요"를 띄우게 된다**(2026-09-03 실측).
+ * ⛔ 판정은 isBlocked 한 곳이다. 여기서 display를 직접 비교하지 말 것.
+ * ⚠ 웹·플러그인 실패에서는 false다 — 모르면 아무 말도 안 하는 쪽이 안전하다.
+ */
+export async function isPermissionBlocked() {
+  const box = await api();
+  if (!box) return false;
+  try {
+    return isBlocked(await box.ln.checkPermissions());
+  } catch {
+    return isBlocked(null, true);
   }
 }
 

@@ -15,6 +15,7 @@ import {
   OFF_BY,
   PERMISSION,
   enableDecision,
+  isBlocked,
   permissionOutcome,
   shouldTurnOff,
 } from "../src/lib/notifyPermission.js";
@@ -154,5 +155,52 @@ test("⛔ notify.js가 판단을 흩뜨리지 않는다 — enableDecision 한 �
   assert.ok(
     !/offBy === OFF_BY\.PERMISSION/.test(notifySrc),
     "notify.js가 표식을 직접 비교한다 — 갈래가 두 곳으로 흩어진다",
+  );
+});
+
+/* --- 영구 거절 판정 (2026-09-03) ---------------------------------------- */
+
+test("★ 영구 거절만 blocked다 — display가 정확히 denied일 때", () => {
+  assert.equal(isBlocked({ display: "denied" }), true);
+});
+
+test("⛔ 아직 물어볼 수 있는 상태는 blocked가 아니다", () => {
+  // 이 둘에서 안내를 띄우면 **팝업이 뜰 수 있는데** 설정으로 보내게 된다.
+  assert.equal(isBlocked({ display: "prompt" }), false, "아직 안 물음");
+  assert.equal(isBlocked({ display: "prompt-with-rationale" }), false, "한 번 거절");
+  assert.equal(isBlocked({ display: "granted" }), false, "허용");
+});
+
+test("⛔ 못 읽으면 blocked가 아니다 — 모르면 아무 말도 안 한다", () => {
+  assert.equal(isBlocked(null, true), false, "throw");
+  assert.equal(isBlocked(null), false, "플러그인 없음");
+  assert.equal(isBlocked(undefined), false);
+  assert.equal(isBlocked("denied"), false, "문자열이 왔다");
+  assert.equal(isBlocked({}), false, "display가 없다");
+  assert.equal(isBlocked({ display: 1 }), false);
+  assert.equal(isBlocked({ display: "denied" }, true), false, "threw가 이긴다");
+});
+
+test("⛔ 모르는 값은 물어볼 수 있는 쪽으로 센다", () => {
+  for (const v of ["blocked", "restricted", "limited", "DENIED", ""]) {
+    assert.equal(isBlocked({ display: v }), false, `${v}가 blocked로 샜다`);
+  }
+});
+
+test("★ blocked는 outcome과 **다른 축**이다 — 4번째 값이 아니다", () => {
+  // 영구 거절은 permissionOutcome에서는 여전히 denied다. 그래야 A′(shouldTurnOff)와
+  // enableDecision의 기존 갈래가 그대로 돈다.
+  assert.equal(permissionOutcome({ display: "denied" }), PERMISSION.DENIED);
+  assert.equal(isBlocked({ display: "denied" }), true);
+  // 한 번 거절은 outcome은 같고 blocked만 다르다 — 축이 갈린다는 증거다.
+  assert.equal(permissionOutcome({ display: "prompt-with-rationale" }), PERMISSION.DENIED);
+  assert.equal(isBlocked({ display: "prompt-with-rationale" }), false);
+});
+
+test("⛔ notify.js가 display를 직접 비교하지 않는다 — isBlocked 한 곳이다", () => {
+  assert.ok(notifySrc.includes("isBlocked("), "isPermissionBlocked가 판정 함수를 안 쓴다");
+  assert.ok(
+    !/display === "denied"/.test(notifySrc),
+    "notify.js가 display를 직접 본다 — 판정이 두 곳으로 갈린다",
   );
 });

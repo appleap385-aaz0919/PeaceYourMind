@@ -103,3 +103,47 @@ export function enableDecision({ userInitiated = false, offBy = null, outcome } 
   if (outcome === PERMISSION.DENIED) return { ask: true, ok: false, mark: "permission" };
   return { ask: true, ok: false, mark: "keep" };
 }
+
+/**
+ * **영구 거절인가** — 시스템이 팝업을 더 이상 띄우지 않는 상태 (2026-09-03 실측).
+ *
+ * [⛔ outcome과 다른 축이다 — 4번째 값으로 만들지 않는다]
+ *   permissionOutcome은 "권한이 있나"를 셋으로 답한다. 이것은 "물어볼 수 있나"이고,
+ *   둘은 갈래가 다르다. 4번째 값으로 끼워 넣으면 shouldTurnOff·enableDecision의
+ *   기존 갈래를 **조용히 지나친다** — 이 파일이 처음부터 경계한 사고 유형이다.
+ *   (2.107 ②가 「정확함」과 「깨움」을 갈라 둔 것과 같은 이유다.)
+ *
+ * [★ 어떻게 알 수 있나 — Capacitor가 이미 세고 있다]
+ *   requestPermissions 결과가 올 때마다 Bridge.validatePermissions가
+ *   shouldShowRequestPermissionRationale을 읽어 SharedPreferences(PluginPermStates)에
+ *   적는다. rationale이 true면 "prompt-with-rationale", false면 **"denied"**.
+ *   checkPermissions는 그 값을 그대로 웹에 돌려준다. 그래서 우리가 셀 것이 없다.
+ *     아직 안 물음      prompt                  (플래그 없음)
+ *     한 번 거절        prompt-with-rationale   (USER_SET)
+ *     ★ 영구 거절       denied                  (USER_SET|USER_FIXED)
+ *     허용             granted
+ *
+ * [⛔⛔ 물어본 **뒤**의 값만 믿는다]
+ *   물어보기 **전** 값은 낡을 수 있다 — 실측했다. 캐시가 "denied"인 채로 OS 쪽
+ *   USER_FIXED만 풀리면(설정에서 알림을 켰다 다시 끈 경우) 팝업을 띄울 수 있는데도
+ *   캐시는 "denied" 그대로다. 그 값을 믿고 안내를 띄우면 **팝업이 뜰 수 있는
+ *   상태에서 "설정으로 가라"고 말하게 된다.**
+ *   ⚠ requestPermissions가 끝난 직후에는 안전하다 — validatePermissions가
+ *     플러그인 콜백보다 **먼저** 돌아 캐시를 새로 쓴다(Plugin.triggerPermissionCallback).
+ *
+ * ⚠ Android 12 이하에서는 checkPermissions가 areNotificationsEnabled()를 문자열로
+ *   준다. 거기서의 "denied"는 사용자가 설정에서 알림을 끈 것이고, 런타임 팝업 자체가
+ *   없으므로 **안내할 내용이 같다**(설정에서 켜야 한다). 그래서 갈래를 안 나눈다.
+ *
+ * @param {unknown} raw  물어본 **뒤** checkPermissions()가 돌려준 것
+ * @param {boolean} threw  호출이 던졌거나 플러그인이 없으면 true
+ */
+export function isBlocked(raw, threw = false) {
+  // ⛔ 못 읽었으면 **아니라고 답한다.** 모르는 상태에서 "설정으로 가라"고
+  //   말하는 것이 잘못 안내하는 쪽이다 — 안전한 방향은 아무 말도 안 하는 것이다.
+  if (threw) return false;
+  if (!raw || typeof raw !== "object") return false;
+  // ⛔ 화이트리스트다. 정확히 "denied"만이다 — prompt·prompt-with-rationale은
+  //   아직 물어볼 수 있는 상태이고, 모르는 값은 물어볼 수 있는 쪽으로 센다.
+  return raw.display === "denied";
+}
