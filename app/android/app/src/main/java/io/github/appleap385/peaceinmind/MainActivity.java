@@ -99,17 +99,29 @@ public class MainActivity extends BridgeActivity {
             if (insets == null) return;
             int inset = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom;
 
-            int[] loc = new int[2];
-            v.getLocationOnScreen(loc);
-            int webBottom = loc[1] + v.getHeight();
-
-            int displayHeight = displayHeight();
-            if (displayHeight <= 0) return;
-
-            int cut = Math.max(0, displayHeight - webBottom); // P
             float density = getResources().getDisplayMetrics().density;
             if (density <= 0) return;
-            float dp = Math.max(0, inset - cut) / density;
+
+            /**
+             * ⛔⛔ **X = I − P 가 아니다.** 갈래 B에서 배너가 배경면 위로 튀어나와
+             *   (위 −8dp) 실측으로 잡았다(2026-09-03).
+             *
+             *   배너 아래끝이 화면 바닥에서 얼마나 떠 있는가를 플러그인 소스로 풀면
+             *     배너 = P + margin + (SDK ≥ 35 ? I : 0)
+             *   이다. 뒤 항이 BannerExecutor의 인셋 리스너인데, **Android 15+ 에서만**
+             *   돈다. 그런데 그 부모가 이미 P만큼 올라와 있으면 **인셋이 두 번 들어간다.**
+             *
+             *   배경면 아래끝은 P + X 이므로  아래 여백 = margin + (SDK≥35 ? I : 0) − X.
+             *   그것이 margin이 되려면  **X = (SDK ≥ 35) ? I : 0**  이다.
+             *
+             *   실측으로 셋 다 맞았다 — 배너 아래끝이 세 갈래 모두 화면 바닥에서 64dp다.
+             *     갈래 A  P=0  SDK35  X=48   갈래 B  P=24 SDK35  X=24
+             *     갈래 C  P=48 SDK33  X=0
+             * ⚠ 이 식은 **플러그인 동작에 매인다.** pluginPins.test.js가 버전을 못 박는
+             *   이유가 이것이다 — 버전이 오르면 BannerExecutor를 다시 읽고 여기를 고친다.
+             */
+            boolean pluginAddsInset = Build.VERSION.SDK_INT >= 35;
+            float dp = (pluginAddsInset ? inset : 0) / density;
 
             final String value = dp + "px";
             // ⛔ 값만 넣으면 **웹이 모른다.** 주입은 마운트 뒤에 오는데 리액트는
