@@ -41,6 +41,34 @@ const appSrc = readSource("App.jsx");
 
 const DAY = 24 * 60 * 60 * 1000;
 
+/* --- 알람 계약 (두 축을 함께 못박는다) ------------------------------------ */
+
+/**
+ * ⛔ 이 둘은 **다른 축이다.** 하나만 보고 다른 하나를 바꾸면 사고가 난다.
+ *   allowWhileIdle      절전에 눌리지 않는가 (권한 불필요)
+ *   isExactNotification 정각을 약속하는가   (권한 필요 · 2.92가 거절했다)
+ */
+test("⛔ allowWhileIdle이 켜져 있다 — 배터리 세이버에서 알림이 사라지는 것을 막는다", () => {
+  const m = /schedule:\s*\{[^}]*allowWhileIdle:\s*(true|false)/.exec(notifySrc);
+  assert.ok(m, "schedule 객체에 allowWhileIdle이 없다");
+  assert.equal(
+    m[1],
+    "true",
+    "allowWhileIdle이 false로 돌아갔다 — 배터리 세이버 기기에서 알림이 +364일 밀린다 (HANDOFF 2.116 ①)",
+  );
+});
+
+test("⛔ 정확 알람은 여전히 쓰지 않는다 — 켜면 schedule()이 설정 화면에서 멈춘다", () => {
+  assert.ok(
+    /isExactNotification:\s*false/.test(notifySrc),
+    "isExactNotification이 false가 아니다 (2026-08-31에 실기기가 멈춘 자리다)",
+  );
+  assert.ok(
+    !/isExactNotification:\s*true/.test(notifySrc),
+    "isExactNotification: true가 어딘가에 남아 있다",
+  );
+});
+
 /* --- 풀 ------------------------------------------------------------------ */
 
 test("알림 풀은 107건이다 (시편 전체 + notify:false 23건 제외)", () => {

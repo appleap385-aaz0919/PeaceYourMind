@@ -228,12 +228,28 @@ export async function refreshSchedule(now = new Date()) {
       body,
       largeBody,
       channelId: CHANNEL_ID,
-      schedule: { at: times[i], allowWhileIdle: false },
-      // ⛔ **정확한 알람을 쓰지 않는다.** 기본값이 true라 명시적으로 꺼야 한다.
+      // ★ allowWhileIdle — **켜 둔다** (2026-09-03 · HANDOFF 2.116 ①).
+      //   [왜] 배터리 세이버가 켜진 채 앱이 백그라운드면 이 알람이
+      //     **+364일 뒤로 밀린다.** 남은 시간이 경과한 만큼만 줄어드는 것을
+      //     실측했다 — 목표 시각이 고정이라 「미룸」이 아니라 **사실상 취소**다.
+      //     아침 09:00에 앱이 포그라운드일 리 없으므로, 끄면 배터리 세이버를
+      //     쓰는 기기에서 구절 알림이 **조용히 영영 안 온다.**
+      //   [무엇이 바뀌나] 플러그인의 setExactIfPossible에서
+      //     set(RTC) → **setAndAllowWhileIdle(RTC_WAKEUP)** 이 된다.
+      //     ✅ 권한이 필요 없다 — SCHEDULE_EXACT_ALARM과 무관하다
+      //     ✅ 여전히 **비정확 알람**이다. 창(window)이 그대로라 몇 분~수십 분
+      //       늦을 수 있다. 2.92가 거절한 것은 "정확함"이고 이것은 "깨움"이다 —
+      //       2.107 ②가 갈라 둔 다른 축이다
+      //   ⛔ **false로 되돌리지 말 것.** notify.test.js가 이 값을 단언한다
+      schedule: { at: times[i], allowWhileIdle: true },
+      // ⛔ **정확한 알람은 여전히 쓰지 않는다.** 기본값이 true라 명시적으로 꺼야 한다.
       //   매니페스트에서 SCHEDULE_EXACT_ALARM을 걷어냈으므로, 켜 두면 플러그인이
       //   시스템의 "알람 및 리마인더" 설정 화면을 열고 그 결과를 기다리며
       //   **schedule()이 영영 응답하지 않는다** — 실기기에서 그렇게 멈췄다
       //   (2026-08-31). 매일 정해진 시각 알림은 inexact가 맞는 용도다.
+      //   ★ 그 화면을 여는 조건을 플러그인 소스에서 확인했다 —
+      //     honorExact = notifications.any { it.isExactNotification }
+      //     (LocalNotificationsPlugin.kt). **allowWhileIdle과는 무관하다.**
       isExactNotification: false,
       // 탭했을 때 어느 구절인지 알아야 화면을 연다.
       extra: { verseId: verse.id },
