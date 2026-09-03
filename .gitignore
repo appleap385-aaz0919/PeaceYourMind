@@ -77,3 +77,6 @@ app/public/krv/
 app/android/admob.properties*
 #   ⚠ .example 은 값이 없는 견본이라 **추적해야 한다** — 위 무늬에서 되살린다.
 !app/android/admob.properties.example
+
+# scripts/measure_banner.py 가 찍은 스크린샷 — 산출물이다
+.measure/

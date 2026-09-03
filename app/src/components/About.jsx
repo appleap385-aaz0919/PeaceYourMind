@@ -287,7 +287,8 @@ function NotifySettings() {
   const toggle = async () => {
     const next = !on;
     setOn(next); // 먼저 움직인다 — 누른 것이 반응해야 한다
-    const ok = await setEnabled(next);
+    // ⛔ 사용자가 직접 누른 것이다 (App.jsx의 탭 행 토글과 같은 규칙).
+    const ok = await setEnabled(next, { userInitiated: true });
     if (!ok) {
       setOn(false); // 권한을 못 받았다. 되돌린다
       setDenied(true);

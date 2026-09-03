@@ -388,3 +388,24 @@ test("광고가 안 채워지면 높이도 lift도 0이다", () => {
   assert.equal(bannerSpace(off), 0);
   assert.equal(bannerLift(off), 0);
 });
+
+test("⛔ 배경면을 띄우면 그 **아래 틈을 덮는다** (콘텐츠가 새지 않게)", () => {
+  // ④를 지키려 배경면을 인셋만큼 띄웠더니 그 자리로 스크롤 콘텐츠가 지나갔다.
+  // 갈래 B에서만 드러났다 — C는 lift 0이고 A는 시스템 바 뒤라 덜 띈다 (2026-09-03).
+  assert.ok(
+    /function bandCoverStyle\(lift\)/.test(appSrc),
+    "덮개 함수가 없다 — 띄운 틈으로 콘텐츠가 샌다",
+  );
+  assert.ok(
+    /bandCoverStyle\(band\.lift\)/.test(appSrc),
+    "덮개를 lift로 그리지 않는다",
+  );
+  assert.ok(
+    /band\.lift > 0 \?/.test(appSrc),
+    "lift가 0일 때도 덮개를 그린다 — 갈래 C에는 틈이 없다",
+  );
+  // ⛔ 덮개가 배경면보다 먼저 와야 한다 (뒤에 오면 배경면을 가린다)
+  const cover = appSrc.indexOf("bandCoverStyle(band.lift)");
+  const band = appSrc.indexOf("bandStyle(band.h, band.lift)");
+  assert.ok(cover > -1 && band > -1 && cover < band, "덮개가 배경면 뒤에 그려진다");
+});

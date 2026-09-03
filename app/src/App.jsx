@@ -185,7 +185,8 @@ export default function App() {
   const toggleNotify = async () => {
     const next = !notifyOn;
     setNotifyOn(next);
-    const ok = await setEnabled(next);
+    // ⛔ 사용자가 직접 누른 것이다 — 거부 표식이 있어도 통과시킨다(막다른 길 방지).
+    const ok = await setEnabled(next, { userInitiated: true });
     if (next && !ok) {
       setNotifyOn(false); // 권한을 못 받았다. 되돌린다
       return;
@@ -1065,6 +1066,32 @@ function bandStyle(height, lift = 0) {
   };
 }
 
+/**
+ * ⛔ 배경면을 띄운 만큼(lift) 생기는 **아래 틈을 덮는다** (2026-09-03).
+ *
+ * [왜 필요한가 — 실사용이 먼저 봤다]
+ *   ④(상하 대칭)를 지키려고 배경면을 인셋만큼 띄웠는데, 그 자리는 여전히
+ *   **웹뷰 안**이라 스크롤하는 콘텐츠가 그리로 지나간다. 갈래 B에서
+ *   "배경 아래쪽에 이격이 있어 뒤에 콘텐츠가 보인다"로 나타났다.
+ *   ⚠ 갈래 C는 lift가 0이라 틈이 없고, 갈래 A는 그 자리가 시스템 바 뒤라
+ *     눈에 덜 띈다 — **갈래 B에서만 드러나는 결함이었다.**
+ * ★ 문서 아래쪽 색(inkDeep)으로 덮는다. 배경면(ink)보다 어두워서 "면이 하나 더
+ *   생긴 것"으로 보이지 않고, 원래 거기 있어야 할 배경이 그대로 있는 것이 된다.
+ * ⛔ 배경면을 bottom:0으로 되돌려 높이를 키우는 것은 답이 아니다 —
+ *   그러면 배너가 보이는 면의 가운데에서 벗어난다(④가 깨진다).
+ */
+function bandCoverStyle(lift) {
+  return {
+    position: "fixed",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: lift,
+    background: T.inkDeep,
+    pointerEvents: "none",
+  };
+}
+
 /** 배경면 위로 이어지는 페이드. 목록이 여기서 배너 뒤로 사라진다. */
 function bandFadeStyle(height, lift = 0) {
   return {
@@ -1158,6 +1185,10 @@ function Shell({
       {band.h > 0 ? (
         <>
           <div aria-hidden="true" style={bandFadeStyle(band.h, band.lift)} />
+          {/* ⛔ 배경면보다 **먼저** 그린다. 띄운 틈으로 콘텐츠가 새는 것을 막는다. */}
+          {band.lift > 0 ? (
+            <div aria-hidden="true" style={bandCoverStyle(band.lift)} />
+          ) : null}
           <div aria-hidden="true" style={bandStyle(band.h, band.lift)} />
         </>
       ) : null}

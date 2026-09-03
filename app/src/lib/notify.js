@@ -321,11 +321,36 @@ export async function refreshSchedule(now = new Date()) {
 }
 
 /** 토글을 켜고 끈다. 켤 때만 권한을 묻는다. */
-export async function setEnabled(next) {
+/**
+ * @param {boolean} next 켤 것인가
+ * @param {{userInitiated?: boolean}} opts
+ *   ⛔ **사용자가 직접 누른 것인가.** 이 한 값이 팝업 가드를 가른다 — 아래를 볼 것.
+ */
+export async function setEnabled(next, { userInitiated = false } = {}) {
   if (next) {
-    // ⛔ **팝업은 최대 1회다.** 거부 표식이 이미 있으면 시스템에 다시 묻지 않는다 —
-    //   안드로이드는 두 번 거절하면 영영 안 띄운다. 호출부가 시스템 알림 설정으로 보낸다.
-    if ((await getSetting(KEYS.NOTIFY_OFF_BY, null)) === OFF_BY.PERMISSION) return false;
+    /**
+     * ⛔⛔ **가드는 자동 경로에만 건다. 사용자가 누른 것은 통과시킨다.**
+     *
+     * [왜 이렇게 됐나 — 실사용이 실측을 뒤집었다 (2026-09-03)]
+     *   처음에는 거부 표식이 있으면 **무조건** 막았다("팝업은 최대 1회").
+     *   그런데 그러면 **한 번 거부한 사용자가 마음을 바꿔도 켤 수 없다.**
+     *   토글이 눌리지 않고 아무 반응도 없다 — 막다른 길이다.
+     *   실기기에서 그 상태를 사용자가 먼저 발견했다. 세션의 검증은
+     *   CDP click으로 했는데 그것은 표식이 없는 상태만 봤다.
+     *
+     * ★ 안드로이드는 **두 번** 거절해야 영영 안 띄운다. 한 번 거부 뒤에는
+     *   아직 한 번 더 물을 수 있고, 그 한 번은 **사용자가 요청했을 때** 쓴다.
+     * ⚠ 이미 영구 거절된 뒤라면 requestPermissions가 팝업 없이 즉시 denied를
+     *   돌려준다 — 소모할 것이 없으므로 눌러도 손해가 없다.
+     * ⛔ 자동 경로(About 진입 등)에서는 여전히 막는다. 우리가 사용자 대신
+     *   팝업을 소모하지 않는다는 원칙은 그대로다.
+     */
+    if (
+      !userInitiated &&
+      (await getSetting(KEYS.NOTIFY_OFF_BY, null)) === OFF_BY.PERMISSION
+    ) {
+      return false;
+    }
     const outcome = await ensurePermission();
     if (outcome !== PERMISSION.GRANTED) {
       // ⚠ **거부일 때만** 표식을 남긴다. unknown(못 읽음)은 아무것도 안 건드린다.

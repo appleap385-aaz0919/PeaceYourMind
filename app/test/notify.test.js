@@ -51,15 +51,24 @@ test("⛔ 알림 기본값이 꺼짐이다 — OS에 따라 첫 화면이 갈리
   );
 });
 
-test("⛔ 시스템 팝업은 최대 1회다 — 거부 표식을 ensurePermission보다 **먼저** 본다", () => {
-  const guard = notifySrc.indexOf("OFF_BY.PERMISSION) return false");
+test("⛔ 자동 경로에서만 팝업을 막는다 — 사용자가 누른 것은 통과시킨다", () => {
+  // ⛔ 무조건 막았더니 **한 번 거부한 사용자가 켤 수 없었다**(막다른 길).
+  //   실기기에서 사용자가 먼저 발견했다 — 2026-09-03. 가드는 자동 경로에만 건다.
+  const guard = notifySrc.indexOf("!userInitiated");
   const ask = notifySrc.indexOf("await ensurePermission()");
-  assert.ok(guard > -1, "거부 표식을 확인하는 자리가 없다");
+  assert.ok(guard > -1, "가드에 userInitiated 조건이 없다 — 사용자가 갇힌다");
   assert.ok(ask > -1, "ensurePermission 호출이 없다");
   assert.ok(
     guard < ask,
-    "표식 확인이 ensurePermission 뒤에 있다 — 그러면 팝업을 한 번 더 소모하고, " +
-      "안드로이드는 두 번 거절이면 영영 안 띄운다",
+    "가드가 ensurePermission 뒤에 있다 — 자동 경로에서 팝업을 한 번 더 소모한다",
+  );
+  assert.ok(
+    /setEnabled\(next, \{ userInitiated: true \}\)/.test(appSrc),
+    "결과 화면 토글이 userInitiated를 안 넘긴다",
+  );
+  assert.ok(
+    /setEnabled\(next, \{ userInitiated: true \}\)/.test(aboutSrc),
+    "About 토글이 userInitiated를 안 넘긴다",
   );
 });
 
