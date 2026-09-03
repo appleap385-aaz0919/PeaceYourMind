@@ -12,7 +12,7 @@
       그리기 전까지 그 흰 화면이 보인다. 스플래시만 어둡게 해도 소용이 없다.
       세 자리를 전부 inkDeep으로 묶어야 이어진다.
 -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- 애플리케이션 테마. 대화상자 등 시스템 표면이 이걸 본다. -->
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
@@ -41,6 +41,35 @@
                  태블릿 실측에서 웹뷰가 [0,0][1440,2304] 화면 전체였다.
                  즉 이 문제 자체가 에뮬레이터(갈래 B) 한정이다. -->
         <item name="android:windowBackground">@color/pym_ink_deep</item>
+
+        <!-- [시스템 바 색 — 2026-09-03 · HANDOFF 2.115]
+             ⛔⛔ **이 style의 parent 명시가 이름의 점 상속을 끊는다.**
+               "AppTheme.NoActionBar"라는 이름은 위의 AppTheme을 물려받는 것처럼 보이지만,
+               parent 속성이 **적혀 있으면 그쪽이 이긴다.** 그래서 AppTheme이 정의한
+               colorPrimary·colorPrimaryDark·colorAccent가 **여기로 오지 않는다.**
+               ★ 다음 사람이 "AppTheme에 있으니 됐다"고 읽고 넘어가지 않도록 여기 적는다.
+
+             그래서 Android 14 이하 — 창이 시스템 바 밑으로 안 들어가는 기기 — 에서
+             statusBarColor가 AppCompat 기본값으로 떨어졌다. 라이트 모드에서 그 값이
+             primary_dark_material_light **#757575**다. 실측(Galaxy Z Flip · Android 13):
+               상단 92px  #757575  vs 문서 위쪽  #211A28   Δ(84,91,77)
+               하단 144px #F6F6F6  vs 문서 아래쪽 #0B1216   Δ(235,228,224)
+
+             ⚠ **windowBackground와 자리가 다르다.** 시스템 바 배경은 windowBackground가
+               아니라 statusBarColor·navigationBarColor다. 바로 위 주석이 잰 2.109는
+               Android 15에서 바가 투명해 **창 배경이 비쳤던** 경우다 —
+               ⛔ 이 수정은 2.109(windowBackground 되돌림)를 다시 열 근거가 아니다.
+
+             ⚠ Android 15+(edge-to-edge 강제)에서는 이 네 줄이 **무시된다.**
+               효과는 갈래 B 기기(Android 14 이하)에 갇힌다. 실측은 HANDOFF 2.115. -->
+        <item name="android:statusBarColor">@color/pym_ink_deep</item>
+        <item name="android:navigationBarColor">@color/pym_ink_deep</item>
+        <!-- ⛔ 색만 어둡게 하고 이 둘을 빼면 **어두운 바에 어두운 아이콘**이 남는다.
+             지금 기본값이 켜짐이다(실측 mLastAppearance=LIGHT_STATUS_BARS LIGHT_NAVIGATION_BARS).
+             색과 아이콘은 **함께** 뒤집는다. -->
+        <item name="android:windowLightStatusBar">false</item>
+        <!-- API 27+ 에만 있는 속성이다. 그 아래(minSdk 24)는 조용히 무시한다. -->
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
     </style>
 
     <!-- 런처가 처음 띄우는 테마. -->
