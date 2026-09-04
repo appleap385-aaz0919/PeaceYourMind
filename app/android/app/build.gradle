@@ -202,7 +202,16 @@ def ksFile = ksPointer ? new File(ksPointer) : null
 def ksLoaded = ksFile != null && ksFile.isFile()
 def ksProps = new Properties()
 if (ksLoaded) {
-    ksFile.withInputStream { ksProps.load(it) }
+    /*
+     * ⛔⛔ **UTF-8 Reader로 읽는다. InputStream이 아니다** (2026-09-04 실측).
+     *   Properties.load(InputStream)은 **ISO-8859-1**로 읽는다. 그래서 경로에
+     *   한글이 있으면 조용히 깨진다 —
+     *     D:/jaehyuk.myung/바탕 화면/... → D:/jaehyuk.myung/ë°í íë©´/...
+     *   ★ 사용자의 보관 폴더가 실제로 「바탕 화면」이라 여기서 걸렸다.
+     *   ⚠ 비밀번호도 같은 경로로 읽힌다 — ASCII만 쓰기로 했지만, 읽는 방식이
+     *     맞아야 그 약속이 안전망이 아니라 **취향**이 된다.
+     */
+    ksFile.withReader("UTF-8") { ksProps.load(it) }
 }
 def ksStoreFile = ksProps.getProperty("storeFile", "")
 def ksStorePassword = ksProps.getProperty("storePassword", "")

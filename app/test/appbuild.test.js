@@ -363,3 +363,17 @@ test("★ 게이트가 보는 것 넷 — 파일 존재 · 값 채움 · 견본�
     "비밀번호를 가공해서 넘긴다 — 공백이 잘리면 원인 모를 서명 실패가 된다",
   );
 });
+
+test("⛔ 키 설정을 **UTF-8 Reader**로 읽는다 (한글 경로가 깨진다)", () => {
+  // Properties.load(InputStream)은 ISO-8859-1로 읽는다. 실측으로 확인했다 —
+  //   D:/jaehyuk.myung/바탕 화면/... → D:/jaehyuk.myung/ë°í íë©´/...
+  // ⚠ 사용자의 보관 폴더가 실제로 「바탕 화면」이라 여기서 걸렸다(2026-09-04).
+  assert.ok(
+    appGradle.includes('ksFile.withReader("UTF-8")'),
+    "키 설정을 InputStream으로 읽는다 — 한글 경로·비밀번호가 조용히 깨진다",
+  );
+  assert.ok(
+    !/ksFile\.withInputStream/.test(appGradle),
+    "InputStream 읽기가 남아 있다",
+  );
+});

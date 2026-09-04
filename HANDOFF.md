@@ -107,7 +107,7 @@ self_control 0 · rest 0
 감정 분류   대분류 9 · 세분류 24 · 키워드 923
 채널       allowlist 22 (하한 15까지 여유 7)
            blocklist 0 · reviewed_out 13
-게이트      파이썬 5종 + 앱 302건
+게이트      파이썬 5종 + 앱 303건
 ```
 <!-- STATS:END -->
 
@@ -14119,6 +14119,32 @@ app/build.gradle        signingConfigs.release + buildTypes.release.signingConfi
 회귀 314 → **318건**
 ```
 
+#### ⛔⛔ 한글 경로 함정 — **두 파일의 규칙이 다르다** (2026-09-04 실측)
+
+```
+사용자의 보관 폴더가 **D:\jaehyuk.myung\바탕 화면\백업용\keys** 였다.
+디스크의 실제 이름이 「바탕 화면」이다(Desktop이 아니다 — 확인했다).
+
+pym-upload.properties 의 storeFile   ✅ **한글을 써도 된다**
+    ⛔ 원래는 깨졌다. Properties.load(InputStream)이 **ISO-8859-1**로 읽어서다 —
+      D:/jaehyuk.myung/바탕 화면/... → D:/jaehyuk.myung/ë°í íë©´/...
+    ✅ build.gradle을 **withReader("UTF-8")** 로 고쳤다. 실측으로 한글이 살아났다
+    ⚠ 비밀번호도 같은 경로로 읽힌다 — ASCII만 쓰기로 한 약속이 이제
+      **안전망**이지 취향이 아니게 됐다
+
+%GRADLE_USER_HOME%/gradle.properties 의 포인터   ⛔ **한글을 쓰면 깨진다**
+    Gradle 자신이 ISO-8859-1로 읽는다. **우리가 못 고친다.** 실측했다
+    ★ 그래서 **작업 폴더는 ASCII 경로**로 둔다. 한글 폴더는 백업본이 간다
+    ⚠ 굳이 가리켜야 하면 \uXXXX 이스케이프뿐이다 —
+      D:/jaehyuk.myung/\uBC14\uD0D5 \uD654\uBA74/\uBC31\uC5C5\uC6A9/keys/...
+      읽기 어렵고 틀리기 쉽다. **마지막 수단이다**
+
+★ 실패는 **조용하지 않다** — 게이트가 깨진 경로를 그대로 찍어 준다([2]·[5]).
+  그래도 사람의 시간을 버리므로 처음부터 ASCII로 간다
+⛔ admob.properties도 같은 방식(InputStream)으로 읽지만 값이 전부 ASCII ID라
+  지금은 문제가 없다. ⚠ 거기에 한글이 들어갈 일이 생기면 같이 고칠 것
+```
+
 #### ⏸ 남은 것 — 보관처를 정하고 키를 만든다
 
 ```
@@ -14226,7 +14252,7 @@ Phase 4  사전 보강 · UI 개정 · 구절 확장                            
 감정 분류   대분류 9 · 세분류 24 · 키워드 923
 채널       allowlist 22 (하한 15까지 여유 7)
            blocklist 0 · reviewed_out 13
-게이트      파이썬 5종 + 앱 302건
+게이트      파이썬 5종 + 앱 303건
 ```
 <!-- STATS:END -->
 
