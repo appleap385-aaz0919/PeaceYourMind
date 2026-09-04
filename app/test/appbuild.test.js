@@ -17,9 +17,21 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
+import { readSource } from "./helpers.js";
+
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..");
 const read = (...p) => readFileSync(join(root, ...p), "utf8");
+
+/**
+ * ⛔ src/ 소스는 **readSource()로 읽는다** — 주석을 걷어낸 것이다.
+ *   이 파일의 새 검사는 `IS_APP` 분기를 찾는데, 아래 두 파일의 **주석이 그 코드를
+ *   그대로 인용한다.** 원문으로 읽으면 조건을 지워도 주석만으로 통과한다
+ *   (helpers.js 상단의 3회차 거짓 통과와 같은 모양이다).
+ */
+const appJsx = readSource("App.jsx");
+const tabsJsx = readSource("components", "ResultTabs.jsx");
+const aboutJsx = readSource("components", "About.jsx");
 
 const viteConfig = read("vite.config.js");
 const adsSrc = read("src", "lib", "ads.js");
@@ -185,4 +197,89 @@ test("릴리스 게이트가 '실제 단위가 있는가'도 본다", () => {
     gradle.includes("hasUnit"),
     "번들에 실제 단위가 실렸는지 보는 검사가 없다 — 값이 없으면 데모 검사는 통과한다",
   );
+});
+
+/* --- ⛔ 앱 전용 요소가 웹으로 새지 않는다 (2026-09-04 · 2.122) --------------
+ *
+ * [무엇이 있었나]
+ *   결과 화면 탭 행에 「구절 알림」 토글을 얹으면서 `__IS_APP__` 분기가 빠졌다.
+ *   웹에는 로컬 알림이 없어 **눌러도 아무 일이 없는 토글**이 모바일 웹에 나갔고,
+ *   그 상태로 배포됐다(2026-09-03 run 77).
+ *
+ * [⛔ 왜 293건이 다 통과했나 — 검사의 방향이 한쪽뿐이었다]
+ *   · 순수 함수 검사   무엇이 그려지는지 모른다
+ *   · 소스 모양 검사   "그 파일에 조건이 있나"만 본다. **조건이 없는 새 파일**은
+ *                    검사 대상이 아니라서 안 걸린다
+ *   · 산출물 검사      **앱 쪽에만** 있었다(AdSense가 앱에 남았나).
+ *                    웹 쪽 산출물 검사는 **아예 없었다**
+ *   ★ "웹 전용이 앱으로" 방향만 있었고 "앱 전용이 웹으로" 방향은 무방비였다.
+ *     아래 검사가 그 방향을 채운다.
+ */
+
+test("웹 빌드에 **산출물 가드**가 걸려 있다 (앱 전용 요소 검사)", () => {
+  assert.ok(viteConfig.includes("function webBuildGuards()"), "웹 가드가 없다");
+  assert.ok(
+    viteConfig.includes("IS_APP ? appBuildGuards() : webBuildGuards()"),
+    "웹 빌드에 가드가 등록되지 않는다 — 있어도 안 돈다",
+  );
+  assert.ok(
+    viteConfig.includes("웹 번들에 **앱 전용 요소**가 남아 있습니다"),
+    "산출물 검사가 사라졌다",
+  );
+});
+
+test("가드가 보는 표식에 알림 토글과 토스트가 들어 있다", () => {
+  // ⚠ 표식은 **산출물에서 확인한 모양**이다. 소스 모양을 넣으면 번들러가 바꾼 뒤
+  //   안 걸리고, 그때는 조용히 통과한다.
+  for (const needle of [
+    'role:"switch"',
+    "aria-label",
+    "정해진 시각에 구절 한 절을 보내드릴게요",
+    "기기 설정에서 알림을 켜 주세요",
+  ]) {
+    assert.ok(viteConfig.includes(needle), `가드 표식에 ${needle}이 없다`);
+  }
+});
+
+test("⛔ 가드가 **가려지지 않는다** — 산출물을 못 읽으면 빌드가 선다", () => {
+  // 가드가 있는 것처럼 보이면서 아무것도 안 보는 것이 가장 나쁜 결과다.
+  // 그래서 "반드시 있어야 하는 문구"를 함께 찾고, 못 찾으면 던진다.
+  assert.ok(viteConfig.includes("MUST_EXIST"), "양성 대조가 없다");
+  assert.ok(
+    viteConfig.includes("웹 가드가 산출물을 못 읽었습니다"),
+    "산출물을 못 읽어도 통과한다 — 가드가 가려진다",
+  );
+});
+
+test("★ 알림 토글이 **두 겹으로** 앱에서만 그려진다", () => {
+  // ① 주는 쪽 — App이 웹에서는 notify를 아예 안 준다.
+  assert.ok(
+    /const notify = IS_APP \? \{ on: notifyOn, onToggle: toggleNotify \} : null;/.test(appJsx),
+    "App이 웹에서도 notify를 준다 — 토글이 그려진다",
+  );
+  // ② 그리는 쪽 — **컴파일 시점 상수**여야 번들러가 마크업을 접는다.
+  //   `notify` 하나만으로 막으면 그것은 런타임 조건이라 웹 산출물에 markup이 남는다.
+  assert.ok(
+    /\{IS_APP && notify \? \(/.test(tabsJsx),
+    "ResultTabs가 런타임 조건만으로 막는다 — 웹 산출물에 토글 markup이 남는다",
+  );
+});
+
+test("★ About이 쓰는 것과 **같은 조건**이다 (새 조건을 만들지 않았다)", () => {
+  const IDIOM = 'const IS_APP = typeof __IS_APP__ === "boolean" ? __IS_APP__ : false;';
+  for (const [name, src] of [
+    ["About.jsx", aboutJsx],
+    ["App.jsx", appJsx],
+    ["ResultTabs.jsx", tabsJsx],
+  ]) {
+    assert.ok(src.includes(IDIOM), `${name}이 다른 조건을 쓴다`);
+  }
+  // ⛔ 플러그인 존재 여부 같은 **다른 판단**으로 갈리지 않는다. 그러면 웹/앱이
+  //   빌드가 아니라 실행 시점에 갈리고, 번들러가 아무것도 못 접는다.
+  for (const [name, src] of [["App.jsx", appJsx], ["ResultTabs.jsx", tabsJsx]]) {
+    assert.ok(
+      !/window\.Capacitor|isNativePlatform|navigator\.userAgent/.test(src),
+      `${name}이 런타임으로 플랫폼을 판단한다`,
+    );
+  }
 });

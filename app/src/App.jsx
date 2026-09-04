@@ -80,6 +80,18 @@ import { setBannerShown, watchBannerFill } from "./lib/bannerNative.js";
 import { DailyVerse } from "./components/DailyVerse.jsx";
 import { T, SERIF } from "./theme.js";
 
+/**
+ * 앱인가. **About이 알림 절을 그릴 때 쓰는 것과 같은 조건이다**(About.jsx).
+ *
+ * ⛔ 웹에는 로컬 알림이 없다. 플러그인이 없으니 setEnabled가 조용히 false를
+ *   돌려주고, 토글은 **눌러도 아무 일이 없다.** 2026-09-03에 그 상태가
+ *   그대로 배포됐다(run 77) — 결과 화면 탭 행에 토글을 얹으면서 이 조건이
+ *   빠졌다. About에는 있었고 여기에는 없었다.
+ * ⛔ 새 조건을 만들지 않는다. `__IS_APP__` 하나가 광고·서비스워커·방침 링크를
+ *   가르는 그 값이고, 알림도 같은 값으로 갈린다.
+ */
+const IS_APP = typeof __IS_APP__ === "boolean" ? __IS_APP__ : false;
+
 const MIN_DURATION_MS = taxonomy.ui.loading.min_duration_ms;
 /**
  * 공감 문구 크기 — **구절보다 항상 작다.**
@@ -229,7 +241,15 @@ export default function App() {
     }
     if (next && ok) setToast(TOAST_TEXT);
   };
-  const notify = { on: notifyOn, onToggle: toggleNotify };
+  /**
+   * ⛔ **웹에서는 null이다.** ResultTabs의 계약이 "notify를 안 주면 토글을
+   *   그리지 않는다"이므로, 막는 자리는 **그리는 쪽이 아니라 주는 쪽**이다.
+   *   ★ ResultTabs 안에 조건을 넣지 않는다 — 그 컴포넌트는 화면 구성이지
+   *     플랫폼 판단이 아니다. 넘겨받은 prop을 몰래 무시하게 만들면 안 된다.
+   * ★ 부수 효과 — toggleNotify가 닿지 않으므로 **토스트도 웹에서 못 뜬다.**
+   *   토스트를 띄우는 자리가 이 하나뿐이다.
+   */
+  const notify = IS_APP ? { on: notifyOn, onToggle: toggleNotify } : null;
 
   useEffect(() => {
     setBannerShown(bannerVisible(screen));

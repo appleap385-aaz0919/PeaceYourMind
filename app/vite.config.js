@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: IS_APP ? "./" : BASE,
-    plugins: [react(), IS_APP ? appBuildGuards() : null].filter(Boolean),
+    plugins: [react(), IS_APP ? appBuildGuards() : webBuildGuards()],
     define: {
       // 영상 데이터는 배치가 하루 2회 갱신한다. 앱도 번들이 아니라 이걸 받는다.
       //   웹  같은 오리진의 data/ (build.yml이 destination_dir: data로 올린다)
@@ -184,6 +184,77 @@ function appBuildGuards() {
       if (hits.length) {
         throw new Error(
           `[pym] 앱 번들에 AdSense가 남아 있습니다:\n  ${hits.join("\n  ")}`,
+        );
+      }
+    },
+  };
+}
+
+/**
+ * 웹 빌드에서 **앱 전용 요소가 새지 않았는지** 검사하는 플러그인 (2026-09-04 · 2.122).
+ *
+ * [⛔ 왜 생겼나 — 결함이 게이트를 다 통과하고 배포됐다]
+ *   결과 화면 탭 행에 「구절 알림」 토글을 얹으면서 `__IS_APP__` 분기가 빠졌다.
+ *   About에는 있었고 새 자리에는 없었다. 웹에는 로컬 알림이 없어 **눌러도 아무
+ *   일이 없는 토글**이 모바일 웹에 그대로 나갔다(2026-09-03 run 77).
+ *   ⛔ 그날 회귀 293건이 **전부 통과했다.** 이유가 분명하다 —
+ *     · 순수 함수 검사는 무엇이 그려지는지 모른다
+ *     · 소스 모양 검사는 "그 파일에 조건이 있나"만 보지, **없는 파일**은 못 본다
+ *     · 산출물 검사는 **앱 쪽에만** 있었다(AdSense). 웹 쪽은 검사가 아예 없었다
+ *   ★ 즉 "앱 전용이 웹으로 새는" 방향이 **통째로 무방비였다.** 여기가 그 방향이다.
+ *
+ * ⚠ 반대 방향(웹 전용이 앱으로 새는 것)은 appBuildGuards가 이미 본다(AdSense).
+ *   두 방향이 대칭이 되도록 짝을 맞춘 것이다.
+ */
+function webBuildGuards() {
+  /**
+   * 웹 산출물에 있으면 **안 되는** 표식.
+   * ⚠ 표식은 **실제 산출물에서 확인한 모양**이어야 한다. 소스 모양을 넣으면
+   *   번들러가 바꾼 뒤에 안 걸리고, 그때는 조용히 통과한다.
+   */
+  const APP_ONLY = [
+    // 이 앱의 스위치는 알림 토글 둘(About · 결과 화면)뿐이고 **둘 다 앱 전용**이다.
+    ['role:"switch"', "알림 토글"],
+    ['"aria-label":"구절 알림"', "결과 화면 알림 토글"],
+    ["정해진 시각에 구절 한 절을 보내드릴게요", "알림을 켠 뒤의 토스트"],
+    ["기기 설정에서 알림을 켜 주세요", "영구 거절 안내 토스트"],
+  ];
+  /**
+   * ⛔ **양성 대조.** 이 문자열은 웹 산출물에 반드시 있다(ResultTabs의 첫 탭).
+   *   못 찾으면 검사가 파일을 못 읽고 있다는 뜻이다 — 그 상태로 통과시키면
+   *   가드가 있는 것처럼 보이면서 실제로는 아무것도 안 본다.
+   *   ★ 가드가 가려지는 것은 가드가 없는 것보다 나쁘다(2026-08-31에 당했다).
+   */
+  const MUST_EXIST = "이어 읽기";
+
+  return {
+    name: "pym-web-build-guards",
+    closeBundle() {
+      const outDir = new URL("./dist/", import.meta.url).pathname
+        .replace(/^\/([A-Za-z]:)/, "$1");
+
+      let sawControl = false;
+      const hits = [];
+      walk(outDir, (file) => {
+        if (!/\.(html|js|css|webmanifest)$/i.test(file)) return;
+        const text = readFileSync(file, "utf8");
+        if (text.includes(MUST_EXIST)) sawControl = true;
+        for (const [needle, what] of APP_ONLY) {
+          if (text.includes(needle)) hits.push(`${what}  (${needle})  ${file}`);
+        }
+      });
+
+      if (!sawControl) {
+        throw new Error(
+          `[pym] 웹 가드가 산출물을 못 읽었습니다 — "${MUST_EXIST}"를 찾지 못했습니다.\n` +
+            "  화면 문구가 바뀌었다면 vite.config.js의 MUST_EXIST도 함께 고쳐야 합니다.",
+        );
+      }
+      if (hits.length) {
+        throw new Error(
+          "[pym] 웹 번들에 **앱 전용 요소**가 남아 있습니다:\n  " +
+            hits.join("\n  ") +
+            "\n  → 웹에는 그 기능이 없습니다. About처럼 `__IS_APP__`로 갈라야 합니다.",
         );
       }
     },

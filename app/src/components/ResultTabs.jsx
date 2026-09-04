@@ -57,10 +57,22 @@ const LABELS = {
 const GROUPS = [[READING], [MEDIA.SERMON, MEDIA.WORSHIP]];
 
 /**
+ * 앱인가. **About이 알림 절을 그릴 때 쓰는 것과 같은 조건이다**(About.jsx).
+ *
+ * ⛔ 웹에는 로컬 알림이 없다. 여기에 이 조건이 없어서 **모바일 웹에 눌러도
+ *   아무 일이 없는 토글이 배포됐다**(2026-09-03 run 77 · 2.122).
+ * ★ **컴파일 시점 상수**여야 한다. `notify` 하나만으로 막으면 그것은 런타임
+ *   조건이라 번들러가 마크업을 못 접는다 — 웹 산출물에 토글 markup이 남는다.
+ *   About이 `{IS_APP ? <NotifySettings /> : null}`로 접는 것과 같은 모양이다.
+ */
+const IS_APP = typeof __IS_APP__ === "boolean" ? __IS_APP__ : false;
+
+/**
  * @param {{value:string, counts?:object, onChange:Function,
  *          notify?:{on:boolean, onToggle:Function}}} props
  *   notify를 안 주면 토글을 그리지 않는다 — 이 컴포넌트를 다른 화면이
  *   재사용하게 되어도 설정이 따라가지 않는다.
+ *   ⚠ 앱에서만 그린다. 웹에서는 App이 notify를 아예 안 준다(두 겹이다).
  */
 export function ResultTabs({ value, counts, onChange, notify }) {
   return (
@@ -111,7 +123,7 @@ export function ResultTabs({ value, counts, onChange, notify }) {
             이 행이 이미 쓰는 관용(묶음을 선으로 가른다)을 한 번 더 쓴다.
           ★ 규칙 2(2.36)는 스위치가 이미 만족한다 — **형태**를 가진 컨트롤이라
             글자만인 탭들과 종류가 다르게 보인다. */}
-      {notify ? (
+      {IS_APP && notify ? (
         <span style={styles.notifyCell}>
           <span style={styles.divider} />
           <span style={styles.notifyLabel}>구절 알림</span>
