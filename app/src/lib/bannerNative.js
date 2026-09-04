@@ -28,6 +28,31 @@ let boxed = null;
 let created = false;
 
 /**
+ * ⛔⛔ **조용히 삼키지 않는다** (2026-09-04 · HANDOFF 2.126).
+ *
+ * [무엇이 있었나]
+ *   이 파일의 catch 셋이 전부 `catch {}` 였다. 그래서 배너가 결과 화면을
+ *   벗어나도 안 사라지는 결함이 **아무 신호 없이** 배포됐고, 통으로 밟기
+ *   전까지 아무도 못 봤다. 웹 쪽(배경면)은 맞게 돌아서 화면만 보고는
+ *   "웹이 맞으니 됐다"로 읽혔다.
+ *   ★ 「일하는 방식」 ⓪-2가 말하는 **"실패가 성공처럼 보이는 자리"** 그 자체다.
+ *
+ * [왜 console.warn인가 — 빌드 갈래를 안 만든다]
+ *   ⛔ 개발/출시 갈래를 새로 만들지 않는다. `__IS_APP__`는 둘 다 true이고
+ *     `import.meta.env.DEV`는 앱 빌드에서 언제나 false라 **앱에서는 영영 안 찍힌다.**
+ *   ★ console은 사용자 화면에 아무것도 남기지 않는다. logcat과 devtools에만 간다 —
+ *     이 저장소가 실제로 결함을 찾아낸 자리가 거기다(2.92는 실기기 콘솔로 잡았다).
+ *   ⚠ 선례가 있다 — AdSlot.jsx가 `console.warn("[ads] …")`를 쓴다. 같은 결로 간다.
+ *
+ * ⛔ 삼키는 것을 **없애지는 않는다.** 배너 실패는 여전히 치명적이지 않다 —
+ *   앱이 죽으면 안 된다. 바뀌는 것은 "말없이 넘어가는 것"뿐이다.
+ */
+function warn(what, error) {
+  // eslint-disable-next-line no-console
+  console.warn(`[banner] ${what}`, error);
+}
+
+/**
  * 플러그인을 늦게 부른다. 없으면 null이다.
  *
  * ⛔ **상자에 담아 돌려준다.** 플러그인 프록시를 async 함수에서 그대로 return하면
@@ -41,7 +66,8 @@ async function api() {
     const mod = await import("@capacitor-community/admob");
     boxed = { ad: mod.AdMob };
     return boxed;
-  } catch {
+  } catch (error) {
+    warn("플러그인을 못 불러왔다 — 배너가 아예 안 뜬다", error);
     return null;
   }
 }
@@ -60,7 +86,12 @@ async function api() {
  */
 export async function setBannerShown(shown) {
   const box = await api();
-  if (!box) return;
+  if (!box) {
+    warn(`상자가 없다 — ${shown ? "보이기" : "숨기기"}를 건너뛴다`, null);
+    return;
+  }
+  // ⚠ 진단 — 어느 갈래를 지나는지 남긴다(2026-09-04). 원인이 확정되면 다듬는다.
+  warn(`요청 shown=${shown} created=${created}`, null);
   try {
     if (!shown) {
       if (created) await box.ad.hideBanner();
@@ -91,8 +122,11 @@ export async function setBannerShown(shown) {
       margin: BANNER_MARGIN,
     });
     created = true;
-  } catch {
-    /* 실패는 치명적이지 않다 — 띠가 안 보일 뿐이다 */
+  } catch (error) {
+    // ⛔⛔ **여기가 결함을 숨긴 자리다.** showBanner가 배너를 띄운 뒤 거부하면
+    //   `created = true`에 도달하지 못하고, 그러면 이후 hide가 전부 건너뛰어진다
+    //   (아래 setBannerShown의 `if (created)`). 신호가 없으면 아무도 모른다.
+    warn(`${shown ? "보이기" : "숨기기"} 실패 (created=${created})`, error);
   }
 }
 
@@ -116,7 +150,8 @@ export async function watchBannerFill(onChange) {
       loaded.remove();
       failed.remove();
     };
-  } catch {
+  } catch (error) {
+    warn("채움 리스너를 못 걸었다 — 배너가 떠도 자리를 안 준다", error);
     return () => {};
   }
 }
