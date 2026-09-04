@@ -283,3 +283,83 @@ test("★ About이 쓰는 것과 **같은 조건**이다 (새 조건을 만들�
     );
   }
 });
+
+/* --- 업로드 키 서명 (2026-09-04 · 2.125) -----------------------------------
+ *
+ * ⛔ 키도 비밀번호도 **저장소 밖**에 있다. 그래서 여기서 볼 수 있는 것은
+ *   "밖에 두는 구조가 살아 있는가"와 "없을 때 릴리스가 서는가"뿐이다.
+ *   실제 서명 여부는 첫 AAB 업로드로 콘솔의 인증서 지문이 확인해 준다.
+ */
+
+const appGradle = read("android", "app", "build.gradle");
+const gitignore = read("..", ".gitignore");
+
+test("⛔ 업로드 키 경로를 **저장소 밖**에서 읽는다", () => {
+  assert.ok(
+    appGradle.includes("project.findProperty(PYM_KEYSTORE_POINTER)"),
+    "gradle이 키 위치를 gradle property로 받지 않는다",
+  );
+  assert.ok(
+    appGradle.includes('def PYM_KEYSTORE_POINTER = "pymKeystoreProperties"'),
+    "포인터 이름이 바뀌었다 — 문서·견본과 갈린다",
+  );
+  // ⛔ 저장소 안의 고정 경로를 읽으면 안 된다. admob.properties와 다른 점이다.
+  assert.ok(
+    !/rootProject\.file\(\s*"keystore\.properties"\s*\)/.test(appGradle),
+    "키 설정을 저장소 안에서 읽는다 — 비밀번호가 든 파일은 밖에 있어야 한다",
+  );
+});
+
+test("⛔ 키·비밀번호 파일이 .gitignore 무늬로 막혀 있다 (이중 방어)", () => {
+  for (const pat of ["*.jks", "*.keystore", "*.p12", "keystore.properties*"]) {
+    assert.ok(gitignore.includes(pat), `.gitignore에 ${pat} 무늬가 없다`);
+  }
+  assert.ok(
+    gitignore.includes("!app/android/keystore.properties.example"),
+    "견본이 무늬에 걸려 추적되지 않는다",
+  );
+});
+
+test("★ 키가 없을 때 — **release는 서고 debug는 돈다**", () => {
+  assert.ok(appGradle.includes("verifyReleaseSigning"), "서명 게이트가 없다");
+  // ⛔ configuration 시점에 throw하면 debug까지 죽는다. task 시점이어야 한다.
+  assert.ok(
+    /tasks\.register\("verifyReleaseSigning"\)/.test(appGradle),
+    "서명 검사가 task가 아니다 — configuration에서 세우면 debug까지 죽는다",
+  );
+  assert.ok(
+    appGradle.includes("dependsOn verifyNoDemoAdIds, verifyReleaseSigning"),
+    "assembleRelease/bundleRelease 둘 다에 게이트가 걸려 있지 않다",
+  );
+  // ★ AAB를 함께 막는지 — Play가 받는 것은 AAB다.
+  assert.ok(
+    /it\.name in \["assembleRelease", "bundleRelease"\]/.test(appGradle),
+    "AAB(bundleRelease)가 게이트를 안 지난다",
+  );
+  // ⛔ 준비가 안 되면 signingConfig는 null이다. 빈 config를 물리면 AGP가
+  //   무엇을 해야 하는지 말하지 않는 메시지로 죽는다.
+  assert.ok(
+    appGradle.includes("signingConfig ksReady ? signingConfigs.release : null"),
+    "키가 없을 때 signingConfig를 비우지 않는다",
+  );
+});
+
+test("★ 게이트가 보는 것 넷 — 파일 존재 · 값 채움 · 견본값 · 경로 실재", () => {
+  assert.ok(appGradle.includes("ksLoaded"), "파일 존재를 안 본다");
+  for (const k of ["storeFile", "storePassword", "keyAlias", "keyPassword"]) {
+    assert.ok(appGradle.includes(`ksProps.getProperty("${k}"`), `${k}를 안 읽는다`);
+  }
+  assert.ok(
+    appGradle.includes('def PYM_KEYSTORE_SENTINEL = "<<CHANGE_ME>>"'),
+    "견본값 검사가 없다 — 안 채운 채로 서명 시도가 나간다",
+  );
+  assert.ok(
+    /new File\(sf\)\.isFile\(\)/.test(appGradle),
+    "키 파일이 실제로 있는지 안 본다",
+  );
+  // ⚠ 비밀번호는 trim하지 않는다 — 공백도 비밀번호의 일부다.
+  assert.ok(
+    appGradle.includes("storePassword ksStorePassword"),
+    "비밀번호를 가공해서 넘긴다 — 공백이 잘리면 원인 모를 서명 실패가 된다",
+  );
+});
