@@ -29,6 +29,7 @@
 ★ 업로드 키는 **우리가 만든다** — 설정·게이트는 넣었고 키는 아직 없다 (2.125)
 ✅ AdMob 「검토 필요」는 **정상**이다 — 스토어 등재를 전제로 하는 요건이다 (2.124)
 ★ 배너를 건드리면 **scripts/measure_banner.py** 로 세 갈래를 한 번에 잰다
+★ "이 PC가 죽으면 무엇이 없어지나" — 3-부록 **「백업 목록」** 절에 다 있다 (2026-09-04)
 ✅ **배터리 세이버를 넘었다** — allowWhileIdle 한 줄. 「영영 안 온다」가 「1분 31초 늦게 온다」가 됐다 (2.116 ①)
 ⛔ 시험 기기 등록은 **콘솔에 AAID · 코드에 해시**다. 둘은 변환되지 않는다 (2.117)
 ★★ 다음 세션은 **3절 「다음 세션은 여기서 시작한다」** 부터 읽는다
@@ -14499,6 +14500,7 @@ C5b  세금 정보 — AdSense 연동 화면에 없었다. 어디에 있는지 (
 
 > ⚠ 상세 제원(해상도·인셋·주입값)과 **에뮬레이터를 다시 띄우는 명령**은
 > 3-부록 「실행 환경」 절에 있다. 여기는 상태만이다.
+> ★ **이 PC에만 있는 것**(백업해야 할 것)은 3-부록 「백업 목록」 절에 있다.
 
 ```
 휴대폰   Galaxy Z Flip (SM-F700N · R39N500G7YF) · Android 13 · **갈래 C**
@@ -16302,6 +16304,151 @@ PYM은 실제로 수집하지 않는다 — 로그인·계정·서버 전송이 
 면책 두 절만 단정형("아닙니다"·"이용해 주세요")을 쓴다. 앱 전체는 조용한
 어조지만 면책은 흐리면 면책이 아니다 — 부드럽게 쓰다가 "의료 서비스가 아니다"가
 읽히지 않으면 그 문장은 제 일을 못 한 것이다.
+
+### ★★ 백업 목록 — **저장소만 clone해서는 안 되는 것들** (2026-09-04)
+
+> ★ 다음 세션이 "이 PC가 죽으면 무엇이 없어지나"를 물으면 **이 절을 읽는다.**
+> ⚠ 2026-09-04 시점에 실제로 훑어서 만든 목록이다. 새 비밀·새 로컬 설정이
+> 생기면 **여기에 함께 적는다** — 적지 않으면 다음 사람이 못 찾는다.
+
+#### ★ 먼저 — 실제로 백업할 것은 **셋뿐이다**
+
+```
+① app/android/admob.properties        ⛔ 잃으면 시험 기기 등록을 다시 해야 한다
+② <저장소 밖>/pym-upload.jks + 비밀번호  ⛔ 아직 없다. 만들면 이것이 가장 무겁다
+③ %GRADLE_USER_HOME%/gradle.properties  ⚠ 한 줄짜리다. 내용을 알면 다시 쓰면 된다
+                                       → 사실상 ②의 부속이라 함께 적어 두면 끝난다
+
+★ 나머지는 전부 ② 또는 ③이다 — 저장소에 있거나, 다시 발급받거나, 다시 만들면 된다.
+⛔ 그러니 **①과 ②만 물리적으로 백업하면 된다.** 목록이 길어 보이지만 그렇다.
+```
+
+#### ⛔ ① 잃으면 되돌릴 수 없다 (또는 대가가 크다)
+
+```
+[1] 업로드 키  <저장소 밖>/pym-upload.jks  +  비밀번호
+    지금       🔴 **아직 만들지 않았다** (2.125). 만드는 순간 이 표의 1번이 된다
+    잃으면     ⛔ 앱은 **죽지 않는다** — 최종 앱 서명 키는 Google이 쥔다.
+               이미 설치된 앱도 스토어 버전도 그대로 돈다.
+               ⚠ 대신 Play에 **업로드 키 재설정**을 신청해야 하고 **며칠 걸린다.**
+                 그동안 업데이트를 못 올린다 (13절 5항)
+    보관       암호 관리자(비밀번호) + 암호화 클라우드(.jks) + 오프라인 매체(.jks)
+               ⛔ 비밀번호를 .jks와 같은 곳에 두지 않는다
+
+[2] app/android/admob.properties
+    무엇       admob.appId · admob.bannerId · admob.testDevice.* · admob.aaid.*
+    잃으면     appId·bannerId는 ②다(AdMob 콘솔에서 다시 읽는다).
+               ⛔ 그러나 **시험 기기 ID(AAID)는 기기에서 다시 뽑아야 한다** —
+                 ★ 그런데 그 절차 자체가 **실제 광고를 한 번 요청하는 일**이다
+                   (2.113 — 결과 화면까지 가야 logcat에 ID가 찍힌다).
+                   개발자 노출이 한 번 더 생기고, 무효 트래픽 위험이 그만큼 는다
+    → 그래서 ①로 둔다. 파일 하나 복사로 그 위험을 피할 수 있다
+    ⚠ 이 파일에는 **개인 기기를 지목하는 안정적 식별자**가 들어 있다. 공개 금지
+```
+
+#### ⚠ ② 잃어도 다시 발급·확인할 수 있다 (어디서 어떻게)
+
+```
+[3] Actions Secret  YOUTUBE_API_KEY   (GitHub → Settings → Secrets → Actions)
+    ⛔⛔ **다시 읽을 수 없다.** GitHub는 Secret 값을 보여주지 않는다 —
+      덮어쓰기만 된다. "백업"이라는 말이 성립하지 않는 자리다
+    ★ 그래도 ②인 이유 — **GCP에서 다시 발급받을 수 있다.**
+      경로  console.cloud.google.com → 해당 프로젝트 → API 및 서비스 →
+            사용자 인증 정보 → **API 키** → 새로 만들거나 기존 키 「키 표시」
+            (YouTube Data API v3가 사용 설정돼 있어야 한다)
+      그다음 GitHub Secret에 새 값을 넣고, 로컬 셸에도 export 한다
+    ⚠ 로컬에서도 필요하다 — Actions Secret은 러너 전용이라 안 잡힌다.
+      build_videos.py(드라이런 제외)와 suggest_channels.py가 그 키를 쓴다
+    ⚠ 키를 새로 만들면 **쿼터가 아니라 키가 바뀔 뿐**이다. 일일 상한은 프로젝트 단위다
+    ⛔ secrets.GITHUB_TOKEN은 백업 대상이 아니다 — Actions가 자동으로 준다
+
+[4] AdMob App ID · 배너 단위 ID       AdMob 콘솔 → 앱 → 앱 설정 / 광고 단위
+[5] 시험 기기 등록                     AdMob 콘솔 → 설정 → 시험 기기 (목록이 남아 있다)
+    ⚠ 콘솔에 목록은 남지만 **AAID 값 자체**를 다시 얻으려면 기기에서 뽑아야 한다 → [2]
+[6] Play Console 앱                    계정에 남아 있다 (앱 자체는 클라우드다)
+[7] 앱 서명 키                         ⛔ 우리가 가진 적이 없다. **Google이 보관한다**
+[8] 인증서 지문(업로드/앱 서명)          Play Console → 앱 무결성 → 앱 서명
+    🔴 첫 AAB 업로드 뒤에 HANDOFF에 적기로 했다 (2.125)
+[9] GitHub 저장소 · gh-pages           원격에 있다. clone하면 온다
+```
+
+#### ✅ ③ 다시 만들면 된다 (백업 불필요)
+
+```
+[10] app/public/krv/                  ⛔ **저장소에 없지만 백업도 필요 없다.**
+     ★ 원천이 저장소에 있다 — **data/krv/bible_1961_krv.json** (추적된다).
+       app/public/krv/ 는 gen_krv_chapters.py 가 **매 빌드 재생성**하는 산출물이다
+     ⚠ 앱 빌드에 **필요하다**(APK에 942KB로 들어간다 · 오프라인 이어 읽기).
+       그런데 `npm run gen:data`가 만들므로 clone만 하면 된다.
+       ⛔ "구절 추가할 때만 필요한 것"이 아니다 — **빌드마다 필요하고 매번 생성된다**
+[11] app/src/data/{taxonomy,verses,themes}.json   같은 이유. gen:data 산출물
+[12] node_modules/ · dist/ · dist-app/ · app/android/build/ · .gradle/   전부 산출물
+[13] app/android/local.properties     sdk.dir 한 줄. ⚠ Android Studio·gradle이
+     처음 열 때 다시 만든다. 손으로 써도 된다
+[14] .quota_log.json                  YouTube API 사용량 **기록**이다. 잃으면
+     "지금까지 얼마나 썼나"의 이력만 사라진다. 쿼터 자체는 구글이 센다
+[15] AVD  pym_phone_360               D:/jaehyuk.myung/android/avd/
+     ⚠ 3.5GB. 다시 만들면 된다(실행 환경 절의 avdmanager 절차).
+     ⛔ 백업 대상이 아니다 — 크고, 재현 가능하고, 기기 상태가 아니라 도구다
+[16] 세션 작업 산출물  .measure/ · 실측 스크립트  전부 임시다
+[17] app/android/app/google-services.json   **없다.** Firebase를 안 쓴다(2.124)
+```
+
+#### ★ 새 PC에서 처음부터 — clone 뒤 무엇을 놓고 무엇을 깔면 도는가
+
+```
+[0] 깔 것
+    Git · Node 20+ (지금 v24.14.1) · Python 3.12+ (지금 3.14.3)
+    JDK 21          지금 D:/jaehyuk.myung/android/jdk21
+    Android SDK     platform-tools · build-tools · platforms;android-36 ·
+                    (에뮬레이터를 쓸 거면) emulator + system-images/android-35/...
+    ⚠ 경로를 D로 두는 이유 — C 여유가 8GB뿐이다(실행 환경 절)
+
+[1] clone 하고 의존성
+    git clone https://github.com/appleap385-aaz0919/PeaceYourMind.git
+    cd PeaceYourMind/app && npm ci
+
+[2] ⚠ **백업에서 되돌릴 것 하나** (①-[2])
+    app/android/admob.properties      ← 백업본을 그대로 복사
+    ⛔ 없으면 **빌드가 선다.** 그것이 의도다(build.gradle이 메시지로 안내한다)
+    ★ 급하면 admob.properties.example 의 데모 값으로도 debug는 돈다.
+      ⛔ 다만 그 상태로 릴리스를 말면 verifyNoDemoAdIds 가 세운다(2.99)
+
+[3] ✅ 여기까지 하면 **debug가 돈다**
+    cd app && npm run sync:app
+    cd app/android && export JAVA_HOME=<JDK 21 경로> && ./gradlew assembleDebug
+    ⚠ local.properties(sdk.dir)는 gradle이 알아서 만들거나 한 줄 써 준다
+
+[4] ⛔ **release를 만들려면 둘이 더 필요하다** (①-[1])
+    ㄱ. 업로드 키 파일을 저장소 **밖**에 놓는다      <경로>/pym-upload.jks
+    ㄴ. 그 옆에 값 파일                              <경로>/pym-upload.properties
+        (app/android/keystore.properties.example 을 복사해 값을 채운다)
+    ㄷ. %GRADLE_USER_HOME%/gradle.properties 에 **한 줄**
+          pymKeystoreProperties=<경로>/pym-upload.properties
+    ✅ 그다음   cd app/android && ./gradlew bundleRelease
+    ⛔ 하나라도 빠지면 verifyReleaseSigning 이 **무엇이 없는지 말하고 세운다**(2.125)
+
+[5] ⚠ API를 쓰는 스크립트를 돌리려면
+    export YOUTUBE_API_KEY="..."     (②-[3]에서 발급)
+    ⛔ 앱 빌드에는 필요 없다. 배치·채널 발굴에만 쓴다
+
+[6] 환경변수 둘 (편의 · 없어도 되지만 있으면 C가 안 찬다)
+    GRADLE_USER_HOME = D:\jaehyuk.myung\android\gradle
+    ANDROID_AVD_HOME = D:\jaehyuk.myung\android\avd
+    ⚠ 2026-09-04 확인 — 이 PC는 **둘 다 사용자 환경변수로 설정돼 있다**(레지스트리)
+    ⛔ GRADLE_USER_HOME을 옮기면 [4]-ㄷ의 gradle.properties 위치도 함께 옮긴다
+```
+
+#### ⚠ 이 목록이 낡는 자리
+
+```
+· 새 비밀이 생기면(다른 API 키 · 다른 Secret) **여기에 함께 적는다**
+· 업로드 키를 만들면 ①-[1]의 "아직 만들지 않았다"를 지운다
+· 첫 AAB 업로드 뒤에는 ②-[8] 지문을 HANDOFF에 적는다
+⛔ 게이트가 이 절을 검사하지 않는다 — 사람이 갱신해야 하는 자리다
+```
+
+---
 
 ### 실행 환경 — 앱 빌드와 시험 기기 (2026-08-31)
 
