@@ -146,6 +146,58 @@ export function bannerVisible(screen) {
 }
 
 /**
+ * 겹친 배너 요청을 어떻게 처리하는가 — **순수 함수**. (2026-09-04 · HANDOFF 2.126)
+ *
+ * [⛔ 왜 이 판단이 밖으로 나왔나 — 깃발 하나가 결함을 만들었다]
+ *   전에는 bannerNative.js가 `if (created) hideBanner()` 로 숨겼다.
+ *   `created`는 showBanner가 **완주한 뒤에야** true가 되는데, 숨기기는 그
+ *   깃발을 **문 앞에서** 본다. 그래서 배너를 만드는 창(에뮬 실측 0.59초) 안에
+ *   결과 화면을 떠나면 hide가 통째로 건너뛰어지고, 뒤늦게 완주한 배너가
+ *   **떠난 화면 위에 갇혔다.** About 본문과 알림 구절 본문을 가렸다.
+ *   ★ 로그가 그것을 그대로 보여줬다 — `요청 shown=false created=false`.
+ *
+ * [★ 규칙 셋]
+ *   ㄱ **숨기기는 조건이 없다.** 만든 적 없을 때 불러도 무해하다(플러그인이
+ *     거부하고, 거부는 이제 로그에 남는다). 반대로 건너뛰면 배너가 갇힌다
+ *   ㄴ **만드는 중이면 또 만들지 않는다.** 플러그인의 showBanner는 두 번째
+ *     호출에서 call.resolve()를 부르지 않는다(BannerExecutor.java:66) —
+ *     약속이 영영 안 풀린다. 그래서 skip이다
+ *   ㄷ **마지막 요청이 이긴다.** wanted에 적어 두고 bannerSettled가 그것을 본다
+ *
+ * @param {{created:boolean, creating:boolean, wanted:boolean}} state
+ * @param {boolean} shown 부르는 쪽이 판정한 "보여야 하는가"
+ * @returns {{action:"hide"|"resume"|"skip"|"create", state:object}}
+ */
+export function bannerRequest(state, shown) {
+  const next = { ...state, wanted: shown };
+  if (!shown) return { action: "hide", state: next };
+  if (next.created) return { action: "resume", state: next };
+  if (next.creating) return { action: "skip", state: next };
+  return { action: "create", state: { ...next, creating: true } };
+}
+
+/**
+ * 배너를 다 만들었다(또는 만들다 실패했다) — **그 사이에 화면이 바뀌었는가.**
+ *
+ * ⛔ 이것이 **최후 방어**다. ㄱ(조건 없는 숨기기)만으로는 모자란다 —
+ *   브리지 스레드 순서는 보장이 없어 hide가 show보다 먼저 닿으면
+ *   플러그인이 "만든 적 없는 배너를 숨기려 한다"며 거부하고, 그러면
+ *   뒤늦게 뜬 배너를 아무도 안 내린다.
+ * ⚠ wanted가 true여도 **resume을 부른다.** 만드는 동안 끼어든 hide가
+ *   배너를 GONE으로 만들어 놓았을 수 있다 — 그러면 결과 화면인데 배너가
+ *   없다. 창 안에서 결과→다른 화면→결과로 오간 경우가 그것이다.
+ *   ★ 만드는 일은 앱 한 판에 한 번뿐이라 이 여벌 호출도 한 번뿐이다.
+ *
+ * @param {{created:boolean, creating:boolean, wanted:boolean}} state
+ * @param {boolean} ok showBanner가 성공했는가
+ * @returns {{action:"resume"|"hide", state:object}}
+ */
+export function bannerSettled(state, ok) {
+  const next = { ...state, creating: false, created: ok ? true : state.created };
+  return { action: next.wanted ? "resume" : "hide", state: next };
+}
+
+/**
  * 하단에 비워 둘 높이(px) = 광고 + 그 위 간격.
  * 떠 있는 버튼을 올리고, 문서 끝을 밀고, **배경면의 높이가 된다.**
  *

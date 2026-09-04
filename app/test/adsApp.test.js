@@ -24,6 +24,8 @@ import {
   SCREEN,
   bannerSpace,
   bannerVisible,
+  bannerRequest,
+  bannerSettled,
   currentScreen,
 } from "../src/lib/adsApp.js";
 import { readSource } from "./helpers.js";
@@ -285,6 +287,108 @@ test("★ 떠 있는 버튼 둘이 같은 함수로 올라간다", () => {
   );
   const calls = common.match(/floatingStyle\(shown, reducedMotion, bottomInset\)/g) || [];
   assert.equal(calls.length, 2, `두 버튼이 함께 쓰지 않는다 (${calls.length}곳)`);
+});
+
+/* --- 겹친 요청 — 배너가 화면에 갇히지 않는다 (2026-09-04 · HANDOFF 2.126) ---
+ *
+ * ⛔ **화면 검사는 회귀로 못 만든다** — 기기와 실제 광고가 있어야 한다.
+ *   그래서 겹침 판단을 순수 함수로 꺼내 여기서 값으로 단언한다.
+ *   화면 쪽은 「통으로 밟기」 절차에 항목으로 남겼다.
+ */
+
+const FRESH = { created: false, creating: false, wanted: false };
+
+test("⛔ 숨기기에는 조건이 없다 — 어떤 상태에서도 hide다", () => {
+  // ★ 결함의 핵심이 여기였다. created가 false라고 숨기기를 건너뛰면
+  //   뒤늦게 뜬 배너를 아무도 안 내린다.
+  for (const created of [true, false]) {
+    for (const creating of [true, false]) {
+      for (const wanted of [true, false]) {
+        const { action } = bannerRequest({ created, creating, wanted }, false);
+        assert.equal(
+          action,
+          "hide",
+          `created=${created} creating=${creating} 인데 숨기기를 건너뛴다`,
+        );
+      }
+    }
+  }
+});
+
+test("만드는 중에 또 만들지 않는다 — 플러그인이 두 번째 약속을 안 푼다", () => {
+  // BannerExecutor.java의 showBanner는 mAdView가 있으면 call.resolve()를
+  // 부르지 않고 돌아간다. 그 약속은 영영 안 풀린다.
+  const { action } = bannerRequest({ ...FRESH, creating: true }, true);
+  assert.equal(action, "skip");
+  assert.equal(bannerRequest(FRESH, true).action, "create");
+  assert.equal(bannerRequest({ ...FRESH, created: true }, true).action, "resume");
+});
+
+test("★ 요청이 겹치면 **마지막 것이 이긴다** — 결과→다른 화면", () => {
+  // 결함이 났던 그 순서다. 만드는 창 안에서 화면을 떠났다.
+  let st = FRESH;
+  ({ state: st } = bannerRequest(st, true)); // 결과 화면 — 만들기 시작
+  assert.equal(st.creating, true);
+  ({ state: st } = bannerRequest(st, false)); // About으로 — 아직 created=false
+  assert.equal(st.created, false, "만드는 중이므로 아직 만들어지지 않았다");
+  assert.equal(st.wanted, false, "마지막 요청이 안 적혔다");
+
+  const done = bannerSettled(st, true); // showBanner가 뒤늦게 완주한다
+  assert.equal(done.action, "hide", "⛔ 떠난 화면 위에 배너가 갇힌다");
+  assert.equal(done.state.creating, false);
+  assert.equal(done.state.created, true);
+});
+
+test("★ 빠른 왕복(결과→다른 화면→결과)에서 **중간 요청이 갇히지 않는다**", () => {
+  // ⚠ skip으로 돌아간 요청이 잊히면 결과 화면인데 배너가 없다.
+  //   중간에 끼어든 숨기기가 이미 GONE으로 만들어 두었기 때문이다.
+  let st = FRESH;
+  ({ state: st } = bannerRequest(st, true)); // 결과 — 만들기 시작
+  ({ state: st } = bannerRequest(st, false)); // 다른 화면 — 숨기기가 나간다
+  const back = bannerRequest(st, true); // 다시 결과 — 아직 만드는 중
+  st = back.state;
+  assert.equal(back.action, "skip");
+  assert.equal(st.wanted, true, "마지막 요청이 안 적혔다");
+
+  const done = bannerSettled(st, true);
+  assert.equal(done.action, "resume", "⛔ 결과 화면인데 배너가 안 돌아온다");
+});
+
+test("만들다 실패하면 creating이 풀린다 — 다음 요청이 영영 skip이면 안 된다", () => {
+  const st = bannerRequest(FRESH, true).state;
+  const failed = bannerSettled(st, false);
+  assert.equal(failed.state.creating, false);
+  assert.equal(failed.state.created, false, "실패했는데 만들어진 것으로 남는다");
+  assert.equal(bannerRequest(failed.state, true).action, "create", "다시 만들 수 없다");
+});
+
+test("⛔ 판단이 값을 **고치지 않는다** (불변)", () => {
+  const before = { ...FRESH };
+  bannerRequest(before, true);
+  bannerSettled(before, true);
+  assert.deepEqual(before, FRESH, "넘긴 상태가 제자리에서 바뀌었다");
+});
+
+test("⛔ 숨기기 갈래가 깃발을 다시 보지 않는다 (소스 계약)", () => {
+  // ★ 2.126이 돌아오는 길은 하나다 — hide 앞에 조건이 다시 붙는 것이다.
+  const native = readSource("lib", "bannerNative.js");
+  // ⚠ 여러 줄 정규식 대신 잘라 낸다 — 정규식이 길어지면 회귀가 스스로 깨진다.
+  const HEAD = 'if (plan.action === "hide") {';
+  const start = native.indexOf(HEAD);
+  const branch = start < 0 ? null : native.slice(start, native.indexOf("\n    }", start));
+  assert.ok(branch, "숨기기 갈래를 못 찾았다 — 구조가 바뀌었으면 이 회귀를 고칠 것");
+  assert.ok(
+    branch.includes("await box.ad.hideBanner();"),
+    "숨기기 갈래가 hideBanner를 안 부른다",
+  );
+  assert.ok(
+    branch.indexOf("if (", HEAD.length) < 0,
+    "⛔ 숨기기 갈래에 조건이 다시 들어왔다 — created가 false인 창에서 배너가 갇힌다 (2.126)",
+  );
+  assert.ok(
+    !/if \(created\)/.test(native),
+    "⛔ created를 직접 보는 자리가 되살아났다 — 판단은 adsApp.js 하나다",
+  );
 });
 
 test("⛔ 네이티브 어댑터가 화면을 판단하지 않는다", () => {

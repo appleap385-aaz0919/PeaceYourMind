@@ -20,12 +20,26 @@
  */
 
 import { APP_BANNER_UNIT } from "./ads.js";
-import { BANNER_MARGIN } from "./adsApp.js";
+import { BANNER_MARGIN, bannerRequest, bannerSettled } from "./adsApp.js";
 
 const IS_APP = typeof __IS_APP__ === "boolean" ? __IS_APP__ : false;
 
 let boxed = null;
-let created = false;
+
+/**
+ * 배너의 상태 — **하나의 값이다.** (2026-09-04 · HANDOFF 2.126)
+ *
+ * ⛔ 전에는 `created` 하나뿐이었고, 숨기기가 그것을 문 앞에서 봤다.
+ *   배너를 만드는 동안(창 0.59초 실측) 화면을 떠나면 그 순간 false라
+ *   숨기기가 통째로 건너뛰어졌고, 뒤늦게 뜬 배너가 **떠난 화면 위에 갇혔다.**
+ * ★ 무엇을 할지 정하는 것은 여기가 아니라 adsApp.js의 순수 함수 둘이다 —
+ *   그래야 겹친 요청을 **값으로 단언**할 수 있다. 화면 검사로는 못 잡는다.
+ *
+ *   created   네이티브에 배너를 만들었나
+ *   creating  showBanner가 지금 날아가 있나 (두 번 만들면 약속이 안 풀린다)
+ *   wanted    **마지막으로** 요청받은 상태 (겹치면 이것이 이긴다)
+ */
+let state = { created: false, creating: false, wanted: false };
 
 /**
  * ⛔⛔ **조용히 삼키지 않는다** (2026-09-04 · HANDOFF 2.126).
@@ -85,20 +99,34 @@ async function api() {
  * @param {boolean} shown
  */
 export async function setBannerShown(shown) {
+  /**
+   * ⛔ **판단은 await 앞에서 끝낸다.** 여기서 기다린 뒤에 정하면 겹친 요청의
+   *   순서가 뒤집힐 수 있고, 그러면 "마지막 요청이 이긴다"가 깨진다.
+   */
+  const plan = bannerRequest(state, shown);
+  state = plan.state;
   const box = await api();
   if (!box) {
+    // ⚠ 상자가 없으면 만들다 만 것이 된다 — creating을 되돌려 놓는다.
+    if (plan.action === "create") state = bannerSettled(state, false).state;
     warn(`상자가 없다 — ${shown ? "보이기" : "숨기기"}를 건너뛴다`, null);
     return;
   }
-  // ⚠ 진단 — 어느 갈래를 지나는지 남긴다(2026-09-04). 원인이 확정되면 다듬는다.
-  warn(`요청 shown=${shown} created=${created}`, null);
+  // ⚠ 진단 — 어느 갈래를 지나는지 남긴다(2026-09-04 · 2.126).
+  warn(`요청 shown=${shown} 갈래=${plan.action} created=${state.created}`, null);
   try {
-    if (!shown) {
-      if (created) await box.ad.hideBanner();
+    if (plan.action === "hide") {
+      // ⛔ **조건 없이 부른다.** 만든 적 없으면 플러그인이 거부하고, 그 거부는
+      //   아래 catch가 로그로 남긴다. 건너뛰면 배너가 갇힌다 — 그것이 2.126이다.
+      await box.ad.hideBanner();
       return;
     }
-    if (created) {
+    if (plan.action === "resume") {
       await box.ad.resumeBanner();
+      return;
+    }
+    if (plan.action === "skip") {
+      // 이미 만들고 있다. 끝난 자리에서 bannerSettled가 마지막 요청을 다시 본다.
       return;
     }
     await box.ad.initialize({});
@@ -121,12 +149,24 @@ export async function setBannerShown(shown) {
       //     **리스너**라 회전에 스스로 따라간다 (BannerExecutor.java 실측).
       margin: BANNER_MARGIN,
     });
-    created = true;
+    /**
+     * ★ **최후 방어** — 만드는 동안 화면이 바뀌었을 수 있다.
+     *   바뀌었으면(wanted=false) 지금 내린다. 안 바뀌었어도 resume을 부른다 —
+     *   중간에 끼어든 숨기기가 배너를 GONE으로 만들어 두었을 수 있다.
+     *   ⚠ 만드는 일은 앱 한 판에 한 번뿐이라 이 호출도 한 번뿐이다.
+     */
+    const done = bannerSettled(state, true);
+    state = done.state;
+    warn(`만들기 끝 — 마지막 요청은 ${state.wanted} → ${done.action}`, null);
+    if (done.action === "hide") await box.ad.hideBanner();
+    else await box.ad.resumeBanner();
   } catch (error) {
     // ⛔⛔ **여기가 결함을 숨긴 자리다.** showBanner가 배너를 띄운 뒤 거부하면
     //   `created = true`에 도달하지 못하고, 그러면 이후 hide가 전부 건너뛰어진다
     //   (아래 setBannerShown의 `if (created)`). 신호가 없으면 아무도 모른다.
-    warn(`${shown ? "보이기" : "숨기기"} 실패 (created=${created})`, error);
+    // ⚠ 만들다 실패했으면 creating을 되돌린다 — 안 그러면 다음 요청이 영영 skip이다.
+    if (state.creating) state = bannerSettled(state, false).state;
+    warn(`${shown ? "보이기" : "숨기기"} 실패 (created=${state.created})`, error);
   }
 }
 
