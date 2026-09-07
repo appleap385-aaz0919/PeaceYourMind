@@ -47,7 +47,12 @@ except ImportError:  # pragma: no cover
 ROOT = Path(__file__).resolve().parent.parent
 THEME_JS = ROOT / "app" / "src" / "theme.js"
 STORE = ROOT / "app" / "store"
-STORE_ICON = ROOT / "app" / "public" / "icons" / "icon-512.png"
+# ⛔ **스토어 아이콘은 웹 아이콘이 아니다.** 전에는 이 상수가
+#   app/public/icons/icon-512.png 를 가리켰고, 그래서 검사가 **올릴 파일이
+#   아닌 것**을 보고 있었다. Play가 요구하는 32비트(알파 포함)를 웹판이
+#   만족하지 않는데도 검사는 아무 말도 안 했다 —
+#   "검사 대상이 아니면 검사는 아무 말도 안 한다"(3-부록 ⓪-3)의 또 한 사례다.
+STORE_ICON = ROOT / "app" / "store" / "icon-512.png"
 
 W, H = 1024, 500
 SUPER = 3.0                      # 오버샘플 배율. 곡선과 글자를 매끄럽게 한다
@@ -217,14 +222,20 @@ def render() -> Image.Image:
 
 
 def check_store_icon() -> list[str]:
-    """스토어 아이콘 512×512 요건 — ⛔ 투명이 있으면 Play가 거부한다."""
+    """스토어 아이콘 512×512 요건 — 32비트여야 하고, 투명은 없어야 한다."""
     problems = []
     if not STORE_ICON.exists():
         return ["스토어 아이콘이 없습니다: %s  (python scripts/gen_icons.py)" % STORE_ICON]
     im = Image.open(STORE_ICON)
     if im.size != (512, 512):
         problems.append("크기가 512×512가 아닙니다: %s" % (im.size,))
-    if "A" in im.getbands():
+    # ⚠ 요건이 둘이고 방향이 반대라 헷갈리기 쉽다 —
+    #   **알파 채널은 있어야 하고(32비트), 투명한 화소는 없어야 한다.**
+    if "A" not in im.getbands():
+        problems.append(
+            "**알파 채널이 없습니다(24비트)** — Play는 아이콘을 "
+            "32비트 PNG(알파 포함)로 요구합니다  (python scripts/gen_icons.py)")
+    else:
         alpha = im.getchannel("A")
         if min(alpha.getdata()) < 255:
             problems.append("**투명한 픽셀이 있습니다** — Play는 아이콘의 투명을 허용하지 않습니다")

@@ -44,6 +44,7 @@ except ImportError:  # pragma: no cover
 ROOT = Path(__file__).resolve().parent.parent
 THEME_JS = ROOT / "app" / "src" / "theme.js"
 WEB_ICONS = ROOT / "app" / "public" / "icons"
+STORE = ROOT / "app" / "store"
 RES = ROOT / "app" / "android" / "app" / "src" / "main" / "res"
 
 # --- 기하 — 512 단위 캔버스가 108dp다 ---------------------------------------
@@ -289,6 +290,20 @@ def main() -> int:
         emit(WEB_ICONS / f"icon-{n}.png", full.resize((n, n), Image.LANCZOS))
     # maskable — 표식이 이미 중앙 51%라 안전 원(80%) 안이다. 같은 그림을 쓴다.
     emit(WEB_ICONS / "icon-maskable-512.png", full.resize((512, 512), Image.LANCZOS))
+
+    # --- 스토어 아이콘 -------------------------------------------------------
+    # ⛔ **웹 아이콘과 다른 파일이다.** 그림은 같고 화소도 같지만 담는 형식이 다르다.
+    #   Play 콘솔은 앱 아이콘을 **32비트 PNG(알파 포함)**로 요구한다. 웹 쪽 512는
+    #   24비트 RGB(알파 없음)이고, 그것을 그대로 올리면 업로더가 거부할 수 있다.
+    # ⛔ 그렇다고 웹 아이콘을 RGBA로 바꾸지 않는다 — icon-180은 iOS의
+    #   apple-touch-icon이라 알파가 붙으면 합성 결과가 달라질 수 있고,
+    #   지금 화면에서 멀쩡한 것을 스토어 사정으로 건드릴 이유가 없다.
+    #   ★ 그래서 **스토어용만 따로 뽑는다.** 같은 master에서 나오므로
+    #     --check가 둘을 함께 지킨다.
+    # ⚠ convert("RGBA")는 **투명을 만들지 않는다** — 알파를 전부 255로 채운다.
+    #   보이는 그림은 24비트판과 화소 단위로 같다.
+    emit(STORE / "icon-512.png",
+         full.resize((512, 512), Image.LANCZOS).convert("RGBA"))
 
     # --- 안드로이드 런처 -----------------------------------------------------
     for name, mult in DENSITIES:
