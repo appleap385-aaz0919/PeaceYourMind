@@ -1,11 +1,11 @@
 {
-  "version": "2026-09-11T13:43:45Z",
-  "untagged_ratio": 0.66,
+  "version": "2026-09-11T23:29:31Z",
+  "untagged_ratio": 0.659,
   "unknown_ratio": 0.015,
   "unknown_kept": 28,
   "tabs_over_cap": [],
   "tab_max_exposed": 20,
-  "kept": 1831,
+  "kept": 1834,
   "themes_empty": [
     "self_control"
   ],
@@ -31,11 +31,11 @@
   "screens_below_target": [],
   "screens_below_min": [],
   "total_exposed": 960,
-  "from_fallback": 247,
+  "from_fallback": 243,
   "channels_zero_yield": [],
   "allowlist_size": 22,
   "theme_pool": {
-    "peace": 20,
+    "peace": 21,
     "trust": 31,
     "courage": 7,
     "self_control": 0,
@@ -46,7 +46,7 @@
     "lament": 16,
     "comfort": 11,
     "love": 37,
-    "presence": 12,
+    "presence": 13,
     "renewal": 17,
     "rest": 6,
     "strength": 4,
@@ -55,8 +55,8 @@
     "new_thing": 3,
     "quiet_worship": 241,
     "creation": 3,
-    "daily_word": 163,
-    "bible_story": 16,
+    "daily_word": 165,
+    "bible_story": 17,
     "hope": 34
   },
   "theme_picked": {
@@ -71,7 +71,7 @@
     "lament": 16,
     "comfort": 11,
     "love": 20,
-    "presence": 12,
+    "presence": 13,
     "renewal": 16,
     "rest": 6,
     "strength": 4,
@@ -81,7 +81,7 @@
     "quiet_worship": 20,
     "creation": 3,
     "daily_word": 16,
-    "bible_story": 16,
+    "bible_story": 17,
     "hope": 20
   }
 }
