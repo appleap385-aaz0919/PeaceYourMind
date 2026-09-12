@@ -1,11 +1,11 @@
 {
-  "version": "2026-09-11T23:29:31Z",
-  "untagged_ratio": 0.659,
+  "version": "2026-09-12T13:02:04Z",
+  "untagged_ratio": 0.658,
   "unknown_ratio": 0.015,
-  "unknown_kept": 28,
+  "unknown_kept": 27,
   "tabs_over_cap": [],
   "tab_max_exposed": 20,
-  "kept": 1834,
+  "kept": 1830,
   "themes_empty": [
     "self_control"
   ],
@@ -23,7 +23,6 @@
     "strength"
   ],
   "media_type_gaps": [
-    "bible_story",
     "forgiveness",
     "justice"
   ],
@@ -36,7 +35,7 @@
   "allowlist_size": 22,
   "theme_pool": {
     "peace": 21,
-    "trust": 31,
+    "trust": 30,
     "courage": 7,
     "self_control": 0,
     "justice": 2,
@@ -57,7 +56,7 @@
     "creation": 3,
     "daily_word": 165,
     "bible_story": 17,
-    "hope": 34
+    "hope": 35
   },
   "theme_picked": {
     "peace": 20,
