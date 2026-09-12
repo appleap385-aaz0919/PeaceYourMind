@@ -1,11 +1,11 @@
 {
-  "version": "2026-09-12T13:02:04Z",
+  "version": "2026-09-12T23:11:14Z",
   "untagged_ratio": 0.658,
   "unknown_ratio": 0.015,
   "unknown_kept": 27,
   "tabs_over_cap": [],
   "tab_max_exposed": 20,
-  "kept": 1830,
+  "kept": 1825,
   "themes_empty": [
     "self_control"
   ],
@@ -54,7 +54,7 @@
     "new_thing": 3,
     "quiet_worship": 241,
     "creation": 3,
-    "daily_word": 165,
+    "daily_word": 163,
     "bible_story": 17,
     "hope": 35
   },
