@@ -265,6 +265,47 @@ MEDIA_CASES = [
         2746, "sermon", SERMON, "channel",
     ),
     #
+    # --- 예배 이름 안의 '찬양' (2026-09-15 · HANDOFF 2.138) --------------------
+    # ★ 사용자 실기기 제보 1건. 예배 **이름** '주일찬양예배'의 '찬양'이 1순위에서
+    #   worship을 확정했다. 어휘를 빼면 0/0 → 곡명 구조 ✗ → 장절 ✗ → 크레딧 ✗
+    #   ("김하나 담임목사 [C채널]"은 구간 전체가 크레딧이 아니다) → 채널이 답한다.
+    #   ⚠ 근거가 channel이 아니라 title(worship)로 되돌아가면 규칙이 꺼진 것이다.
+    (
+        "[2026┃8┃23 명성교회 주일찬양예배] 십계명(1) 하나님만을 예배하라 | 김하나 담임목사 [C채널]",
+        3133, "sermon", SERMON, "channel",
+    ),
+    # ⛔ 규칙은 좁다 — 어절이 '찬양'이면 그대로 형식 어휘다
+    ("주일 찬양 예배", 900, "sermon", WORSHIP, "title"),
+    # ⛔ 홀로 선 '찬양'이 하나라도 있으면 그쪽이 증거다
+    ("주일찬양예배 찬양 콘티 | 오륜교회", 900, "sermon", WORSHIP, "title"),
+    # ⛔ '…예배'로 끝나지 않는 어절('찬양예배실황')은 건드리지 않는다 — '예배실황'도 걸린다
+    ("명성교회 찬양예배실황", 900, "sermon", WORSHIP, "title"),
+    # ⚠ 채널이 mixed면 길이가 답한다 — 이 규칙은 sermon을 **주장**하지 않는다
+    ("[명성교회 주일찬양예배] 십계명(1) 하나님만을 예배하라", 3133, "mixed", SERMON, "duration"),
+    #
+    # --- 거울상 M-a — 예배 이름 sermon 어휘가 어절 경계를 넘어 걸리는 것 (2026-09-15) ---
+    # ★ 꿈의교회 GOODTV 주일저녁 예배실황 단곡 3건. '저녁예배'가 "주일저녁 예배실황"의
+    #   공백을 넘어 걸려 '예배실황'과 동점 → 곡명 1개 → 채널(sermon)이었다.
+    #   ⚠ 근거가 title(worship)이 아니라 channel(sermon)로 되돌아가면 규칙이 꺼진 것이다.
+    (
+        "주를 바라보며 | 윤시영 간사 인도 | GOODTV와 함께하는 꿈의교회 주일저녁 예배실황",
+        236, "sermon", WORSHIP, "title",
+    ),
+    (
+        "비 준비하시니 | 내 안의 한계를 넘어 | 여호와 우리 주여 | 그 이름 아름답도다"
+        " | 견두리 인도자 인도 | GOODTV와 함께하는 꿈의교회 주일저녁 예배실황",
+        1026, "sermon", WORSHIP, "title",
+    ),
+    # ⛔ 한 어절 안의 예배 이름은 그대로 센다
+    ("꿈의교회 주일저녁예배 | 김학중 목사", 2700, "sermon", SERMON, "title"),
+    # ⛔ 공백을 넘어 걸린 예배 이름을 빼도 다른 sermon 어휘가 있으면 sermon이다
+    ("주일 예배 설교 | 홍길동 목사", 2700, "mixed", SERMON, "title"),
+    # ⛔ 기각한 M-c의 오탐 3건 — '예배실황'이 있어도 설교는 설교다 (안 B 절의 707회와 같은 형태)
+    (
+        "꿈의교회 김학중 목사(주일예배 실황 709회) - 어디로 가야 할지 막막할 때",
+        2670, "sermon", SERMON, "channel",
+    ),
+    #
     # --- 설교자 크레딧 (2026-08-28 · 안 A′ · HANDOFF 2.83) -----------------
     # ★ 두 줄은 **실측에서 판정이 바뀐 전부**다. 둘 다 길이 규칙이 찬양으로
     #   확정하던 설교이고, 이 신호가 그 앞에서 sermon을 준다.
@@ -609,6 +650,41 @@ def main() -> int:
         _tag.SERMON_TOPIC_WORDS == ("찬양",),
         "⛔ 문맥에서 빼는 어휘는 '찬양' 하나뿐이다 — 늘리려면 오탐을 다시 재야 한다",
         str(_tag.SERMON_TOPIC_WORDS),
+    )
+
+    # 예배 이름 규칙 — **어절 단위**로만 작동하는지 (2026-09-15 · HANDOFF 2.138)
+    for positive in ("[명성교회 주일찬양예배] 십계명(1)", "찬양예배 | 김하나 목사"):
+        _check(
+            failures,
+            _tag.only_inside_service_name(positive),
+            f"'…예배' 어절 안의 '찬양'을 예배 이름으로 본다: {positive[:22]}",
+        )
+    for negative in ("주일 찬양 예배", "찬양예배실황", "주일찬양예배 찬양 콘티", "찬양의 이유"):
+        _check(
+            failures,
+            not _tag.only_inside_service_name(negative),
+            f"어절이 '찬양'이거나 '…예배'로 안 끝나면 건드리지 않는다: {negative[:22]}",
+        )
+    _check(
+        failures,
+        (_tag.SERVICE_NAME_SUFFIX, _tag.SERVICE_NAME_WORD) == ("예배", "찬양"),
+        "⛔ 예배 이름 규칙은 '찬양' × '…예배' 하나뿐이다 — 늘리려면 오탐을 다시 재야 한다",
+        str((_tag.SERVICE_NAME_SUFFIX, _tag.SERVICE_NAME_WORD)),
+    )
+    # 거울상 M-a — 예배 이름 어휘를 접미사로 고른다. 지금 사전에서는 정확히 여섯이다
+    sermon_kws = next(m for m in themes.media_types if m.id == SERMON).title_keywords
+    service = tuple(k for k in sermon_kws if _tag.is_service_name_keyword(k))
+    _check(
+        failures,
+        set(service) == {"주일예배", "수요예배", "새벽기도", "금요기도", "저녁예배", "청년예배"},
+        "M-a가 건드리는 sermon 어휘는 예배 이름 여섯뿐이다 (설교·강해·말씀·묵상·큐티는 아니다)",
+        str(service),
+    )
+    _check(
+        failures,
+        _tag._crosses_word_gap("꿈의교회 주일저녁 예배실황", "저녁예배")
+        and not _tag._crosses_word_gap("꿈의교회 주일저녁예배 실황", "저녁예배"),
+        "'저녁예배'가 공백을 넘어서만 걸리는 경우와 한 어절 안에 있는 경우를 가른다",
     )
 
     print("\n5. visible_counts 산술 — unknown을 양쪽에 더한다 (⚠ 탭 노출 규칙이 아니다 · 08-28 이후 탭에는 unknown이 없다)")

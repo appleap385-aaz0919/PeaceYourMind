@@ -509,11 +509,104 @@ def has_church_speaker_credit(title: str) -> bool:
     return bool(_CHURCH_SPEAKER.search(title))
 
 
+# --- 예배 이름 안의 '찬양' (2026-09-15 · HANDOFF 2.138) --------------------
+#
+# ★ 안 B와 같은 모양이다 — **새 규칙을 앞에 놓지 않고 어휘 매칭만 좁힌다.**
+#   판정은 기존 순서가 낸다. 여기서 '찬양'이 빠지면 0/0이 되어 곡명 구조 → 장절 →
+#   크레딧 → 채널로 내려간다.
+#
+# [무엇을 고치나 — 예배 **이름**의 '찬양'이 형식 증거로 읽혔다 (사용자 실기기 제보)]
+#   3133s  [2026┃8┃23 명성교회 주일찬양예배] 십계명(1) 하나님만을 예배하라 | 김하나 담임목사 [C채널]
+#   '주일찬양예배'는 예배 이름인데 `찬양`이 부분 문자열로 걸려 worship을 **확정**했다.
+#   sermon 쪽 사전은 예배 이름(주일예배·수요예배·저녁예배…)으로 짜여 있지만
+#   `주일찬양예배`는 `주일예배`를 부분 문자열로 포함하지 않아 sermon 0이었다 —
+#   sermon 어휘가 하나라도 있었으면 동점 → 채널(sermon)로 **맞게** 갔다.
+#   ★ 2.44(곡명 속 '말씀'이 sermon을 끌어온 동점)의 거울상이다. 공통 뿌리는
+#     **예배 이름이 어절 단위로 모델링되지 않고 부분 문자열로 읽힌다**는 것이다.
+#
+# [규칙 — 좁게] '찬양'이 **'…예배'로 끝나는 어절 안에서만** 걸리면 세지 않는다.
+#   주일찬양예배 · 찬양예배         → 안 센다 (예배 이름이다)
+#   찬양 예배 (띄어 씀) · 찬양 콘티   → 센다   (어절이 '찬양'이다)
+#   찬양예배실황                  → 센다   (어절이 '실황'으로 끝난다 · '예배실황'도 걸린다)
+#   주일찬양예배 찬양 콘티          → 센다   (홀로 선 '찬양'이 하나라도 있으면 그쪽이 증거다)
+#
+# [실측 — 7일치 합집합 2,149건 (2026-09-15)]
+#   '찬양예배'가 든 제목  **1건** — 위 명성교회 건. 판정 변화 1 · 오탐 0 · 근거만 바뀌는 것 0
+#   배포본 재조립         말씀 480 · 찬양 480 그대로 (폴백 풀 말씀 790→791 · 찬양 140→139)
+#   ⚠⚠ **근거가 1건이다.** 규칙이 좁아서 부수 피해가 0인 것이지 안전이 증명된 것이 아니다.
+#     "OO교회 찬양예배 실황"처럼 예배 이름이 곧 내용인 찬양 채널 업로드가 나오면
+#     '찬양'을 잃고 채널·길이로 내려간다. 코퍼스가 쌓이면 다시 잰다(HANDOFF 2.138).
+#   ⚠ 명성교회 주일찬양예배는 **매주 편성**이고 C채널이 `[날짜 교회 예배명]` 관행으로
+#     올린다 — 1건이지만 일회성이 아니다.
+#
+# ⛔ 접미사를 늘리지 말 것('집회'·'기도회' 등). 늘리려면 --probe로 오탐을 다시 잰다.
+SERVICE_NAME_SUFFIX = "예배"
+SERVICE_NAME_WORD = "찬양"
+
+# --- 거울상 (M-a) — sermon 쪽 예배 이름 어휘가 **어절 경계를 넘어** 걸리는 것 --------
+#
+# ★ 위 규칙과 **같은 뿌리**다. 위는 worship 쪽('찬양'이 예배 이름 안에 있음), 이쪽은
+#   sermon 쪽(예배 이름 어휘가 공백을 넘어 조립됨). 하나만 고치면 다음 사람이 한쪽만 본다.
+#
+# [무엇을 고치나 — 꿈의교회 GOODTV 주일저녁 예배실황 시리즈]
+#   236s   주를 바라보며 | 윤시영 간사 인도 | GOODTV와 함께하는 꿈의교회 주일저녁 예배실황
+#   '저녁예배'가 "주일저녁 예배실황"의 **공백을 넘어** 걸린다(4음절이라 2음절 어절 가드
+#   SHORT_KEYWORD_SYLLABLES 밖이다). '예배실황'과 동점 → 곡명이 '|'로 이어져 1개 →
+#   채널(sermon) → 찬양 단곡이 sermon. 콘티(+로 이은 것)는 동점 분해가 구해 주지만
+#   단곡 클립은 구할 길이 없었다.
+#
+# [규칙 — 좁게] sermon 어휘 중 **예배 이름**(공백 없는 '…예배'·'…기도' 어휘 — 주일예배 ·
+#   수요예배 · 저녁예배 · 청년예배 · 새벽기도 · 금요기도)이 **어절 경계를 넘어서만** 걸리면
+#   세지 않는다. 한 어절 안에서 걸리는 것("꿈의교회 저녁예배")은 그대로 센다.
+#   ⚠ 목록을 박지 않고 접미사로 고른다 — themes.yaml에 예배 이름이 늘어도 따라간다.
+#
+# [실측 — 7일치 합집합 2,149건 (2026-09-15)]
+#   건드리는 제목 **7건 전부 위 시리즈**. 판정 변화 3(sermon→worship · 전부 찬양 단곡) ·
+#   근거만 바뀜 4(conti→title · worship 그대로) · **오탐 0**. 배포본 480/480 그대로.
+#   ⛔ 기각한 대안 M-c 「동점에서 '예배실황'이 있으면 worship」 — CBS설교
+#     "꿈의교회 김학중 목사(주일예배 실황 709회)" 설교 3건이 함께 뒤집힌다(오탐 3).
+#     '예배실황'은 CBS설교가 설교 제목에 쓴다.
+SERVICE_NAME_SUFFIXES = ("예배", "기도")
+
+
+def is_service_name_keyword(keyword: str) -> bool:
+    """공백 없는 '…예배'·'…기도' 어휘 — sermon 사전의 예배 이름 계열."""
+    return " " not in keyword and keyword.endswith(SERVICE_NAME_SUFFIXES)
+
+
+def only_inside_service_name(title: str, keyword: str = SERVICE_NAME_WORD) -> bool:
+    """이 키워드가 **'…예배'로 끝나는 어절 안에서만** 걸렸는가."""
+    needle = normalize(keyword)
+    if not needle:
+        return False
+    holders = [t for t in _TOKEN.findall(title) if needle in normalize(t)]
+    return bool(holders) and all(
+        normalize(t).endswith(SERVICE_NAME_SUFFIX) for t in holders
+    )
+
+
 def _effective_keywords(title: str, media: MediaType) -> tuple[str, ...]:
-    """이 제목에 대해 실제로 셀 형식 어휘. 위 안 B가 여기서만 작동한다."""
-    if media.id != WORSHIP or not has_church_speaker_credit(title):
-        return media.title_keywords
-    return tuple(k for k in media.title_keywords if k not in SERMON_TOPIC_WORDS)
+    """이 제목에 대해 실제로 셀 형식 어휘. 어휘를 **좁히는** 규칙 셋이 여기서만 작동한다.
+
+    worship 쪽
+      안 B          'OOO교회 OOO 목사' 크레딧이 있으면 '찬양'을 뺀다 (설교의 주제다)
+      예배 이름 G1   '찬양'이 '…예배' 어절 안에서만 있으면 뺀다 (예배 이름이다)
+    sermon 쪽
+      예배 이름 M-a  예배 이름 어휘가 어절 경계를 넘어서만 걸리면 뺀다 (공백 너머로 조립된 것이다)
+    ⚠ G1과 M-a는 같은 뿌리(예배 이름의 부분 문자열)의 양쪽이다 — 한쪽만 고치지 말 것.
+    """
+    keywords = media.title_keywords
+    if media.id == WORSHIP:
+        if has_church_speaker_credit(title):
+            keywords = tuple(k for k in keywords if k not in SERMON_TOPIC_WORDS)
+        if only_inside_service_name(title, SERVICE_NAME_WORD):
+            keywords = tuple(k for k in keywords if k != SERVICE_NAME_WORD)
+    elif media.id == SERMON:
+        keywords = tuple(
+            k for k in keywords
+            if not (is_service_name_keyword(k) and _crosses_word_gap(title, k))
+        )
+    return keywords
 
 
 # --- 곡명 나열 구조 (안 A · 2026-08-28) ------------------------------------
@@ -575,7 +668,7 @@ def classify_media_type(
 ) -> MediaVerdict:
     """말씀/찬양을 가린다 (themes.yaml 판별 우선순위).
 
-        1. 제목 어휘 — **한쪽만** 걸릴 때 확정한다
+        1. 제목 어휘 — **한쪽만** 걸릴 때 확정한다 (⚠ 안 B·예배 이름 규칙이 어휘를 좁힌다 — _effective_keywords)
         1.5 양쪽 다 걸리면(동점) 곡명 구조로 한 번 더 가른다 — _break_media_tie
         1.6 어휘가 아무것도 안 걸려도 제목이 곡명 나열이면 worship (안 A)
         2. 본문 장절 — 있으면 sermon
