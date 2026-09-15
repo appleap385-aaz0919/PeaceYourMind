@@ -1540,6 +1540,80 @@ def main() -> int:
     )
 
 
+    print()
+    print("[14] 폴백 최후순위 — 길이로만 판정된 것은 근거 있는 것이 8 미만일 때만 (2026-09-15 · N-I)")
+
+    def _weak(video_id: str, channel: str, media_type: str) -> TaggedVideo:
+        base = _tagged_untagged(video_id, channel, media_type, f"{channel} 길이판정 {video_id}")
+        return replace(base, media=MediaVerdict(media_type, "duration"))
+
+    def _strong(video_id: str, channel: str, media_type: str) -> TaggedVideo:
+        return _tagged_untagged(video_id, channel, media_type, f"{channel} 근거있음 {video_id}")
+
+    def _fb_split(fb: list[TaggedVideo], side: str) -> tuple[int, int]:
+        mine = [t for t in fb if t.media.media_type == side]
+        return (
+            sum(1 for t in mine if t.media.reason != "duration"),
+            sum(1 for t in mine if t.media.reason == "duration"),
+        )
+
+    # (1) 근거 있는 것이 넉넉하면 길이 판정은 한 건도 안 들어온다 — 사용자 신고 5건이 이 경로다
+    strong30 = [_strong(f"s{i}", f"채널{i % 10}", WORSHIP) for i in range(30)]
+    weak5 = [_weak(f"w{i}", f"방송사{i}", WORSHIP) for i in range(5)]
+    _, fb = select_tab_layers([], strong30 + weak5, 0, 0, now=TEST_NOW, exclude=set())
+    s_n, w_n = _fb_split(fb, WORSHIP)
+    _check(
+        failures,
+        (s_n, w_n) == (20, 0),
+        "★ 근거 있는 것으로 20을 채우면 길이 판정은 0건이다",
+        f"근거 {s_n} · 길이 {w_n}",
+    )
+    # (2) 근거 있는 것이 8 이상이면 길이 판정을 끌어오지 않는다 — 20을 못 채워도 **짧게 낸다**
+    strong10 = [_strong(f"s{i}", f"채널{i}", WORSHIP) for i in range(10)]
+    weak10 = [_weak(f"w{i}", f"방송사{i}", WORSHIP) for i in range(10)]
+    _, fb2 = select_tab_layers([], strong10 + weak10, 0, 0, now=TEST_NOW, exclude=set())
+    s_n, w_n = _fb_split(fb2, WORSHIP)
+    _check(
+        failures,
+        (s_n, w_n) == (10, 0),
+        "★ 근거 있는 것이 8 이상이면 20 미만이어도 길이 판정을 끌어오지 않는다 (짧게 낸다)",
+        f"근거 {s_n} · 길이 {w_n}",
+    )
+    # (3) 근거 있는 것이 8 미만일 때만 — 그것도 8까지만
+    strong5 = [_strong(f"s{i}", f"채널{i}", WORSHIP) for i in range(5)]
+    _, fb3 = select_tab_layers([], strong5 + weak10, 0, 0, now=TEST_NOW, exclude=set())
+    s_n, w_n = _fb_split(fb3, WORSHIP)
+    _check(
+        failures,
+        (s_n, w_n) == (5, 3),
+        "★ 근거 있는 것이 8 미만이면 길이 판정이 **8까지만** 메운다 (20이 아니다)",
+        f"근거 {s_n} · 길이 {w_n}",
+    )
+    # (4) 주제분이 있으면 그것까지 합쳐 8을 센다
+    theme6 = _pool([("주제채널", 6, WORSHIP)])
+    th4, fb4 = select_tab_layers(theme6, weak10, 0, 0, now=TEST_NOW, exclude=set())
+    s_n, w_n = _fb_split(fb4, WORSHIP)
+    _check(
+        failures,
+        visible_count(th4, WORSHIP) == 6 and (s_n, w_n) == (0, 2),
+        "주제분 6이면 길이 판정은 2건만 — 합이 8이 되는 자리까지",
+        f"주제 {visible_count(th4, WORSHIP)} · 근거 {s_n} · 길이 {w_n}",
+    )
+    # (5) 목표가 8인 것은 상수로 고정돼 있다 — 20으로 올리면 "어제 없던 쓰레기가 오늘 보인다"
+    _check(
+        failures,
+        _sel.FALLBACK_LAST_RESORT_TARGET == SUBCATEGORY_MIN_VIDEOS == 8,
+        "⛔ 최후순위 목표는 8(SUBCATEGORY_MIN_VIDEOS)이다 — 20으로 올리지 말 것",
+        str(_sel.FALLBACK_LAST_RESORT_TARGET),
+    )
+    # (6) 폴백 정렬은 두 단계를 합친 뒤에도 최신순이다
+    seq = [t.video.published_at for t in fb3 if t.media.media_type == WORSHIP]
+    _check(
+        failures,
+        all(seq[i] >= seq[i + 1] for i in range(len(seq) - 1)),
+        "두 단계를 합친 뒤에도 폴백은 최신순이다",
+    )
+
     print("\n" + "=" * 76)
     if failures:
         print(f"실패 {len(failures)}건:")

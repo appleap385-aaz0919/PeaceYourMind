@@ -23,12 +23,13 @@ from collections.abc import Sequence
 from datetime import datetime, timezone
 
 from lib.results import TaggedVideo
-from lib.tagging import SERMON, UNKNOWN, WORSHIP
+from lib.tagging import REASON_DURATION, SERMON, UNKNOWN, WORSHIP
 from lib.themes import (
     CRISIS_MAX_VIDEOS,
     CRISIS_MIN_VIDEOS,
     FALLBACK_MAX_PER_TAB,
     PER_CHANNEL_STEPS,
+    SUBCATEGORY_MIN_VIDEOS,
     THEME_MAX_PER_CHANNEL,
     THEME_MAX_VIDEOS,
     THEME_MIN_VIDEOS,
@@ -367,6 +368,51 @@ def drop_promotional(
         else:
             kept.append(item)
     return kept, dropped
+
+
+# =============================================================================
+# 폴백 최후순위 — 길이로만 판정된 영상은 근거 있는 것이 모자랄 때만 (2026-09-15 · N-I)
+# =============================================================================
+# [무엇이 문제였나 — HANDOFF 2.138]
+#   사용자가 실기기 찬양 탭에서 잡은 5건(CTS 드라마 예고 · CGN 후원 스토리 · 경건생활 365 ·
+#   열두 제자 소개 …)은 unknown이 아니라 **길이 규칙이 worship으로 확정**한 것이었다.
+#   어휘 0/0 + mixed 채널 → 4순위 길이 ≤600s → worship. 길이 규칙은 "어느 쪽이냐"만 묻고
+#   **"둘 중 하나이긴 하냐"를 묻지 않는다.** 말씀 탭도 같다(≥1200s → sermon · 드라마 ep.1/5/6 ·
+#   샬롬마켓 라이브 · 모두의 거실 …). 제3범주 이름 목록(THIRD_PARTY_PROGRAMS)은 지난주까지의
+#   편성만 막는다 — 이름을 늘리는 것은 쳇바퀴라 사용자가 기각했다.
+#
+# [왜 자격이 아니라 **순서**인가 — 넷 중 유일하게 정탐 손실 0이다]
+#   폴백 풀(promo·90일 컷 뒤 · 2026-09-14)  찬양 140 · 채널 14 · 탭당 천장 33 (Σ min(3, 채널별))
+#   가장 얇은 탭의 필요량은 찬양 19다. 라운드로빈이 채널을 동등하게 돌리므로 방송사 mixed
+#   채널이 넣는 9건(그 안에 위 쓰레기가 있다)이 19슬롯 탭에서는 거의 매번 뽑혔다 —
+#   쓰레기가 적어도 얇은 탭에는 다 나온다.
+#     N-A 길이→unknown(숨김)        정탐 찬양 11 · 말씀 ≈30 영구 숨김 · 천장 27 · unknown_ratio 1.3→8.4%
+#     N-C duration은 폴백 자격 없음  같은 정탐을 폴백에서 잃음 · 천장 27
+#     N-F mixed 채널 폴백 제외       정탐 말씀 84 · 찬양 18 잃음 · 천장 21(여유 2) · 채널 승인 때 사람 손
+#   ★ N-I 최후순위                 판정도 자격도 그대로 · 천장 33 그대로 · 오늘 48/48 탭에서
+#                                  duration 판정 **0건** 노출 — 손실 없이 목적을 이룬다
+#   (사용자 결정 2026-09-15 · 재조립 하네스 실측 · HANDOFF 2.138 표)
+#
+# [★★ 채우는 목표는 20이 아니라 **8(SUBCATEGORY_MIN_VIDEOS)**이다]
+#   20으로 두면 풀이 마를 때 duration 판정분을 다시 끌어온다. 그러면 이 규칙이
+#   "평소엔 안 보이고 아쉬울 때만 보인다"가 되는데, 사용자에게는 그게 더 나쁘다 —
+#   **어제 없던 쓰레기가 오늘 보인다.** 8은 2026-08-20 결정("쓰레기로 20을 채우지 않고
+#   짧게 낸다")의 결이고, 20 미달이 배포를 막지 않는 것이 2.138에서 확인됐다
+#   (<20 진단 Summary · <8 warning Issue · <4 critical Issue · 종료 코드 불변).
+#   그러니 풀이 마르면 화면은 **짧아지고**, 8 밑으로 내려갈 때만 duration 판정이 8까지 메운다.
+#
+# ⚠ 주제층에는 걸지 않는다. 주제어가 걸린 duration 판정(프랭클린·파이퍼 강해, 모두의 거실 …)은
+#   그대로 주제분에 나간다 — 그쪽 비콘텐츠는 2.89 필터(이름 목록)의 문제이고 여기서 풀지 않는다.
+# ⚠ 정탐도 같이 뒤로 밀린다(사랑의교회 2곡 클립 · 광주극동 찬송가). 형식 어휘가 없는 제목이라
+#   근거가 길이뿐인 것은 사실이고, 그 채널이 제목에 형식을 적기 시작하면 앞으로 온다.
+FALLBACK_LAST_RESORT_TARGET = SUBCATEGORY_MIN_VIDEOS
+
+
+def _by_evidence(untagged: Sequence[TaggedVideo]) -> tuple[list[TaggedVideo], list[TaggedVideo]]:
+    """(근거가 제목·장절·크레딧·곡명·채널에 있는 것, 길이뿐인 것)."""
+    strong = [t for t in untagged if t.media.reason != REASON_DURATION]
+    weak = [t for t in untagged if t.media.reason == REASON_DURATION]
+    return strong, weak
 
 
 # =============================================================================
@@ -959,10 +1005,16 @@ def select_tab_layers(
     ⚠ 순서가 결과를 바꾼다. SERMON을 먼저 돌리므로 unknown이 말씀 쪽에 먼저
       담기고, 찬양 탭은 그것을 이미 가진 채로 부족분을 센다. 형식 간 우열이 아니라
       **결정적이어야 해서** 고정한 순서다.
+
+    ★ 2026-09-15 — 폴백은 **두 단계**로 채운다 (FALLBACK_LAST_RESORT_TARGET 주석 · N-I).
+      1) 근거 있는 미태깅(제목·장절·크레딧·곡명·채널)으로 20까지
+      2) 그래도 8(SUBCATEGORY_MIN_VIDEOS) 미만이면 길이로만 판정된 것으로 **8까지만**
+      ⛔ 2)의 목표를 20으로 올리지 말 것 — "어제 없던 쓰레기가 오늘 보인다"가 된다.
     """
     theme: list[TaggedVideo] = []
     fallback: list[TaggedVideo] = []
     seen: set[str] = set(exclude)
+    strong, weak = _by_evidence(untagged)
 
     for tab in (SERMON, WORSHIP):
         # 2026-08-28 — unknown을 빼면서 그 탭의 형식만 남는다.
@@ -982,10 +1034,21 @@ def select_tab_layers(
         # 조일 때 한 줄이면 된다.
         need = min(max(0, TAB_MAX_VIDEOS - have), FALLBACK_MAX_PER_TAB)
         for tagged in select_fallback_videos(
-            untagged, tab, need, day_of_year, position=position, exclude=seen
+            strong, tab, need, day_of_year, position=position, exclude=seen
         ):
             fallback.append(tagged)
             seen.add(tagged.video_id)
+
+        # 최후순위 — 근거 있는 것으로 8을 못 채웠을 때만, 길이로만 판정된 것으로 8까지.
+        # ⚠ 위 need(20)가 아니라 별도의 목표다. 근거는 FALLBACK_LAST_RESORT_TARGET 주석.
+        have = visible_count(theme, tab) + visible_count(fallback, tab)
+        short = FALLBACK_LAST_RESORT_TARGET - have
+        if short > 0:
+            for tagged in select_fallback_videos(
+                weak, tab, short, day_of_year, position=position, exclude=seen
+            ):
+                fallback.append(tagged)
+                seen.add(tagged.video_id)
 
     # ★ 2026-08-28 — 합친 뒤 **한 번 더** 정렬한다.
     #   select_fallback_videos는 **호출마다** 최신순으로 준다. 그런데 두 패스의
