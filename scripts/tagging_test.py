@@ -611,13 +611,13 @@ def main() -> int:
         str(_tag.SERMON_TOPIC_WORDS),
     )
 
-    print("\n5. unknown은 양쪽 토글에 노출된다")
+    print("\n5. visible_counts 산술 — unknown을 양쪽에 더한다 (⚠ 탭 노출 규칙이 아니다 · 08-28 이후 탭에는 unknown이 없다)")
     print("-" * 76)
     counts = visible_counts([SERMON, SERMON, WORSHIP, UNKNOWN])
     _check(
         failures,
         counts == {SERMON: 3, WORSHIP: 2},
-        "unknown 1건이 양쪽에 더해진다",
+        "unknown 1건이 양쪽에 더해진다 (리포트 산술 · sides_for 주석 참조)",
         str(counts),
     )
 

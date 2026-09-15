@@ -626,9 +626,14 @@ def classify_media_type(
       19건은 unknown이라 **양쪽 토글에 노출**되고 있었다.
       근거는 _break_media_tie에 적었다.
 
-    unknown은 버리는 값이 아니다. 앱은 unknown을 **양쪽 토글 모두에 노출한다**
-    (PLAN.md 3.4) — 판별 실패로 영상이 사라지는 것보다 낫고, unknown 비율이
-    사전을 고칠 근거가 된다. 주제 태깅의 untagged와는 성격이 다르다.
+    ⛔ **unknown은 어느 탭에도 나오지 않는다** (2026-08-28 · 사용자 결정 · HANDOFF 2.80).
+      앱 visibleVideos()와 배치 select_tab_layers()의 tab_pool이 media_type
+      완전 일치만 넣는다. "양쪽 토글 모두에 노출한다"(PLAN.md 3.4 원안)는
+      unknown이 4.5%이던 시절의 판단이고, 1.4%로 줄면서 뒤집혔다 —
+      근거는 lib/selection.visible_count 주석에 있다.
+      그래서 unknown은 지금 **숨겨지는 값**이다. 그 비율(진단 unknown_ratio)이
+      오르면 그만큼 영상이 사라지고 있다는 뜻이고, 사전·규칙을 고칠 근거가 된다.
+      주제 태깅의 untagged와는 성격이 다르다 — 그쪽은 폴백으로 살아남는다.
     """
     # ⚠ media.title_keywords를 그대로 쓰지 않는다 — 안 B가 여기서 '찬양'을 뺀다.
     #   설교자 크레딧이 붙은 제목에서만이고, 그 근거는 _effective_keywords 위에 있다.
@@ -670,11 +675,14 @@ def classify_media_type(
 
 
 def sides_for(media_type: str) -> tuple[str, ...]:
-    """이 영상이 어느 토글에 보이는가 — unknown은 양쪽 다.
+    """리포트 산술용 — unknown을 양쪽에 센다. ⚠ **탭 노출 규칙이 아니다.**
 
-    리포트에서 "말씀 토글을 눌렀을 때 실제로 보일 건수"를 세는 데 쓴다.
-    주제×media_type 분포를 원자료(sermon/worship/unknown)로만 남기면,
-    unknown이 양쪽에 노출된다는 사실이 리포트를 읽는 사람에게서 사라진다.
+    2026-08-28부터 unknown은 어느 탭에도 들어가지 않는다(classify_media_type
+    docstring 끝 참조). 이 함수가 양쪽에 더하는 것은 **주제 단위 진단**
+    (results.ThemeResult.visible — 화면이 아니라 주제 풀을 보는 값)에서 옛
+    산술을 유지하기 위해서다. 세분류 화면의 tab_counts에는 unknown이 애초에
+    들어오지 않으므로(tab_pool이 거른다) 이 산술이 화면 수치를 바꾸지 않는다.
+    ⛔ 이 함수를 "unknown은 양쪽에 보인다"의 근거로 읽지 말 것.
     """
     if media_type == UNKNOWN:
         return (SERMON, WORSHIP)
@@ -682,7 +690,7 @@ def sides_for(media_type: str) -> tuple[str, ...]:
 
 
 def visible_counts(media_types: Sequence[str]) -> dict[str, int]:
-    """토글별로 실제 보이는 건수 (unknown은 양쪽에 더해진다)."""
+    """토글별 건수 — sides_for의 산술(unknown 양쪽 가산). 탭에는 unknown이 없다."""
     counts = {SERMON: 0, WORSHIP: 0}
     for media_type in media_types:
         for side in sides_for(media_type):

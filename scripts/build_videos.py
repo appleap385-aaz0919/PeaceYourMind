@@ -332,8 +332,10 @@ def _evaluate_theme(ctx: BuildContext, result: ThemeResult) -> None:
             **alert_specs.theme_low_yield(result.id, len(result.picked), THEME_MIN_VIDEOS)
         )
 
-    # 토글 기준으로 본다 — unknown은 양쪽에 노출되므로 한쪽이 0이 되는 것은
-    # "그 형식의 영상도 unknown도 없다"는 뜻이다. 그때만 빈 화면이 나온다.
+    # 토글 기준으로 본다. ⚠ 주제 단위 진단이라 visible이 unknown을 양쪽에 세는
+    # 옛 산술을 쓴다(tagging.sides_for 주석) — 실제 탭에는 2026-08-28부터 unknown이
+    # 없으므로, 여기서 0이 아니어도 화면에서는 0일 수 있다. 화면 기준 경보는
+    # _evaluate_subcategory의 theme_too_few가 맡는다.
     visible = result.visible
     for side, other in ((SERMON, WORSHIP), (WORSHIP, SERMON)):
         if visible[side] == 0 and visible[other] > 0:

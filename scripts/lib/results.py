@@ -103,7 +103,8 @@ class ThemeResult:
 
     @property
     def visible(self) -> dict[str, int]:
-        """토글별로 실제 보이는 건수 (unknown은 양쪽에 노출된다)."""
+        """토글별 건수 — 주제 단위 진단이다. ⚠ unknown을 양쪽에 세는 옛 산술이지만
+        탭에는 unknown이 안 나온다(2026-08-28 · tagging.sides_for 주석)."""
         return visible_counts([t.media.media_type for t in self.picked])
 
     @property
@@ -146,8 +147,8 @@ class SubcategoryResult:
         ⚠⚠ 화면 평균으로 재면 **한 탭이 100% 폴백이어도 가려진다.** 탭별 상한
           이후에는 두 탭의 구성이 크게 달라져 평균이 어느 쪽도 설명하지 못한다.
           경보는 반드시 이 값으로 판정한다.
-        ⚠ unknown은 양쪽에 세므로 분모가 탭마다 다르다. 그게 맞다 —
-          사용자가 그 탭에서 실제로 보는 건수가 분모여야 한다.
+        ⚠ 분모는 사용자가 그 탭에서 실제로 보는 건수다. 2026-08-28부터 탭에
+          unknown이 없으므로 visible_counts의 양쪽 가산은 여기서 항등이다.
         """
         theme = visible_counts([t.media.media_type for t in self.theme_videos])
         fall = visible_counts([t.media.media_type for t in self.fallback_videos])
