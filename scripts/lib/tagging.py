@@ -449,7 +449,20 @@ def _break_media_tie(title: str, themes: Themes) -> str | None:
         "[사역자설교] 제목 / 마가복음 14:43-52 - 임대선 목사 / 정의학 초원지기"
         처럼 /를 메타데이터 구분자로 쓴다 (실측 18건). 그래서 곡명 수만으로
         worship을 주지 않고, **나머지 구간에 worship 어휘가 남을 때만** 준다.
-        위 18건은 나머지 구간에 sermon("설교")만 남아 sermon으로 확정된다.
+
+    [2026-09-15 — **sermon은 돌려주지 않는다** (HANDOFF 2.138 MM · 사용자 결정)]
+      전에는 나머지 구간에 sermon 어휘만 남으면 sermon을 **확정**했다. 그런데
+      '+'가 곡명이 아니라 서술어를 잇는 제목이 있다 —
+        12216s  [Playlist] 따뜻한 모닥불 + 피아노 찬양 | 묵상, 기도, 숙면, 집중, 공부 | Fireplace on Piano Worship
+      "피아노 찬양"이 곡명으로 소비되고 나머지에 '묵상'만 남아 **sermon/conti**가 됐고,
+      배포본 말씀 탭 4곳에 주제분(quiet_worship)으로 나갔다.
+      ★ 이 분해의 근거는 "곡명 나열 = 콘티"라는 **worship 쪽 구조 증거**다. 그 증거로
+        sermon을 확정하는 것은 방향이 뒤집힌 것이다. 나머지 구간이 sermon이라고 말하면
+        판정하지 않고(None) 하류로 넘긴다 — 곡명 나열 가드(G1·G2) · 장절 · 크레딧 ·
+        채널이 그 자리를 맡고, 전부 sermon 쪽으로 기운 단계들이라 잃는 것이 없다.
+      실측(7일치 2,149건)  sermon/conti는 **이 1건뿐**이었다. 위 우리들교회 18건은
+        '설교'가 단독 매치라 애초에 동점이 아니고(sermon/title), 동점이 되더라도
+        장절이 잡는다. 판정 변화 1 · 오탐 0.
     """
     songs, rest = split_conti(title)
     if len(songs) < CONTI_MIN_SONGS:
@@ -459,10 +472,9 @@ def _break_media_tie(title: str, themes: Themes) -> str | None:
         for media in themes.media_types
         if matched_keywords(rest, media.title_keywords)
     ]
-    if len(hit_ids) == 1:
-        return hit_ids[0]
-    # 나머지 구간에서도 동점이면(예: "금요기도회 찬양") 곡명 나열 구조가 증거다.
-    # 아무것도 안 남았을 때는 판정하지 않는다 — 근거 없이 한쪽을 주지 않는다.
+    # 나머지 구간에 worship 어휘가 남으면 — 단독이든 동점(예: "금요기도회 찬양")이든 —
+    # 곡명 나열 구조가 증거다. sermon만 남거나 아무것도 안 남으면 판정하지 않는다:
+    # 이 구조는 worship 쪽 증거라 sermon을 확정할 자격이 없다(위 2026-09-15 절).
     return WORSHIP if WORSHIP in hit_ids else None
 
 
