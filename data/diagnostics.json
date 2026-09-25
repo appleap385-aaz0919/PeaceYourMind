@@ -1,11 +1,11 @@
 {
-  "version": "2026-09-24T23:57:48Z",
+  "version": "2026-09-25T14:42:20Z",
   "untagged_ratio": 0.641,
   "unknown_ratio": 0.011,
-  "unknown_kept": 20,
+  "unknown_kept": 21,
   "tabs_over_cap": [],
   "tab_max_exposed": 20,
-  "kept": 1846,
+  "kept": 1849,
   "themes_empty": [
     "self_control"
   ],
@@ -28,11 +28,11 @@
   "screens_below_target": [],
   "screens_below_min": [],
   "total_exposed": 960,
-  "from_fallback": 170,
+  "from_fallback": 168,
   "channels_zero_yield": [],
   "allowlist_size": 22,
   "theme_pool": {
-    "peace": 33,
+    "peace": 34,
     "trust": 29,
     "courage": 6,
     "self_control": 0,
@@ -44,7 +44,7 @@
     "comfort": 14,
     "love": 38,
     "presence": 16,
-    "renewal": 23,
+    "renewal": 24,
     "rest": 9,
     "strength": 7,
     "gratitude": 40,
