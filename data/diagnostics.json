@@ -1,11 +1,11 @@
 {
-  "version": "2026-09-26T13:49:11Z",
+  "version": "2026-09-26T23:46:01Z",
   "untagged_ratio": 0.64,
   "unknown_ratio": 0.012,
-  "unknown_kept": 22,
+  "unknown_kept": 23,
   "tabs_over_cap": [],
   "tab_max_exposed": 20,
-  "kept": 1850,
+  "kept": 1851,
   "themes_empty": [
     "self_control"
   ],
@@ -28,7 +28,7 @@
   "screens_below_target": [],
   "screens_below_min": [],
   "total_exposed": 960,
-  "from_fallback": 167,
+  "from_fallback": 165,
   "channels_zero_yield": [],
   "allowlist_size": 22,
   "theme_pool": {
@@ -48,9 +48,9 @@
     "rest": 9,
     "strength": 7,
     "gratitude": 40,
-    "joy_praise": 35,
+    "joy_praise": 36,
     "new_thing": 4,
-    "quiet_worship": 244,
+    "quiet_worship": 243,
     "creation": 6,
     "daily_word": 165,
     "bible_story": 15,
