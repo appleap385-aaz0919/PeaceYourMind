@@ -290,9 +290,25 @@
         <li>이메일: <a href="mailto:appleap385@gmail.com">appleap385@gmail.com</a></li>
       </ul>
 
-      <footer>
+      <footer id="back-home">
         <a href="/PeaceYourMind/">Peace in Mind로 돌아가기</a>
       </footer>
+      <!--
+        앱에서 연 방침에서는 「돌아가기」를 숨긴다 (HANDOFF 2.141 안 2).
+          앱은 이 페이지를 **외부 브라우저**로 연다(About.jsx PRIVACY_URL_APP).
+          거기서 이 링크를 누르면 앱이 아니라 웹 서비스로 간다. 앱으로 돌아가는 길은
+          기기 뒤로가기다(2026-09-28 실기기 실측).
+        ★ 표시(?from=app)가 없으면 **그대로 보인다** — 웹 사용자·직접 방문자
+          (검색 · Play 등록정보의 방침 링크)는 달라지는 것이 없다.
+        ⚠ footer **뒤**에 둔다. 앞이면 실행 시점에 요소가 없다. 동기 실행이라
+          링크가 한 번 보였다 사라지는 깜빡임도 없다.
+        ⚠ 표시는 누구나 붙일 수 있다 — 숨기는 것이 링크 하나라 해가 없다.
+      -->
+      <script>
+        if (new URLSearchParams(location.search).get("from") === "app") {
+          document.getElementById("back-home").hidden = true;
+        }
+      </script>
     </main>
   </body>
 </html>
