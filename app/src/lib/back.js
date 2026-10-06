@@ -27,7 +27,7 @@ export const BACK = {
   CLOSE_DAILY_VERSE: "closeDailyVerse",
   /** About을 닫는다 — 들어온 화면이 돌아온다. */
   CLOSE_ABOUT: "closeAbout",
-  /** 결과에서 초기 입력 화면으로 (FLOW.RETRACE · 글자를 남긴다). */
+  /** 결과에서 초기 입력 화면으로 (FLOW.RETRACE · 글자를 남긴다 — 위기 화면만은 비운다). */
   RETRACE: "retrace",
   /** 고르는 화면의 한 걸음 뒤 — 세분류 → 대분류 → 직접 적기 (FLOW.BACK). */
   STEP_BACK: "stepBack",

@@ -955,8 +955,11 @@ function walkFlow(seed) {
     const node = queue.shift();
     for (const action of ACTIONS) {
       const next = flowReducer(node.state, action);
+      // ⚠ 위기 화면의 RETRACE는 비우는 쪽이라 「무르기」가 아니다 — 표를 그대로 둔다.
       const retracted =
-        action.type === FLOW.RETRACE && node.state.phase === PHASE.RESULT;
+        action.type === FLOW.RETRACE &&
+        node.state.phase === PHASE.RESULT &&
+        node.state.result?.kind !== RESULT.CRISIS;
       const answered =
         action.type === FLOW.TYPE || retracted
           ? false
@@ -1064,7 +1067,8 @@ test("App이 상태 기계를 우회하지 않는다 — 낱개 세터가 없다
  */
 
 test("뒤로가기(RETRACE) — 결과에서 입력 화면으로 되짚고 글자를 남긴다", () => {
-  for (const kind of [RESULT.OK, RESULT.CRISIS, RESULT.EMPTY, RESULT.NO_MATCH]) {
+  // ⛔ 위기 화면은 이 묶음에 넣지 않는다 — 거기서는 비운다(아래 검사 · 2026-10-06 사용자 결정).
+  for (const kind of [RESULT.OK, RESULT.EMPTY, RESULT.NO_MATCH]) {
     let s = flowReducer(initialFlow(""), { type: FLOW.TYPE, text: "짜증나" });
     s = flowReducer(s, { type: FLOW.SUBMIT });
     s = flowReducer(s, { type: FLOW.ANSWER, outcome: { kind }, category: null });
@@ -1082,6 +1086,38 @@ test("뒤로가기(RETRACE) — 결과에서 입력 화면으로 되짚고 글�
   assert.ok(inputBoxVisible(back), "골라서 간 결과에서 직접 적기 화면으로 돌아오지 않았다");
   assert.equal(back.selectedCategory, null, "골라서 간 결과에서 대분류가 남았다");
   assert.equal(back.text, "불안해", "골라서 간 결과에서 글자가 지워졌다");
+});
+
+test("★ 위기 화면에서의 뒤로가기는 글자를 **비운다** — 일반 결과와 다르다", () => {
+  // 2026-10-06 사용자 결정 · HANDOFF 2.146 ③.
+  //   ① 위기 화면의 기존 버튼(reset)이 이미 비운다 — 뒤로가기만 남기면 같은 화면에서
+  //      어떤 때는 남고 어떤 때는 사라진다.
+  //   ② 2026-08-25 결정(힘들어 적은 문장이 화면에 남는 것이 이 앱에 맞지 않다)이
+  //      가장 세게 적용되는 자리다. 「고쳐 쓰기」는 일반 결과의 이야기다.
+  // ⛔ 「일관성이 없다」고 위 묶음에 합치지 말 것 — 다른 것이 맞다.
+  let s = flowReducer(initialFlow(""), { type: FLOW.TYPE, text: "죽고 싶어" });
+  s = flowReducer(s, { type: FLOW.SUBMIT });
+  s = flowReducer(s, { type: FLOW.ANSWER, outcome: { kind: RESULT.CRISIS }, category: null });
+  const back = flowReducer(s, { type: FLOW.RETRACE });
+  assert.ok(inputBoxVisible(back), "위기 화면 → 뒤로가기가 입력 화면으로 가지 않았다");
+  assert.equal(back.text, "", "위기 화면 → 뒤로가기 뒤에 적었던 문장이 남았다");
+  assert.equal(back.result, null, "위기 화면 → 뒤로가기 뒤에 결과가 남았다");
+  // 버튼(reset)과 같은 곳에 같은 상태로 선다 — 둘의 차이를 사용자가 겪지 않는다.
+  const viaButton = flowReducer(s, { type: FLOW.RESET });
+  assert.deepEqual(back, viaButton, "위기 화면에서 뒤로가기와 버튼의 도착 상태가 다르다");
+});
+
+test("고장 주입: 위기 화면 갈래가 빠지면 문장이 남는다 — 위 검사가 그것을 본다", () => {
+  // 위기 갈래가 없던 첫 구현(543d675)을 그대로 재현한다.
+  const broken = (state, action) =>
+    action.type === FLOW.RETRACE && state.phase === PHASE.RESULT
+      ? { ...state, phase: PHASE.INPUT, mode: MODE.TEXT, result: null, selectedCategory: null }
+      : flowReducer(state, action);
+  let s = broken(initialFlow(""), { type: FLOW.TYPE, text: "죽고 싶어" });
+  s = broken(s, { type: FLOW.SUBMIT });
+  s = broken(s, { type: FLOW.ANSWER, outcome: { kind: RESULT.CRISIS }, category: null });
+  s = broken(s, { type: FLOW.RETRACE });
+  assert.equal(s.text, "죽고 싶어", "고장을 주입했는데도 비어 있다 — 검사가 무엇도 못 본다");
 });
 
 test("RETRACE는 결과 화면에서만 움직이고, 응답 행동으로 세지 않는다", () => {

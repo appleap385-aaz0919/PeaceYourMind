@@ -334,7 +334,7 @@ export default function App() {
    * 네이티브가 window[BACK_HANDLER]()를 부르고, true면 소비한다. false면 플랫폼
    * 기본(백그라운드)으로 넘긴다 — 초기 입력 화면에서는 그것이 맞는 동작이다.
    * ⛔ FLOW.RESET 계열을 쓰지 않는다. 뒤로가기는 「취소」라 글자를 비우지 않는다
-   *   (FLOW.RETRACE · lib/flow.js 불변식).
+   *   (FLOW.RETRACE · lib/flow.js 불변식 — 위기 화면만은 RETRACE 안에서 비운다).
    * ⚠ ref로 **최신 상태**를 읽는다. 함수는 한 번만 걸리므로 클로저에 갇힌 첫
    *   렌더의 상태를 보면 늘 초기 화면으로 판단해 아무것도 소비하지 않는다.
    * ⛔ 앱에서만 건다 — 웹 브라우저의 뒤로가기에는 관여하지 않는다(2.122의 교훈:
