@@ -70,8 +70,13 @@ const CONTACT = "appleap385@gmail.com";
 //        고칠 곳이 둘이 되어 언젠가 갈린다
 //   Capacitor는 외부 URL을 기본적으로 시스템 브라우저로 연다(server.allowNavigation
 //   기본값 []). 유튜브로 나가는 흐름과 같은 방식이다.
+//
+// [?from=app — 방침이 「돌아가기」를 숨기는 표시 · 2026-10-06 · HANDOFF 2.141 안 2]
+//   외부 브라우저에서 그 링크를 누르면 앱이 아니라 웹 서비스로 간다. 앱으로
+//   돌아오는 길은 기기 뒤로가기다. ⚠ 방침 스크립트가 확인하는 값과 **같아야 한다** —
+//   갈리면 조용히 안 숨는다(verses.test.js가 둘을 묶는다).
 const PRIVACY_URL_WEB = "/PeaceYourMind/privacy/";
-const PRIVACY_URL_APP = "https://appleap385-aaz0919.github.io/PeaceYourMind/privacy/";
+const PRIVACY_URL_APP = "https://appleap385-aaz0919.github.io/PeaceYourMind/privacy/?from=app";
 const PRIVACY_URL = __IS_APP__ ? PRIVACY_URL_APP : PRIVACY_URL_WEB;
 
 /**

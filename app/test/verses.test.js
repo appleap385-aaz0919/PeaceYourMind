@@ -288,6 +288,24 @@ test("앱에서 연 방침은 「돌아가기」를 숨기고, 표시가 없으�
   assert.equal(run("?from=web"), false, "다른 값에도 숨었다 — 숨김은 from=app 하나뿐이다");
 });
 
+test("앱이 붙이는 표시와 방침이 확인하는 표시가 같다 (2.141)", () => {
+  // 문의처를 CONTACT로 묶은 것과 같은 이유다 — 두 곳이 갈리면 **조용히** 안 숨는다.
+  //   앱이 ?from=android를 붙이고 방침이 from=app을 보면 어느 검사도 실패하지 않고
+  //   앱 사용자에게 다시 웹으로 가는 링크가 보인다.
+  const appUrl = (aboutSrc.match(/const PRIVACY_URL_APP = "([^"]*)"/) || [])[1];
+  assert.ok(appUrl, "About.jsx의 PRIVACY_URL_APP이 비어 있다");
+  const inApp = [...new URL(appUrl).searchParams];
+  assert.equal(inApp.length, 1, "앱 방침 링크에 표시가 없거나 여러 개다: " + appUrl);
+
+  const inPolicy = privacyHtml.match(/\.get\("([^"]+)"\) === "([^"]+)"/);
+  assert.ok(inPolicy, "방침 스크립트에서 확인하는 표시를 찾지 못했다");
+  assert.deepEqual(
+    inApp[0],
+    [inPolicy[1], inPolicy[2]],
+    "앱이 붙이는 표시와 방침이 확인하는 표시가 다르다 — 앱 사용자에게 돌아가기가 다시 보인다",
+  );
+});
+
 /* --- About 광고 문단 — 문구와 표시 조건을 함께 고정한다 (2026-08-24) --------
  *
  * 두 가지를 지킨다. 하나만으로는 부족하다.
@@ -818,6 +836,18 @@ test("이름을 바꿔도 경로·식별자는 구명 그대로다 (심사·PWA�
     aboutSrc.includes('const PRIVACY_URL_APP = "https://') &&
       aboutSrc.includes(BASE_PATH + 'privacy/"'),
     "About의 앱 방침 링크 경로가 바뀌었다 — 앱에서 404가 난다",
+  );
+  // ⛔⛔ 위 단언은 **앱 쪽을 지키지 못하고 있었다** (2026-10-06 발견 · HANDOFF 2.141).
+  //   두 번째 조건은 aboutSrc 전체에서 찾으므로 **PRIVACY_URL_WEB만으로도 참**이다 —
+  //   앱 상수의 경로가 바뀌어도 통과했다. 지우지 않고 **앱 상수 자체를** 본다.
+  //   ?from=app(방침이 「돌아가기」를 숨기는 표시 · 2.141 안 2)은 경로가 아니라 허용한다.
+  assert.ok(
+    new RegExp(
+      'const PRIVACY_URL_APP = "https://[^"/]+' +
+        BASE_PATH.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") +
+        'privacy/(\\?from=app)?"',
+    ).test(aboutSrc),
+    "About의 앱 방침 링크(PRIVACY_URL_APP)가 " + BASE_PATH + "privacy/ 를 가리키지 않는다 — 앱에서 404가 난다",
   );
   // 이름 쪽 오염 방지: 표시명은 공백을 포함한다. 경로 자리에 끼어들면 URL이 깨진다.
   for (const [where, text] of [
