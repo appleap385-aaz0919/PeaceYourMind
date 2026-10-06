@@ -11,6 +11,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -252,6 +253,39 @@ test("방침과 앱이 같은 문의처를 말한다", () => {
     inPolicy,
     "방침과 앱의 문의처가 다르다. 두 곳이 갈리면 어느 쪽이 맞는지 알 수 없다",
   );
+});
+
+/* --- 앱에서 연 방침은 「돌아가기」를 숨긴다 (HANDOFF 2.141 안 2 · 2026-10-06) ------
+ *
+ * 앱은 방침을 **외부 브라우저**로 연다. 거기서 「돌아가기」를 누르면 앱이 아니라
+ * 웹 서비스로 간다. 그래서 앱이 붙인 표시(?from=app)가 있을 때만 숨긴다.
+ *
+ * ⚠ 문자열 단언으로 두지 않고 **스크립트를 실제로 돌린다.** 숨김 조건은 세 갈래
+ *   (표시 있음 · 없음 · 다른 값)이고, 문자열로는 "없으면 보인다" 쪽을 못 지킨다 —
+ *   그쪽이 깨지면 웹 사용자·직접 방문자가 링크를 잃는다.
+ */
+test("앱에서 연 방침은 「돌아가기」를 숨기고, 표시가 없으면 그대로 보인다 (2.141)", () => {
+  const footer = privacyHtml.match(/<footer id="([\w-]+)">\s*<a href="\/PeaceYourMind\/">/);
+  assert.ok(footer, "방침 footer에 id가 없거나 돌아가기 링크가 웹 홈을 가리키지 않는다");
+  const id = footer[1];
+
+  // footer **뒤**의 인라인 스크립트여야 한다 — 앞이면 실행 시점에 요소가 없다.
+  const after = privacyHtml.slice(privacyHtml.indexOf("</footer>"));
+  const script = (after.match(/<script>([\s\S]*?)<\/script>/) || [])[1];
+  assert.ok(script, "footer 뒤에 인라인 스크립트가 없다 — 숨길 수 없다");
+
+  const run = (search) => {
+    const el = { hidden: false };
+    vm.runInNewContext(script, {
+      URLSearchParams,
+      location: { search },
+      document: { getElementById: (got) => (got === id ? el : null) },
+    });
+    return el.hidden;
+  };
+  assert.equal(run("?from=app"), true, "?from=app인데 돌아가기가 보인다 — 앱 사용자가 웹으로 간다");
+  assert.equal(run(""), false, "표시가 없는데 숨었다 — 웹 사용자·직접 방문자가 링크를 잃는다");
+  assert.equal(run("?from=web"), false, "다른 값에도 숨었다 — 숨김은 from=app 하나뿐이다");
 });
 
 /* --- About 광고 문단 — 문구와 표시 조건을 함께 고정한다 (2026-08-24) --------
