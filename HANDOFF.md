@@ -16235,7 +16235,7 @@ Play     「앱 번들 탐색기」 다운로드 탭 문서에는 **생성된 AP
 ★ 101을 **단계적 출시**(일부 %)로 내면 ①을 더 적은 사용자에서 쓸 수 있다 — 🔴 출시 방식은 사용자가 정한다
 ```
 
-#### ㄹ 브랜치 — 🔴 안만 낸다 · 사용자가 고른다 (보고에 적었다)
+#### ㄹ 브랜치 — ✅ 안 1(main에서 직접) 채택 · 아래 「결정 셋」
 
 #### 버전 코드 자리 — ⛔ 지금 올리지 않는다
 
@@ -16244,6 +16244,44 @@ Play     「앱 번들 탐색기」 다운로드 탭 문서에는 **생성된 AP
            (app/android/app/build.gradle이 major*10000+minor*100+patch로 계산 · 손으로 적지 않는다)
 따라오는 것  app/package-lock.json의 version 두 자리(3·9행) · About 화면 버전 표시(__APP_VERSION__) ·
            verses.json source_version
+```
+
+#### ✅ 결정 셋과 조치 (2026-10-06 · 사용자 결정 → 세션 조치)
+
+```
+[1] 브랜치   ✅ **안 1 — main에서 직접.** 213커밋 머지 0건 저장소에 첫 브랜치를 만들면
+            HANDOFF를 어느 브랜치에 쓸지 규칙부터 새로 정해야 한다 — 작업 둘에 과하다
+            ★ 웹 선배포 조건 충족 — [2]는 ?from=app으로 오는 사람이 아직 없어 누구에게도
+              달라지는 것이 없고(2.141의 판단) [1]은 안드로이드 전용이다
+            ⚠ 되돌릴 기준은 태그 v100
+            ⛔ 안 2(release/101) 기각
+
+[2] 100 AAB  ✅ **옮겼다** — D:/jaehyuk.myung/claude_demo/Demo_29_PYM_key_backup/aab/pym-release-v100-vc100.aab
+            sha256 790fcffdbcb6eed61e45363cb1a45cf26f900c2de09960dd2cbd47bb9270136b — **기록값과 일치**
+            ★ 파일명에 버전을 박았다(v100 · versionCode 100)
+            ⚠ 원본(app/android/app/build/outputs/bundle/release/app-release.aab) **삭제는 권한이 거부돼
+              남아 있다** — 101 빌드가 덮어쓰므로 해는 없지만, 백업은 위 사본이 정본이다
+
+[3] 키 포인터 ✅ **새 이름으로 고쳤다**(폴더 이름은 되돌리지 않는다 — 지금 이름이 더 명확하다)
+            ⚠ 포인터는 **저장소 안이 아니라** Gradle 사용자 홈에 있다(build.gradle 184~187행 주석의 설계).
+              저장소 안에는 옛 경로를 가리키는 파일이 **없다**(검색 0건 · HANDOFF 제외)
+            고친 곳   D:/jaehyuk.myung/android/gradle/gradle.properties                    (실사용)
+                     D:/jaehyuk.myung/claude_demo/Demo_29_PYM_key_backup/keys/gradle.properties (그 백업 사본)
+                     pymKeystoreProperties=D:/jaehyuk.myung/claude_demo/Demo_29_PYM_key_backup/keys/pym-upload.properties
+            ⏳ **사용자가 고칠 것** — pym-upload.properties 의 storeFile 한 줄 (비밀번호가 든 파일이라 세션이 안 고친다)
+                     파일   D:/jaehyuk.myung/claude_demo/Demo_29_PYM_key_backup/keys/pym-upload.properties
+                     지금   storeFile=D:/jaehyuk.myung/claude_demo/Demo_29_PYM_backup/keys/pym-upload.jks
+                     바꿀 것 storeFile=D:/jaehyuk.myung/claude_demo/Demo_29_PYM_key_backup/keys/pym-upload.jks
+            검증     ./gradlew :app:verifyReleaseSigning --offline (**그 task만** · 빌드 없음 · JAVA_HOME=jdk21)
+                     10-06 결과  [2] 포인터 파일 없음 → **통과** · 값 넷 비어 있지 않음 · 남은 것 **[5] storeFile 경로뿐**
+                     → storeFile을 고친 뒤 같은 명령으로 통과를 확인한다
+            ⚠ 이 task는 **경로와 값의 존재**만 본다 — 비밀번호가 맞는지는 모른다.
+              빌드 없이 비밀번호까지 보려면 사용자가 직접 keytool -list -v -keystore <jks> 를 치고
+              비밀번호를 입력해 SHA-256이 AF:23:0D:…:DE:22(2.125)와 같은지 본다
+
+★ 바로잡은 전제 확인 — 「되돌릴 때 올리는 것은 100 AAB가 아니라 v100 + versionCode 102로 새로 빌드한 것,
+  100 AAB는 대조 기준」이 위 ㄴ에 그대로 적혀 있다 ✅
+★ 롤백 절차의 미확인(중단에 게시 버튼이 필요한가)은 **미확인 그대로** — 사용자가 콘솔에서 확인한다
 ```
 
 #### ⚠⚠ 발견 — **업로드 키 폴더 이름이 바뀌었는데 포인터가 옛 이름이다**
@@ -16286,7 +16324,7 @@ Play     「앱 번들 탐색기」 다운로드 탭 문서에는 **생성된 AP
         ⑤ ⛔ **해제 전에는 채움률을 재지 않는다**
       ⑥ **뒤로가기(2.136) + 방침 링크 안 2(2.141)** — 같은 재빌드 · **버전 101**
         ▶ **2026-10-06 착수 지시** (2.146) — [0] 되돌림 수단 ✅ 태그 v100 · AAB 위치 · 롤백 절차
-          ⏳ 사용자 결정 대기 — 브랜치 · AAB 옮길 자리 · 키 포인터
+          ✅ 결정 — 브랜치 main 직접 · AAB 키 백업 폴더로(sha256 일치) · 포인터 새 이름 · ⏳ storeFile 줄은 사용자
           다음 [1] 알림 구절 화면 안 + [2] 선배포 여부 제시 → 결정 → 구현 · ⛔ 빌드·업로드는 지시 뒤
 ⛔ 공개 테스트는 쓰지 않는다 · ⚠ 버전 101도 관리형 게시다 — 검토 통과 뒤 **버튼을 한 번 더**
 ★ 광고 클릭 기준 — 개발자·테스터 ⛔ · 일반 사용자 ✅ (2.145)
@@ -19137,7 +19175,8 @@ PYM은 실제로 수집하지 않는다 — 로그인·계정·서버 전송이 
                        13:2E:77:AC:38:F8:E4:60:C3:28:FC:B7:8D:9E:DE:22
     ⚠⚠ 폴더 이름이 저장소(Demo_29_PYM)와 **다섯 글자 차이**다(Demo_29_PYM_backup).
     ⚠⚠ **2026-10-06 실측 — 폴더가 Demo_29_PYM_key_backup 으로 바뀌어 있다.** 위 두 경로와
-       포인터·storeFile은 아직 옛 이름이다 → 릴리스 빌드가 서명 검사에서 멈춘다 (2.146 · 🔴 미조치)
+       포인터·storeFile은 아직 옛 이름이다 → 릴리스 빌드가 서명 검사에서 멈춘다 (2.146)
+       ✅ 포인터(gradle.properties 둘)는 새 이름으로 고쳤다 · ⏳ storeFile 한 줄은 사용자가 고친다
        ⛔ 부모 폴더 claude_demo 를 통째로 압축하면 **저장소와 키가 함께 나간다**
     잃으면     ⛔ 앱은 **죽지 않는다** — 최종 앱 서명 키는 Google이 쥔다.
                이미 설치된 앱도 스토어 버전도 그대로 돈다.
@@ -19200,7 +19239,10 @@ PYM은 실제로 수집하지 않는다 — 로그인·계정·서버 전송이 
          7,792,230 바이트 · 2026-09-07 09:34 · sha256
          790fcffdbcb6eed61e45363cb1a45cf26f900c2de09960dd2cbd47bb9270136b
          ⚠ gitignore된 빌드 산출물이다 — clone하면 **오지 않는다**
-         ⛔⛔ **다음 bundleRelease가 같은 경로에 덮어쓴다.** 101 빌드 전에 밖으로 옮긴다(🔴 자리 미정)
+         ⛔⛔ 다음 bundleRelease가 같은 경로에 덮어쓴다 → ✅ **2026-10-06 옮겼다(사본 · sha256 일치)**
+정본     D:/jaehyuk.myung/claude_demo/Demo_29_PYM_key_backup/aab/pym-release-v100-vc100.aab
+         ★ 키 묶음과 같은 자리다 — 「이 폴더 = 저장소 밖 백업」 하나로 모은다
+         ⚠ 빌드 폴더의 원본은 남아 있다(삭제 권한 거부) — 101 빌드가 덮어쓴다. 정본은 위 사본이다
 Play     ⏳ 「최신 버전 및 번들」 — 원본 .aab를 내려받을 수 있는지 **사용자가 콘솔에서 확인**
          (앱 번들 탐색기 문서에는 생성된 APK 다운로드만 있다)
 코드     ✅ git 태그 **v100** — 같은 앱을 다시 빌드할 수 있다(2.146 ㄱ에서 번들 데이터까지 대조)
