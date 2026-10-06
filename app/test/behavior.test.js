@@ -37,6 +37,7 @@ import {
   initialFlow,
   inputBoxVisible,
 } from "../src/lib/flow.js";
+import { BACK, BACK_HANDLER, backAction } from "../src/lib/back.js";
 import { isCompleteVideosPayload } from "../src/lib/payload.js";
 import { revisitSlot, sameDayGreetingPool, visitNumberOf } from "../src/lib/messages.js";
 import { withMinDuration } from "../src/lib/offline.js";
@@ -928,12 +929,20 @@ const ACTIONS = [
   { type: FLOW.ANSWER, outcome: { kind: RESULT.CATEGORY }, category: CATEGORY },
   { type: FLOW.RESET },
   { type: FLOW.RESET_TO_PICKER },
+  { type: FLOW.RETRACE },
 ];
 
 /**
  * 도달 가능한 상태를 넓이 우선으로 전부 모은다.
  * `answered`는 "앱이 한 번 응답한 뒤"라는 표시다 — TYPE이 그 표를 지운다
  * (그때부터 글자는 다시 사용자가 직접 넣은 것이다).
+ *
+ * ★ 결과 화면에서의 RETRACE(기기 뒤로가기)도 그 표를 지운다 (2026-10-06 사용자 결정 ·
+ *   HANDOFF 2.136 · 2.146). 뒤로가기는 사용자가 응답을 **무르는** 「취소」다 —
+ *   돌아온 입력창의 글자는 다시 사용자의 문장이다. 2026-08-25 규칙은 「앱이 응답한 뒤」를
+ *   위한 것이고 이것은 「사용자가 스스로 옮기는 것」이다.
+ *   ⚠ 결과 화면이 아닐 때의 RETRACE는 아무것도 안 하므로 표를 지우지 않는다 —
+ *     지우면 응답 뒤의 상태가 이동 없이 "응답 전"으로 둔갑해 검사가 느슨해진다.
  */
 function walkFlow(seed) {
   const key = (s, answered) =>
@@ -946,8 +955,10 @@ function walkFlow(seed) {
     const node = queue.shift();
     for (const action of ACTIONS) {
       const next = flowReducer(node.state, action);
+      const retracted =
+        action.type === FLOW.RETRACE && node.state.phase === PHASE.RESULT;
       const answered =
-        action.type === FLOW.TYPE
+        action.type === FLOW.TYPE || retracted
           ? false
           : node.answered || ANSWER_ACTIONS.includes(action.type);
       const k = key(next, answered);
@@ -1043,6 +1054,118 @@ test("App이 상태 기계를 우회하지 않는다 — 낱개 세터가 없다
     );
   }
   assert.ok(appSrc.includes("useReducer(flowReducer"), "App이 flowReducer를 쓰지 않는다");
+});
+
+/* --- 하드웨어 뒤로가기 — 되짚기 전용 경로 (HANDOFF 2.136 안 A · 2.146 · 2026-10-06) ----
+ *
+ * 네이티브(MainActivity)가 뒤로가기를 잡아 window.pymBack()에 묻고, 판단은
+ * lib/back.js가 한다. 결과에서 돌아오는 길은 FLOW.RETRACE다.
+ * ⛔ FLOW.RESET 계열을 타면 안 된다 — 뒤로가기는 「취소」라 글자를 비우지 않는다.
+ */
+
+test("뒤로가기(RETRACE) — 결과에서 입력 화면으로 되짚고 글자를 남긴다", () => {
+  for (const kind of [RESULT.OK, RESULT.CRISIS, RESULT.EMPTY, RESULT.NO_MATCH]) {
+    let s = flowReducer(initialFlow(""), { type: FLOW.TYPE, text: "짜증나" });
+    s = flowReducer(s, { type: FLOW.SUBMIT });
+    s = flowReducer(s, { type: FLOW.ANSWER, outcome: { kind }, category: null });
+    const back = flowReducer(s, { type: FLOW.RETRACE });
+    assert.ok(inputBoxVisible(back), `${kind} → 뒤로가기가 입력 화면으로 가지 않았다`);
+    assert.equal(back.text, "짜증나", `${kind} → 뒤로가기가 글자를 지웠다 — RESET 계열을 탔다`);
+    assert.equal(back.result, null, `${kind} → 뒤로가기 뒤에 결과가 남았다`);
+  }
+  // 골라서 찾기로 간 결과도 「초기 입력 화면」이다(안 ㄴ) — 고르던 대분류를 들고 오지 않는다.
+  let s = flowReducer(initialFlow(""), { type: FLOW.TYPE, text: "불안해" });
+  s = flowReducer(s, { type: FLOW.SWITCH_TO_PICKER });
+  s = flowReducer(s, { type: FLOW.PICK_CATEGORY, category: CATEGORY });
+  s = flowReducer(s, { type: FLOW.ANSWER, outcome: { kind: RESULT.OK }, category: null });
+  const back = flowReducer(s, { type: FLOW.RETRACE });
+  assert.ok(inputBoxVisible(back), "골라서 간 결과에서 직접 적기 화면으로 돌아오지 않았다");
+  assert.equal(back.selectedCategory, null, "골라서 간 결과에서 대분류가 남았다");
+  assert.equal(back.text, "불안해", "골라서 간 결과에서 글자가 지워졌다");
+});
+
+test("RETRACE는 결과 화면에서만 움직이고, 응답 행동으로 세지 않는다", () => {
+  const typed = flowReducer(initialFlow(""), { type: FLOW.TYPE, text: "불안해" });
+  const picker = flowReducer(typed, { type: FLOW.SWITCH_TO_PICKER });
+  const loading = flowReducer(typed, { type: FLOW.SUBMIT });
+  for (const [where, s] of [["입력", typed], ["고르기", picker], ["로딩", loading]]) {
+    assert.equal(flowReducer(s, { type: FLOW.RETRACE }), s, `${where}에서 RETRACE가 상태를 바꿨다`);
+  }
+  assert.ok(!ANSWER_ACTIONS.includes(FLOW.RETRACE), "RETRACE가 응답 행동으로 분류됐다");
+});
+
+test("고장 주입: 뒤로가기가 RESET을 타면 글자를 잃는다 — 위 검사가 그것을 본다", () => {
+  const broken = (state, action) =>
+    flowReducer(state, action.type === FLOW.RETRACE ? { type: FLOW.RESET } : action);
+  let s = broken(initialFlow(""), { type: FLOW.TYPE, text: "짜증나" });
+  s = broken(s, { type: FLOW.SUBMIT });
+  s = broken(s, { type: FLOW.ANSWER, outcome: { kind: RESULT.OK }, category: null });
+  s = broken(s, { type: FLOW.RETRACE });
+  assert.notEqual(s.text, "짜증나", "고장을 주입했는데도 글자가 남는다 — 검사가 무엇도 못 본다");
+});
+
+test("뒤로가기 판단표 — 덮개가 먼저, 그다음 흐름 (2.136 · 2.146)", () => {
+  const typed = flowReducer(initialFlow(""), { type: FLOW.TYPE, text: "불안해" });
+  const picker = flowReducer(typed, { type: FLOW.SWITCH_TO_PICKER });
+  const sub = flowReducer(picker, { type: FLOW.PICK_CATEGORY, category: CATEGORY });
+  const loading = flowReducer(typed, { type: FLOW.SUBMIT });
+  const result = flowReducer(loading, {
+    type: FLOW.ANSWER, outcome: { kind: RESULT.OK }, category: null,
+  });
+  const verse = { id: "jhn.14.27" };
+  const cases = [
+    // 알림 구절은 **덮개만 닫는다**(안 ㄱ) — 아래 무엇이 깔려 있든 먼저다
+    ["알림 구절 (결과 위 · About 위)", { dailyVerse: verse, showAbout: true, flow: result }, BACK.CLOSE_DAILY_VERSE],
+    ["알림 구절 (콜드 스타트)", { dailyVerse: verse, showAbout: false, flow: initialFlow("") }, BACK.CLOSE_DAILY_VERSE],
+    ["About", { dailyVerse: null, showAbout: true, flow: result }, BACK.CLOSE_ABOUT],
+    ["결과", { dailyVerse: null, showAbout: false, flow: result }, BACK.RETRACE],
+    ["세분류", { dailyVerse: null, showAbout: false, flow: sub }, BACK.STEP_BACK],
+    ["대분류", { dailyVerse: null, showAbout: false, flow: picker }, BACK.STEP_BACK],
+    ["초기 입력", { dailyVerse: null, showAbout: false, flow: typed }, BACK.NONE],
+    ["로딩", { dailyVerse: null, showAbout: false, flow: loading }, BACK.NONE],
+  ];
+  for (const [where, ui, want] of cases) {
+    assert.equal(backAction(ui), want, `${where}: 뒤로가기 판단이 ${want}가 아니다`);
+  }
+});
+
+test("어느 화면에서든 뒤로가기를 거듭 누르면 초기 입력 화면에서 멈춘다", () => {
+  // 그래프의 모든 상태에서 걷는다 — 되짚기가 고리를 돌거나 엉뚱한 곳에 서지 않는지.
+  const step = (flow) => {
+    const act = backAction({ dailyVerse: null, showAbout: false, flow });
+    if (act === BACK.RETRACE) return flowReducer(flow, { type: FLOW.RETRACE });
+    if (act === BACK.STEP_BACK) return flowReducer(flow, { type: FLOW.BACK });
+    return null;
+  };
+  for (const { state } of walkFlow(initialFlow(""))) {
+    if (state.phase === PHASE.LOADING) continue; // 로딩은 플랫폼 기본(백그라운드)이다
+    let s = state;
+    for (let i = 0; i < 3; i++) {
+      const next = step(s);
+      if (next === null) break;
+      s = next;
+    }
+    assert.equal(step(s), null, `세 번 눌러도 멈추지 않는다: ${JSON.stringify(state)}`);
+    assert.ok(inputBoxVisible(s), `멈춘 곳이 초기 입력 화면이 아니다: ${JSON.stringify(s)}`);
+  }
+});
+
+test("뒤로가기 다리 — 웹이 거는 이름과 네이티브가 부르는 이름이 같다", () => {
+  // ⛔ 이름이 갈리면 **조용히** 망가진다 — 네이티브는 함수가 없으면 플랫폼 기본으로
+  //   넘기므로, 모든 화면에서 뒤로가기가 앱을 내리기만 하고 아무 검사도 실패하지 않는다.
+  const main = readFileSync(
+    join(here, "..", "android", "app", "src", "main", "java", "io", "github",
+      "appleap385", "peaceinmind", "MainActivity.java"),
+    "utf8",
+  );
+  assert.ok(main.includes(`window.${BACK_HANDLER}`), `MainActivity가 window.${BACK_HANDLER}를 부르지 않는다`);
+  assert.ok(appSrc.includes("BACK_HANDLER"), "App.jsx가 뒤로가기 함수를 걸지 않는다");
+  assert.ok(
+    main.includes("getOnBackPressedDispatcher().addCallback"),
+    "MainActivity에 뒤로가기 콜백이 없다 — Capacitor 6+는 @capacitor/app 없이 웹에 뒤로가기를 주지 않는다(2.136)",
+  );
+  // ⚠ 원칙 문장은 지우지 않고 예외를 붙였다(2.136). 원칙이 사라지면 다음 용도가 쉽게 얹힌다.
+  assert.ok(main.includes("이 파일에 다른 용도를 얹지 말 것"), "MainActivity의 원칙 주석이 지워졌다");
 });
 
 test("복귀 함수는 인자를 받지 않는다 (onClick이 이벤트를 넘긴다)", () => {

@@ -22,6 +22,7 @@ import versesData from "./data/verses.json";
 
 import { RESULT, classify, findSubcategory, subcategoriesOf } from "./lib/classify.js";
 import { FLOW, MODE, PHASE, flowReducer, initialFlow } from "./lib/flow.js";
+import { BACK, BACK_HANDLER, backAction } from "./lib/back.js";
 import { KEYS, getSetting, setSetting } from "./lib/db.js";
 import { usePrefersReducedMotion, withMinDuration } from "./lib/offline.js";
 import {
@@ -328,6 +329,45 @@ export default function App() {
   }, []);
 
   /**
+   * 하드웨어 뒤로가기 — **잡는 것은 MainActivity, 판단은 lib/back.js** (HANDOFF 2.136 · 2.146).
+   *
+   * 네이티브가 window[BACK_HANDLER]()를 부르고, true면 소비한다. false면 플랫폼
+   * 기본(백그라운드)으로 넘긴다 — 초기 입력 화면에서는 그것이 맞는 동작이다.
+   * ⛔ FLOW.RESET 계열을 쓰지 않는다. 뒤로가기는 「취소」라 글자를 비우지 않는다
+   *   (FLOW.RETRACE · lib/flow.js 불변식).
+   * ⚠ ref로 **최신 상태**를 읽는다. 함수는 한 번만 걸리므로 클로저에 갇힌 첫
+   *   렌더의 상태를 보면 늘 초기 화면으로 판단해 아무것도 소비하지 않는다.
+   * ⛔ 앱에서만 건다 — 웹 브라우저의 뒤로가기에는 관여하지 않는다(2.122의 교훈:
+   *   앱 전용이 웹으로 새는 방향을 막는다).
+   */
+  const backRef = useRef(() => false);
+  backRef.current = () => {
+    switch (backAction({ dailyVerse, showAbout, flow })) {
+      case BACK.CLOSE_DAILY_VERSE:
+        setDailyVerse(null);
+        return true;
+      case BACK.CLOSE_ABOUT:
+        setShowAbout(false);
+        return true;
+      case BACK.RETRACE:
+        dispatch({ type: FLOW.RETRACE });
+        return true;
+      case BACK.STEP_BACK:
+        dispatch({ type: FLOW.BACK });
+        return true;
+      default:
+        return false;
+    }
+  };
+  useEffect(() => {
+    if (!IS_APP) return undefined;
+    window[BACK_HANDLER] = () => backRef.current();
+    return () => {
+      delete window[BACK_HANDLER];
+    };
+  }, []);
+
+  /**
    * 분류 결과를 화면에 붙인다.
    *
    * ⚠ **대분류까지만 맞은 경우도 여기를 지난다.** 그 경로는 결과 화면을 거치지
@@ -400,6 +440,10 @@ export default function App() {
    * 결과 화면이 아니다. 나가는 길은 "지금 마음을 적어볼까요" 하나뿐이고
    * 그것이 입력 화면으로 보낸다 — 알림이 입구가 되게 하는 문이다.
    * ⛔ 떠 있는 버튼(onRestart)을 주지 않는다. 돌아갈 "이전 화면"이 없다.
+   *   ⚠ 이 말은 **콜드 스타트에서만** 맞다(2026-10-06 보충). 앱이 켜져 있다가
+   *     알림을 누르면 이 화면은 덮개일 뿐이고, 아래에 보던 화면이 그대로 있다.
+   *     기기 뒤로가기는 그 덮개만 닫는다(lib/back.js · 안 ㄱ) — 버튼은 「새로 시작」,
+   *     뒤로가기는 「취소」라 목적지가 다르다. 떠 있는 버튼을 안 두는 결정은 그대로다.
    */
   if (dailyVerse) {
     return (

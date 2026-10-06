@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.webkit.WebView;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
@@ -39,6 +40,10 @@ import com.getcapacitor.BridgeActivity;
  *   루트 뷰로 재면 P가 0으로 나와 X가 I가 되어 **정반대 값**이 된다.
  *
  * ⚠ 이 파일에 다른 용도를 얹지 말 것. 인셋 하나만 넘긴다.
+ *   ⚠ 예외 하나 — **하드웨어 뒤로가기**(HANDOFF 2.136 안 A · 2.146). 뒤로가기는
+ *     **네이티브에서만 잡힌다.** Capacitor 6부터 @capacitor/app이 없으면 웹에 콜백을
+ *     등록하는 주체가 없다는 것을 실측했다(2.136). 그래서 이 파일에 들어가는 것이 맞는
+ *     종류다 — 원칙이 느슨해진 것이 아니라 「네이티브에서만 가능한 것」이 예외의 전부다.
  */
 public class MainActivity extends BridgeActivity {
 
@@ -48,9 +53,17 @@ public class MainActivity extends BridgeActivity {
     /** 값이 바뀌었다고 웹에 알린다. ⛔ App.jsx의 useInsetBottomReal()과 짝이다. */
     private static final String JS_EVENT = "pym:inset";
 
+    /**
+     * 뒤로가기를 웹에 묻는다. ⛔ lib/back.js의 BACK_HANDLER와 짝이다.
+     * 함수가 없으면(로드 전 · 웹 쪽 이름이 갈림) false — 플랫폼 기본으로 넘어간다.
+     */
+    private static final String JS_BACK =
+        "typeof window.pymBack === 'function' && window.pymBack() === true";
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        registerBack();
         final WebView web = getBridge().getWebView();
         if (web == null) return;
 
@@ -138,6 +151,40 @@ public class MainActivity extends BridgeActivity {
             // ⛔ 조용히 넘어간다 — 값이 안 오면 웹이 폴백(옛 비대칭식)으로 간다.
             //   그쪽은 음수가 안 되므로 화면이 깨지지 않는다.
         }
+    }
+
+    /**
+     * 하드웨어 뒤로가기 — **판단은 웹이 하고 여기는 묻고 따르기만 한다** (HANDOFF 2.136 · 2.146).
+     *
+     *   웹(window.pymBack)이 true면 소비한다 — 덮개를 닫거나 한 걸음 되짚었다.
+     *   아니면 콜백을 잠깐 끄고 디스패처에 다시 넘겨 **플랫폼 기본**(백그라운드)으로 간다.
+     * ★ androidx가 예측형·레거시 뒤로가기를 함께 처리한다. 새 의존성 0 —
+     *   androidx.activity는 BridgeActivity가 이미 쓴다.
+     * ⛔ 웹뷰 히스토리(canGoBack/goBack)를 쓰지 않는다(2.136의 처음 그림에서 바꿨다 · 2.146).
+     *   그러려면 화면 이동마다 히스토리를 쌓고 「다시 적기」 같은 버튼 이동마다 맞춰
+     *   빼야 한다. 하나라도 어긋나면 초기 화면에서 누른 뒤로가기가 낡은 항목으로
+     *   **삼켜진다.** 지금 상태를 물으면 맞출 것이 없다.
+     */
+    private void registerBack() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                WebView web = getBridge() == null ? null : getBridge().getWebView();
+                if (web == null) {
+                    passToPlatform(this);
+                    return;
+                }
+                web.evaluateJavascript(JS_BACK, value -> {
+                    if (!"true".equals(value)) passToPlatform(this);
+                });
+            }
+        });
+    }
+
+    private void passToPlatform(OnBackPressedCallback callback) {
+        callback.setEnabled(false);
+        getOnBackPressedDispatcher().onBackPressed();
+        callback.setEnabled(true);
     }
 
     private int displayHeight() {

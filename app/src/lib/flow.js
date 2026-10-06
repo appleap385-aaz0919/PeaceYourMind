@@ -18,6 +18,10 @@
  *     앱이 한 번 응답하면(ANSWER) 그 뒤로 입력창이 다시 보이는 모든 상태에서
  *     비어 있다. 사용자가 스스로 고르는 화면을 구경하다 돌아오는 것(BACK)은
  *     응답이 아니므로 글자를 지우지 않는다 — 그건 아직 사용자의 문장이다.
+ *   ★ 기기 뒤로가기로 결과 화면을 나오는 것(RETRACE)도 지우지 않는다 (2026-10-06
+ *     사용자 결정 · HANDOFF 2.136 · 2.146). 사용자가 응답을 **무르는** 「취소」라서,
+ *     돌아온 입력창의 글자는 다시 사용자의 문장이다. 「다시 적기」(RESET)는
+ *     새로 시작하겠다는 명시적 선택이라 그대로 비운다 — 둘은 달라야 맞다.
  *
  * ⚠ 여기에 부수효과를 넣지 말 것. 순수해야 테스트가 그래프를 걸을 수 있다.
  *   무작위 문구 선택(pickMessage)처럼 순수하지 않은 것은 **행동의 payload로**
@@ -54,6 +58,8 @@ export const FLOW = {
   RESET: "reset",
   /** 분류 실패에서 고르는 화면으로 나간다. */
   RESET_TO_PICKER: "resetToPicker",
+  /** 기기 뒤로가기로 결과 화면에서 입력 화면으로 되짚는다. **글자를 비우지 않는다.** */
+  RETRACE: "retrace",
   /** 안내 문구만 바꾼다 (첫 로딩에서 한 번). */
   PLACEHOLDER: "placeholder",
 };
@@ -122,6 +128,13 @@ export function flowReducer(state, action) {
 
     case FLOW.RESET_TO_PICKER:
       return enterInput(state, MODE.SELECT, null, action.placeholder);
+
+    case FLOW.RETRACE:
+      // ⛔ enterInput을 타지 않는다 — 그것은 「앱이 응답한 뒤」 입력창을 비우는 자리다.
+      //   뒤로가기는 사용자가 스스로 옮기는 것이라 SWITCH_TO_PICKER·BACK과 같은 결이다.
+      //   결과와 고르던 대분류는 버린다 — 「다시 적기」가 가는 그 화면이다(2.136 안 ㄴ).
+      if (state.phase !== PHASE.RESULT) return state;
+      return { ...state, phase: PHASE.INPUT, mode: MODE.TEXT, result: null, selectedCategory: null };
 
     case FLOW.PLACEHOLDER:
       return { ...state, placeholder: action.placeholder };
