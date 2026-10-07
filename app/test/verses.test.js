@@ -135,7 +135,8 @@ test("이 앱에 대해 — 기록 삭제 버튼이 실제로 연결돼 있다",
     aboutSrc.includes("clearBrowsingTraces"),
     "열람 흔적(썸네일·장 본문 캐시)이 함께 지워지지 않는다",
   );
-  assert.ok(aboutSrc.includes("<EraseRecords />"), "버튼이 화면에 놓이지 않았다");
+  // ⚠ 2026-10-08부터 onErased를 받는다(지운 뒤 알림 절을 다시 읽게 · 2.147) — 속성이 있어도 본다.
+  assert.ok(/<EraseRecords[\s/]/.test(aboutSrc), "버튼이 화면에 놓이지 않았다");
 });
 
 test("기록 삭제는 한 번 더 묻는다 (되돌릴 수 없다)", () => {

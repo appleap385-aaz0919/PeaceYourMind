@@ -30,8 +30,10 @@ import { useEffect, useState } from "react";
 
 import { adsEnabled } from "../lib/ads.js";
 import { clearAllLocalData, clearBrowsingTraces } from "../lib/db.js";
+import { eraseRecords } from "../lib/erase.js";
 import {
   DEFAULT_TIME,
+  cancelAll,
   ensurePermission,
   readSettings,
   refreshSchedule,
@@ -87,6 +89,9 @@ const PRIVACY_URL = __IS_APP__ ? PRIVACY_URL_APP : PRIVACY_URL_WEB;
 export const ABOUT_BACK_ID = "about-back";
 
 export function About({ attribution, onBack }) {
+  // 기록을 지우면 알림도 꺼진다(lib/erase.js). 그 절을 **다시 만들어** 새로 읽게 한다 —
+  //   안 그러면 지운 직후 이 화면의 토글이 「켜짐」으로 남는다(HANDOFF 2.147).
+  const [erasedAt, setErasedAt] = useState(0);
   return (
     <div className="rise">
       <h1 style={styles.title}>이 앱에 대해</h1>
@@ -94,7 +99,7 @@ export function About({ attribution, onBack }) {
       {/* 알림 설정을 **위쪽에** 둔다. 이 화면은 절이 일곱이라 길고, 조작하는
           것이 아래에 있으면 찾지 못한다. 읽는 절보다 누르는 절이 먼저다.
           ⚠ 앱에서만 그린다 — 웹에는 로컬 알림이 없다. */}
-      {IS_APP ? <NotifySettings /> : null}
+      {IS_APP ? <NotifySettings key={erasedAt} /> : null}
 
       <section style={styles.block}>
         <h2 style={styles.heading}>성경 본문</h2>
@@ -170,7 +175,7 @@ export function About({ attribution, onBack }) {
         {/* 지우기와 방침을 한 행에 둔다 — 둘 다 "내 기록을 어떻게 하는가"다.
             세로로 쌓으면 방침이 별개 항목처럼 읽힌다 (styles.recordRow 주석). */}
         <div style={styles.recordRow}>
-          <EraseRecords />
+          <EraseRecords onErased={() => setErasedAt(Date.now())} />
           {PRIVACY_URL ? (
             <a
               href={PRIVACY_URL}
@@ -348,13 +353,18 @@ function NotifySettings() {
   );
 }
 
-function EraseRecords() {
+function EraseRecords({ onErased }) {
   const [step, setStep] = useState("idle"); // idle → asking → done
 
+  // ⛔ 여기서 낱개로 지우지 않는다 — 순서와 예약 취소는 eraseRecords 한 곳이다(2.147).
   const erase = async () => {
-    await clearAllLocalData();
-    await clearBrowsingTraces();
+    await eraseRecords({
+      cancelNotifications: cancelAll,
+      clearStore: clearAllLocalData,
+      clearTraces: clearBrowsingTraces,
+    });
     setStep("done");
+    onErased();
   };
 
   if (step === "done") {

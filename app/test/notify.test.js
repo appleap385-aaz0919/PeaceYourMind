@@ -27,6 +27,7 @@ import {
   recentlySent,
   scheduleTimes,
 } from "../src/lib/notifySelect.js";
+import { eraseRecords } from "../src/lib/erase.js";
 import { readSource } from "./helpers.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -74,6 +75,71 @@ test("결과 화면 토글이 About을 닫을 때 저장값을 다시 읽는다 
     /readSettings\(\)\.then\(\(s\) => alive && setNotifyOn\(s\.on\)\)[\s\S]{0,120}\}, \[showAbout\]\);/.test(appSrc),
     "App의 알림 읽기가 showAbout에 묶여 있지 않다 — About에서 바꾼 값이 결과 화면에 안 온다",
   );
+});
+
+/* --- 기록 지우기 뒤 저장값과 예약이 같은 상태를 말한다 (2026-10-08 · HANDOFF 2.147 ㄱ-2) ---
+ *
+ * 「기록 지우기」는 설정 저장소를 통째로 비운다 — NOTIFY_ON도 함께다. 그런데 예약은
+ * 취소하지 않았다. 지운 뒤 저장값은 기본값(꺼짐)인데 예약된 알림이 최대 14일 계속 왔고,
+ * 다음 콜드 스타트에서 refreshSchedule이 「꺼짐」을 보고 지워 **조용히 멎었다.**
+ * ⚠ 원인은 순서였다 — 기록 지우기(2e91d2d · 08-24)가 먼저 생기고 알림 키가 일주일 뒤
+ *   (77547ff · 08-31) 같은 저장소에 들어오면서 지우기 쪽을 손보지 않았다.
+ *
+ * 가짜 저장소·가짜 예약으로 **실제로 지워 보고** 둘이 같은 상태인지 본다.
+ */
+const DEFAULT_ON_IN_SRC = /export const DEFAULT_ON = (true|false);/.exec(notifySrc)?.[1] === "true";
+
+function fakeDevice() {
+  const store = new Map([
+    ["notify_on", true],
+    ["notify_time", "07:30"],
+  ]);
+  const device = {
+    store,
+    scheduled: 14,
+    cancelNotifications: async () => {
+      device.scheduled = 0;
+    },
+    clearStore: async () => {
+      store.clear();
+      return true;
+    },
+    clearTraces: async () => true,
+    // readSettings와 같은 규칙 — 값이 없으면 DEFAULT_ON이다.
+    storedOn: () => (store.has("notify_on") ? store.get("notify_on") : DEFAULT_ON_IN_SRC),
+  };
+  return device;
+}
+
+test("기록 지우기 뒤 저장값과 예약이 같은 상태를 말한다 — 둘 다 꺼짐", async () => {
+  const d = fakeDevice();
+  assert.equal(d.storedOn() && d.scheduled > 0, true, "준비가 틀렸다 — 켜진 상태에서 시작해야 한다");
+  await eraseRecords(d);
+  assert.equal(d.storedOn(), false, "지운 뒤 저장값이 「켜짐」이다");
+  assert.equal(d.scheduled, 0, "지운 뒤에도 예약이 남았다 — 끈 적 없는 알림이 계속 온다");
+  assert.equal(d.storedOn(), d.scheduled > 0, "저장값과 예약이 다른 말을 한다");
+});
+
+test("고장 주입: 예약을 안 지우면(2e91d2d~ 동작) 위 검사가 그것을 본다", async () => {
+  const d = fakeDevice();
+  await eraseRecords({ ...d, cancelNotifications: async () => {} });
+  assert.notEqual(d.storedOn(), d.scheduled > 0, "고장을 주입했는데도 둘이 같다 — 검사가 무엇도 못 본다");
+});
+
+test("예약 취소가 실패해도 기록은 지운다 — 다음 콜드 스타트가 예약을 정리한다", async () => {
+  // 사용자는 지우라고 했다. 플러그인 실패로 지우기 자체를 멈추면 그 요청을 어긴다.
+  //   저장값이 꺼짐이 되므로 다음 콜드 스타트의 refreshSchedule이 남은 예약을 지운다.
+  const d = fakeDevice();
+  await eraseRecords({ ...d, cancelNotifications: async () => { throw new Error("plugin"); } });
+  assert.equal(d.store.size, 0, "예약 취소가 실패했다고 기록을 안 지웠다");
+});
+
+test("About의 기록 지우기가 eraseRecords를 거치고, 알림 설정 절을 다시 읽는다", () => {
+  assert.ok(/eraseRecords\(\{/.test(aboutSrc), "About이 eraseRecords를 안 쓴다 — 예약이 안 지워진다");
+  assert.ok(/cancelNotifications: cancelAll/.test(aboutSrc), "About이 예약 취소(cancelAll)를 넘기지 않는다");
+  // 지운 뒤 About 안의 토글도 「꺼짐」이 되어야 한다 — 그 절을 다시 만들어 새로 읽게 한다.
+  assert.ok(/<NotifySettings key=\{/.test(aboutSrc), "지운 뒤 About의 알림 토글이 낡은 값으로 남는다");
+  assert.ok(/<EraseRecords onErased=\{/.test(aboutSrc), "지우기가 끝났다는 것을 About이 모른다");
 });
 
 test("⛔ 토글이 재진입을 막는다 — 연타하면 쓰기가 엇갈린다", () => {
