@@ -65,6 +65,17 @@ test("⛔ 켜기 판단을 setEnabled가 직접 하지 않는다 — enableDecis
   );
 });
 
+test("결과 화면 토글이 About을 닫을 때 저장값을 다시 읽는다 (2026-10-06 실기기 · HANDOFF 2.147)", () => {
+  // 두 토글이 **각자 state를 든다.** About은 열 때마다 새로 읽지만 App은 처음 한 번만
+  //   읽었다 — About에서 바꾸고 돌아오면 결과 화면이 낡은 값을 보였다(v100부터).
+  // ⚠ 안 3이라 **문자열 검사뿐이다.** 토글이 세 번째 화면에 생기면 이것으로는 못 막는다 —
+  //   그때가 안 2(한 출처 + 구독)의 자리다(2.147).
+  assert.ok(
+    /readSettings\(\)\.then\(\(s\) => alive && setNotifyOn\(s\.on\)\)[\s\S]{0,120}\}, \[showAbout\]\);/.test(appSrc),
+    "App의 알림 읽기가 showAbout에 묶여 있지 않다 — About에서 바꾼 값이 결과 화면에 안 온다",
+  );
+});
+
 test("⛔ 토글이 재진입을 막는다 — 연타하면 쓰기가 엇갈린다", () => {
   assert.ok(
     /notifyBusy\.current/.test(appSrc),

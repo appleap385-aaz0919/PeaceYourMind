@@ -182,13 +182,25 @@ export default function App() {
 
   const [notifyOn, setNotifyOn] = useState(false);
   const [toast, setToast] = useState("");
+  /**
+   * 결과 화면 토글의 값 — **About이 닫힐 때마다 다시 읽는다** (2026-10-06 · HANDOFF 2.147 안 3).
+   *
+   * ⚠ 두 토글은 쓰기(setEnabled)만 같고 **state는 각자 든다.** About은 열 때마다
+   *   새로 읽지만 여기는 처음 한 번만 읽었다 — About에서 끄고 돌아오면 결과 화면이
+   *   「켜짐」으로 남았다(v100부터 · 2026-10-06 실기기).
+   * ⚠ 안 3의 한계 — ① 토글이 세 번째 화면에 생기면 또 갈린다 ② 앱 시작 때
+   *   refreshSchedule이 권한 거부로 저장값을 끄는 경로는 못 덮는다(OS가 막아 실제
+   *   알림은 안 온다). 둘 다 안 2(한 출처 + 구독)의 몫이다(2.147).
+   */
+  //   ⚠ `if (showAbout)`로 쓰지 않는다 — 화면 분기 순서 검사가 그 문자열의 위치를 본다
+  //     (adsApp.test.js · notify.test.js). 여기 먼저 나오면 분기 순서가 바뀐 것으로 읽힌다.
   useEffect(() => {
     let alive = true;
-    readSettings().then((s) => alive && setNotifyOn(s.on));
+    if (!showAbout) readSettings().then((s) => alive && setNotifyOn(s.on));
     return () => {
       alive = false;
     };
-  }, []);
+  }, [showAbout]);
   const [toastLeaving, setToastLeaving] = useState(false);
   useEffect(() => {
     if (!toast) return undefined;
