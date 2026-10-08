@@ -528,7 +528,9 @@ export default function App() {
           <Msg
             title={taxonomy.ui.empty_input[0]}
             sub={taxonomy.ui.empty_input[1] || ""}
-            onBack={reset}
+            // ⛔ 라벨대로 **고르는 화면**으로 간다. 08-19부터 v100까지 reset(직접 적기)이었다 —
+            //   안내 문구도 버튼도 「고르라」고 하는데 코드만 아니었다(HANDOFF 2.148).
+            onBack={resetToPicker}
             back="골라서 찾기"
           />
         </Shell>

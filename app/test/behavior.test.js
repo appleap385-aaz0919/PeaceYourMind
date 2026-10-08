@@ -1217,6 +1217,52 @@ test("분류 실패 화면이 인라인 핸들러가 아니라 resetToPicker를 
   assert.ok(!msg.includes("dispatch("), "인라인 dispatch가 남아 있다 — 비우는 자리를 우회한다");
 });
 
+/* --- 버튼 라벨이 말하는 곳으로 간다 (2026-10-08 · HANDOFF 2.148) -----------------
+ *
+ * 빈 입력 화면의 「골라서 찾기」가 **고르는 화면이 아니라 직접 적기**로 갔다 —
+ * 첫 커밋(416d29c · 08-19)부터 v100까지. 08-25에 분류 실패 화면만 resetToPicker로
+ * 고쳤고, 빈 입력 화면은 「입력창을 비우는 규칙에는 맞았다」는 이유로 남았다.
+ * ⚠ 검사의 기준이 「비우는가」 하나뿐이라 **「라벨과 목적지가 맞는가」**가 안 보였다.
+ *   그래서 라벨 → 행동 짝을 표로 두고 **화면 전체를** 훑는다 — 같은 라벨이 새로 생겨도 걸린다.
+ */
+const LABEL_TO_HANDLER = {
+  "골라서 찾기": "resetToPicker",
+  "다시 적기": "reset",
+};
+
+test("Msg 버튼 — 라벨이 말하는 곳으로 간다 (골라서 찾기 = resetToPicker · 다시 적기 = reset)", () => {
+  const blocks = appSrc.match(/<Msg\b[\s\S]*?\/>/g) || [];
+  const pairs = [];
+  for (const block of blocks) {
+    for (const [labelProp, handlerProp] of [["back", "onBack"], ["alt", "onAlt"]]) {
+      const label = (block.match(new RegExp(`\\b${labelProp}="([^"]+)"`)) || [])[1];
+      const handler = (block.match(new RegExp(`\\b${handlerProp}=\\{(\\w+)\\}`)) || [])[1];
+      if (label) pairs.push({ label, handler });
+    }
+  }
+  // 검사가 헛돌지 않는지 — 지금 「골라서 찾기」는 빈 입력·분류 실패 두 곳이다.
+  assert.ok(
+    pairs.filter((p) => p.label === "골라서 찾기").length >= 2,
+    `「골라서 찾기」 버튼을 ${pairs.filter((p) => p.label === "골라서 찾기").length}개만 찾았다 — 파싱이 어긋났다`,
+  );
+  for (const { label, handler } of pairs) {
+    const want = LABEL_TO_HANDLER[label];
+    if (!want) continue;
+    assert.equal(handler, want, `「${label}」 버튼이 ${handler}로 간다 — ${want}여야 한다`);
+  }
+});
+
+test("떠 있는 「다시 적기」 버튼은 어느 화면에서든 reset이다", () => {
+  // 라벨은 common.jsx의 떠 있는 버튼에 있고, 화면마다 Shell의 onRestart로 무엇을 할지 넘긴다.
+  const commonSrc = readSource("components", "common.jsx");
+  assert.ok(commonSrc.includes("다시 적기"), "떠 있는 버튼의 라벨이 바뀌었다 — 이 짝 검사를 다시 볼 것");
+  const handlers = [...appSrc.matchAll(/onRestart=\{(\w+)\}/g)].map((m) => m[1]);
+  assert.ok(handlers.length > 0, "onRestart를 넘기는 화면을 하나도 못 찾았다 — 검사가 헛돈다");
+  for (const h of handlers) {
+    assert.equal(h, LABEL_TO_HANDLER["다시 적기"], `떠 있는 「다시 적기」가 ${h}로 간다`);
+  }
+});
+
 /* --- `구려`·`구질` 계열 — 어절 결합으로만 넣었다 (2026-08-25) ---------------
  *
  * 실사용 조사에서 "기분이 구려"·"기분이 구질구질해"가 미분류로 나왔다.
