@@ -18,16 +18,18 @@
  *     앱이 한 번 응답하면(ANSWER) 그 뒤로 입력창이 다시 보이는 모든 상태에서
  *     비어 있다. 사용자가 스스로 고르는 화면을 구경하다 돌아오는 것(BACK)은
  *     응답이 아니므로 글자를 지우지 않는다 — 그건 아직 사용자의 문장이다.
- *   ★ 기기 뒤로가기로 결과 화면을 나오는 것(RETRACE)도 지우지 않는다 (2026-10-06
- *     사용자 결정 · HANDOFF 2.136 · 2.146). 사용자가 응답을 **무르는** 「취소」라서,
- *     돌아온 입력창의 글자는 다시 사용자의 문장이다. 「다시 적기」(RESET)는
- *     새로 시작하겠다는 명시적 선택이라 그대로 비운다 — 둘은 달라야 맞다.
- *   ⛔ **단 위기 화면에서의 RETRACE는 비운다** (2026-10-06 사용자 결정).
- *     ① 그 화면의 버튼이 이미 비운다 — 뒤로가기만 남기면 같은 화면에서 어떤 때는
- *        남고 어떤 때는 사라진다. ② 위 2026-08-25 결정이 가장 세게 적용되는 자리다.
- *        「방금 적은 것을 고쳐 쓰기」는 일반 결과의 이야기이고, 위기 화면에서 돌아온
- *        사람에게 그 문장을 다시 보여주는 것은 다르다.
- *     ⚠ 「일관성이 없다」고 합치지 말 것 — 다른 것이 맞다.
+ *   ★★ **RETRACE는 비운다. BACK은 남긴다. 기준은 「앱이 답을 줬는가」다**
+ *     (2026-10-08 사용자 결정 · HANDOFF 2.146 ③).
+ *       결과·위기에서 돌아온다   답을 받은 뒤다 → **비운다** — 버튼(RESET)이든
+ *                               기기 뒤로가기(RETRACE)든 같은 상태에 선다
+ *       대분류·세분류에서 돌아온다 아직 답 전이다 → **남긴다**(BACK)
+ *     「사용자가 스스로 옮겼는가」가 기준이 아니다. 뒤로가기도 결과를 본 **뒤**라면
+ *     그 문장은 앱이 이미 응답한 문장이다.
+ *   ⚠ 뒤집힌 이력 — 2026-09-14 「뒤로가기로 돌아갈 때 text를 비우면 안 된다」와
+ *     2026-10-06 「결과의 RETRACE는 남긴다 · 위기 화면만 비운다」는 **실기기에서 눌러
+ *     보고** 뒤집혔다. 결과를 본 뒤에 그 문장이 다시 떠 있는 것이 맞지 않았다.
+ *     ★ 예외를 만든 것이 아니라 위 2026-08-25 규칙으로 **돌아간 것**이다 —
+ *       결과 화면 전체에 같은 규칙이 적용된다.
  *
  * ⚠ 여기에 부수효과를 넣지 말 것. 순수해야 테스트가 그래프를 걸을 수 있다.
  *   무작위 문구 선택(pickMessage)처럼 순수하지 않은 것은 **행동의 payload로**
@@ -64,7 +66,7 @@ export const FLOW = {
   RESET: "reset",
   /** 분류 실패에서 고르는 화면으로 나간다. */
   RESET_TO_PICKER: "resetToPicker",
-  /** 기기 뒤로가기로 결과 화면에서 입력 화면으로 되짚는다. **글자를 비우지 않는다.** */
+  /** 기기 뒤로가기로 결과 화면에서 입력 화면으로 되짚는다. **비운다** — 「다시 적기」와 같은 상태다. */
   RETRACE: "retrace",
   /** 안내 문구만 바꾼다 (첫 로딩에서 한 번). */
   PLACEHOLDER: "placeholder",
@@ -136,16 +138,11 @@ export function flowReducer(state, action) {
       return enterInput(state, MODE.SELECT, null, action.placeholder);
 
     case FLOW.RETRACE:
+      // 결과 화면에서만 움직인다 — 나머지는 back.js가 BACK으로 보내거나 플랫폼에 넘긴다.
       if (state.phase !== PHASE.RESULT) return state;
-      // ★ 위기 화면만은 **비운다** — 그 화면의 버튼(RESET)과 같은 상태로 선다.
-      //   일관성이 없는 것이 아니라 다른 것이 맞다(머리말 불변식 · HANDOFF 2.146 ③).
-      if (state.result?.kind === RESULT.CRISIS) {
-        return enterInput(state, MODE.TEXT, null, state.placeholder);
-      }
-      // ⛔ 그 밖에는 enterInput을 타지 않는다 — 그것은 「앱이 응답한 뒤」 입력창을 비우는
-      //   자리다. 뒤로가기는 사용자가 스스로 옮기는 것이라 SWITCH_TO_PICKER·BACK과 같은 결이다.
-      //   결과와 고르던 대분류는 버린다 — 「다시 적기」가 가는 그 화면이다(2.136 안 ㄴ).
-      return { ...state, phase: PHASE.INPUT, mode: MODE.TEXT, result: null, selectedCategory: null };
+      // ★ 결과의 종류를 보지 않는다 — 앱이 답을 준 뒤이므로 **비운다**(머리말 불변식).
+      //   「다시 적기」(RESET)와 같은 화면·같은 상태다(2.136 안 ㄴ · 2.146 ③).
+      return enterInput(state, MODE.TEXT, null, action.placeholder);
 
     case FLOW.PLACEHOLDER:
       return { ...state, placeholder: action.placeholder };

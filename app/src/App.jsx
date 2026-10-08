@@ -345,8 +345,8 @@ export default function App() {
    *
    * 네이티브가 window[BACK_HANDLER]()를 부르고, true면 소비한다. false면 플랫폼
    * 기본(백그라운드)으로 넘긴다 — 초기 입력 화면에서는 그것이 맞는 동작이다.
-   * ⛔ FLOW.RESET 계열을 쓰지 않는다. 뒤로가기는 「취소」라 글자를 비우지 않는다
-   *   (FLOW.RETRACE · lib/flow.js 불변식 — 위기 화면만은 RETRACE 안에서 비운다).
+   * ★ 결과·위기에서 돌아오는 FLOW.RETRACE는 **비운다**(앱이 답을 준 뒤) — 「다시 적기」와
+   *   같은 상태다. 고르는 화면의 FLOW.BACK은 **남긴다**(아직 답 전) — lib/flow.js 불변식.
    * ⚠ ref로 **최신 상태**를 읽는다. 함수는 한 번만 걸리므로 클로저에 갇힌 첫
    *   렌더의 상태를 보면 늘 초기 화면으로 판단해 아무것도 소비하지 않는다.
    * ⛔ 앱에서만 건다 — 웹 브라우저의 뒤로가기에는 관여하지 않는다(2.122의 교훈:
@@ -362,7 +362,11 @@ export default function App() {
         setShowAbout(false);
         return true;
       case BACK.RETRACE:
-        dispatch({ type: FLOW.RETRACE });
+        // 안내 문구도 「다시 적기」(goInput)처럼 새로 고른다 — 같은 상태로 선다.
+        dispatch({
+          type: FLOW.RETRACE,
+          placeholder: pickMessage("placeholder", taxonomy.ui.placeholders),
+        });
         return true;
       case BACK.STEP_BACK:
         dispatch({ type: FLOW.BACK });

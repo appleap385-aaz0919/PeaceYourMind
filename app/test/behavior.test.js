@@ -937,12 +937,10 @@ const ACTIONS = [
  * `answered`는 "앱이 한 번 응답한 뒤"라는 표시다 — TYPE이 그 표를 지운다
  * (그때부터 글자는 다시 사용자가 직접 넣은 것이다).
  *
- * ★ 결과 화면에서의 RETRACE(기기 뒤로가기)도 그 표를 지운다 (2026-10-06 사용자 결정 ·
- *   HANDOFF 2.136 · 2.146). 뒤로가기는 사용자가 응답을 **무르는** 「취소」다 —
- *   돌아온 입력창의 글자는 다시 사용자의 문장이다. 2026-08-25 규칙은 「앱이 응답한 뒤」를
- *   위한 것이고 이것은 「사용자가 스스로 옮기는 것」이다.
- *   ⚠ 결과 화면이 아닐 때의 RETRACE는 아무것도 안 하므로 표를 지우지 않는다 —
- *     지우면 응답 뒤의 상태가 이동 없이 "응답 전"으로 둔갑해 검사가 느슨해진다.
+ * ⚠ RETRACE(기기 뒤로가기)는 표를 **지우지도 세우지도 않는다** (2026-10-08 · HANDOFF 2.146 ③).
+ *   결과에서는 이미 ANSWER로 세워진 표 위에서 비우므로 불변식이 그대로 걸리고,
+ *   결과가 아닐 때는 아무것도 안 하므로 세우면 오히려 응답 전 상태를 응답 뒤로 둔갑시킨다.
+ *   (10-06에는 「무르기」로 표를 지웠다 — 결과에서 글자를 남기던 때의 판정이다. 뒤집혔다)
  */
 function walkFlow(seed) {
   const key = (s, answered) =>
@@ -955,13 +953,8 @@ function walkFlow(seed) {
     const node = queue.shift();
     for (const action of ACTIONS) {
       const next = flowReducer(node.state, action);
-      // ⚠ 위기 화면의 RETRACE는 비우는 쪽이라 「무르기」가 아니다 — 표를 그대로 둔다.
-      const retracted =
-        action.type === FLOW.RETRACE &&
-        node.state.phase === PHASE.RESULT &&
-        node.state.result?.kind !== RESULT.CRISIS;
       const answered =
-        action.type === FLOW.TYPE || retracted
+        action.type === FLOW.TYPE
           ? false
           : node.answered || ANSWER_ACTIONS.includes(action.type);
       const k = key(next, answered);
@@ -1062,82 +1055,77 @@ test("App이 상태 기계를 우회하지 않는다 — 낱개 세터가 없다
 /* --- 하드웨어 뒤로가기 — 되짚기 전용 경로 (HANDOFF 2.136 안 A · 2.146 · 2026-10-06) ----
  *
  * 네이티브(MainActivity)가 뒤로가기를 잡아 window.pymBack()에 묻고, 판단은
- * lib/back.js가 한다. 결과에서 돌아오는 길은 FLOW.RETRACE다.
- * ⛔ FLOW.RESET 계열을 타면 안 된다 — 뒤로가기는 「취소」라 글자를 비우지 않는다.
+ * lib/back.js가 한다. 결과에서 돌아오는 길은 FLOW.RETRACE, 고르는 화면은 FLOW.BACK이다.
+ * ★ 기준은 「앱이 답을 줬는가」다 (2026-10-08 사용자 결정 · 2.146 ③) —
+ *   RETRACE(결과·위기 · 답 받은 뒤)는 **비운다** · BACK(대분류·세분류 · 답 전)은 **남긴다**.
  */
 
-test("뒤로가기(RETRACE) — 결과에서 입력 화면으로 되짚고 글자를 남긴다", () => {
-  // ⛔ 위기 화면은 이 묶음에 넣지 않는다 — 거기서는 비운다(아래 검사 · 2026-10-06 사용자 결정).
-  for (const kind of [RESULT.OK, RESULT.EMPTY, RESULT.NO_MATCH]) {
+test("뒤로가기(RETRACE) — 결과에서 비우고, 「다시 적기」 버튼과 같은 상태에 선다", () => {
+  // 결과 종류를 가리지 않는다 — 위기 화면 예외는 없어졌다(10-06 → 10-08 번복).
+  for (const kind of [RESULT.OK, RESULT.CRISIS, RESULT.EMPTY, RESULT.NO_MATCH]) {
     let s = flowReducer(initialFlow(""), { type: FLOW.TYPE, text: "짜증나" });
     s = flowReducer(s, { type: FLOW.SUBMIT });
     s = flowReducer(s, { type: FLOW.ANSWER, outcome: { kind }, category: null });
-    const back = flowReducer(s, { type: FLOW.RETRACE });
+    const back = flowReducer(s, { type: FLOW.RETRACE, placeholder: "p" });
     assert.ok(inputBoxVisible(back), `${kind} → 뒤로가기가 입력 화면으로 가지 않았다`);
-    assert.equal(back.text, "짜증나", `${kind} → 뒤로가기가 글자를 지웠다 — RESET 계열을 탔다`);
-    assert.equal(back.result, null, `${kind} → 뒤로가기 뒤에 결과가 남았다`);
+    assert.equal(back.text, "", `${kind} → 결과를 본 뒤 뒤로가기에서 적었던 문장이 남았다`);
+    const viaButton = flowReducer(s, { type: FLOW.RESET, placeholder: "p" });
+    assert.deepEqual(back, viaButton, `${kind} → 뒤로가기와 「다시 적기」의 도착 상태가 다르다`);
   }
   // 골라서 찾기로 간 결과도 「초기 입력 화면」이다(안 ㄴ) — 고르던 대분류를 들고 오지 않는다.
   let s = flowReducer(initialFlow(""), { type: FLOW.TYPE, text: "불안해" });
   s = flowReducer(s, { type: FLOW.SWITCH_TO_PICKER });
   s = flowReducer(s, { type: FLOW.PICK_CATEGORY, category: CATEGORY });
   s = flowReducer(s, { type: FLOW.ANSWER, outcome: { kind: RESULT.OK }, category: null });
-  const back = flowReducer(s, { type: FLOW.RETRACE });
-  assert.ok(inputBoxVisible(back), "골라서 간 결과에서 직접 적기 화면으로 돌아오지 않았다");
+  const back = flowReducer(s, { type: FLOW.RETRACE, placeholder: "p" });
+  assert.deepEqual(
+    back,
+    flowReducer(s, { type: FLOW.RESET, placeholder: "p" }),
+    "골라서 간 결과에서 뒤로가기와 「다시 적기」의 도착 상태가 다르다",
+  );
   assert.equal(back.selectedCategory, null, "골라서 간 결과에서 대분류가 남았다");
-  assert.equal(back.text, "불안해", "골라서 간 결과에서 글자가 지워졌다");
 });
 
-test("★ 위기 화면에서의 뒤로가기는 글자를 **비운다** — 일반 결과와 다르다", () => {
-  // 2026-10-06 사용자 결정 · HANDOFF 2.146 ③.
-  //   ① 위기 화면의 기존 버튼(reset)이 이미 비운다 — 뒤로가기만 남기면 같은 화면에서
-  //      어떤 때는 남고 어떤 때는 사라진다.
-  //   ② 2026-08-25 결정(힘들어 적은 문장이 화면에 남는 것이 이 앱에 맞지 않다)이
-  //      가장 세게 적용되는 자리다. 「고쳐 쓰기」는 일반 결과의 이야기다.
-  // ⛔ 「일관성이 없다」고 위 묶음에 합치지 말 것 — 다른 것이 맞다.
-  let s = flowReducer(initialFlow(""), { type: FLOW.TYPE, text: "죽고 싶어" });
-  s = flowReducer(s, { type: FLOW.SUBMIT });
-  s = flowReducer(s, { type: FLOW.ANSWER, outcome: { kind: RESULT.CRISIS }, category: null });
-  const back = flowReducer(s, { type: FLOW.RETRACE });
-  assert.ok(inputBoxVisible(back), "위기 화면 → 뒤로가기가 입력 화면으로 가지 않았다");
-  assert.equal(back.text, "", "위기 화면 → 뒤로가기 뒤에 적었던 문장이 남았다");
-  assert.equal(back.result, null, "위기 화면 → 뒤로가기 뒤에 결과가 남았다");
-  // 버튼(reset)과 같은 곳에 같은 상태로 선다 — 둘의 차이를 사용자가 겪지 않는다.
-  const viaButton = flowReducer(s, { type: FLOW.RESET });
-  assert.deepEqual(back, viaButton, "위기 화면에서 뒤로가기와 버튼의 도착 상태가 다르다");
-});
-
-test("고장 주입: 위기 화면 갈래가 빠지면 문장이 남는다 — 위 검사가 그것을 본다", () => {
-  // 위기 갈래가 없던 첫 구현(543d675)을 그대로 재현한다.
+test("고장 주입: RETRACE가 글자를 남기면(543d675~dfbe172 동작) 위 검사가 그것을 본다", () => {
+  // 10-06의 「결과에서는 남긴다」 구현을 그대로 재현한다.
   const broken = (state, action) =>
     action.type === FLOW.RETRACE && state.phase === PHASE.RESULT
       ? { ...state, phase: PHASE.INPUT, mode: MODE.TEXT, result: null, selectedCategory: null }
       : flowReducer(state, action);
-  let s = broken(initialFlow(""), { type: FLOW.TYPE, text: "죽고 싶어" });
+  let s = broken(initialFlow(""), { type: FLOW.TYPE, text: "짜증나" });
   s = broken(s, { type: FLOW.SUBMIT });
-  s = broken(s, { type: FLOW.ANSWER, outcome: { kind: RESULT.CRISIS }, category: null });
+  s = broken(s, { type: FLOW.ANSWER, outcome: { kind: RESULT.OK }, category: null });
   s = broken(s, { type: FLOW.RETRACE });
-  assert.equal(s.text, "죽고 싶어", "고장을 주입했는데도 비어 있다 — 검사가 무엇도 못 본다");
+  assert.equal(s.text, "짜증나", "고장을 주입했는데도 비어 있다 — 검사가 무엇도 못 본다");
 });
 
-test("RETRACE는 결과 화면에서만 움직이고, 응답 행동으로 세지 않는다", () => {
+test("뒤로가기 STEP_BACK(세분류·대분류)은 글자를 **남긴다** — RETRACE와 함께 비우는 실수를 막는다", () => {
+  // 아직 앱이 답을 주기 전이다. 친 문장은 사용자의 것이다(FLOW.BACK · 지금 그대로).
+  let s = flowReducer(initialFlow(""), { type: FLOW.TYPE, text: "불안해" });
+  s = flowReducer(s, { type: FLOW.SWITCH_TO_PICKER });
+  s = flowReducer(s, { type: FLOW.PICK_CATEGORY, category: CATEGORY });
+  for (const where of ["세분류 → 대분류", "대분류 → 직접 적기"]) {
+    assert.equal(
+      backAction({ dailyVerse: null, showAbout: false, flow: s }),
+      BACK.STEP_BACK,
+      `${where}: 뒤로가기가 STEP_BACK이 아니다`,
+    );
+    s = flowReducer(s, { type: FLOW.BACK });
+    assert.equal(s.text, "불안해", `${where}: 아직 답 전인데 친 문장이 지워졌다`);
+  }
+  assert.ok(inputBoxVisible(s), "대분류에서 돌아와 직접 적기 화면이 아니다");
+});
+
+test("RETRACE는 결과 화면에서만 움직이고, 응답 행동 목록에는 넣지 않는다", () => {
   const typed = flowReducer(initialFlow(""), { type: FLOW.TYPE, text: "불안해" });
   const picker = flowReducer(typed, { type: FLOW.SWITCH_TO_PICKER });
   const loading = flowReducer(typed, { type: FLOW.SUBMIT });
   for (const [where, s] of [["입력", typed], ["고르기", picker], ["로딩", loading]]) {
     assert.equal(flowReducer(s, { type: FLOW.RETRACE }), s, `${where}에서 RETRACE가 상태를 바꿨다`);
   }
+  // ⚠ 결과 밖에서는 아무것도 안 하므로 응답 행동으로 세면 walkFlow가 응답 전 상태를
+  //   응답 뒤로 둔갑시킨다. 결과에서는 ANSWER가 이미 표를 세웠다.
   assert.ok(!ANSWER_ACTIONS.includes(FLOW.RETRACE), "RETRACE가 응답 행동으로 분류됐다");
-});
-
-test("고장 주입: 뒤로가기가 RESET을 타면 글자를 잃는다 — 위 검사가 그것을 본다", () => {
-  const broken = (state, action) =>
-    flowReducer(state, action.type === FLOW.RETRACE ? { type: FLOW.RESET } : action);
-  let s = broken(initialFlow(""), { type: FLOW.TYPE, text: "짜증나" });
-  s = broken(s, { type: FLOW.SUBMIT });
-  s = broken(s, { type: FLOW.ANSWER, outcome: { kind: RESULT.OK }, category: null });
-  s = broken(s, { type: FLOW.RETRACE });
-  assert.notEqual(s.text, "짜증나", "고장을 주입했는데도 글자가 남는다 — 검사가 무엇도 못 본다");
 });
 
 test("뒤로가기 판단표 — 덮개가 먼저, 그다음 흐름 (2.136 · 2.146)", () => {
