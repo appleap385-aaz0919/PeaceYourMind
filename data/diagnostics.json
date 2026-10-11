@@ -1,11 +1,11 @@
 {
-  "version": "2026-10-10T15:31:42Z",
-  "untagged_ratio": 0.636,
+  "version": "2026-10-11T00:21:14Z",
+  "untagged_ratio": 0.635,
   "unknown_ratio": 0.019,
   "unknown_kept": 35,
   "tabs_over_cap": [],
   "tab_max_exposed": 20,
-  "kept": 1878,
+  "kept": 1871,
   "themes_empty": [
     "self_control"
   ],
@@ -31,7 +31,7 @@
   "channels_zero_yield": [],
   "allowlist_size": 22,
   "theme_pool": {
-    "peace": 37,
+    "peace": 36,
     "trust": 29,
     "courage": 10,
     "self_control": 0,
