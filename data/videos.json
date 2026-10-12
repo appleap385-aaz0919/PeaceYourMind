@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-12T00:41:30Z",
+  "version": "2026-10-12T19:14:59Z",
   "subcategories": [
     {
       "id": "anxiety.restless",
@@ -280,20 +280,20 @@
           "source": "theme"
         },
         {
+          "videoId": "PP6aIJ-lGSY",
+          "title": "[1시간 연속듣기] 나로부터 시작되리(저 높은 하늘 위로) 피아노 CCM 연주 /Starting With Me Piano Instrumental (영어가사/lyrics)",
+          "channel": "Worship Flow 워십플로우",
+          "publishedAt": "2026-10-12T02:02:52Z",
+          "duration": "PT1H26S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
           "videoId": "6zbxFB6eT8Q",
           "title": "[1시간 연속듣기] 나 주의 도움 받고자 피아노 찬송가 연주/Jesus My Lord to Thee I Cry Piano Instrumental(가사/lyrics)",
           "channel": "Worship Flow 워십플로우",
           "publishedAt": "2026-10-03T01:29:14Z",
           "duration": "PT1H4M59S",
-          "media_type": "worship",
-          "source": "theme"
-        },
-        {
-          "videoId": "9wBeMoHtKSc",
-          "title": "[1시간 연속듣기] 보라 너희는 두려워 말고 피아노 CCM 연주/Behold, Don't be Afraid Piano Instrumental(영어가사/lyrics)",
-          "channel": "Worship Flow 워십플로우",
-          "publishedAt": "2026-09-25T00:00:36Z",
-          "duration": "PT1H2M22S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -316,29 +316,29 @@
           "source": "theme"
         },
         {
-          "videoId": "g2MST4u9Lfo",
-          "title": "[사랑의교회] 주 하나님 크시도다 - 호산나찬양대",
+          "videoId": "KXxOFnnAgkc",
+          "title": "[사랑의교회] 이것이 나의 간증이요 - 시온찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-06T04:29:38Z",
-          "duration": "PT4M48S",
+          "publishedAt": "2026-10-12T05:33:33Z",
+          "duration": "PT4M27S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "yvk2tfgs66g",
-          "title": "[사랑의교회] 괴로울 때 주님의 얼굴 보라 - 할렐루야찬양대",
+          "videoId": "Jssn4N2vn8w",
+          "title": "[사랑의교회] 주님을 찬양하라 - 할렐루야찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-05T05:06:19Z",
-          "duration": "PT4M32S",
+          "publishedAt": "2026-10-12T05:32:31Z",
+          "duration": "PT3M52S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "v5EG7y8NTq4",
-          "title": "[사랑의교회] 내가 산을 향하여 눈을 드니 - 영광찬양대",
+          "videoId": "LfiXd9v1-co",
+          "title": "[사랑의교회] 저 멀리 뵈는 나의 시온성 - 호산나찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-05T05:05:11Z",
-          "duration": "PT4M10S",
+          "publishedAt": "2026-10-12T05:31:58Z",
+          "duration": "PT4M45S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -966,15 +966,6 @@
           "source": "theme"
         },
         {
-          "videoId": "W9MBYK5SM4o",
-          "title": "[사랑의교회] 강하고 담대하라 - 소프라노 김순영, 메조 소프라노 김순희 (피아노: 최혜진 집사)",
-          "channel": "사랑의교회",
-          "publishedAt": "2026-09-07T05:22:53Z",
-          "duration": "PT4M30S",
-          "media_type": "worship",
-          "source": "theme"
-        },
-        {
           "videoId": "r74ssY04tMI",
           "title": "오 주 안에 내 믿음이 있네 + 주 안에서 기뻐해 + 주의 자녀로 산다는 것은 + 보라 너희는 두려워 말고 | 오륜교회 수요 오후예배 찬양 브릿지워십 (2026-08-12)",
           "channel": "오륜교회 oryunchurch",
@@ -989,6 +980,15 @@
           "channel": "우리들교회",
           "publishedAt": "2026-08-16T06:49:41Z",
           "duration": "PT21M16S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
+          "videoId": "W9MBYK5SM4o",
+          "title": "[사랑의교회] 강하고 담대하라 - 소프라노 김순영, 메조 소프라노 김순희 (피아노: 최혜진 집사)",
+          "channel": "사랑의교회",
+          "publishedAt": "2026-09-07T05:22:53Z",
+          "duration": "PT4M30S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -1101,11 +1101,11 @@
           "source": "theme"
         },
         {
-          "videoId": "ZvfOfREfAGg",
-          "title": "광주극동방송 찬송가 콘서트｜옹기장이 × 정자영 교수｜31일의 기록, 오늘 찬양이 되다 🎶",
-          "channel": "광주극동방송",
-          "publishedAt": "2026-08-28T00:42:01Z",
-          "duration": "PT2H13M39S",
+          "videoId": "A8SSJxbcez8",
+          "title": "성령의 리듬 | 옹기장이 40주년 카운트다운콘서트 2026",
+          "channel": "옹기장이선교단 Official",
+          "publishedAt": "2026-07-21T12:00:29Z",
+          "duration": "PT4M40S",
           "media_type": "worship",
           "source": "fallback"
         }
@@ -1183,6 +1183,15 @@
           "source": "theme"
         },
         {
+          "videoId": "PP6aIJ-lGSY",
+          "title": "[1시간 연속듣기] 나로부터 시작되리(저 높은 하늘 위로) 피아노 CCM 연주 /Starting With Me Piano Instrumental (영어가사/lyrics)",
+          "channel": "Worship Flow 워십플로우",
+          "publishedAt": "2026-10-12T02:02:52Z",
+          "duration": "PT1H26S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
           "videoId": "6zbxFB6eT8Q",
           "title": "[1시간 연속듣기] 나 주의 도움 받고자 피아노 찬송가 연주/Jesus My Lord to Thee I Cry Piano Instrumental(가사/lyrics)",
           "channel": "Worship Flow 워십플로우",
@@ -1197,15 +1206,6 @@
           "channel": "Worship Flow 워십플로우",
           "publishedAt": "2026-09-25T00:00:36Z",
           "duration": "PT1H2M22S",
-          "media_type": "worship",
-          "source": "theme"
-        },
-        {
-          "videoId": "SCpL02CKvw8",
-          "title": "[1시간 연속듣기] 만유의 주재 피아노 찬송가 연주/Fairest Lord Jesus Piano Hymns Instrumental (영어가사)",
-          "channel": "Worship Flow 워십플로우",
-          "publishedAt": "2026-09-14T00:23:00Z",
-          "duration": "PT1H25S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -1237,38 +1237,38 @@
           "source": "theme"
         },
         {
-          "videoId": "g2MST4u9Lfo",
-          "title": "[사랑의교회] 주 하나님 크시도다 - 호산나찬양대",
+          "videoId": "KXxOFnnAgkc",
+          "title": "[사랑의교회] 이것이 나의 간증이요 - 시온찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-06T04:29:38Z",
-          "duration": "PT4M48S",
+          "publishedAt": "2026-10-12T05:33:33Z",
+          "duration": "PT4M27S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "yvk2tfgs66g",
-          "title": "[사랑의교회] 괴로울 때 주님의 얼굴 보라 - 할렐루야찬양대",
+          "videoId": "Jssn4N2vn8w",
+          "title": "[사랑의교회] 주님을 찬양하라 - 할렐루야찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-05T05:06:19Z",
-          "duration": "PT4M32S",
+          "publishedAt": "2026-10-12T05:32:31Z",
+          "duration": "PT3M52S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "v5EG7y8NTq4",
-          "title": "[사랑의교회] 내가 산을 향하여 눈을 드니 - 영광찬양대",
+          "videoId": "LfiXd9v1-co",
+          "title": "[사랑의교회] 저 멀리 뵈는 나의 시온성 - 호산나찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-05T05:05:11Z",
-          "duration": "PT4M10S",
+          "publishedAt": "2026-10-12T05:31:58Z",
+          "duration": "PT4M45S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "s3JuoKBTccE",
-          "title": "[사랑의교회] 옷자락에서 전해지는 사랑 - 시온찬양대",
+          "videoId": "7Zpvdk7noX4",
+          "title": "[사랑의교회] 나는 I am - 영광찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-09-29T04:39:30Z",
-          "duration": "PT4M52S",
+          "publishedAt": "2026-10-12T05:30:42Z",
+          "duration": "PT3M39S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -1309,38 +1309,47 @@
           "source": "theme"
         },
         {
-          "videoId": "SN0XOZ0md0U",
-          "title": "서울대치순복음교회 한별 목사(CBS TV강단 461회) - [상속자] 기적이 일어나는 조건을 갖추라",
+          "videoId": "CjARfnt56zI",
+          "title": "[2026┃10┃08 명성교회 새벽기도회] 감추어진 하나님 l 김동민 목사 [C채널]",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-10-12T00:27:43Z",
+          "duration": "PT28M14S",
+          "media_type": "sermon",
+          "source": "fallback"
+        },
+        {
+          "videoId": "hyE7s2v-xkY",
+          "title": "우리들교회 김양재 목사(CBS 우리들 말씀 310회) - 말씀과 같이 되었더라",
           "channel": "CBS설교",
-          "publishedAt": "2026-10-11T15:00:32Z",
-          "duration": "PT24M32S",
+          "publishedAt": "2026-10-12T00:10:35Z",
+          "duration": "PT42M28S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "MFWf6bwoCjU",
-          "title": "다 해결하고 나서? 그런 날 오지 않아요 - 김관성 목사 설교 낮은담교회 : 갓피플TV [공식제휴]",
+          "videoId": "FZzDtTMHjuE",
+          "title": "세상에 없던 교회를 꿈꾸다! - 김병삼 목사 설교 만나교회 : 갓피플TV [공식제휴]",
           "channel": "갓피플TV",
-          "publishedAt": "2026-10-10T11:15:26Z",
-          "duration": "PT54M44S",
+          "publishedAt": "2026-10-10T00:30:01Z",
+          "duration": "PT44M35S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "Lc9u_r9j9to",
-          "title": "끝을 생각하며 살 때, 진정한 오늘을 산다 - 주경훈 목사 | 오륜교회 금요기도회 설교 (2026-10-09)",
-          "channel": "오륜교회 oryunchurch",
-          "publishedAt": "2026-10-09T14:30:38Z",
-          "duration": "PT1H25S",
+          "videoId": "OcAQLV8gXnk",
+          "title": "하나님의 손길을 구하는 삶에서 얼굴을 구하는 삶으로 l 원유경 목사 l 출애굽기 33장 12-23절ㅣ메신저스",
+          "channel": "CTS기독교TV",
+          "publishedAt": "2026-10-08T08:00:09Z",
+          "duration": "PT25M23S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "KNF7cgSwEag",
-          "title": "마귀 태클 피하기(10) 충성스러운 사탄, 사랑스러운 마귀 - 안호성 목사 설교 물맷돌중앙교회 : 갓피플TV [공식제휴]",
-          "channel": "갓피플TV",
-          "publishedAt": "2026-10-07T09:15:13Z",
-          "duration": "PT57M57S",
+          "videoId": "4MjE3ma5-9g",
+          "title": "특톡 영상 - 넷째 날 | 부끄러울 것이 없는 인정된 일꾼! 어와나!",
+          "channel": "분당우리교회",
+          "publishedAt": "2026-10-08T02:34:51Z",
+          "duration": "PT3M3S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -1354,20 +1363,20 @@
           "source": "fallback"
         },
         {
+          "videoId": "-OzFBQhRvjA",
+          "title": "은혜15 - 한창수목사 엠마오교회 주일설교 : 갓피플TV [공식제휴]",
+          "channel": "갓피플TV",
+          "publishedAt": "2026-10-05T09:15:11Z",
+          "duration": "PT44M30S",
+          "media_type": "sermon",
+          "source": "fallback"
+        },
+        {
           "videoId": "qrn4SQ5b_4c",
           "title": "김관성 목사 낮은담교회 주일예배 2026.10.4 \"다 해결하고 나서? 그런 날 오지 않아요\" 창세기 35:1-15",
           "channel": "낮은담교회",
           "publishedAt": "2026-10-04T16:04:53Z",
           "duration": "PT54M44S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "amP_RFJdRW8",
-          "title": "[2026┃9 | 23 명성교회 수요기도회] 병든 자에게 주시는 은혜 | 김하나 담임목사 [C채널]",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-10-02T10:30:30Z",
-          "duration": "PT52M16S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -1381,24 +1390,6 @@
           "source": "fallback"
         },
         {
-          "videoId": "sV4mulhLm9M",
-          "title": "[극동방송] Billy Kim's Message 김장환 목사 설교_260927",
-          "channel": "극동방송",
-          "publishedAt": "2026-10-01T20:00:37Z",
-          "duration": "PT24M46S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "4r-Yy_RvI40",
-          "title": "[274일차] 오바댜 1장, 요나 1~4장 (2026.10.1) | CGN과 함께 일-일 통독(우리말성경)",
-          "channel": "CGN 성경통독",
-          "publishedAt": "2026-09-30T20:00:16Z",
-          "duration": "PT13M52S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
           "videoId": "mlg5zzVACjw",
           "title": "신통하면 인통하고 인통하면 형통하다 l 김선교 선교사 l 에베소서 1장 2절ㅣ메신저스",
           "channel": "CTS기독교TV",
@@ -1408,11 +1399,11 @@
           "source": "fallback"
         },
         {
-          "videoId": "e8IJBeRIi5A",
-          "title": "2026-09-29 (화) | 네 하나님이 통치하신다 | 이사야 52장 7-9절 | 임예창 목사 | 분당우리교회 새벽기도회",
-          "channel": "분당우리교회",
-          "publishedAt": "2026-09-28T21:43:01Z",
-          "duration": "PT1H16M15S",
+          "videoId": "3-pKbUrW40E",
+          "title": "[아침예배] 무엇을 기도하나? (대상16:7-22)_베이직교회_강성훈 목사_20260928",
+          "channel": "베이직교회",
+          "publishedAt": "2026-09-27T22:11:11Z",
+          "duration": "PT42M1S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -1426,56 +1417,65 @@
           "source": "fallback"
         },
         {
-          "videoId": "UHl7xePXkso",
-          "title": "꿈의교회 실시간 _ 이예준 목사 설교 2026/9/27 _ 1부예배 \"성찬이 있는 예배\"",
-          "channel": "김학중 목사_꿈의교회 미디어교회",
-          "publishedAt": "2026-09-27T04:30:28Z",
-          "duration": "PT36M32S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "vTLfnqqQlhQ",
-          "title": "[사랑공동체 성경읽기] 요나 1~4장",
-          "channel": "사랑의교회",
-          "publishedAt": "2026-09-19T21:00:11Z",
-          "duration": "PT5M33S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "MqRBfVUjmTA",
-          "title": "[19일차] 시편 73~76편 | 듣다 보면 기도가 되는 40일 시편통독",
-          "channel": "CBSJOY",
-          "publishedAt": "2026-09-18T20:00:30Z",
-          "duration": "PT14M20S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "YBxflYNayHA",
-          "title": "[극동방송] Billy Kim's Message 김장환 목사 설교_260913",
+          "videoId": "7cYwJ4NDSo0",
+          "title": "[극동방송] Billy Kim's Message 김장환 목사 설교_260920",
           "channel": "극동방송",
-          "publishedAt": "2026-09-17T20:00:28Z",
-          "duration": "PT24M21S",
+          "publishedAt": "2026-09-24T20:00:33Z",
+          "duration": "PT24M33S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "O2wHndcpyJY",
-          "title": "[사역자설교] 거룩을 위한 명령 / 신명기 21:22-22:5 - 박재현 목사 | 2026.09.16",
+          "videoId": "n5m75y1M_As",
+          "title": "[사역자설교] 의무를 다 행할 것이요 / 신명기 25:1-10 - 김성우 목사 | 2026.09.23",
           "channel": "우리들교회",
-          "publishedAt": "2026-09-17T00:33:33Z",
-          "duration": "PT1H3M39S",
+          "publishedAt": "2026-09-24T00:58:09Z",
+          "duration": "PT1H1M51S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "_57WQQpbcPI",
-          "title": "[아침예배] 사랑하는 이에게 주시는 것 (시편 119:121-136)_베이직교회_강성훈 목사_20260909",
+          "videoId": "q-cY9lM7RKg",
+          "title": "[262일차] 에스겔 45~48장 (2026.9.19) | CGN과 함께 일-일 통독(우리말성경)",
+          "channel": "CGN 성경통독",
+          "publishedAt": "2026-09-18T20:00:25Z",
+          "duration": "PT20M38S",
+          "media_type": "sermon",
+          "source": "fallback"
+        },
+        {
+          "videoId": "t9VjB3Uq8LU",
+          "title": "[사랑공동체 성경읽기] 요엘 1~3장",
+          "channel": "사랑의교회",
+          "publishedAt": "2026-09-15T21:00:19Z",
+          "duration": "PT8M31S",
+          "media_type": "sermon",
+          "source": "fallback"
+        },
+        {
+          "videoId": "2V7TXNVVn14",
+          "title": "[14일차] 시편 54~57편 | 듣다 보면 기도가 되는 40일 시편통독",
+          "channel": "CBSJOY",
+          "publishedAt": "2026-09-13T20:00:27Z",
+          "duration": "PT13M19S",
+          "media_type": "sermon",
+          "source": "fallback"
+        },
+        {
+          "videoId": "CxQu62u4DAc",
+          "title": "[아침예배] 신앙을 해독하다 (겔 45:1-25)_베이직교회_김희윤 목사_20260824",
           "channel": "베이직교회",
-          "publishedAt": "2026-09-08T22:09:35Z",
-          "duration": "PT41M20S",
+          "publishedAt": "2026-08-23T22:19:24Z",
+          "duration": "PT46M36S",
+          "media_type": "sermon",
+          "source": "fallback"
+        },
+        {
+          "videoId": "5qO8cZctHhY",
+          "title": "서민욱 목사 낮은담교회 새벽만나 2026.8.18 \"누가 내 가족인가?\" 누가복음 8:19-21",
+          "channel": "낮은담교회",
+          "publishedAt": "2026-08-17T21:56:41Z",
+          "duration": "PT17M46S",
           "media_type": "sermon",
           "source": "fallback"
         }
@@ -1490,6 +1490,15 @@
       ],
       "media_default": "sermon",
       "videos": [
+        {
+          "videoId": "TIOGj-E4d7U",
+          "title": "기도를 필사적으로 방해하는 마귀를 대적하라(2) : 너는 부르짖으라 시리즈 181 - 박한수 목사 금요예배 설교 제자광성교회 : 갓피플TV [공식제휴]",
+          "channel": "갓피플TV",
+          "publishedAt": "2026-10-12T09:15:04Z",
+          "duration": "PT1H26M11S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
         {
           "videoId": "MesLTS4bmZk",
           "title": "기도를 필사적으로 방해하는 마귀를 대적하라 : 너는 부르짖으라 시리즈 180 - 박한수 목사 금요예배 설교 제자광성교회 : 갓피플TV [공식제휴]",
@@ -1590,24 +1599,6 @@
           "source": "theme"
         },
         {
-          "videoId": "ZHLuD5SsEtY",
-          "title": "제자광성교회 박한수 목사 | 너는 부르짖으라(175) 하나님이 받으시는 기도 [C채널] 금요성령집회",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-09-15T12:00:36Z",
-          "duration": "PT44M10S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "ADVNQn2r0uI",
-          "title": "기도하는 사람인가, 기도의 사람인가?(1) : 너는 부르짖으라 시리즈 176 - 박한수 목사 금요예배 설교 제자광성교회 : 갓피플TV [공식제휴]",
-          "channel": "갓피플TV",
-          "publishedAt": "2026-09-02T09:15:24Z",
-          "duration": "PT1H8M30S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
           "videoId": "30Vn45G2ItM",
           "title": "2026-07-31 (금) | 가장 어두운 시간에 가장 크게 부르짖으라 | 시편 5편 1-7절 | 박기범 목사 | 분당우리교회 새벽기도회",
           "channel": "분당우리교회",
@@ -1635,20 +1626,20 @@
           "source": "theme"
         },
         {
-          "videoId": "zixMZUCitQE",
-          "title": "김관성 목사  낮은담교회 새벽만나   2026. 7. 23 “보이지 않는 용서” 누가복음 5:17-26",
-          "channel": "낮은담교회",
-          "publishedAt": "2026-07-22T21:39:48Z",
-          "duration": "PT13M51S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
           "videoId": "xUKvqyW0ix8",
           "title": "2026-08-29 (토) | 큐티인 | 신명기 12:32-13:11 | 용서 없이 악을 제하라 | 황송영 평원지기 | 우리들교회 새벽기도회",
           "channel": "우리들교회",
           "publishedAt": "2026-08-28T21:23:21Z",
           "duration": "PT45M51S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "zixMZUCitQE",
+          "title": "김관성 목사  낮은담교회 새벽만나   2026. 7. 23 “보이지 않는 용서” 누가복음 5:17-26",
+          "channel": "낮은담교회",
+          "publishedAt": "2026-07-22T21:39:48Z",
+          "duration": "PT13M51S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -1667,6 +1658,15 @@
           "channel": "CGN 생명의 삶",
           "publishedAt": "2026-07-16T15:00:31Z",
           "duration": "PT7M55S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "ts-c905a-L0",
+          "title": "제자광성교회 박한수 목사 | 너는 부르짖으라(179) 양의 기도를 들으시는 목자 [C채널] 금요성령집회",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-10-12T17:00:04Z",
+          "duration": "PT43M50S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -1698,20 +1698,29 @@
           "source": "theme"
         },
         {
-          "videoId": "otqvwoH5tMo",
-          "title": "특송 - 주님의 임재 앞에서, 어린이 군대 | 주일학교 어와나",
+          "videoId": "BiYUMJ4KYUk",
+          "title": "2026 가을특새 찬양 - 셋째 날",
           "channel": "분당우리교회",
-          "publishedAt": "2026-10-07T03:19:15Z",
-          "duration": "PT9M57S",
+          "publishedAt": "2026-10-07T03:19:29Z",
+          "duration": "PT14M27S",
           "media_type": "worship",
           "source": "fallback"
         },
         {
-          "videoId": "IWzvN36-hbg",
-          "title": "[사랑의교회] 나의 생명 되신 주 - 소프라노 박은영 (첼로: 윤보연 집사, 피아노: 손유리 집사)",
+          "videoId": "rwdrC33Uiz0",
+          "title": "방글라데시 선교후원 찬양콘서트 「그의 길을 따라」",
+          "channel": "CTS기독교TV",
+          "publishedAt": "2026-10-06T12:00:14Z",
+          "duration": "PT53M27S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "nMDxzeAdxpQ",
+          "title": "[사랑의교회] 예수는 나의 힘이요/하늘 위에 주님 밖에/예수 우리 왕이여",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-05T05:05:42Z",
-          "duration": "PT3M3S",
+          "publishedAt": "2026-10-06T04:31:23Z",
+          "duration": "PT10M20S",
           "media_type": "worship",
           "source": "fallback"
         },
@@ -1725,47 +1734,38 @@
           "source": "fallback"
         },
         {
-          "videoId": "pjQGawxWs4M",
-          "title": "주의 친절한 팔에 안기세 | 제예희 인도자 인도 | 꿈의교회 예배실황",
-          "channel": "김학중 목사_꿈의교회 미디어교회",
-          "publishedAt": "2026-09-26T11:35:12Z",
-          "duration": "PT4M2S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "dbLmXAV89AI",
-          "title": "참 아름다워라 + 오 주여 나의 마음이 + 주의 친절한 팔에 안기세 + 내 영혼은 안전합니다 + 내 평생에 가는 길 + 모든 상황 속에서  | 제예희 인도자ㅣ꿈의교회 예배실황",
-          "channel": "김학중 목사_꿈의교회 미디어교회",
-          "publishedAt": "2026-09-26T08:12:24Z",
-          "duration": "PT24M7S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "6RFzUSeAGJE",
-          "title": "2026_0917ㅣ어노인팅목요예배ㅣ인도_ 박기범",
+          "videoId": "aGfO-7i4Si0",
+          "title": "사랑의 노래 드리네ㅣANOINTING CLIP",
           "channel": "ANOINTING",
-          "publishedAt": "2026-09-23T09:00:35Z",
-          "duration": "PT1H54M33S",
+          "publishedAt": "2026-09-25T09:00:21Z",
+          "duration": "PT6M31S",
           "media_type": "worship",
           "source": "fallback"
         },
         {
-          "videoId": "v-Y9UUfb9aU",
-          "title": "[Full] CTS스페셜 '이순희 2000곡 창작기념 찬양콘서트' 1부ㅣ백송교회ㅣ1부 9월 21일 (월)",
+          "videoId": "y1lVTQPDGnE",
+          "title": "[Full] CTS스페셜 '이순희 2000곡 창작기념 찬양콘서트' 2부ㅣ백송교회ㅣ9월 22일 (화)",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-09-22T02:45:19Z",
-          "duration": "PT51M49S",
+          "publishedAt": "2026-09-22T06:00:08Z",
+          "duration": "PT53M8S",
           "media_type": "worship",
           "source": "fallback"
         },
         {
-          "videoId": "opTzxYpCwk8",
-          "title": "[사랑의교회] 누군가 널 위해 기도하네 - 소프라노 신예은 (첼로: 윤보연 집사, 피아노: 손유리 집사)",
+          "videoId": "zRoaehkJLp0",
+          "title": "은혜로다 (What an Amazing Grace) | 윤시영 간사 인도 | 꿈의교회 예배실황",
+          "channel": "김학중 목사_꿈의교회 미디어교회",
+          "publishedAt": "2026-09-22T02:45:13Z",
+          "duration": "PT4M12S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "B8NsTpysVJ4",
+          "title": "[사랑의교회] 죄에서 자유를 얻게 함은/나의 가는 길/날 자녀라 하시네",
           "channel": "사랑의교회",
-          "publishedAt": "2026-09-21T05:16:03Z",
-          "duration": "PT3M15S",
+          "publishedAt": "2026-09-22T02:41:23Z",
+          "duration": "PT11M37S",
           "media_type": "worship",
           "source": "fallback"
         },
@@ -1824,6 +1824,15 @@
           "source": "fallback"
         },
         {
+          "videoId": "WWgezZmexz0",
+          "title": "[찬양만] 라이브로 듣는 옹기장이 레전드 명곡!! | 옹기장이 40주년 카운트다운 콘서트 2026",
+          "channel": "옹기장이선교단 Official",
+          "publishedAt": "2026-08-28T23:45:06Z",
+          "duration": "PT22M16S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
           "videoId": "ZvfOfREfAGg",
           "title": "광주극동방송 찬송가 콘서트｜옹기장이 × 정자영 교수｜31일의 기록, 오늘 찬양이 되다 🎶",
           "channel": "광주극동방송",
@@ -1833,20 +1842,11 @@
           "source": "fallback"
         },
         {
-          "videoId": "XNVhg688J2o",
-          "title": "부를 때마다 감사 | 옹기장이 40주년 카운트다운 콘서트 2026",
+          "videoId": "iFPKML8RxZA",
+          "title": "할렐루야 존귀하신 주 | 옹기장이 40주년 카운트다운콘서트 2026",
           "channel": "옹기장이선교단 Official",
-          "publishedAt": "2026-08-25T08:30:26Z",
-          "duration": "PT5M4S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "05GLD2hPmWc",
-          "title": "주 여호와는 나의 힘 & 찬송할 수 있을 때 | 옹기장이 40주년 카운트다운 콘서트 2026",
-          "channel": "옹기장이선교단 Official",
-          "publishedAt": "2026-07-27T12:30:08Z",
-          "duration": "PT3M54S",
+          "publishedAt": "2026-08-05T11:08:39Z",
+          "duration": "PT6M45S",
           "media_type": "worship",
           "source": "fallback"
         }
@@ -2158,38 +2158,29 @@
           "source": "theme"
         },
         {
-          "videoId": "rQsu6zZVP6s",
-          "title": "분당우리교회 주일 찬양 | 2026-09-27",
+          "videoId": "hdienojDVcQ",
+          "title": "2026 가을특새 찬양 - 첫째 날",
           "channel": "분당우리교회",
-          "publishedAt": "2026-09-30T08:33:48Z",
-          "duration": "PT14M45S",
+          "publishedAt": "2026-10-04T22:43:13Z",
+          "duration": "PT14M4S",
           "media_type": "worship",
           "source": "fallback"
         },
         {
-          "videoId": "MT5PDpfXp5c",
-          "title": "지극히 높으신 주ㅣANOINTING CLIP",
+          "videoId": "3q0M5WaUH1A",
+          "title": "은밀한 곳 조용한 곳에ㅣANOINTING CLIP",
           "channel": "ANOINTING",
-          "publishedAt": "2026-09-28T09:00:22Z",
-          "duration": "PT9M2S",
+          "publishedAt": "2026-10-02T09:00:29Z",
+          "duration": "PT4M28S",
           "media_type": "worship",
           "source": "fallback"
         },
         {
-          "videoId": "dbLmXAV89AI",
-          "title": "참 아름다워라 + 오 주여 나의 마음이 + 주의 친절한 팔에 안기세 + 내 영혼은 안전합니다 + 내 평생에 가는 길 + 모든 상황 속에서  | 제예희 인도자ㅣ꿈의교회 예배실황",
-          "channel": "김학중 목사_꿈의교회 미디어교회",
-          "publishedAt": "2026-09-26T08:12:24Z",
-          "duration": "PT24M7S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "y1lVTQPDGnE",
-          "title": "[Full] CTS스페셜 '이순희 2000곡 창작기념 찬양콘서트' 2부ㅣ백송교회ㅣ9월 22일 (화)",
-          "channel": "CTS기독교TV",
-          "publishedAt": "2026-09-22T06:00:08Z",
-          "duration": "PT53M8S",
+          "videoId": "aiy6VU0tSnw",
+          "title": "[CCM 𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 있는 모습 그대로, 주님 안에서 나를 찾아가는 시간🎧| 찬양 모음 | 제이어스, 수상한거리, WELOVE, 김윤진, 어노인팅",
+          "channel": "CBS설교",
+          "publishedAt": "2026-10-01T08:56:34Z",
+          "duration": "PT27M55S",
           "media_type": "worship",
           "source": "fallback"
         },
@@ -2219,6 +2210,15 @@
           "duration": "PT22M5S",
           "media_type": "worship",
           "source": "fallback"
+        },
+        {
+          "videoId": "aMDDUECapmk",
+          "title": "어린 다윗이 보인 찬양의 열정, 우리에게도 있습니다! | 공항벧엘교회 CBS 장로합창단 초청연주회 | CBS 스페셜",
+          "channel": "CBSJOY",
+          "publishedAt": "2026-09-01T03:00:08Z",
+          "duration": "PT51M49S",
+          "media_type": "worship",
+          "source": "fallback"
         }
       ]
     },
@@ -2230,15 +2230,6 @@
       ],
       "media_default": "sermon",
       "videos": [
-        {
-          "videoId": "SRnHaKRyPno",
-          "title": "그의 마음을 따르는 사람 1 : 조용한 혁명┃한소망교회 최봉규 목사 [C채널] 한소망비전워십",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-08-18T06:08:18Z",
-          "duration": "PT50M5S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
         {
           "videoId": "9buK09GIzlE",
           "title": "소망교회 김경진 목사(CBS 소망의 말씀 346회) - 세대를 넘어 함께하시는 하나님",
@@ -2357,6 +2348,15 @@
           "source": "theme"
         },
         {
+          "videoId": "hQupIYL9KGw",
+          "title": "청운교회 이필산 목사 | 아직도 소망이 있나니 [C채널] 비전메시지",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-08-21T03:07:01Z",
+          "duration": "PT50M7S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
           "videoId": "p7PYNKCEDEo",
           "title": "주 예수 나의 산 소망 - 주경훈 목사 | 오륜교회 금요기도회 설교 (2026-09-25)",
           "channel": "오륜교회 oryunchurch",
@@ -2402,11 +2402,11 @@
           "source": "theme"
         },
         {
-          "videoId": "hQupIYL9KGw",
-          "title": "청운교회 이필산 목사 | 아직도 소망이 있나니 [C채널] 비전메시지",
+          "videoId": "SRnHaKRyPno",
+          "title": "그의 마음을 따르는 사람 1 : 조용한 혁명┃한소망교회 최봉규 목사 [C채널] 한소망비전워십",
           "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-08-21T03:07:01Z",
-          "duration": "PT50M7S",
+          "publishedAt": "2026-08-18T06:08:18Z",
+          "duration": "PT50M5S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -2601,15 +2601,6 @@
       "media_default": "sermon",
       "videos": [
         {
-          "videoId": "hQupIYL9KGw",
-          "title": "청운교회 이필산 목사 | 아직도 소망이 있나니 [C채널] 비전메시지",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-08-21T03:07:01Z",
-          "duration": "PT50M7S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
           "videoId": "SRnHaKRyPno",
           "title": "그의 마음을 따르는 사람 1 : 조용한 혁명┃한소망교회 최봉규 목사 [C채널] 한소망비전워십",
           "channel": "C채널방송 : 설교",
@@ -2660,6 +2651,15 @@
           "channel": "CBS설교",
           "publishedAt": "2026-09-14T04:58:36Z",
           "duration": "PT24M39S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "1JMDrluJWLw",
+          "title": "무엇이 우리를 화목하게 할까?┃한소망교회 최봉규 목사 [C채널] 한소망비전워십",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-09-29T15:00:14Z",
+          "duration": "PT54M3S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -2971,6 +2971,24 @@
       "media_default": "sermon",
       "videos": [
         {
+          "videoId": "9vpfr0iRTRY",
+          "title": "제자광성교회 박한수 목사 | 너는 부르짖으라(177) 기도의 사람인가?(2) [C채널] 금요성령집회",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-09-22T06:45:59Z",
+          "duration": "PT43M8S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "yyacT0mtGPo",
+          "title": "나는 기도의 사람인가?(2) : 너는 부르짖으라 시리즈 177 - 박한수 목사 금요예배 설교 제자광성교회 : 갓피플TV [공식제휴]",
+          "channel": "갓피플TV",
+          "publishedAt": "2026-09-07T09:15:20Z",
+          "duration": "PT1H27M51S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
           "videoId": "4nZrAiB6O80",
           "title": "제자광성교회 박한수 목사 | 너는 부르짖으라(176) 기도하는 사람인가, 기도의 사람인가?(1) [C채널] 금요성령집회",
           "channel": "C채널방송 : 설교",
@@ -2989,15 +3007,6 @@
           "source": "theme"
         },
         {
-          "videoId": "ADVNQn2r0uI",
-          "title": "기도하는 사람인가, 기도의 사람인가?(1) : 너는 부르짖으라 시리즈 176 - 박한수 목사 금요예배 설교 제자광성교회 : 갓피플TV [공식제휴]",
-          "channel": "갓피플TV",
-          "publishedAt": "2026-09-02T09:15:24Z",
-          "duration": "PT1H8M30S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
           "videoId": "30Vn45G2ItM",
           "title": "2026-07-31 (금) | 가장 어두운 시간에 가장 크게 부르짖으라 | 시편 5편 1-7절 | 박기범 목사 | 분당우리교회 새벽기도회",
           "channel": "분당우리교회",
@@ -3012,15 +3021,6 @@
           "channel": "CBS설교",
           "publishedAt": "2026-09-08T15:00:11Z",
           "duration": "PT25M1S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "4oxkqfAOQIo",
-          "title": "삼손(6) : 부르짖는 자의 샘 [김하나 목사의 말씀 강해] 2023.02.12 [C채널]",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-08-21T05:26:31Z",
-          "duration": "PT40M46S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -3057,6 +3057,24 @@
           "channel": "CTS기독교TV",
           "publishedAt": "2026-10-06T22:00:12Z",
           "duration": "PT42M41S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "ts-c905a-L0",
+          "title": "제자광성교회 박한수 목사 | 너는 부르짖으라(179) 양의 기도를 들으시는 목자 [C채널] 금요성령집회",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-10-12T17:00:04Z",
+          "duration": "PT43M50S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "TIOGj-E4d7U",
+          "title": "기도를 필사적으로 방해하는 마귀를 대적하라(2) : 너는 부르짖으라 시리즈 181 - 박한수 목사 금요예배 설교 제자광성교회 : 갓피플TV [공식제휴]",
+          "channel": "갓피플TV",
+          "publishedAt": "2026-10-12T09:15:04Z",
+          "duration": "PT1H26M11S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -3106,29 +3124,11 @@
           "source": "theme"
         },
         {
-          "videoId": "9vpfr0iRTRY",
-          "title": "제자광성교회 박한수 목사 | 너는 부르짖으라(177) 기도의 사람인가?(2) [C채널] 금요성령집회",
+          "videoId": "4oxkqfAOQIo",
+          "title": "삼손(6) : 부르짖는 자의 샘 [김하나 목사의 말씀 강해] 2023.02.12 [C채널]",
           "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-09-22T06:45:59Z",
-          "duration": "PT43M8S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "yyacT0mtGPo",
-          "title": "나는 기도의 사람인가?(2) : 너는 부르짖으라 시리즈 177 - 박한수 목사 금요예배 설교 제자광성교회 : 갓피플TV [공식제휴]",
-          "channel": "갓피플TV",
-          "publishedAt": "2026-09-07T09:15:20Z",
-          "duration": "PT1H27M51S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "Z0__DbPYct0",
-          "title": "✨ 듣기만 해도 마음이 편안해지는 성경구절 12가지 #성경 #말씀 #위로 #평안 #수험생 #기도 #극동방송",
-          "channel": "광주극동방송",
-          "publishedAt": "2025-11-12T12:39:55Z",
-          "duration": "PT3M43S",
+          "publishedAt": "2026-08-21T05:26:31Z",
+          "duration": "PT40M46S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -3148,6 +3148,15 @@
           "publishedAt": "2026-09-17T00:24:18Z",
           "duration": "PT27M6S",
           "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "PP6aIJ-lGSY",
+          "title": "[1시간 연속듣기] 나로부터 시작되리(저 높은 하늘 위로) 피아노 CCM 연주 /Starting With Me Piano Instrumental (영어가사/lyrics)",
+          "channel": "Worship Flow 워십플로우",
+          "publishedAt": "2026-10-12T02:02:52Z",
+          "duration": "PT1H26S",
+          "media_type": "worship",
           "source": "theme"
         },
         {
@@ -3241,11 +3250,29 @@
           "source": "fallback"
         },
         {
-          "videoId": "_dEnCvgoKpw",
-          "title": "특송 - 주가 지으신 이 날에, 춤추는 세대 | 청소년",
+          "videoId": "ckKZI0a7YJ4",
+          "title": "2026 가을특새 찬양 - 여섯째 날",
           "channel": "분당우리교회",
-          "publishedAt": "2026-10-10T03:09:18Z",
-          "duration": "PT6M42S",
+          "publishedAt": "2026-10-10T03:09:21Z",
+          "duration": "PT12M39S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "LetNhK6LiFM",
+          "title": "찬양하는 나의 삶 | 옹기장이 40주년 카운트다운콘서트 2026",
+          "channel": "옹기장이선교단 Official",
+          "publishedAt": "2026-10-07T13:32:01Z",
+          "duration": "PT4M13S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "rwdrC33Uiz0",
+          "title": "방글라데시 선교후원 찬양콘서트 「그의 길을 따라」",
+          "channel": "CTS기독교TV",
+          "publishedAt": "2026-10-06T12:00:14Z",
+          "duration": "PT53M27S",
           "media_type": "worship",
           "source": "fallback"
         },
@@ -3259,29 +3286,11 @@
           "source": "fallback"
         },
         {
-          "videoId": "FWf4sGgHfKY",
-          "title": "옹기장이 축복송 메들리 | 옹기장이 40주년 카운트다운 콘서트 2026",
-          "channel": "옹기장이선교단 Official",
-          "publishedAt": "2026-10-04T13:58:10Z",
-          "duration": "PT6M12S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "aiy6VU0tSnw",
-          "title": "[CCM 𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 있는 모습 그대로, 주님 안에서 나를 찾아가는 시간🎧| 찬양 모음 | 제이어스, 수상한거리, WELOVE, 김윤진, 어노인팅",
-          "channel": "CBS설교",
-          "publishedAt": "2026-10-01T08:56:34Z",
-          "duration": "PT27M55S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "v-Y9UUfb9aU",
-          "title": "[Full] CTS스페셜 '이순희 2000곡 창작기념 찬양콘서트' 1부ㅣ백송교회ㅣ1부 9월 21일 (월)",
-          "channel": "CTS기독교TV",
-          "publishedAt": "2026-09-22T02:45:19Z",
-          "duration": "PT51M49S",
+          "videoId": "SLdaxGDVaqM",
+          "title": "[사랑의교회] 나를 통하여 - 보컬 신예림 (피아노: 장혜리 성도)",
+          "channel": "사랑의교회",
+          "publishedAt": "2026-10-05T05:07:24Z",
+          "duration": "PT3M19S",
           "media_type": "worship",
           "source": "fallback"
         },
@@ -3295,29 +3304,20 @@
           "source": "fallback"
         },
         {
-          "videoId": "tuRdoviftYc",
-          "title": "[사랑의교회] 충만 - 테너 이정명 (피아노: 최혜진 집사)",
-          "channel": "사랑의교회",
-          "publishedAt": "2026-09-07T05:22:00Z",
-          "duration": "PT3M16S",
+          "videoId": "3GTw_7gUV1o",
+          "title": "CCM 오디션에 지원자만 1,600명? 이거 됩니다 (w. 김영우, 백승남, 여니엘, 김수지, 김도현) | 힐링보이스 스페셜토크",
+          "channel": "CGN",
+          "publishedAt": "2026-09-13T08:00:27Z",
+          "duration": "PT1H1M3S",
           "media_type": "worship",
           "source": "fallback"
         },
         {
-          "videoId": "aMDDUECapmk",
-          "title": "어린 다윗이 보인 찬양의 열정, 우리에게도 있습니다! | 공항벧엘교회 CBS 장로합창단 초청연주회 | CBS 스페셜",
-          "channel": "CBSJOY",
-          "publishedAt": "2026-09-01T03:00:08Z",
-          "duration": "PT51M49S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "8Ph3rkv6Z1E",
-          "title": "Thank You & Creditㅣ어노인팅예배캠프2026 \"WELCOME\" ",
+          "videoId": "oj2AjOC0uvc",
+          "title": "2026_0827ㅣ어노인팅목요예배ㅣ인도_ 소병찬 ",
           "channel": "ANOINTING",
-          "publishedAt": "2026-08-31T14:49:07Z",
-          "duration": "PT4M46S",
+          "publishedAt": "2026-09-02T09:00:12Z",
+          "duration": "PT2H19S",
           "media_type": "worship",
           "source": "fallback"
         },
@@ -3342,6 +3342,24 @@
       "media_default": "worship",
       "videos": [
         {
+          "videoId": "w2BAFw9TjSg",
+          "title": "연동교회 김주용 목사(TV강단 411회) - 새 영으로 읽는 에스겔 (21) 엎드려 부르짖는 중보자",
+          "channel": "CBS설교",
+          "publishedAt": "2026-10-02T15:00:35Z",
+          "duration": "PT24M58S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "ZtnmnRW66WE",
+          "title": "제자광성교회 박한수 목사 | 너는 부르짖으라(178) 기도의 사람(3) [C채널] 금요성령집회",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-09-28T21:00:01Z",
+          "duration": "PT42M8S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
           "videoId": "yrj-kmavptA",
           "title": "기도의 사람(3) : 너는 부르짖으라 시리즈 178 - 박한수 목사 금요예배 설교 제자광성교회 : 갓피플TV [공식제휴]",
           "channel": "갓피플TV",
@@ -3365,24 +3383,6 @@
           "channel": "갓피플TV",
           "publishedAt": "2026-09-07T09:15:20Z",
           "duration": "PT1H27M51S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "4nZrAiB6O80",
-          "title": "제자광성교회 박한수 목사 | 너는 부르짖으라(176) 기도하는 사람인가, 기도의 사람인가?(1) [C채널] 금요성령집회",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-09-18T10:00:18Z",
-          "duration": "PT43M28S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "ADVNQn2r0uI",
-          "title": "기도하는 사람인가, 기도의 사람인가?(1) : 너는 부르짖으라 시리즈 176 - 박한수 목사 금요예배 설교 제자광성교회 : 갓피플TV [공식제휴]",
-          "channel": "갓피플TV",
-          "publishedAt": "2026-09-02T09:15:24Z",
-          "duration": "PT1H8M30S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -3450,11 +3450,29 @@
           "source": "theme"
         },
         {
+          "videoId": "ts-c905a-L0",
+          "title": "제자광성교회 박한수 목사 | 너는 부르짖으라(179) 양의 기도를 들으시는 목자 [C채널] 금요성령집회",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-10-12T17:00:04Z",
+          "duration": "PT43M50S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
           "videoId": "PQ3gLYISZi4",
           "title": "어떤 일꾼을 찾으실까?┃한소망교회 최봉규 목사 [C채널] 한소망비전워십",
           "channel": "C채널방송 : 설교",
           "publishedAt": "2026-10-06T22:00:11Z",
           "duration": "PT43M1S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "TIOGj-E4d7U",
+          "title": "기도를 필사적으로 방해하는 마귀를 대적하라(2) : 너는 부르짖으라 시리즈 181 - 박한수 목사 금요예배 설교 제자광성교회 : 갓피플TV [공식제휴]",
+          "channel": "갓피플TV",
+          "publishedAt": "2026-10-12T09:15:04Z",
+          "duration": "PT1H26M11S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -3486,20 +3504,11 @@
           "source": "theme"
         },
         {
-          "videoId": "w2BAFw9TjSg",
-          "title": "연동교회 김주용 목사(TV강단 411회) - 새 영으로 읽는 에스겔 (21) 엎드려 부르짖는 중보자",
-          "channel": "CBS설교",
-          "publishedAt": "2026-10-02T15:00:35Z",
-          "duration": "PT24M58S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "ZtnmnRW66WE",
-          "title": "제자광성교회 박한수 목사 | 너는 부르짖으라(178) 기도의 사람(3) [C채널] 금요성령집회",
+          "videoId": "1JMDrluJWLw",
+          "title": "무엇이 우리를 화목하게 할까?┃한소망교회 최봉규 목사 [C채널] 한소망비전워십",
           "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-09-28T21:00:01Z",
-          "duration": "PT42M8S",
+          "publishedAt": "2026-09-29T15:00:14Z",
+          "duration": "PT54M3S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -3513,20 +3522,20 @@
           "source": "theme"
         },
         {
-          "videoId": "wmZA3InKSgY",
-          "title": "마귀에게 틈을 주지 맙시다┃한소망교회 최봉규 목사 [C채널] 한소망비전워십",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-09-23T02:00:08Z",
-          "duration": "PT35M15S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
           "videoId": "nE61CJ1Rv8E",
           "title": "[𝐂𝐂𝐌 𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 하늘 소망을 품으며 | 피아노 찬양 | [4시간]",
           "channel": "택피아노 | TAEK PIANO",
           "publishedAt": "2026-10-08T12:08:27Z",
           "duration": "PT4H2M53S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
+          "videoId": "PP6aIJ-lGSY",
+          "title": "[1시간 연속듣기] 나로부터 시작되리(저 높은 하늘 위로) 피아노 CCM 연주 /Starting With Me Piano Instrumental (영어가사/lyrics)",
+          "channel": "Worship Flow 워십플로우",
+          "publishedAt": "2026-10-12T02:02:52Z",
+          "duration": "PT1H26S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -3585,6 +3594,15 @@
           "source": "theme"
         },
         {
+          "videoId": "fjnhvw_BI1M",
+          "title": "[CCM 𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 가을에 다시 부르는 찬양🎧 | 위로 찬양 | 김대환, 피아워십, 브라이언킴, 마커스워십, 어노인팅",
+          "channel": "CBS설교",
+          "publishedAt": "2026-09-10T08:33:33Z",
+          "duration": "PT25M57S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
           "videoId": "a6PBVBMe_Mw",
           "title": "[CCM 𝐏𝐥𝐚𝐲𝐥𝐢st] 지친 삶에 다가와 곁을 지켜주시는 주님의 음성 🎧 | 마음의 쉼과 회복 ccm | 위로 찬양 | 러빔, 이룸워십, 오벧, 잔치공동체, 어노인팅",
           "channel": "CBS설교",
@@ -3599,15 +3617,6 @@
           "channel": "CBS설교",
           "publishedAt": "2026-09-29T07:41:43Z",
           "duration": "PT20M47S",
-          "media_type": "worship",
-          "source": "theme"
-        },
-        {
-          "videoId": "fjnhvw_BI1M",
-          "title": "[CCM 𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 가을에 다시 부르는 찬양🎧 | 위로 찬양 | 김대환, 피아워십, 브라이언킴, 마커스워십, 어노인팅",
-          "channel": "CBS설교",
-          "publishedAt": "2026-09-10T08:33:33Z",
-          "duration": "PT25M57S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -3691,15 +3700,6 @@
           "duration": "PT3M58S",
           "media_type": "worship",
           "source": "theme"
-        },
-        {
-          "videoId": "j9J0Q3_KdBg",
-          "title": "[𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 하늘을 소망하며 듣는 | CCM 피아노, 찬송가 연주 | 묵상 | 기도 찬양",
-          "channel": "mini Music 미니뮤직",
-          "publishedAt": "2024-11-08T11:26:07Z",
-          "duration": "PT3H2M25S",
-          "media_type": "worship",
-          "source": "theme"
         }
       ]
     },
@@ -3712,47 +3712,47 @@
       "media_default": "worship",
       "videos": [
         {
-          "videoId": "NQERXM22F8M",
-          "title": "사랑받을 자격이 없다고 느낄 때 들어야 할 이야기ㅣ모두의 거실 20회",
-          "channel": "CBSJOY",
-          "publishedAt": "2026-07-26T11:00:14Z",
-          "duration": "PT39M15S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "LtCFBR_Ii8k",
-          "title": "2026-08-08 (토) | 그 사랑이 나를 회복시킵니다 | 시편 13편 1-6절 | 양현서 목사 | 분당우리교회 새벽기도회",
-          "channel": "분당우리교회",
-          "publishedAt": "2026-08-07T21:38:51Z",
-          "duration": "PT1H15M50S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "WV0UXW12kWg",
-          "title": "2026-08-28 (금) | 우린 넘어져도 그 사랑 영원하네 | 호세아 14장 1-3절 | 신용헌 목사 | 분당우리교회 새벽기도회",
-          "channel": "분당우리교회",
-          "publishedAt": "2026-08-28T04:30:38Z",
-          "duration": "PT1H15M32S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "Tsj73HqQRow",
-          "title": "[2026.09.02. 명성교회 특별새벽집회]  둘째 날: 나와 함께하시는 하나님 - 김삼환 원로목사 [C채널]",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-09-03T20:30:16Z",
-          "duration": "PT30M11S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
           "videoId": "SPKwOvaBQJI",
           "title": "하나님의 임재에서 동행으로 - 김은호 목사 | 오륜교회 주일설교 (2026-07-19)",
           "channel": "오륜교회 oryunchurch",
           "publishedAt": "2026-07-19T08:45:33Z",
           "duration": "PT47M48S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "Rh93PKdulGA",
+          "title": "2026-09-01 (화) | 정체성, 사랑받는 자로 살아가기 | 마가복음 1장 9-11절 | 이진환 목사 | 분당우리교회 새벽기도회",
+          "channel": "분당우리교회",
+          "publishedAt": "2026-08-31T22:02:36Z",
+          "duration": "PT1H37M45S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "RhUpapeuhSc",
+          "title": "세한교회 주진 목사(CBS TV강단 333회) - 반드시 함께 하시는 하나님",
+          "channel": "CBS설교",
+          "publishedAt": "2026-09-19T15:00:30Z",
+          "duration": "PT25M1S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "zpeMXPegjUg",
+          "title": "새은혜교회 황형택 목사(CBS TV강단 311회) - 반드시 함께 하시는 하나님",
+          "channel": "CBS설교",
+          "publishedAt": "2026-09-19T15:00:02Z",
+          "duration": "PT24M52S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "ErqzgQgvheY",
+          "title": "산위의마을교회 김영준 목사(영혼의 양식 309회) - 성찰하는 사람이 하나님과 동행합니다",
+          "channel": "CBS설교",
+          "publishedAt": "2026-08-17T15:00:14Z",
+          "duration": "PT5M43S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -3811,56 +3811,38 @@
           "source": "theme"
         },
         {
-          "videoId": "Rh93PKdulGA",
-          "title": "2026-09-01 (화) | 정체성, 사랑받는 자로 살아가기 | 마가복음 1장 9-11절 | 이진환 목사 | 분당우리교회 새벽기도회",
+          "videoId": "NQERXM22F8M",
+          "title": "사랑받을 자격이 없다고 느낄 때 들어야 할 이야기ㅣ모두의 거실 20회",
+          "channel": "CBSJOY",
+          "publishedAt": "2026-07-26T11:00:14Z",
+          "duration": "PT39M15S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "LtCFBR_Ii8k",
+          "title": "2026-08-08 (토) | 그 사랑이 나를 회복시킵니다 | 시편 13편 1-6절 | 양현서 목사 | 분당우리교회 새벽기도회",
           "channel": "분당우리교회",
-          "publishedAt": "2026-08-31T22:02:36Z",
-          "duration": "PT1H37M45S",
+          "publishedAt": "2026-08-07T21:38:51Z",
+          "duration": "PT1H15M50S",
           "media_type": "sermon",
           "source": "theme"
         },
         {
-          "videoId": "RhUpapeuhSc",
-          "title": "세한교회 주진 목사(CBS TV강단 333회) - 반드시 함께 하시는 하나님",
-          "channel": "CBS설교",
-          "publishedAt": "2026-09-19T15:00:30Z",
-          "duration": "PT25M1S",
+          "videoId": "WV0UXW12kWg",
+          "title": "2026-08-28 (금) | 우린 넘어져도 그 사랑 영원하네 | 호세아 14장 1-3절 | 신용헌 목사 | 분당우리교회 새벽기도회",
+          "channel": "분당우리교회",
+          "publishedAt": "2026-08-28T04:30:38Z",
+          "duration": "PT1H15M32S",
           "media_type": "sermon",
           "source": "theme"
         },
         {
-          "videoId": "zpeMXPegjUg",
-          "title": "새은혜교회 황형택 목사(CBS TV강단 311회) - 반드시 함께 하시는 하나님",
-          "channel": "CBS설교",
-          "publishedAt": "2026-09-19T15:00:02Z",
-          "duration": "PT24M52S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "ErqzgQgvheY",
-          "title": "산위의마을교회 김영준 목사(영혼의 양식 309회) - 성찰하는 사람이 하나님과 동행합니다",
-          "channel": "CBS설교",
-          "publishedAt": "2026-08-17T15:00:14Z",
-          "duration": "PT5M43S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "UgvaT9UBzN4",
-          "title": "삼일교회 송태근 목사 (CBS TV강단 571회) - 엠마오의 동행",
-          "channel": "CBS설교",
-          "publishedAt": "2026-09-14T05:08:11Z",
-          "duration": "PT25M1S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "tD-3ehY869I",
-          "title": "[어린이 예배] 끝까지 사랑하셨어요 (요한복음 13:1)_베이직교회_20260705",
-          "channel": "베이직교회",
-          "publishedAt": "2026-07-05T01:30:31Z",
-          "duration": "PT13M56S",
+          "videoId": "Tsj73HqQRow",
+          "title": "[2026.09.02. 명성교회 특별새벽집회]  둘째 날: 나와 함께하시는 하나님 - 김삼환 원로목사 [C채널]",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-09-03T20:30:16Z",
+          "duration": "PT30M11S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -3883,12 +3865,21 @@
           "source": "theme"
         },
         {
-          "videoId": "vPbXJbVjHhw",
-          "title": "사랑한다 말하시네 | 분당우리교회 3부 찬양대 | 2026-09-27",
-          "channel": "분당우리교회",
-          "publishedAt": "2026-09-30T08:33:45Z",
-          "duration": "PT4M18S",
-          "media_type": "worship",
+          "videoId": "UgvaT9UBzN4",
+          "title": "삼일교회 송태근 목사 (CBS TV강단 571회) - 엠마오의 동행",
+          "channel": "CBS설교",
+          "publishedAt": "2026-09-14T05:08:11Z",
+          "duration": "PT25M1S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "tD-3ehY869I",
+          "title": "[어린이 예배] 끝까지 사랑하셨어요 (요한복음 13:1)_베이직교회_20260705",
+          "channel": "베이직교회",
+          "publishedAt": "2026-07-05T01:30:31Z",
+          "duration": "PT13M56S",
+          "media_type": "sermon",
           "source": "theme"
         },
         {
@@ -4045,11 +4036,11 @@
           "source": "theme"
         },
         {
-          "videoId": "2AFxiJ8RcIg",
-          "title": "[1시간 연속듣기] 주의 사랑을 주의 선하심을 피아노 CCM 연주/Think about His Love Piano Instrumental(영어가사/Lyrics)",
-          "channel": "Worship Flow 워십플로우",
-          "publishedAt": "2026-07-13T02:17:33Z",
-          "duration": "PT1H53S",
+          "videoId": "vPbXJbVjHhw",
+          "title": "사랑한다 말하시네 | 분당우리교회 3부 찬양대 | 2026-09-27",
+          "channel": "분당우리교회",
+          "publishedAt": "2026-09-30T08:33:45Z",
+          "duration": "PT4M18S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -4063,11 +4054,20 @@
           "source": "theme"
         },
         {
-          "videoId": "WKw_WjIgK2A",
-          "title": "서로를 섬기면 교회는 망한다 l 김선교 선교사 l 민수기 8장 5-13절ㅣ메신저스",
-          "channel": "CTS기독교TV",
-          "publishedAt": "2026-10-07T08:00:10Z",
-          "duration": "PT25M31S",
+          "videoId": "lo71ojRp_R8",
+          "title": "[𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 우릴 향한 주 사랑 | CCM 피아노 연주 모음 | 묵상 찬양, 기도 음악 (중간광고없음)",
+          "channel": "mini Music 미니뮤직",
+          "publishedAt": "2024-01-17T06:29:09Z",
+          "duration": "PT2H31M3S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
+          "videoId": "U74f2e7o-Vs",
+          "title": "[15일차] 시편 58~62편 | 듣다 보면 기도가 되는 40일 시편통독",
+          "channel": "CBSJOY",
+          "publishedAt": "2026-09-14T20:00:38Z",
+          "duration": "PT14M48S",
           "media_type": "sermon",
           "source": "fallback"
         }
@@ -4081,15 +4081,6 @@
       ],
       "media_default": "worship",
       "videos": [
-        {
-          "videoId": "9kgD4tYQzs8",
-          "title": "하나님, 우리의 위로 - 이정규 목사 설교 시광교회 : 갓피플TV [공식제휴]",
-          "channel": "갓피플TV",
-          "publishedAt": "2026-09-10T04:00:02Z",
-          "duration": "PT59M15S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
         {
           "videoId": "vkRvv9XA-5M",
           "title": "군포제일교회 권태진 목사 | 물 위로 오라 하소서 [C채널] 복음강단",
@@ -4163,6 +4154,15 @@
           "source": "theme"
         },
         {
+          "videoId": "CHl1LExI1-0",
+          "title": "영광교회 윤보환 감독 | 방패 기도와 회복 기도 [C채널] 말씀의창",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-10-01T10:30:22Z",
+          "duration": "PT24M10S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
           "videoId": "IHeL8PQbW3o",
           "title": "[Full] 부흥어게인 105차 집회 | 기도의 회복  | 대전제일교회",
           "channel": "CTS기독교TV",
@@ -4217,15 +4217,6 @@
           "source": "theme"
         },
         {
-          "videoId": "CHl1LExI1-0",
-          "title": "영광교회 윤보환 감독 | 방패 기도와 회복 기도 [C채널] 말씀의창",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-10-01T10:30:22Z",
-          "duration": "PT24M10S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
           "videoId": "o1i2Fx0kagc",
           "title": "거룩한 굶주림을 회복하라 | 남세권 목사 | 분당우리교회 금요기도회 | 2026-09-18",
           "channel": "분당우리교회",
@@ -4262,6 +4253,33 @@
           "source": "theme"
         },
         {
+          "videoId": "9kgD4tYQzs8",
+          "title": "하나님, 우리의 위로 - 이정규 목사 설교 시광교회 : 갓피플TV [공식제휴]",
+          "channel": "갓피플TV",
+          "publishedAt": "2026-09-10T04:00:02Z",
+          "duration": "PT59M15S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "lu65fZUADDo",
+          "title": "[CCM 𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 은혜와 위로가 되는 찬양🎧 | 찬양 모음집 | 어노인팅,  피아워십, 브라운워십, 한웅재, 원두패밀리",
+          "channel": "CBS설교",
+          "publishedAt": "2026-09-29T07:41:43Z",
+          "duration": "PT20M47S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
+          "videoId": "PP6aIJ-lGSY",
+          "title": "[1시간 연속듣기] 나로부터 시작되리(저 높은 하늘 위로) 피아노 CCM 연주 /Starting With Me Piano Instrumental (영어가사/lyrics)",
+          "channel": "Worship Flow 워십플로우",
+          "publishedAt": "2026-10-12T02:02:52Z",
+          "duration": "PT1H26S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
           "videoId": "fjnhvw_BI1M",
           "title": "[CCM 𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 가을에 다시 부르는 찬양🎧 | 위로 찬양 | 김대환, 피아워십, 브라이언킴, 마커스워십, 어노인팅",
           "channel": "CBS설교",
@@ -4276,15 +4294,6 @@
           "channel": "CBS설교",
           "publishedAt": "2026-09-02T07:38:21Z",
           "duration": "PT29M43S",
-          "media_type": "worship",
-          "source": "theme"
-        },
-        {
-          "videoId": "lu65fZUADDo",
-          "title": "[CCM 𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 은혜와 위로가 되는 찬양🎧 | 찬양 모음집 | 어노인팅,  피아워십, 브라운워십, 한웅재, 원두패밀리",
-          "channel": "CBS설교",
-          "publishedAt": "2026-09-29T07:41:43Z",
-          "duration": "PT20M47S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -4370,15 +4379,6 @@
           "source": "fallback"
         },
         {
-          "videoId": "aiy6VU0tSnw",
-          "title": "[CCM 𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 있는 모습 그대로, 주님 안에서 나를 찾아가는 시간🎧| 찬양 모음 | 제이어스, 수상한거리, WELOVE, 김윤진, 어노인팅",
-          "channel": "CBS설교",
-          "publishedAt": "2026-10-01T08:56:34Z",
-          "duration": "PT27M55S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
           "videoId": "o2lW6lhsSa4",
           "title": "오직 예수뿐이네 + 내 영이 + 존귀 오 존귀하신 주 + 나 가진 재물 없으나 | 오륜교회 수요 오전예배 찬양 헤세드 (2026-09-30)",
           "channel": "오륜교회 oryunchurch",
@@ -4388,29 +4388,20 @@
           "source": "fallback"
         },
         {
-          "videoId": "aGfO-7i4Si0",
-          "title": "사랑의 노래 드리네ㅣANOINTING CLIP",
+          "videoId": "MT5PDpfXp5c",
+          "title": "지극히 높으신 주ㅣANOINTING CLIP",
           "channel": "ANOINTING",
-          "publishedAt": "2026-09-25T09:00:21Z",
-          "duration": "PT6M31S",
+          "publishedAt": "2026-09-28T09:00:22Z",
+          "duration": "PT9M2S",
           "media_type": "worship",
           "source": "fallback"
         },
         {
-          "videoId": "y1lVTQPDGnE",
-          "title": "[Full] CTS스페셜 '이순희 2000곡 창작기념 찬양콘서트' 2부ㅣ백송교회ㅣ9월 22일 (화)",
-          "channel": "CTS기독교TV",
-          "publishedAt": "2026-09-22T06:00:08Z",
-          "duration": "PT53M8S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "KwBs7Kgo9ng",
-          "title": "[사랑의교회] 시온의 영광이 빛나는 아침/주님과 같이/모든 민족과 언어들 가운데",
+          "videoId": "N984zO89BWA",
+          "title": "[사랑의교회] 구원 열차 - 사랑유스콰이어 (피아노: 황나래 성도)",
           "channel": "사랑의교회",
-          "publishedAt": "2026-09-15T05:10:27Z",
-          "duration": "PT11M24S",
+          "publishedAt": "2026-09-21T05:17:38Z",
+          "duration": "PT3M4S",
           "media_type": "worship",
           "source": "fallback"
         },
@@ -4424,20 +4415,29 @@
           "source": "fallback"
         },
         {
-          "videoId": "iN3q0Ft-q8Q",
-          "title": "분당우리교회 주일 찬양 | 2026-09-06",
-          "channel": "분당우리교회",
-          "publishedAt": "2026-09-09T07:09:49Z",
-          "duration": "PT15M13S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
           "videoId": "aMDDUECapmk",
           "title": "어린 다윗이 보인 찬양의 열정, 우리에게도 있습니다! | 공항벧엘교회 CBS 장로합창단 초청연주회 | CBS 스페셜",
           "channel": "CBSJOY",
           "publishedAt": "2026-09-01T03:00:08Z",
           "duration": "PT51M49S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "ZvfOfREfAGg",
+          "title": "광주극동방송 찬송가 콘서트｜옹기장이 × 정자영 교수｜31일의 기록, 오늘 찬양이 되다 🎶",
+          "channel": "광주극동방송",
+          "publishedAt": "2026-08-28T00:42:01Z",
+          "duration": "PT2H13M39S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "XNVhg688J2o",
+          "title": "부를 때마다 감사 | 옹기장이 40주년 카운트다운 콘서트 2026",
+          "channel": "옹기장이선교단 Official",
+          "publishedAt": "2026-08-25T08:30:26Z",
+          "duration": "PT5M4S",
           "media_type": "worship",
           "source": "fallback"
         }
@@ -4497,20 +4497,20 @@
           "source": "theme"
         },
         {
+          "videoId": "CHl1LExI1-0",
+          "title": "영광교회 윤보환 감독 | 방패 기도와 회복 기도 [C채널] 말씀의창",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-10-01T10:30:22Z",
+          "duration": "PT24M10S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
           "videoId": "q7a4hNc1LDY",
           "title": "분당우리교회 이찬수 목사(함께 울고 함께 웃는 우리 743회) - 평안과 안식을 위한 멈춤",
           "channel": "CBS설교",
           "publishedAt": "2026-09-21T00:11:05Z",
           "duration": "PT27M22S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "VJAsbNxLong",
-          "title": "서울제일교회 최봉수 목사 | 회복의 갈릴리, 예수 그리스도 [C채널] 말씀의창",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-09-20T08:00:29Z",
-          "duration": "PT24M33S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -4587,11 +4587,11 @@
           "source": "theme"
         },
         {
-          "videoId": "CHl1LExI1-0",
-          "title": "영광교회 윤보환 감독 | 방패 기도와 회복 기도 [C채널] 말씀의창",
+          "videoId": "LPKBfmsiJYk",
+          "title": "수원제일교회 김근영 목사 | 안식으로 지키신다 [C채널] 말씀의창",
           "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-10-01T10:30:22Z",
-          "duration": "PT24M10S",
+          "publishedAt": "2026-10-12T13:00:14Z",
+          "duration": "PT25M2S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -4686,11 +4686,11 @@
           "source": "theme"
         },
         {
-          "videoId": "otqvwoH5tMo",
-          "title": "특송 - 주님의 임재 앞에서, 어린이 군대 | 주일학교 어와나",
+          "videoId": "BiYUMJ4KYUk",
+          "title": "2026 가을특새 찬양 - 셋째 날",
           "channel": "분당우리교회",
-          "publishedAt": "2026-10-07T03:19:15Z",
-          "duration": "PT9M57S",
+          "publishedAt": "2026-10-07T03:19:29Z",
+          "duration": "PT14M27S",
           "media_type": "worship",
           "source": "fallback"
         },
@@ -4704,11 +4704,20 @@
           "source": "fallback"
         },
         {
-          "videoId": "IWzvN36-hbg",
-          "title": "[사랑의교회] 나의 생명 되신 주 - 소프라노 박은영 (첼로: 윤보연 집사, 피아노: 손유리 집사)",
+          "videoId": "x_PLuEnCwx0",
+          "title": "나의 안에 거하라 + 그 크신 하나님의 사랑 + 내 영혼의 그윽히 깊은 데서 | 김학중 목사 인도 | GOODTV와 함께하는 꿈의교회 주일저녁 예배실황",
+          "channel": "김학중 목사_꿈의교회 미디어교회",
+          "publishedAt": "2026-10-06T04:39:19Z",
+          "duration": "PT7M20S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "nMDxzeAdxpQ",
+          "title": "[사랑의교회] 예수는 나의 힘이요/하늘 위에 주님 밖에/예수 우리 왕이여",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-05T05:05:42Z",
-          "duration": "PT3M3S",
+          "publishedAt": "2026-10-06T04:31:23Z",
+          "duration": "PT10M20S",
           "media_type": "worship",
           "source": "fallback"
         },
@@ -4740,29 +4749,20 @@
           "source": "fallback"
         },
         {
-          "videoId": "v-Y9UUfb9aU",
-          "title": "[Full] CTS스페셜 '이순희 2000곡 창작기념 찬양콘서트' 1부ㅣ백송교회ㅣ1부 9월 21일 (월)",
-          "channel": "CTS기독교TV",
-          "publishedAt": "2026-09-22T02:45:19Z",
-          "duration": "PT51M49S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "Pe_t0Eq2JV0",
-          "title": "기도의 힘 | 옹기장이 40주년 카운트다운콘서트 2026",
+          "videoId": "P4rtvEytZMc",
+          "title": "예수로 스며들다 | 옹기장이 40주년 카운트다운콘서트 2026",
           "channel": "옹기장이선교단 Official",
-          "publishedAt": "2026-09-21T17:23:59Z",
-          "duration": "PT4M46S",
+          "publishedAt": "2026-09-28T12:00:40Z",
+          "duration": "PT4M54S",
           "media_type": "worship",
           "source": "fallback"
         },
         {
-          "videoId": "YaoQbh7mkyY",
-          "title": "예수 좋은 내 친구ㅣANOINTING CLIP",
+          "videoId": "6RFzUSeAGJE",
+          "title": "2026_0917ㅣ어노인팅목요예배ㅣ인도_ 박기범",
           "channel": "ANOINTING",
-          "publishedAt": "2026-09-21T09:00:05Z",
-          "duration": "PT5M22S",
+          "publishedAt": "2026-09-23T09:00:35Z",
+          "duration": "PT1H54M33S",
           "media_type": "worship",
           "source": "fallback"
         },
@@ -4803,11 +4803,11 @@
           "source": "fallback"
         },
         {
-          "videoId": "Af9jTsMzDBg",
-          "title": "2026_0723ㅣ어노인팅목요예배ㅣ인도_ 소병찬 #성문교회",
+          "videoId": "4hGfpjLjSOE",
+          "title": "08 가득해 | 새노래배우기ㅣ어노인팅예배캠프2026",
           "channel": "ANOINTING",
-          "publishedAt": "2026-07-29T09:00:34Z",
-          "duration": "PT2H7M19S",
+          "publishedAt": "2026-08-03T08:12:29Z",
+          "duration": "PT4M55S",
           "media_type": "worship",
           "source": "fallback"
         }
@@ -4821,6 +4821,33 @@
       ],
       "media_default": "worship",
       "videos": [
+        {
+          "videoId": "s-QT5AKNZeo",
+          "title": "사랑의교회 오정현 목사(CBS 사랑의 말씀 1069회) - 하나님 왕국의 비밀병기, 찬양대",
+          "channel": "CBS설교",
+          "publishedAt": "2026-09-14T05:01:38Z",
+          "duration": "PT41M39S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "q7a4hNc1LDY",
+          "title": "분당우리교회 이찬수 목사(함께 울고 함께 웃는 우리 743회) - 평안과 안식을 위한 멈춤",
+          "channel": "CBS설교",
+          "publishedAt": "2026-09-21T00:11:05Z",
+          "duration": "PT27M22S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "pqzVXHeBzGY",
+          "title": "서산성결교회 김형배 목사(CBS 생명의 양식 596회) - 믿음의 비밀 맡기고 안식",
+          "channel": "CBS설교",
+          "publishedAt": "2026-08-28T00:11:39Z",
+          "duration": "PT25M1S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
         {
           "videoId": "7oA_fOI0_7g",
           "title": "청주서남교회 장승권 목사 | 광야행진 (29) 안식에 들어가라 [C채널] 복음강단",
@@ -4840,20 +4867,20 @@
           "source": "theme"
         },
         {
-          "videoId": "pqzVXHeBzGY",
-          "title": "서산성결교회 김형배 목사(CBS 생명의 양식 596회) - 믿음의 비밀 맡기고 안식",
-          "channel": "CBS설교",
-          "publishedAt": "2026-08-28T00:11:39Z",
-          "duration": "PT25M1S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
           "videoId": "GozcjQAMNfo",
           "title": "하늘빛광성교회 박경수 목사(CBS TV강단 296회) - 마음의 참된 쉼은 어디에?",
           "channel": "CBS설교",
           "publishedAt": "2026-10-07T01:32:48Z",
           "duration": "PT25M1S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "LPKBfmsiJYk",
+          "title": "수원제일교회 김근영 목사 | 안식으로 지키신다 [C채널] 말씀의창",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-10-12T13:00:14Z",
+          "duration": "PT25M2S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -4876,24 +4903,6 @@
           "source": "theme"
         },
         {
-          "videoId": "s-QT5AKNZeo",
-          "title": "사랑의교회 오정현 목사(CBS 사랑의 말씀 1069회) - 하나님 왕국의 비밀병기, 찬양대",
-          "channel": "CBS설교",
-          "publishedAt": "2026-09-14T05:01:38Z",
-          "duration": "PT41M39S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "q7a4hNc1LDY",
-          "title": "분당우리교회 이찬수 목사(함께 울고 함께 웃는 우리 743회) - 평안과 안식을 위한 멈춤",
-          "channel": "CBS설교",
-          "publishedAt": "2026-09-21T00:11:05Z",
-          "duration": "PT27M22S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
           "videoId": "sRzC2I5ekbk",
           "title": "아름다운 천국 | 분당우리교회 2부 찬양대 | 2026-10-04",
           "channel": "분당우리교회",
@@ -4912,29 +4921,29 @@
           "source": "theme"
         },
         {
-          "videoId": "g2MST4u9Lfo",
-          "title": "[사랑의교회] 주 하나님 크시도다 - 호산나찬양대",
+          "videoId": "KXxOFnnAgkc",
+          "title": "[사랑의교회] 이것이 나의 간증이요 - 시온찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-06T04:29:38Z",
-          "duration": "PT4M48S",
+          "publishedAt": "2026-10-12T05:33:33Z",
+          "duration": "PT4M27S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "yvk2tfgs66g",
-          "title": "[사랑의교회] 괴로울 때 주님의 얼굴 보라 - 할렐루야찬양대",
+          "videoId": "Jssn4N2vn8w",
+          "title": "[사랑의교회] 주님을 찬양하라 - 할렐루야찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-05T05:06:19Z",
-          "duration": "PT4M32S",
+          "publishedAt": "2026-10-12T05:32:31Z",
+          "duration": "PT3M52S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "v5EG7y8NTq4",
-          "title": "[사랑의교회] 내가 산을 향하여 눈을 드니 - 영광찬양대",
+          "videoId": "LfiXd9v1-co",
+          "title": "[사랑의교회] 저 멀리 뵈는 나의 시온성 - 호산나찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-05T05:05:11Z",
-          "duration": "PT4M10S",
+          "publishedAt": "2026-10-12T05:31:58Z",
+          "duration": "PT4M45S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -5038,6 +5047,15 @@
           "source": "theme"
         },
         {
+          "videoId": "PP6aIJ-lGSY",
+          "title": "[1시간 연속듣기] 나로부터 시작되리(저 높은 하늘 위로) 피아노 CCM 연주 /Starting With Me Piano Instrumental (영어가사/lyrics)",
+          "channel": "Worship Flow 워십플로우",
+          "publishedAt": "2026-10-12T02:02:52Z",
+          "duration": "PT1H26S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
           "videoId": "6zbxFB6eT8Q",
           "title": "[1시간 연속듣기] 나 주의 도움 받고자 피아노 찬송가 연주/Jesus My Lord to Thee I Cry Piano Instrumental(가사/lyrics)",
           "channel": "Worship Flow 워십플로우",
@@ -5052,15 +5070,6 @@
           "channel": "Worship Flow 워십플로우",
           "publishedAt": "2026-09-25T00:00:36Z",
           "duration": "PT1H2M22S",
-          "media_type": "worship",
-          "source": "theme"
-        },
-        {
-          "videoId": "SCpL02CKvw8",
-          "title": "[1시간 연속듣기] 만유의 주재 피아노 찬송가 연주/Fairest Lord Jesus Piano Hymns Instrumental (영어가사)",
-          "channel": "Worship Flow 워십플로우",
-          "publishedAt": "2026-09-14T00:23:00Z",
-          "duration": "PT1H25S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -5083,47 +5092,29 @@
           "source": "fallback"
         },
         {
-          "videoId": "YttIOHxEL3M",
-          "title": "[사역자설교] 모략을 패하게 하리라 / 사무엘하 15:29-37 - 김동환 목사 / 양경남 권사 | 2026.10.07",
-          "channel": "우리들교회",
-          "publishedAt": "2026-10-07T12:23:10Z",
-          "duration": "PT1H28M11S",
+          "videoId": "TfgWEkKaXwE",
+          "title": "양천교회 김동인 목사(영혼의양식 419회) - 목이 뻣뻣한 백성",
+          "channel": "CBS설교",
+          "publishedAt": "2026-10-08T00:14:40Z",
+          "duration": "PT5M17S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "DaC1xgPav2A",
-          "title": "두란노교회 이상문 목사 ㅣ비웃음이 다가올 때(2) [C채널] 비전메시지",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-10-06T03:00:26Z",
-          "duration": "PT25M46S",
+          "videoId": "nYRn2i57E9s",
+          "title": "[Full] 아주 특별한 재회 | 출애굽기 18장 1-4절 | 이에스더 목사(요나3일영성원)ㅣ빛으로 소금으로",
+          "channel": "CTS기독교TV",
+          "publishedAt": "2026-10-05T22:00:19Z",
+          "duration": "PT6M27S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "ObL7yVsVR3c",
-          "title": "2026-10-03 (토) | 담이 높아도 그래도 크레도(CREDO)! | 이사야 56장 1-8절 | 고두빈 목사 | 분당우리교회 새벽기도회",
-          "channel": "분당우리교회",
-          "publishedAt": "2026-10-02T21:57:44Z",
-          "duration": "PT1H33M36S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "sV4mulhLm9M",
-          "title": "[극동방송] Billy Kim's Message 김장환 목사 설교_260927",
-          "channel": "극동방송",
-          "publishedAt": "2026-10-01T20:00:37Z",
-          "duration": "PT24M46S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "nuf5tWvYDM0",
-          "title": "성스러움이 폭력의 옷을 입은날 - 김관성 목사 설교 낮은담교회 : 갓피플TV [공식제휴]",
-          "channel": "갓피플TV",
-          "publishedAt": "2026-09-30T07:00:25Z",
-          "duration": "PT1H4M21S",
+          "videoId": "8-lMYovH1nA",
+          "title": "속고, 속이고! 그 가운데 야곱이 걸어간 은혜의 여정 | 이정규 목사 | RE바이블 48편",
+          "channel": "CGN",
+          "publishedAt": "2026-10-01T00:00:20Z",
+          "duration": "PT34M46S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -5137,38 +5128,20 @@
           "source": "fallback"
         },
         {
-          "videoId": "1Iu567OpDMQ",
-          "title": "거룩한 불: 궁극적 증거 3 (31) | R.T. 켄달의 말씀과 성령 | R.T. Kendall's Word and Spirit",
-          "channel": "CGN",
-          "publishedAt": "2026-09-29T07:00:15Z",
-          "duration": "PT27M24S",
+          "videoId": "5g61_EvNWSw",
+          "title": "미국 칼빈 신학교 채플 | 김양재 목사 | CALVIN THEOLOGICALSEMINARY CHAPEL | 09/24/25",
+          "channel": "우리들교회",
+          "publishedAt": "2026-09-28T10:54:05Z",
+          "duration": "PT21M21S",
           "media_type": "sermon",
           "source": "fallback"
         },
         {
-          "videoId": "uYA8qAmL0Zk",
-          "title": "[Full] 진리의 가치와 유익 | 디모데후서 3장 11-17절 | 이에스더 목사(요나3일영성원)ㅣ빛으로 소금으로",
-          "channel": "CTS기독교TV",
-          "publishedAt": "2026-09-28T22:00:21Z",
-          "duration": "PT6M37S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "DZOy92_JX1w",
-          "title": "[사랑공동체 성경읽기] 학개 1~2장",
-          "channel": "사랑의교회",
-          "publishedAt": "2026-09-25T21:00:10Z",
-          "duration": "PT4M44S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "P8IdeObpnE0",
-          "title": "[265일차] 다니엘 5~6장 (2026.9.22) | CGN과 함께 일-일 통독(우리말성경)",
-          "channel": "CGN 성경통독",
-          "publishedAt": "2026-09-21T20:00:00Z",
-          "duration": "PT13M28S",
+          "videoId": "CGXWvaLkiSo",
+          "title": "말씀이 내 몸을 고친다! 암세포가 사라지고, 치매가 나은 기적의 성경낭독! | 문성모 목사님 (서울장신대 전 총장, 예배학자)",
+          "channel": "극동방송",
+          "publishedAt": "2026-09-25T08:58:10Z",
+          "duration": "PT53M22S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -5178,6 +5151,33 @@
           "channel": "오륜교회 oryunchurch",
           "publishedAt": "2026-09-18T14:30:24Z",
           "duration": "PT1H5M38S",
+          "media_type": "sermon",
+          "source": "fallback"
+        },
+        {
+          "videoId": "WCRc4gimEOc",
+          "title": "[사랑공동체 성경읽기] 다니엘 11~12장",
+          "channel": "사랑의교회",
+          "publishedAt": "2026-09-11T21:00:17Z",
+          "duration": "PT7M40S",
+          "media_type": "sermon",
+          "source": "fallback"
+        },
+        {
+          "videoId": "Ugjwvnvg6qY",
+          "title": "황명철 목사  낮은담교회 새벽만나  2026. 9. 9 “내가 아니라 예수님!” 누가복음 9:49-50",
+          "channel": "낮은담교회",
+          "publishedAt": "2026-09-09T09:49:07Z",
+          "duration": "PT12M23S",
+          "media_type": "sermon",
+          "source": "fallback"
+        },
+        {
+          "videoId": "K9JlCgAM1sU",
+          "title": "[아침예배] 우리가 담이다 (겔 42:1-20)_베이직교회_조정민 목사_20260818",
+          "channel": "베이직교회",
+          "publishedAt": "2026-08-17T22:11:55Z",
+          "duration": "PT40M30S",
           "media_type": "sermon",
           "source": "fallback"
         }
@@ -5191,15 +5191,6 @@
       ],
       "media_default": "worship",
       "videos": [
-        {
-          "videoId": "IY22vmUa5Dc",
-          "title": "소망교회 김경진 목사(CBS 소망의 말씀 350회) - 평안히 가라",
-          "channel": "CBS설교",
-          "publishedAt": "2026-09-14T00:13:49Z",
-          "duration": "PT38M36S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
         {
           "videoId": "wmZA3InKSgY",
           "title": "마귀에게 틈을 주지 맙시다┃한소망교회 최봉규 목사 [C채널] 한소망비전워십",
@@ -5224,6 +5215,15 @@
           "channel": "CBS설교",
           "publishedAt": "2026-09-08T00:05:02Z",
           "duration": "PT24M5S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "hQupIYL9KGw",
+          "title": "청운교회 이필산 목사 | 아직도 소망이 있나니 [C채널] 비전메시지",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-08-21T03:07:01Z",
+          "duration": "PT50M7S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -5287,15 +5287,6 @@
           "channel": "C채널방송 : 설교",
           "publishedAt": "2026-09-16T07:00:35Z",
           "duration": "PT42M30S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "hQupIYL9KGw",
-          "title": "청운교회 이필산 목사 | 아직도 소망이 있나니 [C채널] 비전메시지",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-08-21T03:07:01Z",
-          "duration": "PT50M7S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -5368,6 +5359,15 @@
           "channel": "C채널방송 : 설교",
           "publishedAt": "2026-09-29T15:00:14Z",
           "duration": "PT54M3S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "IY22vmUa5Dc",
+          "title": "소망교회 김경진 목사(CBS 소망의 말씀 350회) - 평안히 가라",
+          "channel": "CBS설교",
+          "publishedAt": "2026-09-14T00:13:49Z",
+          "duration": "PT38M36S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -5562,47 +5562,47 @@
       "media_default": "worship",
       "videos": [
         {
-          "videoId": "3zJVJ5HYkmA",
-          "title": "하나님의 유일한 기쁨, 죽지 않고 천국에 간 에녹? | 반태효 목사 | RE바이블 39편",
+          "videoId": "-ogpxrz0nZs",
+          "title": "돈을 잃은 슬픔에서 예수를 얻는 기쁨으로 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
           "channel": "CGN",
-          "publishedAt": "2026-07-30T00:00:08Z",
-          "duration": "PT36M52S",
+          "publishedAt": "2026-08-06T07:00:37Z",
+          "duration": "PT20M37S",
           "media_type": "sermon",
           "source": "theme"
         },
         {
-          "videoId": "URQgzCaqqTU",
-          "title": "청주금천교회 신경민 목사 |  감사의 재발견  [C채널] 말씀의창",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-09-23T20:00:16Z",
-          "duration": "PT50M55S",
+          "videoId": "4xyPRZKOvrw",
+          "title": "소설 '몽실언니'를 아시나요? 몽실언니의 시작이 바로 월간 '새가정'입니다 | 월간 '새가정' 800호 발간 감사예배 | CBS 스페셜",
+          "channel": "CBSJOY",
+          "publishedAt": "2026-07-17T00:00:04Z",
+          "duration": "PT51M24S",
           "media_type": "sermon",
           "source": "theme"
         },
         {
-          "videoId": "HiY5Tz9FXbQ",
-          "title": "나성영락교회 박은성 목사 | 이젠 이해되는 괴로움의 기쁨 [C채널] 비전메시지",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-09-19T11:00:00Z",
-          "duration": "PT25M3S",
+          "videoId": "xHFnhzWF9y4",
+          "title": "2026-08-14 (금) | 영광스러운 하나님의 세계에서 기쁨으로 사는 법 | 시편 19편 1-8절 | 한승우 목사 | 분당우리교회 새벽기도회",
+          "channel": "분당우리교회",
+          "publishedAt": "2026-08-13T21:38:23Z",
+          "duration": "PT1H15M16S",
           "media_type": "sermon",
           "source": "theme"
         },
         {
-          "videoId": "sjYhUOzaF8c",
-          "title": "시온교회 박성준 목사(CBS TV강단 60회) - 눈물의 기도, 감사의 찬양",
-          "channel": "CBS설교",
-          "publishedAt": "2026-09-10T00:09:09Z",
-          "duration": "PT24M26S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "mSh63juwXcU",
-          "title": "주의 선하심을 맛보라 - 이건호 목사 설교 순복음 대구교회 : 갓피플TV [공식제휴]",
+          "videoId": "dtB5jf5SiPI",
+          "title": "조정민 목사 '평생얻는 기쁨 하나님과의 관계' 시리즈 설교 3편 몰아보기 | 베이직교회 : 갓피플TV [공식제휴]",
           "channel": "갓피플TV",
-          "publishedAt": "2026-08-12T04:00:20Z",
-          "duration": "PT40M20S",
+          "publishedAt": "2026-08-10T11:15:01Z",
+          "duration": "PT1H30M30S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "CX_F5E5FyH4",
+          "title": "돈을 잃은 슬픔에서 예수를 얻는 기쁨으로 (2) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
+          "channel": "CGN",
+          "publishedAt": "2026-08-13T07:00:12Z",
+          "duration": "PT22M17S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -5661,15 +5661,6 @@
           "source": "theme"
         },
         {
-          "videoId": "ABjUC85jyC8",
-          "title": "은정감리교회 최상일 목사 | 감사할 것 뿐일세 [C채널] 말씀의창",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-10-01T03:00:36Z",
-          "duration": "PT25M11S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
           "videoId": "ac8OHAwY5Mo",
           "title": "[사랑의교회] 하나님이 기뻐하시는 믿음 - 윤대혁 후임목사",
           "channel": "사랑의교회",
@@ -5697,57 +5688,57 @@
           "source": "theme"
         },
         {
+          "videoId": "3zJVJ5HYkmA",
+          "title": "하나님의 유일한 기쁨, 죽지 않고 천국에 간 에녹? | 반태효 목사 | RE바이블 39편",
+          "channel": "CGN",
+          "publishedAt": "2026-07-30T00:00:08Z",
+          "duration": "PT36M52S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "URQgzCaqqTU",
+          "title": "청주금천교회 신경민 목사 |  감사의 재발견  [C채널] 말씀의창",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-09-23T20:00:16Z",
+          "duration": "PT50M55S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "HiY5Tz9FXbQ",
+          "title": "나성영락교회 박은성 목사 | 이젠 이해되는 괴로움의 기쁨 [C채널] 비전메시지",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-09-19T11:00:00Z",
+          "duration": "PT25M3S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "sjYhUOzaF8c",
+          "title": "시온교회 박성준 목사(CBS TV강단 60회) - 눈물의 기도, 감사의 찬양",
+          "channel": "CBS설교",
+          "publishedAt": "2026-09-10T00:09:09Z",
+          "duration": "PT24M26S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "mSh63juwXcU",
+          "title": "주의 선하심을 맛보라 - 이건호 목사 설교 순복음 대구교회 : 갓피플TV [공식제휴]",
+          "channel": "갓피플TV",
+          "publishedAt": "2026-08-12T04:00:20Z",
+          "duration": "PT40M20S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
           "videoId": "LNBHznQskW0",
           "title": "한국중앙교회 임석순 목사 (CBS 주일강단 542회) - 복음이 임한 곳에 큰 기쁨이 있더라",
           "channel": "CBS설교",
           "publishedAt": "2026-08-31T00:26:37Z",
           "duration": "PT42M13S",
           "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "-ogpxrz0nZs",
-          "title": "돈을 잃은 슬픔에서 예수를 얻는 기쁨으로 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
-          "channel": "CGN",
-          "publishedAt": "2026-08-06T07:00:37Z",
-          "duration": "PT20M37S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "4xyPRZKOvrw",
-          "title": "소설 '몽실언니'를 아시나요? 몽실언니의 시작이 바로 월간 '새가정'입니다 | 월간 '새가정' 800호 발간 감사예배 | CBS 스페셜",
-          "channel": "CBSJOY",
-          "publishedAt": "2026-07-17T00:00:04Z",
-          "duration": "PT51M24S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "xHFnhzWF9y4",
-          "title": "2026-08-14 (금) | 영광스러운 하나님의 세계에서 기쁨으로 사는 법 | 시편 19편 1-8절 | 한승우 목사 | 분당우리교회 새벽기도회",
-          "channel": "분당우리교회",
-          "publishedAt": "2026-08-13T21:38:23Z",
-          "duration": "PT1H15M16S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "dtB5jf5SiPI",
-          "title": "조정민 목사 '평생얻는 기쁨 하나님과의 관계' 시리즈 설교 3편 몰아보기 | 베이직교회 : 갓피플TV [공식제휴]",
-          "channel": "갓피플TV",
-          "publishedAt": "2026-08-10T11:15:01Z",
-          "duration": "PT1H30M30S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "b-9AsdRTa10",
-          "title": "[사랑의교회] 감사해 시험이 닥쳐올 때에/주 예수 나의 산 소망/오 위대한 기적을 베푸시는",
-          "channel": "사랑의교회",
-          "publishedAt": "2026-09-29T01:14:38Z",
-          "duration": "PT11M41S",
-          "media_type": "worship",
           "source": "theme"
         },
         {
@@ -5783,6 +5774,15 @@
           "channel": "김학중 목사_꿈의교회 미디어교회",
           "publishedAt": "2026-08-11T02:30:25Z",
           "duration": "PT15M5S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
+          "videoId": "5BtI94JimmA",
+          "title": "[CCM 𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 기쁨과 승리를 선포하는 신나는 찬양 모음 🎧 | 신나는 찬양 | CCM 플리 | 아이자야씩스티원, 러브타운, GIFTED, WELOVE, 제이어스",
+          "channel": "CBS설교",
+          "publishedAt": "2026-10-06T07:49:40Z",
+          "duration": "PT21M27S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -5868,15 +5868,6 @@
           "source": "theme"
         },
         {
-          "videoId": "5BtI94JimmA",
-          "title": "[CCM 𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 기쁨과 승리를 선포하는 신나는 찬양 모음 🎧 | 신나는 찬양 | CCM 플리 | 아이자야씩스티원, 러브타운, GIFTED, WELOVE, 제이어스",
-          "channel": "CBS설교",
-          "publishedAt": "2026-10-06T07:49:40Z",
-          "duration": "PT21M27S",
-          "media_type": "worship",
-          "source": "theme"
-        },
-        {
           "videoId": "Kpp2gFX4E2Y",
           "title": "[𝐂𝐂𝐌 𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 감사가 줄어들던 날에 | 피아노 찬양 | [4시간]",
           "channel": "택피아노 | TAEK PIANO",
@@ -5886,11 +5877,11 @@
           "source": "theme"
         },
         {
-          "videoId": "2AFxiJ8RcIg",
-          "title": "[1시간 연속듣기] 주의 사랑을 주의 선하심을 피아노 CCM 연주/Think about His Love Piano Instrumental(영어가사/Lyrics)",
-          "channel": "Worship Flow 워십플로우",
-          "publishedAt": "2026-07-13T02:17:33Z",
-          "duration": "PT1H53S",
+          "videoId": "Jssn4N2vn8w",
+          "title": "[사랑의교회] 주님을 찬양하라 - 할렐루야찬양대",
+          "channel": "사랑의교회",
+          "publishedAt": "2026-10-12T05:32:31Z",
+          "duration": "PT3M52S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -5920,6 +5911,15 @@
           "duration": "PT20M57S",
           "media_type": "worship",
           "source": "theme"
+        },
+        {
+          "videoId": "OoBbQNZBjDk",
+          "title": "[주일 BRANDNEW 찬양] 판교채플/ 26.08.16 / 감사함으로 / 그리 아니하실지라도 / 언제나 어떤 상황에서도 / 아무것도 두려워 말라",
+          "channel": "우리들교회",
+          "publishedAt": "2026-08-16T06:49:41Z",
+          "duration": "PT21M16S",
+          "media_type": "worship",
+          "source": "theme"
         }
       ]
     },
@@ -5931,29 +5931,29 @@
       "media_default": "worship",
       "videos": [
         {
-          "videoId": "aQhKMWwp7yE",
-          "title": "은정감리교회 최상일 목사 | 예배의 기쁨이 있는 교회 3 [C채널] 말씀의창",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-08-27T03:15:32Z",
-          "duration": "PT24M1S",
+          "videoId": "CX_F5E5FyH4",
+          "title": "돈을 잃은 슬픔에서 예수를 얻는 기쁨으로 (2) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
+          "channel": "CGN",
+          "publishedAt": "2026-08-13T07:00:12Z",
+          "duration": "PT22M17S",
           "media_type": "sermon",
           "source": "theme"
         },
         {
-          "videoId": "G7s7l6HXjkU",
-          "title": "은정감리교회 최상일 목사 | 예배의 기쁨이 있는 교회 2 [C채널] 말씀의창",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-08-19T02:19:23Z",
-          "duration": "PT24M9S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "NjzHqWtAqOk",
-          "title": "여의도순복음교회 이영훈 목사(CBS 말씀과 함께 630회) - 기쁨 충만한 삶",
+          "videoId": "ysPW5wuusSc",
+          "title": "신일교회 배요한 목사(말씀의 힘 300회) - 아버지의 기쁨 안으로!",
           "channel": "CBS설교",
-          "publishedAt": "2026-09-26T15:00:19Z",
-          "duration": "PT25M43S",
+          "publishedAt": "2026-09-04T15:00:23Z",
+          "duration": "PT25M1S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "FsxrZa5Bp8Y",
+          "title": "수원중앙교회 고명진 목사 (생명의 양식 53회) - 야훼를 송축해야 할 이유",
+          "channel": "CBS설교",
+          "publishedAt": "2026-09-19T15:00:22Z",
+          "duration": "PT25M1S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -6021,6 +6021,24 @@
           "source": "theme"
         },
         {
+          "videoId": "3zJVJ5HYkmA",
+          "title": "하나님의 유일한 기쁨, 죽지 않고 천국에 간 에녹? | 반태효 목사 | RE바이블 39편",
+          "channel": "CGN",
+          "publishedAt": "2026-07-30T00:00:08Z",
+          "duration": "PT36M52S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "HiY5Tz9FXbQ",
+          "title": "나성영락교회 박은성 목사 | 이젠 이해되는 괴로움의 기쁨 [C채널] 비전메시지",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-09-19T11:00:00Z",
+          "duration": "PT25M3S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
           "videoId": "LNBHznQskW0",
           "title": "한국중앙교회 임석순 목사 (CBS 주일강단 542회) - 복음이 임한 곳에 큰 기쁨이 있더라",
           "channel": "CBS설교",
@@ -6057,47 +6075,29 @@
           "source": "theme"
         },
         {
-          "videoId": "3zJVJ5HYkmA",
-          "title": "하나님의 유일한 기쁨, 죽지 않고 천국에 간 에녹? | 반태효 목사 | RE바이블 39편",
-          "channel": "CGN",
-          "publishedAt": "2026-07-30T00:00:08Z",
-          "duration": "PT36M52S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "HiY5Tz9FXbQ",
-          "title": "나성영락교회 박은성 목사 | 이젠 이해되는 괴로움의 기쁨 [C채널] 비전메시지",
+          "videoId": "aQhKMWwp7yE",
+          "title": "은정감리교회 최상일 목사 | 예배의 기쁨이 있는 교회 3 [C채널] 말씀의창",
           "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-09-19T11:00:00Z",
-          "duration": "PT25M3S",
+          "publishedAt": "2026-08-27T03:15:32Z",
+          "duration": "PT24M1S",
           "media_type": "sermon",
           "source": "theme"
         },
         {
-          "videoId": "CX_F5E5FyH4",
-          "title": "돈을 잃은 슬픔에서 예수를 얻는 기쁨으로 (2) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
-          "channel": "CGN",
-          "publishedAt": "2026-08-13T07:00:12Z",
-          "duration": "PT22M17S",
+          "videoId": "G7s7l6HXjkU",
+          "title": "은정감리교회 최상일 목사 | 예배의 기쁨이 있는 교회 2 [C채널] 말씀의창",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-08-19T02:19:23Z",
+          "duration": "PT24M9S",
           "media_type": "sermon",
           "source": "theme"
         },
         {
-          "videoId": "ysPW5wuusSc",
-          "title": "신일교회 배요한 목사(말씀의 힘 300회) - 아버지의 기쁨 안으로!",
+          "videoId": "NjzHqWtAqOk",
+          "title": "여의도순복음교회 이영훈 목사(CBS 말씀과 함께 630회) - 기쁨 충만한 삶",
           "channel": "CBS설교",
-          "publishedAt": "2026-09-04T15:00:23Z",
-          "duration": "PT25M1S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "FsxrZa5Bp8Y",
-          "title": "수원중앙교회 고명진 목사 (생명의 양식 53회) - 야훼를 송축해야 할 이유",
-          "channel": "CBS설교",
-          "publishedAt": "2026-09-19T15:00:22Z",
-          "duration": "PT25M1S",
+          "publishedAt": "2026-09-26T15:00:19Z",
+          "duration": "PT25M43S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -6174,11 +6174,11 @@
           "source": "theme"
         },
         {
-          "videoId": "5BtI94JimmA",
-          "title": "[CCM 𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 기쁨과 승리를 선포하는 신나는 찬양 모음 🎧 | 신나는 찬양 | CCM 플리 | 아이자야씩스티원, 러브타운, GIFTED, WELOVE, 제이어스",
-          "channel": "CBS설교",
-          "publishedAt": "2026-10-06T07:49:40Z",
-          "duration": "PT21M27S",
+          "videoId": "Jssn4N2vn8w",
+          "title": "[사랑의교회] 주님을 찬양하라 - 할렐루야찬양대",
+          "channel": "사랑의교회",
+          "publishedAt": "2026-10-12T05:32:31Z",
+          "duration": "PT3M52S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -6237,11 +6237,11 @@
           "source": "theme"
         },
         {
-          "videoId": "GfuRyE7v8Wk",
-          "title": "[사랑의교회] 거리마다 기쁨으로 - 호산나찬양대",
-          "channel": "사랑의교회",
-          "publishedAt": "2026-07-28T05:10:31Z",
-          "duration": "PT4M40S",
+          "videoId": "5BtI94JimmA",
+          "title": "[CCM 𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 기쁨과 승리를 선포하는 신나는 찬양 모음 🎧 | 신나는 찬양 | CCM 플리 | 아이자야씩스티원, 러브타운, GIFTED, WELOVE, 제이어스",
+          "channel": "CBS설교",
+          "publishedAt": "2026-10-06T07:49:40Z",
+          "duration": "PT21M27S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -6251,6 +6251,24 @@
           "channel": "우리들교회",
           "publishedAt": "2026-07-26T06:36:42Z",
           "duration": "PT21M23S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
+          "videoId": "_RXNvs8qI_s",
+          "title": "주님을 바라봅니다 + 주님을 예배하는 것 + 감사함으로 + 주 안에서 기뻐해 + 주님의 임재 앞에서 + 비 준비하시니 | 오륜교회 금요기도회 찬양 브릿지워십 (2026-08-21)",
+          "channel": "오륜교회 oryunchurch",
+          "publishedAt": "2026-08-21T14:30:29Z",
+          "duration": "PT29M9S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
+          "videoId": "VxsYxwBcnBo",
+          "title": "주 예수 기뻐 찬양해ㅣANOINTING CLIP",
+          "channel": "ANOINTING",
+          "publishedAt": "2026-06-01T09:00:26Z",
+          "duration": "PT5M14S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -6271,24 +6289,6 @@
           "duration": "PT18M55S",
           "media_type": "worship",
           "source": "theme"
-        },
-        {
-          "videoId": "jTHh_3gC73k",
-          "title": "나의 생명 되신 주 + 찬양하라 복되신 구세주 예수 + 주님의 영광 나타나셨네 + 나 가진 제물 없으나 | 오륜교회 주일 2부예배 찬양 헤세드 (2026-08-23)",
-          "channel": "오륜교회 oryunchurch",
-          "publishedAt": "2026-08-23T08:45:23Z",
-          "duration": "PT15M50S",
-          "media_type": "worship",
-          "source": "theme"
-        },
-        {
-          "videoId": "SPp08nvkWrc",
-          "title": "내 주의 보혈은 + 주 사랑 놀라와 + 경배하리 주 하나님 + 선포하라 | 오륜교회 다니엘센터 주일 4부예배 찬양 블레싱워십 (2026-08-23)",
-          "channel": "오륜교회 oryunchurch",
-          "publishedAt": "2026-08-23T08:45:01Z",
-          "duration": "PT15M18S",
-          "media_type": "worship",
-          "source": "theme"
         }
       ]
     },
@@ -6300,11 +6300,11 @@
       "media_default": "worship",
       "videos": [
         {
-          "videoId": "mSh63juwXcU",
-          "title": "주의 선하심을 맛보라 - 이건호 목사 설교 순복음 대구교회 : 갓피플TV [공식제휴]",
-          "channel": "갓피플TV",
-          "publishedAt": "2026-08-12T04:00:20Z",
-          "duration": "PT40M20S",
+          "videoId": "4xyPRZKOvrw",
+          "title": "소설 '몽실언니'를 아시나요? 몽실언니의 시작이 바로 월간 '새가정'입니다 | 월간 '새가정' 800호 발간 감사예배 | CBS 스페셜",
+          "channel": "CBSJOY",
+          "publishedAt": "2026-07-17T00:00:04Z",
+          "duration": "PT51M24S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -6354,29 +6354,11 @@
           "source": "theme"
         },
         {
-          "videoId": "ABjUC85jyC8",
-          "title": "은정감리교회 최상일 목사 | 감사할 것 뿐일세 [C채널] 말씀의창",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-10-01T03:00:36Z",
-          "duration": "PT25M11S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
           "videoId": "DDeuS02NaTc",
           "title": "염려 대신 감사를 | 더하는교회 | 최민우 목사 | 더 기프트 #더기프트 #더하는교회 #최민우",
           "channel": "CTS기독교TV",
           "publishedAt": "2026-08-13T02:00:29Z",
           "duration": "PT3M",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "4xyPRZKOvrw",
-          "title": "소설 '몽실언니'를 아시나요? 몽실언니의 시작이 바로 월간 '새가정'입니다 | 월간 '새가정' 800호 발간 감사예배 | CBS 스페셜",
-          "channel": "CBSJOY",
-          "publishedAt": "2026-07-17T00:00:04Z",
-          "duration": "PT51M24S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -6399,6 +6381,24 @@
           "source": "theme"
         },
         {
+          "videoId": "mSh63juwXcU",
+          "title": "주의 선하심을 맛보라 - 이건호 목사 설교 순복음 대구교회 : 갓피플TV [공식제휴]",
+          "channel": "갓피플TV",
+          "publishedAt": "2026-08-12T04:00:20Z",
+          "duration": "PT40M20S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "ABjUC85jyC8",
+          "title": "은정감리교회 최상일 목사 | 감사할 것 뿐일세 [C채널] 말씀의창",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-10-01T03:00:36Z",
+          "duration": "PT25M11S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
           "videoId": "XMCFYbp99p8",
           "title": "감사와 관련된 기독교 명언 10가지, 성경구절 20가지 #감사 #말씀 #성경 #기독교명언 #명언 #극동방송",
           "channel": "광주극동방송",
@@ -6417,20 +6417,11 @@
           "source": "theme"
         },
         {
-          "videoId": "rT3qUBkOCO4",
-          "title": "[사랑의교회] 주님의 선하심 - 보컬 윤정화 (피아노: 장혜리 성도)",
-          "channel": "사랑의교회",
-          "publishedAt": "2026-08-10T05:28:56Z",
-          "duration": "PT3M6S",
-          "media_type": "worship",
-          "source": "theme"
-        },
-        {
-          "videoId": "F-xkDLk_CHw",
-          "title": "[사랑의교회] 좋으신 하나님 인자와 자비 영원히/감사함으로/주 안에 있는 나에게/하나님의 부르심/성령이 오셨네",
-          "channel": "사랑의교회",
-          "publishedAt": "2026-09-01T01:25:15Z",
-          "duration": "PT19M25S",
+          "videoId": "HpU4AZ5NJZg",
+          "title": "오셔서 다스리소서 + 감사함으로 + 원하고 바라고 기도합니다 + 우리 함께 기도해 | 윤시영 간사 인도 | 꿈의교회 예배실황",
+          "channel": "김학중 목사_꿈의교회 미디어교회",
+          "publishedAt": "2026-08-25T03:00:26Z",
+          "duration": "PT13M30S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -6507,15 +6498,6 @@
           "source": "theme"
         },
         {
-          "videoId": "2AFxiJ8RcIg",
-          "title": "[1시간 연속듣기] 주의 사랑을 주의 선하심을 피아노 CCM 연주/Think about His Love Piano Instrumental(영어가사/Lyrics)",
-          "channel": "Worship Flow 워십플로우",
-          "publishedAt": "2026-07-13T02:17:33Z",
-          "duration": "PT1H53S",
-          "media_type": "worship",
-          "source": "theme"
-        },
-        {
           "videoId": "SBu9WFUFsWI",
           "title": "[사랑의교회] 감사 - 바리톤 이동환 (피아노: 최혜진 집사)",
           "channel": "사랑의교회",
@@ -6570,6 +6552,24 @@
           "source": "theme"
         },
         {
+          "videoId": "rT3qUBkOCO4",
+          "title": "[사랑의교회] 주님의 선하심 - 보컬 윤정화 (피아노: 장혜리 성도)",
+          "channel": "사랑의교회",
+          "publishedAt": "2026-08-10T05:28:56Z",
+          "duration": "PT3M6S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
+          "videoId": "F-xkDLk_CHw",
+          "title": "[사랑의교회] 좋으신 하나님 인자와 자비 영원히/감사함으로/주 안에 있는 나에게/하나님의 부르심/성령이 오셨네",
+          "channel": "사랑의교회",
+          "publishedAt": "2026-09-01T01:25:15Z",
+          "duration": "PT19M25S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
           "videoId": "zrm2HN5hBFY",
           "title": "시편 139편 + 감사함으로 + 나는 예배자입니다 + 부르신 곳에서 | 오륜교회 다니엘센터 주일 3부예배 찬양 프레전스 (2026-08-02)",
           "channel": "오륜교회 oryunchurch",
@@ -6579,47 +6579,38 @@
           "source": "theme"
         },
         {
-          "videoId": "HpU4AZ5NJZg",
-          "title": "오셔서 다스리소서 + 감사함으로 + 원하고 바라고 기도합니다 + 우리 함께 기도해 | 윤시영 간사 인도 | 꿈의교회 예배실황",
-          "channel": "김학중 목사_꿈의교회 미디어교회",
-          "publishedAt": "2026-08-25T03:00:26Z",
-          "duration": "PT13M30S",
+          "videoId": "V5JjkTPfbFo",
+          "title": "[1시간 연속듣기] 주님의 선하심 피아노 CCM 연주/Goodness of God Piano Instrumental(영어가사/lyrics)",
+          "channel": "Worship Flow 워십플로우",
+          "publishedAt": "2025-03-03T02:42:11Z",
+          "duration": "PT1H3M45S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "a4VhEYCc78Y",
-          "title": "[주일 BRANDNEW 찬양] 판교채플/ 26.07.12 / 감사함으로 / 온세상 창조주 / 성령님이 임하시면+부흥있으리라 / 날 살피시는 주 + 아 하나님의 은혜로(후렴)",
-          "channel": "우리들교회",
-          "publishedAt": "2026-07-12T06:42:19Z",
-          "duration": "PT21M25S",
+          "videoId": "_Fl62sZww8Y",
+          "title": "[1시간 연속듣기]또 하나의 열매를 바라시며(감사해요 깨닫지 못했었는데)피아노 CCM 연주/For Another Fruit Piano Instrumental(영어가사/lyrics)",
+          "channel": "Worship Flow 워십플로우",
+          "publishedAt": "2024-10-26T02:21:41Z",
+          "duration": "PT1H59S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "u1J7n-pufns",
-          "title": "짬짜면 (예수봉담교회 / 이상민 목사) 행복다이어리",
+          "videoId": "FZzDtTMHjuE",
+          "title": "세상에 없던 교회를 꿈꾸다! - 김병삼 목사 설교 만나교회 : 갓피플TV [공식제휴]",
+          "channel": "갓피플TV",
+          "publishedAt": "2026-10-10T00:30:01Z",
+          "duration": "PT44M35S",
+          "media_type": "sermon",
+          "source": "fallback"
+        },
+        {
+          "videoId": "aHXTHY7bOmQ",
+          "title": "미디에이터교회 최서형 장로(최서형의 생명에 이르는 길 18회) - 당신은 자신의 진짜 신분을 알고 있나요?",
           "channel": "CBS설교",
-          "publishedAt": "2026-10-10T09:00:11Z",
-          "duration": "PT5M7S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "4fsGfuzGAVM",
-          "title": "청주순복음교회 이동규 목사 | 꺼지지 않는 등불 [C채널] 비전메시지",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-10-08T04:30:28Z",
-          "duration": "PT22M35S",
-          "media_type": "sermon",
-          "source": "fallback"
-        },
-        {
-          "videoId": "kFLj2-Axxd0",
-          "title": "사람은 관계를 통해 성숙해간다 | 이찬수 목사 | 분당우리교회 가을특별새벽부흥회 | 2026-10-08",
-          "channel": "분당우리교회",
-          "publishedAt": "2026-10-07T22:26:36Z",
-          "duration": "PT45M7S",
+          "publishedAt": "2026-10-09T15:00:05Z",
+          "duration": "PT5M8S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -6633,11 +6624,20 @@
           "source": "fallback"
         },
         {
-          "videoId": "8-lMYovH1nA",
-          "title": "속고, 속이고! 그 가운데 야곱이 걸어간 은혜의 여정 | 이정규 목사 | RE바이블 48편",
-          "channel": "CGN",
-          "publishedAt": "2026-10-01T00:00:20Z",
-          "duration": "PT34M46S",
+          "videoId": "Rje9sYWNf1M",
+          "title": "[사랑공동체 성경읽기] 마태복음 8~9장",
+          "channel": "사랑의교회",
+          "publishedAt": "2026-10-02T21:00:15Z",
+          "duration": "PT7M11S",
+          "media_type": "sermon",
+          "source": "fallback"
+        },
+        {
+          "videoId": "aZZtqEh9TUM",
+          "title": "남가주 새누리교회 박성근 목사 | 닭이 울지 않아도 새벽은 온다 [C채널] 말씀의창",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-10-02T17:00:10Z",
+          "duration": "PT34M22S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -6670,20 +6670,20 @@
       "media_default": "worship",
       "videos": [
         {
-          "videoId": "wmZA3InKSgY",
-          "title": "마귀에게 틈을 주지 맙시다┃한소망교회 최봉규 목사 [C채널] 한소망비전워십",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-09-23T02:00:08Z",
-          "duration": "PT35M15S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
           "videoId": "Q7Qc4O-Udrw",
           "title": "소망교회 김경진 목사(CBS 소망의 말씀 353회) - 새들이 깃드는 하나님 나라",
           "channel": "CBS설교",
           "publishedAt": "2026-10-04T15:00:21Z",
           "duration": "PT37M4S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "TWShUFV-f2M",
+          "title": "거룩한빛광성교회 정성진 목사 (CBS TV강단 316회) - 세상의 소망이 되는 교회",
+          "channel": "CBS설교",
+          "publishedAt": "2026-09-08T00:05:02Z",
+          "duration": "PT24M5S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -6756,15 +6756,6 @@
           "channel": "C채널방송 : 설교",
           "publishedAt": "2026-09-16T07:00:35Z",
           "duration": "PT42M30S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "hQupIYL9KGw",
-          "title": "청운교회 이필산 목사 | 아직도 소망이 있나니 [C채널] 비전메시지",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-08-21T03:07:01Z",
-          "duration": "PT50M7S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -6846,6 +6837,15 @@
           "channel": "CBS설교",
           "publishedAt": "2026-09-14T00:13:49Z",
           "duration": "PT38M36S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "wmZA3InKSgY",
+          "title": "마귀에게 틈을 주지 맙시다┃한소망교회 최봉규 목사 [C채널] 한소망비전워십",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-09-23T02:00:08Z",
+          "duration": "PT35M15S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -7148,6 +7148,24 @@
           "source": "theme"
         },
         {
+          "videoId": "3zJVJ5HYkmA",
+          "title": "하나님의 유일한 기쁨, 죽지 않고 천국에 간 에녹? | 반태효 목사 | RE바이블 39편",
+          "channel": "CGN",
+          "publishedAt": "2026-07-30T00:00:08Z",
+          "duration": "PT36M52S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "HiY5Tz9FXbQ",
+          "title": "나성영락교회 박은성 목사 | 이젠 이해되는 괴로움의 기쁨 [C채널] 비전메시지",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-09-19T11:00:00Z",
+          "duration": "PT25M3S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
           "videoId": "-ogpxrz0nZs",
           "title": "돈을 잃은 슬픔에서 예수를 얻는 기쁨으로 (1) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
           "channel": "CGN",
@@ -7175,33 +7193,6 @@
           "source": "theme"
         },
         {
-          "videoId": "3zJVJ5HYkmA",
-          "title": "하나님의 유일한 기쁨, 죽지 않고 천국에 간 에녹? | 반태효 목사 | RE바이블 39편",
-          "channel": "CGN",
-          "publishedAt": "2026-07-30T00:00:08Z",
-          "duration": "PT36M52S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "HiY5Tz9FXbQ",
-          "title": "나성영락교회 박은성 목사 | 이젠 이해되는 괴로움의 기쁨 [C채널] 비전메시지",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-09-19T11:00:00Z",
-          "duration": "PT25M3S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "CX_F5E5FyH4",
-          "title": "돈을 잃은 슬픔에서 예수를 얻는 기쁨으로 (2) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
-          "channel": "CGN",
-          "publishedAt": "2026-08-13T07:00:12Z",
-          "duration": "PT22M17S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
           "videoId": "aQhKMWwp7yE",
           "title": "은정감리교회 최상일 목사 | 예배의 기쁨이 있는 교회 3 [C채널] 말씀의창",
           "channel": "C채널방송 : 설교",
@@ -7216,6 +7207,15 @@
           "channel": "C채널방송 : 설교",
           "publishedAt": "2026-08-19T02:19:23Z",
           "duration": "PT24M9S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "CX_F5E5FyH4",
+          "title": "돈을 잃은 슬픔에서 예수를 얻는 기쁨으로 (2) | 존 파이퍼의 더 바이블 | John Piper's The Bible",
+          "channel": "CGN",
+          "publishedAt": "2026-08-13T07:00:12Z",
+          "duration": "PT22M17S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -7265,20 +7265,20 @@
           "source": "theme"
         },
         {
-          "videoId": "5BtI94JimmA",
-          "title": "[CCM 𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 기쁨과 승리를 선포하는 신나는 찬양 모음 🎧 | 신나는 찬양 | CCM 플리 | 아이자야씩스티원, 러브타운, GIFTED, WELOVE, 제이어스",
-          "channel": "CBS설교",
-          "publishedAt": "2026-10-06T07:49:40Z",
-          "duration": "PT21M27S",
-          "media_type": "worship",
-          "source": "theme"
-        },
-        {
           "videoId": "RUIvOfg1ROk",
           "title": "시작하는 순간 떼창 유발, 그 시절 우리가 사랑했던 찬양 | 옹기장이 40주년 카운트다운 콘서트 2026",
           "channel": "옹기장이선교단 Official",
           "publishedAt": "2026-08-18T12:30:06Z",
           "duration": "PT5M35S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
+          "videoId": "Jssn4N2vn8w",
+          "title": "[사랑의교회] 주님을 찬양하라 - 할렐루야찬양대",
+          "channel": "사랑의교회",
+          "publishedAt": "2026-10-12T05:32:31Z",
+          "duration": "PT3M52S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -7337,11 +7337,11 @@
           "source": "theme"
         },
         {
-          "videoId": "GfuRyE7v8Wk",
-          "title": "[사랑의교회] 거리마다 기쁨으로 - 호산나찬양대",
-          "channel": "사랑의교회",
-          "publishedAt": "2026-07-28T05:10:31Z",
-          "duration": "PT4M40S",
+          "videoId": "5BtI94JimmA",
+          "title": "[CCM 𝐏𝐥𝐚𝐲𝐥𝐢𝐬𝐭] 기쁨과 승리를 선포하는 신나는 찬양 모음 🎧 | 신나는 찬양 | CCM 플리 | 아이자야씩스티원, 러브타운, GIFTED, WELOVE, 제이어스",
+          "channel": "CBS설교",
+          "publishedAt": "2026-10-06T07:49:40Z",
+          "duration": "PT21M27S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -7373,29 +7373,29 @@
           "source": "theme"
         },
         {
-          "videoId": "SPp08nvkWrc",
-          "title": "내 주의 보혈은 + 주 사랑 놀라와 + 경배하리 주 하나님 + 선포하라 | 오륜교회 다니엘센터 주일 4부예배 찬양 블레싱워십 (2026-08-23)",
+          "videoId": "r74ssY04tMI",
+          "title": "오 주 안에 내 믿음이 있네 + 주 안에서 기뻐해 + 주의 자녀로 산다는 것은 + 보라 너희는 두려워 말고 | 오륜교회 수요 오후예배 찬양 브릿지워십 (2026-08-12)",
           "channel": "오륜교회 oryunchurch",
-          "publishedAt": "2026-08-23T08:45:01Z",
-          "duration": "PT15M18S",
+          "publishedAt": "2026-08-12T11:55:59Z",
+          "duration": "PT18M55S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "_RXNvs8qI_s",
-          "title": "주님을 바라봅니다 + 주님을 예배하는 것 + 감사함으로 + 주 안에서 기뻐해 + 주님의 임재 앞에서 + 비 준비하시니 | 오륜교회 금요기도회 찬양 브릿지워십 (2026-08-21)",
-          "channel": "오륜교회 oryunchurch",
-          "publishedAt": "2026-08-21T14:30:29Z",
-          "duration": "PT29M9S",
+          "videoId": "GfuRyE7v8Wk",
+          "title": "[사랑의교회] 거리마다 기쁨으로 - 호산나찬양대",
+          "channel": "사랑의교회",
+          "publishedAt": "2026-07-28T05:10:31Z",
+          "duration": "PT4M40S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "VxsYxwBcnBo",
-          "title": "주 예수 기뻐 찬양해ㅣANOINTING CLIP",
-          "channel": "ANOINTING",
-          "publishedAt": "2026-06-01T09:00:26Z",
-          "duration": "PT5M14S",
+          "videoId": "jTHh_3gC73k",
+          "title": "나의 생명 되신 주 + 찬양하라 복되신 구세주 예수 + 주님의 영광 나타나셨네 + 나 가진 제물 없으나 | 오륜교회 주일 2부예배 찬양 헤세드 (2026-08-23)",
+          "channel": "오륜교회 oryunchurch",
+          "publishedAt": "2026-08-23T08:45:23Z",
+          "duration": "PT15M50S",
           "media_type": "worship",
           "source": "theme"
         }
@@ -7410,11 +7410,11 @@
       "media_default": "worship",
       "videos": [
         {
-          "videoId": "DhisTxSeduI",
-          "title": "삼일교회 송태근 목사 (CBS TV강단 569회) - 내 영광을 위해 창조한 자",
+          "videoId": "gJy8XXXtL8w",
+          "title": "박관목사의 성서적 전인치유교회 (CBS 비전특강 475회) - 무너진 창조질서를 회복시키시는 하나님",
           "channel": "CBS설교",
-          "publishedAt": "2026-09-01T00:06:51Z",
-          "duration": "PT25M1S",
+          "publishedAt": "2026-09-22T06:32:18Z",
+          "duration": "PT42M43S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -7424,6 +7424,15 @@
           "channel": "CBS설교",
           "publishedAt": "2026-09-14T05:01:38Z",
           "duration": "PT41M39S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "DhisTxSeduI",
+          "title": "삼일교회 송태근 목사 (CBS TV강단 569회) - 내 영광을 위해 창조한 자",
+          "channel": "CBS설교",
+          "publishedAt": "2026-09-01T00:06:51Z",
+          "duration": "PT25M1S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -7460,15 +7469,6 @@
           "channel": "CBS설교",
           "publishedAt": "2026-09-14T00:10:17Z",
           "duration": "PT41M39S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "gJy8XXXtL8w",
-          "title": "박관목사의 성서적 전인치유교회 (CBS 비전특강 475회) - 무너진 창조질서를 회복시키시는 하나님",
-          "channel": "CBS설교",
-          "publishedAt": "2026-09-22T06:32:18Z",
-          "duration": "PT42M43S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -7554,6 +7554,15 @@
           "source": "theme"
         },
         {
+          "videoId": "PP6aIJ-lGSY",
+          "title": "[1시간 연속듣기] 나로부터 시작되리(저 높은 하늘 위로) 피아노 CCM 연주 /Starting With Me Piano Instrumental (영어가사/lyrics)",
+          "channel": "Worship Flow 워십플로우",
+          "publishedAt": "2026-10-12T02:02:52Z",
+          "duration": "PT1H26S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
           "videoId": "6zbxFB6eT8Q",
           "title": "[1시간 연속듣기] 나 주의 도움 받고자 피아노 찬송가 연주/Jesus My Lord to Thee I Cry Piano Instrumental(가사/lyrics)",
           "channel": "Worship Flow 워십플로우",
@@ -7568,15 +7577,6 @@
           "channel": "Worship Flow 워십플로우",
           "publishedAt": "2026-09-25T00:00:36Z",
           "duration": "PT1H2M22S",
-          "media_type": "worship",
-          "source": "theme"
-        },
-        {
-          "videoId": "SCpL02CKvw8",
-          "title": "[1시간 연속듣기] 만유의 주재 피아노 찬송가 연주/Fairest Lord Jesus Piano Hymns Instrumental (영어가사)",
-          "channel": "Worship Flow 워십플로우",
-          "publishedAt": "2026-09-14T00:23:00Z",
-          "duration": "PT1H25S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -7608,38 +7608,38 @@
           "source": "theme"
         },
         {
-          "videoId": "g2MST4u9Lfo",
-          "title": "[사랑의교회] 주 하나님 크시도다 - 호산나찬양대",
+          "videoId": "KXxOFnnAgkc",
+          "title": "[사랑의교회] 이것이 나의 간증이요 - 시온찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-06T04:29:38Z",
-          "duration": "PT4M48S",
+          "publishedAt": "2026-10-12T05:33:33Z",
+          "duration": "PT4M27S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "yvk2tfgs66g",
-          "title": "[사랑의교회] 괴로울 때 주님의 얼굴 보라 - 할렐루야찬양대",
+          "videoId": "Jssn4N2vn8w",
+          "title": "[사랑의교회] 주님을 찬양하라 - 할렐루야찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-05T05:06:19Z",
-          "duration": "PT4M32S",
+          "publishedAt": "2026-10-12T05:32:31Z",
+          "duration": "PT3M52S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "v5EG7y8NTq4",
-          "title": "[사랑의교회] 내가 산을 향하여 눈을 드니 - 영광찬양대",
+          "videoId": "LfiXd9v1-co",
+          "title": "[사랑의교회] 저 멀리 뵈는 나의 시온성 - 호산나찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-05T05:05:11Z",
-          "duration": "PT4M10S",
+          "publishedAt": "2026-10-12T05:31:58Z",
+          "duration": "PT4M45S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "s3JuoKBTccE",
-          "title": "[사랑의교회] 옷자락에서 전해지는 사랑 - 시온찬양대",
+          "videoId": "7Zpvdk7noX4",
+          "title": "[사랑의교회] 나는 I am - 영광찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-09-29T04:39:30Z",
-          "duration": "PT4M52S",
+          "publishedAt": "2026-10-12T05:30:42Z",
+          "duration": "PT3M39S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -7653,11 +7653,11 @@
           "source": "theme"
         },
         {
-          "videoId": "bUtGuCif_hk",
-          "title": "산정현교회 장재우 목사(CBS 산정현 강단 1029회) - 복음, 처음 그 자리 (2) 도망치는 죄인",
+          "videoId": "Sc7BpUX4Trg",
+          "title": "강남중앙교회 장찬영 목사(CBS TV강단 358회) - 엔학고레의 기도를 사수하라",
           "channel": "CBS설교",
-          "publishedAt": "2026-10-11T15:00:02Z",
-          "duration": "PT24M50S",
+          "publishedAt": "2026-10-11T15:00:20Z",
+          "duration": "PT24M37S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -7671,11 +7671,11 @@
           "source": "fallback"
         },
         {
-          "videoId": "kvvMSgXAV5Q",
-          "title": "제3의 길은 없다┃새물결 새바람 NEW WAVE 수영로교회 이규현 목사 [C채널]",
+          "videoId": "SUkU4NOR9JY",
+          "title": "[2026┃10┃06 명성교회 새벽기도회]  김삼환 원로목사 [C채널]",
           "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-10-06T20:00:32Z",
-          "duration": "PT46M33S",
+          "publishedAt": "2026-10-07T21:00:22Z",
+          "duration": "PT36M23S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -7689,11 +7689,11 @@
           "source": "fallback"
         },
         {
-          "videoId": "3wmP85X8hac",
-          "title": "박한수 목사 '분주함과 관계의 단절이 더 위험하다' 시리즈 설교 3편 몰아보기 | 제자광성교회 : 갓피플TV [공식제휴]",
+          "videoId": "sUpOTVByw6g",
+          "title": "은혜14 - 한창수목사 엠마오교회 주일설교 : 갓피플TV [공식제휴]",
           "channel": "갓피플TV",
-          "publishedAt": "2026-09-26T11:15:05Z",
-          "duration": "PT3H22M11S",
+          "publishedAt": "2026-09-28T07:00:19Z",
+          "duration": "PT42M57S",
           "media_type": "sermon",
           "source": "fallback"
         },
@@ -7825,6 +7825,15 @@
           "source": "theme"
         },
         {
+          "videoId": "DkA2J6c8yHI",
+          "title": "[생명의 삶 큐티] 제비뽑기를 통한 공정한 직무 분배| 역대상 24:1~31 | 조호영 목사 | 261013QT",
+          "channel": "CGN 생명의 삶",
+          "publishedAt": "2026-10-12T15:00:07Z",
+          "duration": "PT14M15S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
           "videoId": "OoLIh4JRRLY",
           "title": "[생명의 삶 큐티] 예배하는 세대를 위해 준비된 사람들 | 역대상 23:1~32 | 조호영 목사 | 261012QT",
           "channel": "CGN 생명의 삶",
@@ -7857,15 +7866,6 @@
           "channel": "CGN 생명의 삶",
           "publishedAt": "2026-10-08T15:00:13Z",
           "duration": "PT9M29S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "BoxDrG7a2IY",
-          "title": "[생명의 삶 큐티] 하나님보다 사람 수를 의지하는 죄 | 역대상 21:1~8 | 윤광열 목사 | 261008QT",
-          "channel": "CGN 생명의 삶",
-          "publishedAt": "2026-10-07T15:00:25Z",
-          "duration": "PT10M20S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -8032,6 +8032,15 @@
           "source": "theme"
         },
         {
+          "videoId": "PP6aIJ-lGSY",
+          "title": "[1시간 연속듣기] 나로부터 시작되리(저 높은 하늘 위로) 피아노 CCM 연주 /Starting With Me Piano Instrumental (영어가사/lyrics)",
+          "channel": "Worship Flow 워십플로우",
+          "publishedAt": "2026-10-12T02:02:52Z",
+          "duration": "PT1H26S",
+          "media_type": "worship",
+          "source": "theme"
+        },
+        {
           "videoId": "6zbxFB6eT8Q",
           "title": "[1시간 연속듣기] 나 주의 도움 받고자 피아노 찬송가 연주/Jesus My Lord to Thee I Cry Piano Instrumental(가사/lyrics)",
           "channel": "Worship Flow 워십플로우",
@@ -8046,15 +8055,6 @@
           "channel": "Worship Flow 워십플로우",
           "publishedAt": "2026-09-25T00:00:36Z",
           "duration": "PT1H2M22S",
-          "media_type": "worship",
-          "source": "theme"
-        },
-        {
-          "videoId": "SCpL02CKvw8",
-          "title": "[1시간 연속듣기] 만유의 주재 피아노 찬송가 연주/Fairest Lord Jesus Piano Hymns Instrumental (영어가사)",
-          "channel": "Worship Flow 워십플로우",
-          "publishedAt": "2026-09-14T00:23:00Z",
-          "duration": "PT1H25S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -8086,38 +8086,38 @@
           "source": "theme"
         },
         {
-          "videoId": "g2MST4u9Lfo",
-          "title": "[사랑의교회] 주 하나님 크시도다 - 호산나찬양대",
+          "videoId": "KXxOFnnAgkc",
+          "title": "[사랑의교회] 이것이 나의 간증이요 - 시온찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-06T04:29:38Z",
-          "duration": "PT4M48S",
+          "publishedAt": "2026-10-12T05:33:33Z",
+          "duration": "PT4M27S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "yvk2tfgs66g",
-          "title": "[사랑의교회] 괴로울 때 주님의 얼굴 보라 - 할렐루야찬양대",
+          "videoId": "Jssn4N2vn8w",
+          "title": "[사랑의교회] 주님을 찬양하라 - 할렐루야찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-05T05:06:19Z",
-          "duration": "PT4M32S",
+          "publishedAt": "2026-10-12T05:32:31Z",
+          "duration": "PT3M52S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "v5EG7y8NTq4",
-          "title": "[사랑의교회] 내가 산을 향하여 눈을 드니 - 영광찬양대",
+          "videoId": "LfiXd9v1-co",
+          "title": "[사랑의교회] 저 멀리 뵈는 나의 시온성 - 호산나찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-10-05T05:05:11Z",
-          "duration": "PT4M10S",
+          "publishedAt": "2026-10-12T05:31:58Z",
+          "duration": "PT4M45S",
           "media_type": "worship",
           "source": "theme"
         },
         {
-          "videoId": "s3JuoKBTccE",
-          "title": "[사랑의교회] 옷자락에서 전해지는 사랑 - 시온찬양대",
+          "videoId": "7Zpvdk7noX4",
+          "title": "[사랑의교회] 나는 I am - 영광찬양대",
           "channel": "사랑의교회",
-          "publishedAt": "2026-09-29T04:39:30Z",
-          "duration": "PT4M52S",
+          "publishedAt": "2026-10-12T05:30:42Z",
+          "duration": "PT3M39S",
           "media_type": "worship",
           "source": "theme"
         },
@@ -8176,6 +8176,15 @@
           "source": "theme"
         },
         {
+          "videoId": "DkA2J6c8yHI",
+          "title": "[생명의 삶 큐티] 제비뽑기를 통한 공정한 직무 분배| 역대상 24:1~31 | 조호영 목사 | 261013QT",
+          "channel": "CGN 생명의 삶",
+          "publishedAt": "2026-10-12T15:00:07Z",
+          "duration": "PT14M15S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
           "videoId": "OoLIh4JRRLY",
           "title": "[생명의 삶 큐티] 예배하는 세대를 위해 준비된 사람들 | 역대상 23:1~32 | 조호영 목사 | 261012QT",
           "channel": "CGN 생명의 삶",
@@ -8208,15 +8217,6 @@
           "channel": "CGN 생명의 삶",
           "publishedAt": "2026-10-08T15:00:13Z",
           "duration": "PT9M29S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "BoxDrG7a2IY",
-          "title": "[생명의 삶 큐티] 하나님보다 사람 수를 의지하는 죄 | 역대상 21:1~8 | 윤광열 목사 | 261008QT",
-          "channel": "CGN 생명의 삶",
-          "publishedAt": "2026-10-07T15:00:25Z",
-          "duration": "PT10M20S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -8311,20 +8311,20 @@
           "source": "theme"
         },
         {
+          "videoId": "BoxDrG7a2IY",
+          "title": "[생명의 삶 큐티] 하나님보다 사람 수를 의지하는 죄 | 역대상 21:1~8 | 윤광열 목사 | 261008QT",
+          "channel": "CGN 생명의 삶",
+          "publishedAt": "2026-10-07T15:00:25Z",
+          "duration": "PT10M20S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
           "videoId": "rFp7Tv55OsI",
           "title": "[생명의 삶 큐티] 하나님을 의지한 용사들의 승리 | 역대상 20:1~8 | 윤광열 목사 | 261007QT",
           "channel": "CGN 생명의 삶",
           "publishedAt": "2026-10-06T15:00:27Z",
           "duration": "PT9M11S",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
-          "videoId": "mFSX8moswEQ",
-          "title": "[생명의 삶 큐티] 하나님의 선하신 뜻과 승리 | 역대상 19:8~19 | 윤광열 목사 | 261006QT",
-          "channel": "CGN 생명의 삶",
-          "publishedAt": "2026-10-05T15:00:09Z",
-          "duration": "PT10M18S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -8338,6 +8338,15 @@
           "source": "theme"
         },
         {
+          "videoId": "SdYBvsleOaE",
+          "title": "예수는 왕 예수는 주 | 옹기장이 40주년 카운트다운콘서트 2026",
+          "channel": "옹기장이선교단 Official",
+          "publishedAt": "2026-10-11T12:00:16Z",
+          "duration": "PT4M48S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
           "videoId": "YFiDmBI0UFQ",
           "title": "[주일 BRANDNEW 찬양] 판교채플/ 26.10.11 / 주님 마음 내게 주소서 / 주를 바라보며 / 전능하신 우리 주 하나님에게 / 삶의 예배 / 푯대를 향하여",
           "channel": "우리들교회",
@@ -8347,38 +8356,20 @@
           "source": "fallback"
         },
         {
-          "videoId": "_dEnCvgoKpw",
-          "title": "특송 - 주가 지으신 이 날에, 춤추는 세대 | 청소년",
+          "videoId": "ckKZI0a7YJ4",
+          "title": "2026 가을특새 찬양 - 여섯째 날",
           "channel": "분당우리교회",
-          "publishedAt": "2026-10-10T03:09:18Z",
-          "duration": "PT6M42S",
+          "publishedAt": "2026-10-10T03:09:21Z",
+          "duration": "PT12M39S",
           "media_type": "worship",
           "source": "fallback"
         },
         {
-          "videoId": "n5rRRocVXOo",
-          "title": "하나님은 사랑이라(ft. 월드비전합창단) | 옹기장이 40주년 카운트다운콘서트 2026",
-          "channel": "옹기장이선교단 Official",
-          "publishedAt": "2026-10-09T16:30:40Z",
-          "duration": "PT5M33S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "otqvwoH5tMo",
-          "title": "특송 - 주님의 임재 앞에서, 어린이 군대 | 주일학교 어와나",
+          "videoId": "BiYUMJ4KYUk",
+          "title": "2026 가을특새 찬양 - 셋째 날",
           "channel": "분당우리교회",
-          "publishedAt": "2026-10-07T03:19:15Z",
-          "duration": "PT9M57S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "nMDxzeAdxpQ",
-          "title": "[사랑의교회] 예수는 나의 힘이요/하늘 위에 주님 밖에/예수 우리 왕이여",
-          "channel": "사랑의교회",
-          "publishedAt": "2026-10-06T04:31:23Z",
-          "duration": "PT10M20S",
+          "publishedAt": "2026-10-07T03:19:29Z",
+          "duration": "PT14M27S",
           "media_type": "worship",
           "source": "fallback"
         },
@@ -8392,6 +8383,24 @@
           "source": "fallback"
         },
         {
+          "videoId": "P4rtvEytZMc",
+          "title": "예수로 스며들다 | 옹기장이 40주년 카운트다운콘서트 2026",
+          "channel": "옹기장이선교단 Official",
+          "publishedAt": "2026-09-28T12:00:40Z",
+          "duration": "PT4M54S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "H6SFgvR_P2c",
+          "title": "[사랑의교회] 우리 때문에 - 소프라노 박영서 (피아노: 송은정 집사)",
+          "channel": "사랑의교회",
+          "publishedAt": "2026-09-28T04:56:26Z",
+          "duration": "PT3M5S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
           "videoId": "pjQGawxWs4M",
           "title": "주의 친절한 팔에 안기세 | 제예희 인도자 인도 | 꿈의교회 예배실황",
           "channel": "김학중 목사_꿈의교회 미디어교회",
@@ -8401,11 +8410,20 @@
           "source": "fallback"
         },
         {
-          "videoId": "Tamv5GhmH0w",
-          "title": "[CTS 추천픽]  🌕🎁 추석에는 추천픽 모아보기 | 이하늬 가족, 태진아 출연 | 내 영혼의 찬양 Praise | 추석 특집 |",
+          "videoId": "y1lVTQPDGnE",
+          "title": "[Full] CTS스페셜 '이순희 2000곡 창작기념 찬양콘서트' 2부ㅣ백송교회ㅣ9월 22일 (화)",
           "channel": "CTS기독교TV",
-          "publishedAt": "2026-09-24T23:00:21Z",
-          "duration": "PT23M49S",
+          "publishedAt": "2026-09-22T06:00:08Z",
+          "duration": "PT53M8S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "v-Y9UUfb9aU",
+          "title": "[Full] CTS스페셜 '이순희 2000곡 창작기념 찬양콘서트' 1부ㅣ백송교회ㅣ1부 9월 21일 (월)",
+          "channel": "CTS기독교TV",
+          "publishedAt": "2026-09-22T02:45:19Z",
+          "duration": "PT51M49S",
           "media_type": "worship",
           "source": "fallback"
         },
@@ -8419,24 +8437,6 @@
           "source": "fallback"
         },
         {
-          "videoId": "LGfBH45HRU4",
-          "title": "[사랑의교회] 빛 되신 주/죄에서 자유를 얻게 함은/내 마음 다해/날 자녀라 하시네/주님의 선하심",
-          "channel": "사랑의교회",
-          "publishedAt": "2026-09-22T02:42:45Z",
-          "duration": "PT20M52S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "Pe_t0Eq2JV0",
-          "title": "기도의 힘 | 옹기장이 40주년 카운트다운콘서트 2026",
-          "channel": "옹기장이선교단 Official",
-          "publishedAt": "2026-09-21T17:23:59Z",
-          "duration": "PT4M46S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
           "videoId": "3GTw_7gUV1o",
           "title": "CCM 오디션에 지원자만 1,600명? 이거 됩니다 (w. 김영우, 백승남, 여니엘, 김수지, 김도현) | 힐링보이스 스페셜토크",
           "channel": "CGN",
@@ -8446,11 +8446,11 @@
           "source": "fallback"
         },
         {
-          "videoId": "2qkN_xvZBAw",
-          "title": "[주일찬양] 휘문채플 / 26.09.13 / 우리들이 싸울 것은 / 주의 손에 나의 손을 포개고 / 내 평생 소원 이것뿐",
-          "channel": "우리들교회",
-          "publishedAt": "2026-09-13T06:43:36Z",
-          "duration": "PT14M57S",
+          "videoId": "tuRdoviftYc",
+          "title": "[사랑의교회] 충만 - 테너 이정명 (피아노: 최혜진 집사)",
+          "channel": "사랑의교회",
+          "publishedAt": "2026-09-07T05:22:00Z",
+          "duration": "PT3M16S",
           "media_type": "worship",
           "source": "fallback"
         },
@@ -8482,6 +8482,15 @@
           "source": "fallback"
         },
         {
+          "videoId": "Zz3R2Ux6VEQ",
+          "title": "2026_0820ㅣ어노인팅목요예배ㅣ인도_ 강슬기",
+          "channel": "ANOINTING",
+          "publishedAt": "2026-08-26T09:00:25Z",
+          "duration": "PT1H57M44S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
           "videoId": "UgQF4ZE0d_M",
           "title": "나의 가장 낮은 마음 + 예수 나의 첫사랑 되시네 + 예수 예수 예수 + 소원 | 오륜교회 수요 오전예배 찬양 헤세드 (2026-08-19)",
           "channel": "오륜교회 oryunchurch",
@@ -8491,20 +8500,11 @@
           "source": "fallback"
         },
         {
-          "videoId": "9j1hLyR299E",
-          "title": "2026_0806ㅣ어노인팅목요예배ㅣ인도_ 양민호  #성문교회 ",
+          "videoId": "smsE7hEHn9o",
+          "title": "어노인팅예배캠프2026 새노래 배우기_전곡 #Newsongs",
           "channel": "ANOINTING",
-          "publishedAt": "2026-08-12T09:00:21Z",
-          "duration": "PT1H52M41S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "rFjWg9kG-b4",
-          "title": "02 주는 나의 하나님 | 새노래배우기ㅣ어노인팅예배캠프2026",
-          "channel": "ANOINTING",
-          "publishedAt": "2026-08-03T08:13:12Z",
-          "duration": "PT4M48S",
+          "publishedAt": "2026-08-11T09:00:01Z",
+          "duration": "PT21M57S",
           "media_type": "worship",
           "source": "fallback"
         }
@@ -8552,6 +8552,15 @@
           "channel": "CBS설교",
           "publishedAt": "2026-10-09T15:00:33Z",
           "duration": "PT47M27S",
+          "media_type": "sermon",
+          "source": "theme"
+        },
+        {
+          "videoId": "C_pRCve5yZg",
+          "title": "바른교회 조정현 목사 | 강해진 다음이 더 위험합니다 [C채널] 비전메세지",
+          "channel": "C채널방송 : 설교",
+          "publishedAt": "2026-10-12T04:00:17Z",
+          "duration": "PT35M21S",
           "media_type": "sermon",
           "source": "theme"
         },
@@ -8637,15 +8646,6 @@
           "source": "theme"
         },
         {
-          "videoId": "yUK8ywfxbQA",
-          "title": "청주순복음교회 이동규 목사 | 새 일을 행하시리라 [C채널] 비전메시지",
-          "channel": "C채널방송 : 설교",
-          "publishedAt": "2026-09-20T03:00:01Z",
-          "duration": "PT24M",
-          "media_type": "sermon",
-          "source": "theme"
-        },
-        {
           "videoId": "nxFF4pm1L1U",
           "title": "[사랑의교회] 성화의 첫 열매, 복된 결혼(로마서 강해 16) - 오정현 담임목사",
           "channel": "사랑의교회",
@@ -8727,20 +8727,29 @@
           "source": "fallback"
         },
         {
-          "videoId": "otqvwoH5tMo",
-          "title": "특송 - 주님의 임재 앞에서, 어린이 군대 | 주일학교 어와나",
-          "channel": "분당우리교회",
-          "publishedAt": "2026-10-07T03:19:15Z",
-          "duration": "PT9M57S",
+          "videoId": "LetNhK6LiFM",
+          "title": "찬양하는 나의 삶 | 옹기장이 40주년 카운트다운콘서트 2026",
+          "channel": "옹기장이선교단 Official",
+          "publishedAt": "2026-10-07T13:32:01Z",
+          "duration": "PT4M13S",
           "media_type": "worship",
           "source": "fallback"
         },
         {
-          "videoId": "FWf4sGgHfKY",
-          "title": "옹기장이 축복송 메들리 | 옹기장이 40주년 카운트다운 콘서트 2026",
-          "channel": "옹기장이선교단 Official",
-          "publishedAt": "2026-10-04T13:58:10Z",
-          "duration": "PT6M12S",
+          "videoId": "BiYUMJ4KYUk",
+          "title": "2026 가을특새 찬양 - 셋째 날",
+          "channel": "분당우리교회",
+          "publishedAt": "2026-10-07T03:19:29Z",
+          "duration": "PT14M27S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "rwdrC33Uiz0",
+          "title": "방글라데시 선교후원 찬양콘서트 「그의 길을 따라」",
+          "channel": "CTS기독교TV",
+          "publishedAt": "2026-10-06T12:00:14Z",
+          "duration": "PT53M27S",
           "media_type": "worship",
           "source": "fallback"
         },
@@ -8781,20 +8790,29 @@
           "source": "fallback"
         },
         {
-          "videoId": "v-Y9UUfb9aU",
-          "title": "[Full] CTS스페셜 '이순희 2000곡 창작기념 찬양콘서트' 1부ㅣ백송교회ㅣ1부 9월 21일 (월)",
-          "channel": "CTS기독교TV",
-          "publishedAt": "2026-09-22T02:45:19Z",
-          "duration": "PT51M49S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
           "videoId": "2kUE4m1J3WI",
           "title": "[주일찬양] 휘문채플 / 26.09.20 / 내 모든 소원 기도의 제목 / 원하고 바라고 기도합니다 / 예수의 길",
           "channel": "우리들교회",
           "publishedAt": "2026-09-20T06:46:31Z",
           "duration": "PT14M43S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "zqmMSt9Yh6I",
+          "title": "분당우리교회 주일 찬양 | 2026-09-13",
+          "channel": "분당우리교회",
+          "publishedAt": "2026-09-16T07:02:21Z",
+          "duration": "PT14M36S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "KwBs7Kgo9ng",
+          "title": "[사랑의교회] 시온의 영광이 빛나는 아침/주님과 같이/모든 민족과 언어들 가운데",
+          "channel": "사랑의교회",
+          "publishedAt": "2026-09-15T05:10:27Z",
+          "duration": "PT11M24S",
           "media_type": "worship",
           "source": "fallback"
         },
@@ -8808,29 +8826,20 @@
           "source": "fallback"
         },
         {
-          "videoId": "iN3q0Ft-q8Q",
-          "title": "분당우리교회 주일 찬양 | 2026-09-06",
-          "channel": "분당우리교회",
-          "publishedAt": "2026-09-09T07:09:49Z",
-          "duration": "PT15M13S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
-          "videoId": "R9UI2DgLW0w",
-          "title": "[사랑의교회] 여정 - 소프라노 노희재, 테너 경세현 (피아노: 변혜린 성도)",
-          "channel": "사랑의교회",
-          "publishedAt": "2026-09-07T05:24:44Z",
-          "duration": "PT4M27S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
           "videoId": "aMDDUECapmk",
           "title": "어린 다윗이 보인 찬양의 열정, 우리에게도 있습니다! | 공항벧엘교회 CBS 장로합창단 초청연주회 | CBS 스페셜",
           "channel": "CBSJOY",
           "publishedAt": "2026-09-01T03:00:08Z",
           "duration": "PT51M49S",
+          "media_type": "worship",
+          "source": "fallback"
+        },
+        {
+          "videoId": "8Ph3rkv6Z1E",
+          "title": "Thank You & Creditㅣ어노인팅예배캠프2026 \"WELCOME\" ",
+          "channel": "ANOINTING",
+          "publishedAt": "2026-08-31T14:49:07Z",
+          "duration": "PT4M46S",
           "media_type": "worship",
           "source": "fallback"
         },
@@ -8844,15 +8853,6 @@
           "source": "fallback"
         },
         {
-          "videoId": "Zz3R2Ux6VEQ",
-          "title": "2026_0820ㅣ어노인팅목요예배ㅣ인도_ 강슬기",
-          "channel": "ANOINTING",
-          "publishedAt": "2026-08-26T09:00:25Z",
-          "duration": "PT1H57M44S",
-          "media_type": "worship",
-          "source": "fallback"
-        },
-        {
           "videoId": "u_FKpWlYxkc",
           "title": "주 예수 내 맘에 들어와 + 갈 길을 밝히 보이시니 + 나는 아무것도 아닙니다 + 내 삶은 주의 것 | 오륜교회 수요 오후예배 찬양 브릿지워십 (2026-08-19)",
           "channel": "오륜교회 oryunchurch",
@@ -8862,20 +8862,20 @@
           "source": "fallback"
         },
         {
-          "videoId": "YLtCQE7owvA",
-          "title": "05 주님 환영합니다 | 새노래배우기ㅣ어노인팅예배캠프2026",
+          "videoId": "uY4biIXXvrQ",
+          "title": "04 살아계시며 다스리시네 | 새노래배우기ㅣ어노인팅예배캠프2026",
           "channel": "ANOINTING",
-          "publishedAt": "2026-08-03T08:12:51Z",
-          "duration": "PT5M3S",
+          "publishedAt": "2026-08-03T08:12:58Z",
+          "duration": "PT7M32S",
           "media_type": "worship",
           "source": "fallback"
         },
         {
-          "videoId": "ufEXsxOS3mE",
-          "title": "주의 나라와 영광 이곳에 | 옹기장이 40주년 카운트다운콘서트 2026",
+          "videoId": "A8SSJxbcez8",
+          "title": "성령의 리듬 | 옹기장이 40주년 카운트다운콘서트 2026",
           "channel": "옹기장이선교단 Official",
-          "publishedAt": "2026-07-22T12:00:08Z",
-          "duration": "PT4M27S",
+          "publishedAt": "2026-07-21T12:00:29Z",
+          "duration": "PT4M40S",
           "media_type": "worship",
           "source": "fallback"
         }
