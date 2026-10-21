@@ -6,7 +6,7 @@ The daily picker uses only verified, non-crisis entries whose reference identifi
 
 ## Viewer journey and links
 
-Each Short displays the verse, includes a Korean neural TTS reading of its reference and text, then points to Peace in Mind's chapter reader and its 말씀·찬양 videos. The ending asks viewers to use the channel profile link to open the website or download the Android app.
+Each Short opens on the app emotion-entry screen, reveals the daily verse, keeps the chapter reader with its continuation-reading tab selected during narration, switches to the app praise recommendations, and shows the YouTube player handoff. The daily verse is overlaid on the real app screenshots so it always matches the narration. It uses a low male Korean neural TTS reading of the reference and verse, then points to the app's praise videos. The ending asks viewers to use the channel profile link to open the website or download the Android app.
 
 Shorts descriptions and comments do not make URLs clickable. Add these as channel profile links:
 
@@ -17,7 +17,7 @@ The same URLs are included in descriptions for reference, with a clear "프로�
 
 ## Render a local draft
 
-Python 3.12+, FFmpeg/FFprobe, a Korean font, and Google Cloud Text-to-Speech Application Default Credentials are required. Google Cloud currently offers Korean Neural2 voices; the default is `ko-KR-Neural2-A` at a slower reading rate, with no background music.
+Python 3.12+, FFmpeg/FFprobe, a Korean font, and Google Cloud Text-to-Speech Application Default Credentials are required. Google Cloud currently offers Korean Neural2 voices; the default is the low male `ko-KR-Neural2-C` voice at a slower reading rate and lower pitch, with no background music.
 
 From the repository root:
 
@@ -29,7 +29,7 @@ python youtube_shorts/scripts/render_short.py youtube_shorts/work/2026-10-22/202
 python youtube_shorts/scripts/build_metadata.py youtube_shorts/work/2026-10-22/2026-10-22.json
 ```
 
-This writes a narrated MP4, four caption cards, and metadata beneath the ignored `youtube_shorts/work/` directory. Before automation, listen to the MP4 and confirm that the AI voice reads the older KRV spelling clearly.
+This writes the narrated MP4, app walkthrough frames, and metadata beneath the ignored `youtube_shorts/work/` directory. Before automation, listen to the MP4 and confirm that the AI voice reads the older KRV spelling clearly.
 
 ## Upload authorization
 

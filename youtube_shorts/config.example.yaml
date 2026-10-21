@@ -21,9 +21,9 @@ video:
 voice:
   provider: google-cloud-text-to-speech
   language_code: ko-KR
-  voice_name: ko-KR-Neural2-A
+  voice_name: ko-KR-Neural2-C
   speaking_rate: 0.88
-  pitch: -1.0
+  pitch: -3.0
 
 editorial:
   speak_scripture_exactly: true
