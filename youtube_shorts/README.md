@@ -6,7 +6,7 @@ The daily picker uses only verified, non-crisis entries whose reference identifi
 
 ## Viewer journey and links
 
-Each Short opens on the app emotion-entry screen, reveals the daily verse, keeps the chapter reader with its continuation-reading tab selected during narration, switches to the app praise recommendations, and shows the YouTube player handoff. The daily verse is overlaid on the real app screenshots so it always matches the narration. It uses a low male Korean neural TTS reading of the reference and verse, then points to the app's praise videos. The ending asks viewers to use the channel profile link to open the website or download the Android app.
+Each Short opens on the app emotion-entry screen, reveals the daily verse, keeps the chapter reader with its continuation-reading tab selected during narration, switches to the app praise recommendations, and shows the YouTube player handoff. The daily verse is overlaid on the real app screenshots so it always matches the narration. Three low male Korean neural TTS segments cover the emotion prompt, verse, and praise recommendation; short crossfades align the app-screen changes with each segment. The chapter reader shows the same four following verses as the app. The YouTube handoff uses the actual recommended thumbnail with a player-state animation. The ending asks viewers to use the channel profile link to open the website or download the Android app.
 
 Shorts descriptions and comments do not make URLs clickable. Add these as channel profile links:
 

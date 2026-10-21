@@ -7,7 +7,6 @@ import argparse
 import json
 import math
 import os
-import re
 import subprocess
 from pathlib import Path
 
@@ -16,9 +15,6 @@ from PIL import Image, ImageDraw, ImageFont
 WIDTH, HEIGHT, FPS = 1080, 1920, 30
 DURATION = 7
 VOICE_NAME = os.environ.get("PYM_TTS_VOICE", "ko-KR-Neural2-C")
-INK = (14, 25, 32)
-PAPER = (245, 241, 231)
-ACCENTS = ((186, 207, 196), (205, 183, 145), (166, 194, 211), (210, 170, 163))
 
 
 def font_path() -> Path:
@@ -49,42 +45,6 @@ def wrap(text: str, font: ImageFont.FreeTypeFont, max_width: int) -> list[str]:
         if line:
             lines.append(line)
     return lines
-
-
-def multiline_center(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont,
-                     center_y: int, max_width: int, fill: tuple[int, int, int],
-                     spacing: int = 30) -> None:
-    lines = wrap(text, font, max_width)
-    heights = [draw.textbbox((0, 0), line, font=font)[3] for line in lines]
-    total_height = sum(heights) + spacing * max(0, len(lines) - 1)
-    y = center_y - total_height // 2
-    for line, height in zip(lines, heights):
-        draw.text((WIDTH // 2, y), line, font=font, fill=fill, anchor="mt")
-        y += height + spacing
-
-
-def card(title: str, body: str, footer: str, accent: tuple[int, int, int],
-         output: Path, body_size: int = 68) -> None:
-    image = Image.new("RGB", (WIDTH, HEIGHT), INK)
-    draw = ImageDraw.Draw(image)
-    draw.ellipse((650, -410, 1370, 310), fill=tuple(int(c * 0.46) for c in accent))
-    draw.ellipse((-490, 1410, 330, 2230), fill=tuple(int(c * 0.27) for c in accent))
-    draw.rounded_rectangle((80, 135, WIDTH - 80, HEIGHT - 135), radius=48,
-                           outline=(55, 70, 76), width=2)
-
-    korean_font = font_path()
-    small = ImageFont.truetype(str(korean_font), 38)
-    heading = ImageFont.truetype(str(korean_font), 55)
-    main = ImageFont.truetype(str(korean_font), body_size)
-    foot = ImageFont.truetype(str(korean_font), 34)
-    draw.text((WIDTH // 2, 250), title, font=heading, fill=accent, anchor="mm")
-    multiline_center(draw, body, main, 920, WIDTH - 190, PAPER, spacing=38)
-    draw.rounded_rectangle((WIDTH // 2 - 44, 1490, WIDTH // 2 + 44, 1497),
-                           radius=4, fill=accent)
-    draw.text((WIDTH // 2, 1590), footer, font=small, fill=(192, 202, 201), anchor="mm")
-    draw.text((WIDTH // 2, 1710), "Peace in Mind", font=foot, fill=(142, 161, 164), anchor="mm")
-    output.parent.mkdir(parents=True, exist_ok=True)
-    image.save(output, format="PNG", optimize=True)
 
 
 def draw_wrapped(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont,
@@ -127,13 +87,13 @@ def app_scenes(manifest: dict, work: Path) -> tuple[list[Path], list[Path]]:
 
     input_font = ImageFont.truetype(str(korean_font), 48)
     emotion = "\uB9C8\uC74C\uC774 \uC790\uAFB8 \uC870\uAE09\uD574\uC838\uC694"
-    for index, count in enumerate((0, 3, 8, len(emotion))):
+    for index, count in enumerate((0, 2, 4, 6, 8, 10, len(emotion))):
         image = Image.open(input_screen).convert("RGB")
         draw = ImageDraw.Draw(image, "RGBA")
         draw.rectangle((45, 815, 1035, 945), fill=image.getpixel((10, 900)))
         typed = emotion[:count]
         draw.text((60, 845), typed, font=input_font, fill=(235, 239, 235))
-        if index == 3:
+        if index == 6:
             cursor_x = 60 + int(input_font.getlength(typed)) + 4
             draw.line((cursor_x, 850, cursor_x, 910), fill=(127, 179, 163), width=3)
             draw.ellipse((490, 1050, 590, 1150), outline=(127, 179, 163, 235), width=9)
@@ -156,19 +116,24 @@ def app_scenes(manifest: dict, work: Path) -> tuple[list[Path], list[Path]]:
     image.save(path, optimize=True)
     pages.append(path)
 
+    chapter, start_verse, context_verses, progress = reading_context(manifest)
     image = Image.open(reading_screen).convert("RGB")
     draw = ImageDraw.Draw(image)
     reader_top = image.getpixel((10, 180))
     reader_body = image.getpixel((10, 900))
-    verse_font = fit_font(verse_text, korean_font, 61, 40, 940, 455, 30)
+    verse_font = fit_context_font(context_verses, korean_font, 50, 34, 865, 900, 16, 28)
     draw.rectangle((35, 35, 1045, 415), fill=reader_top)
-    draw.rectangle((35, 605, 1045, 1815), fill=reader_body)
+    draw.rectangle((35, 605, 1045, 1630), fill=reader_body)
     draw.text((60, 135), "\uB9D0\uC500\uC744 \uCC9C\uCC9C\uD788 \uC774\uC5B4 \uC77D\uC5B4\uBCF4\uC138\uC694.", font=title_font, fill=muted)
-    match = re.search(r"(.+?)\s+(\d+):(\d+)", manifest["reference"])
-    chapter_label = f"{match.group(1)} {match.group(2)}\uC7A5 \u00B7 {match.group(3)}\uC808" if match else manifest["reference"]
-    draw.text((60, 635), chapter_label, font=ref_font, fill=gold)
-    draw_wrapped(draw, verse_text, verse_font, 60, 770, 940, paper, 30)
-    draw.text((60, 1575), "\uC624\uB298\uC758 \uAD6C\uC808\uC744 \uB2E4 \uC77D\uC5C8\uC5B4\uC694", font=ref_font, fill=muted)
+    draw.text((60, 635), chapter["title"], font=ref_font, fill=gold)
+    draw.text((300, 635), progress, font=ref_font, fill=muted)
+    y = 760
+    for number, verse in enumerate(context_verses, start=start_verse):
+        draw.text((60, y), str(number), font=ref_font, fill=gold)
+        for line in wrap(verse, verse_font, 865):
+            draw.text((112, y), line, font=verse_font, fill=paper)
+            y += verse_font.size + 16
+        y += 28
     path = work / "app-reading.png"
     image.save(path, optimize=True)
     pages.append(path)
@@ -205,7 +170,36 @@ def app_scenes(manifest: dict, work: Path) -> tuple[list[Path], list[Path]]:
     return pages, player_pages
 
 
-def synthesize_verse(manifest: dict, output: Path, voice_name: str) -> None:
+def reading_context(manifest: dict) -> tuple[dict, int, list[str], str]:
+    """Mirror ChapterReader's four-verse page starting after the selected verse."""
+    root = Path(__file__).resolve().parents[2]
+    data = json.loads((root / "app" / "src" / "data" / "verses.json").read_text(encoding="utf-8"))
+    selected = next(item for item in data["verses"] if item["id"] == manifest["verse_id"])
+    read = selected["read"]
+    chapter_path = root / "app" / "public" / "krv" / read["book"] / f"{read['chapter']}.json"
+    chapter = json.loads(chapter_path.read_text(encoding="utf-8"))
+    start = read["from"]
+    verses = chapter["verses"][start - 1:start + 3]
+    end = start + len(verses) - 1
+    span = f"{start}-{end}" if end > start else str(start)
+    return chapter, start, verses, f"{span} / {len(chapter['verses'])}"
+
+
+def fit_context_font(verses: list[str], font_file: Path, start_size: int, min_size: int,
+                     max_width: int, max_height: int, line_gap: int,
+                     verse_gap: int) -> ImageFont.FreeTypeFont:
+    measure = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+    for size in range(start_size, min_size - 1, -1):
+        font = ImageFont.truetype(str(font_file), size)
+        line_height = max(measure.textbbox((0, 0), "가", font=font)[3], size)
+        lines = sum(len(wrap(verse, font, max_width)) for verse in verses)
+        height = lines * (line_height + line_gap) + max(0, len(verses) - 1) * verse_gap
+        if height <= max_height:
+            return font
+    return ImageFont.truetype(str(font_file), min_size)
+
+
+def synthesize_text(text: str, output: Path, voice_name: str, speaking_rate: float = 0.9) -> None:
     try:
         from google.cloud import texttospeech
     except ImportError as error:
@@ -214,15 +208,12 @@ def synthesize_verse(manifest: dict, output: Path, voice_name: str) -> None:
         ) from error
 
     client = texttospeech.TextToSpeechClient()
-    # Only formatting line breaks are joined. The KRV verse's words are preserved.
-    text = " ".join(manifest["text"].splitlines()).strip()
-    reading = f"{manifest['reference']}. {text}"
     response = client.synthesize_speech(
-        input=texttospeech.SynthesisInput(text=reading),
+        input=texttospeech.SynthesisInput(text=" ".join(text.splitlines()).strip()),
         voice=texttospeech.VoiceSelectionParams(language_code="ko-KR", name=voice_name),
         audio_config=texttospeech.AudioConfig(
             audio_encoding=texttospeech.AudioEncoding.MP3,
-            speaking_rate=0.88,
+            speaking_rate=speaking_rate,
             pitch=-3.0,
         ),
     )
@@ -238,24 +229,39 @@ def media_duration(path: Path, ffprobe: str) -> float:
     return float(result.stdout.strip())
 
 
-def render_mp4(images: list[Path], output: Path, audio: Path, durations: list[float],
-               ffmpeg: str, narration_after_scenes: int = 1) -> None:
+def render_mp4(images: list[Path], durations: list[float], audio_clips: list[tuple[Path, float]],
+               output: Path, ffmpeg: str, transition: float = 0.16) -> None:
     command = [ffmpeg, "-hide_banner", "-loglevel", "error", "-y"]
     for image, duration in zip(images, durations):
         command += ["-loop", "1", "-framerate", str(FPS), "-t", str(duration), "-i", str(image)]
-    audio_index = len(images)
-    command += ["-i", str(audio)]
-    filters = [f"[{i}:v]fps={FPS},setsar=1[v{i}]" for i in range(len(images))]
-    joins = "".join(f"[v{i}]" for i in range(len(images)))
-    total = sum(durations)
-    filters.append(f"{joins}concat=n={len(images)}:v=1:a=0[vout]")
-    delay = round(sum(durations[:narration_after_scenes]) * 1000)
+    audio_base = len(images)
+    for audio, _ in audio_clips:
+        command += ["-i", str(audio)]
+    filters = [f"[{i}:v]fps={FPS},settb=AVTB,setpts=PTS-STARTPTS,setsar=1[v{i}]"
+               for i in range(len(images))]
+    current = "v0"
+    for index in range(1, len(images)):
+        offset = sum(durations[:index]) - transition * index
+        output_label = f"xf{index}"
+        filters.append(
+            f"[{current}][v{index}]xfade=transition=fade:duration={transition}:offset={offset:.3f}[{output_label}]"
+        )
+        current = output_label
+    total = sum(durations) - transition * (len(images) - 1)
+    filters.append(f"[{current}]format=yuv420p[vout]")
+    audio_labels = []
+    for index, (_, offset) in enumerate(audio_clips):
+        delay = round(offset * 1000)
+        label = f"a{index}"
+        filters.append(f"[{audio_base + index}:a]adelay={delay}|{delay},asetpts=PTS-STARTPTS[{label}]")
+        audio_labels.append(f"[{label}]")
     filters.append(
-        f"[{audio_index}:a]adelay={delay}|{delay},apad,atrim=duration={total},asetpts=N/SR/TB[aout]"
+        f"{''.join(audio_labels)}amix=inputs={len(audio_clips)}:duration=longest:normalize=0[mix]"
     )
+    filters.append(f"[mix]apad,atrim=duration={total:.3f},asetpts=PTS-STARTPTS[aout]")
     command += ["-filter_complex", ";".join(filters), "-map", "[vout]", "-map", "[aout]",
                 "-c:v", "libx264", "-preset", "ultrafast", "-crf", "20", "-pix_fmt", "yuv420p",
-                "-c:a", "aac", "-b:a", "128k", "-t", str(total), "-movflags", "+faststart",
+                "-c:a", "aac", "-b:a", "128k", "-t", f"{total:.3f}", "-movflags", "+faststart",
                 "-r", str(FPS), str(output)]
     subprocess.run(command, check=True)
 
@@ -277,23 +283,44 @@ def main() -> None:
             raise ValueError(f"Manifest requires a non-empty '{field}'")
     work = Path(__file__).resolve().parents[1] / "work" / manifest["date_kst"]
     work.mkdir(parents=True, exist_ok=True)
-    audio = work / "verse-reading.mp3"
-    synthesize_verse(manifest, audio, args.voice)
-    speaking_time = media_duration(audio, args.ffprobe)
-    input_pages, player_pages = app_scenes(manifest, work)
-    image_paths = [*input_pages[:4], input_pages[4], work / "app-reading.png",
-                   input_pages[6], *player_pages]
-    # Keep the continuation-reading tab visible throughout narration, then switch to praise.
-    durations = [0.45, 0.45, 0.45, 0.45, 1.6,
-                 max(DURATION, math.ceil(speaking_time + 1)), 3, 2, 2, 2]
+    prompts = work / "narration"
+    prompts.mkdir(parents=True, exist_ok=True)
+    intro_text = "\uC9C0\uAE08 \uB9C8\uC74C\uC740 \uC5B4\uB5A0\uC138\uC694? \uB204\uAD6C\uC5D0\uAC8C\uB3C4 \uB9D0\uD558\uC9C0 \uBABB\uD55C \uB9C8\uC74C\uC774 \uC788\uB2E4\uBA74, \uC5EC\uAE30\uC5D0 \uD3B8\uD558\uAC8C \uC801\uC5B4\uC8FC\uC138\uC694."
+    verse_text = f"{manifest['reference']}. {' '.join(manifest['text'].splitlines()).strip()}"
+    video_text = "\uC774 \uB9C8\uC74C\uC5D0 \uC5B4\uC6B8\uB9AC\uB294 \uCC2C\uC591 \uC601\uC0C1\uC744 \uD568\uAED8 \uCC3E\uC544\uBCFC\uAC8C\uC694."
+    intro_audio, verse_audio, video_audio = prompts / "input.mp3", prompts / "verse.mp3", prompts / "videos.mp3"
+    synthesize_text(intro_text, intro_audio, args.voice, speaking_rate=0.94)
+    synthesize_text(verse_text, verse_audio, args.voice, speaking_rate=0.88)
+    synthesize_text(video_text, video_audio, args.voice, speaking_rate=0.94)
+    intro_time = media_duration(intro_audio, args.ffprobe)
+    verse_time = media_duration(verse_audio, args.ffprobe)
+    video_time = media_duration(video_audio, args.ffprobe)
+    pages, player_pages = app_scenes(manifest, work)
+    typing_pages = pages[:-3]
+    verse_page, reading_page, video_page = pages[-3:]
+    image_paths = [*typing_pages, verse_page, reading_page, video_page, *player_pages]
+    transition = 0.16
+    intro_duration = max(5.8, intro_time + 1.0)
+    verse_preview = 1.25
+    reading_duration = max(DURATION, math.ceil(verse_time + 1.3))
+    video_duration = max(4.0, math.ceil(video_time + 0.9))
+    durations = ([intro_duration / len(typing_pages)] * len(typing_pages)
+                 + [verse_preview, reading_duration, video_duration, 1.2, 1.2, 1.2])
     if sum(durations) > 60:
         raise ValueError(f"Narration is too long for a Short: estimated {sum(durations)} seconds")
 
+    def scene_start(index: int) -> float:
+        return sum(durations[:index]) - transition * index
+
+    audio_clips = [(intro_audio, 0.0), (verse_audio, scene_start(len(typing_pages) + 1)),
+                   (video_audio, scene_start(len(typing_pages) + 2))]
+
     output = args.output or work / "short-draft.mp4"
     output.parent.mkdir(parents=True, exist_ok=True)
-    render_mp4(image_paths, output, audio, durations, args.ffmpeg, narration_after_scenes=5)
-    print(f"Rendered app walkthrough with {args.voice} ({sum(durations)} seconds): {output}")
-    print("Review the verse, low male narration, and YouTube handoff before publishing.")
+    render_mp4(image_paths, durations, audio_clips, output, args.ffmpeg, transition=transition)
+    rendered_time = sum(durations) - transition * (len(image_paths) - 1)
+    print(f"Rendered app walkthrough with {args.voice} ({rendered_time:.1f} seconds): {output}")
+    print("Review the verse, three narration parts, transitions, and YouTube handoff before publishing.")
 
 
 if __name__ == "__main__":
