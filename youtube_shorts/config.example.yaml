@@ -1,0 +1,30 @@
+# Copy to config.yaml after deciding the publication time and review mode.
+timezone: Asia/Seoul
+publish_time: "09:00"
+
+links:
+  website: https://appleap385-aaz0919.github.io/PeaceYourMind/
+  play_store: https://play.google.com/store/apps/details?id=io.github.appleap385.peaceinmind
+
+youtube:
+  # Options: draft, scheduled. Publishing stays off until OAuth is configured.
+  mode: draft
+  category_id: "27" # Education
+
+video:
+  width: 1080
+  height: 1920
+  max_duration_seconds: 60
+  attribution: "성경전서 개역한글판, 대한성서공회"
+  music: false # Add only audio with confirmed usage rights.
+
+voice:
+  provider: google-cloud-text-to-speech
+  language_code: ko-KR
+  voice_name: ko-KR-Neural2-A
+  speaking_rate: 0.88
+  pitch: -1.0
+
+editorial:
+  speak_scripture_exactly: true
+  exclude_crisis_verses: true

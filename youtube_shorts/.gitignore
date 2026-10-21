@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+oauth-client*.json
+client_secret*.json
+token*.json
+credentials*.json
+work/
+output/
+*.mp4
+*.wav
+*.mp3
+__pycache__/
