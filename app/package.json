@@ -1,7 +1,7 @@
 {
   "name": "peaceyourmind",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "gen:data": "python ../scripts/gen_taxonomy_json.py && python ../scripts/gen_verses_json.py && python ../scripts/gen_krv_chapters.py",

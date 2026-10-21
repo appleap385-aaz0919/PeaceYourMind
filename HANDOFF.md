@@ -45,6 +45,8 @@
 ▶ **하드웨어 뒤로가기** — **2026-10-06 보류 해제 · 버전 101 착수**(2.136 · 2.146).
    ★ [0] 되돌림 수단 먼저 — ✅ 태그 v100 · 100 AAB 로컬 1부(⛔ 101 빌드가 덮어쓴다) · 롤백 절차 등재
    ⚠⚠ 업로드 키 폴더 이름이 바뀌어 **포인터가 끊겼다** — 릴리스 빌드 전에 사용자가 정한다 (2.146)
+   ✅✅ **릴리스 AAB 101을 만들었다**(2026-10-21 · 2.149) — 첫 실서명 지문 일치 · 내용 대조 끝 · ⛔ **미업로드**
+        출시 노트 본문은 2.149 [2](v100 노트는 저장소에 없었다) · ⛔ 태그 v101은 출시가 나간 뒤
 ✅✅ **프로덕션 액세스 승인**(2026-09-23) → **프로덕션 버전 100 출시 제출**(09-25) (2.140)
 ✅✅ **프로덕션 출시 완료**(2026-10-02) — 검토 통과 → **「변경사항 게시」 클릭** → 스토어 반영.
    대한민국 · 전체 출시 100% · ✅ 사용자가 **실기기로 검색·설치를 확인했다** (2.143)
@@ -16636,6 +16638,144 @@ NOTIFY_LAST_BOOK · NOTIFY_OFF_BY가 **없다.** 같은 저장소에 있고 기�
 
 ---
 
+### 2.149 ✅ 버전 101 릴리스 AAB — 빌드 · 첫 실서명 · 내용 대조 · ⛔ 미업로드 (2026-10-21)
+
+> 사용자 전달: 101 구현과 실기기 확인이 끝났다 → 릴리스 빌드.
+> ⛔ 코드는 고치지 않았다(바뀐 것은 버전 두 파일과 이 문서뿐) · ⛔ 업로드는 사용자 · ⛔ 태그 v101은 출시가 나간 뒤
+
+#### [1] 버전 코드 — 101로 계산되는 것을 세 군데서 따로 읽었다
+
+```
+바꾼 것   app/package.json        "version" 0.1.0 → 0.1.1
+         app/package-lock.json   3행 · 9행 두 자리 0.1.0 → 0.1.1
+                                 (1641행 등의 0.1.0은 의존성 bplist-creator다 — 그대로)
+확인     AAB 안 base/manifest/AndroidManifest.xml(proto)   versionCode 101 · versionName 0.1.1
+                                                        (v100 백업 사본은 100 · 0.1.0)
+         intermediates bundle_manifest                   android:versionCode="101"
+         stats.py 실측                                   0.1.1 (versionCode 101) → 생성 블록 --write
+         About 표시(__APP_VERSION__)                     번들에 "0.1.1" 1 · "0.1.0" 0
+⚠ 정정 — 2.146 「따라오는 것」의 **verses.json source_version은 package.json을 따라가지 않는다.**
+  gen_verses_json.py가 **verses.yaml의 version**을 쓴다. 둘 다 0.1.0이어서 같아 보였을 뿐이다 (0.1.0 그대로)
+```
+
+#### [2] 출시 노트 — ★ v100 프로덕션 노트는 **저장소에 적혀 있지 않았다**
+
+```
+찾은 것   3절 「📝 출시 노트」(2026-09-07) — **내부 테스트** 노트뿐이다. 태그 없는 평문 · 테스터에게 쓴 글
+         2.140 — 「출시 노트(ko-KR)」라는 말만 있고 **본문이 없다**
+→ 같은 자리가 없어 **여기(2.149)에 둔다.** 콘솔에 그대로 붙여 넣는 모양이다
+```
+
+```
+<ko-KR>
+뒤로가기 버튼으로 이전 화면으로 돌아갈 수 있습니다.
+알림 설정이 화면마다 다르게 보이던 문제를 고쳤습니다.
+</ko-KR>
+```
+
+```
+⚠ 사실만 — 노트에 안 들어간 사용자 체감 변화가 둘 있다. 문구는 사용자 확정 그대로 두었다
+   「기록 지우기」가 알림도 끈다(2.147 ㄱ-2) · 빈 입력 화면 「골라서 찾기」가 고르는 화면으로 간다(2.148)
+```
+
+#### [3] 빌드
+
+```
+절차   cd app && npm run sync:app     (gen:data → build:app → cap sync · ⛔ 낡은 번들 함정 2.131·2.146)
+                                      git status 변화 없음(버전 두 파일만)
+      cd android && JAVA_HOME=D:/jaehyuk.myung/android/jdk21 ./gradlew bundleRelease
+결과   BUILD SUCCESSFUL 2m 27s · 196 tasks (53 executed)
+      verifyNoDemoAdIds ✅ · verifyReleaseSigning ✅ · signReleaseBundle ✅
+파일   app/android/app/build/outputs/bundle/release/app-release.aab
+      **7,793,405 바이트** · 2026-10-21 18:54
+      sha256 **c1dc827cb8ef464c6d5c5b0cab58561d55e95c5dd5cf8c7ca2a969544503eff3**
+⚠ javac 노트 「MainActivity.java uses or overrides a deprecated API」
+   유력한 자리 — 196행 getWindowManager().getDefaultDisplay().getRealSize() (9c9b1e6 · 09-03부터 · v100에도 있다)
+   ⚠ -Xlint로 확인하지는 않았다. 이번 뒤로가기 코드(543d675)의 줄은 아니다 · ⛔ 고치지 않는다
+낡은 산출물  outputs/ 안 다른 것은 apk/debug/app-debug.apk(10-08 · 이름이 안 겹친다)뿐 — 남겼다
+```
+
+#### ✅ 서명 — storeFile 경로를 고친 뒤 **첫 실제 서명**
+
+```
+keytool -printcert -jarfile   Owner  CN=Peace in Mind, OU=Upload Key, O=appleap385, C=KR
+                              SHA256 AF:23:0D:4D:25:95:89:61:95:F0:A9:AF:59:80:EE:2A:
+                                     13:2E:77:AC:38:F8:E4:60:C3:28:FC:B7:8D:9E:DE:22   ✅ 2.125와 일치
+                              SHA256withRSA
+jarsigner -verify             jar verified
+서명 파일                      META-INF/PYM-UPLO.SF · PYM-UPLO.RSA · MANIFEST.MF — v100과 이름·크기가 같다
+경고                          self-signed · 타임스탬프 없음 · JarInputStream 불일치 715항목
+                              ★ **v100 AAB에서도 똑같이 나온다**(Play가 받은 파일이다) — 업로드 키 서명의 모양이다.
+                              ⛔ 이 경고를 결함으로 보고 고치지 말 것
+⚠ 도구 함정 — jarsigner·keytool은 한국어 로캘에서 출력이 깨진다(grep이 이진 파일로 본다)
+              → -J-Duser.language=en
+```
+
+#### ✅ ⛔⛔ 100 AAB — 덮어쓰지 않았다
+
+```
+정본   D:/jaehyuk.myung/claude_demo/Demo_29_PYM_key_backup/aab/pym-release-v100-vc100.aab
+      빌드 **전·후** 모두 sha256 790fcffdbcb6eed61e45363cb1a45cf26f900c2de09960dd2cbd47bb9270136b — 기대값 일치
+      7,792,230 바이트 · 시각 2026-09-07 09:34 그대로
+빌드 폴더의 원본   덮어써졌다(허용된 것) — 그 경로는 이제 101이다
+```
+
+#### [4] 101 AAB 백업
+
+```
+D:/jaehyuk.myung/claude_demo/Demo_29_PYM_key_backup/aab/pym-release-v101-vc101.aab
+7,793,405 바이트 · sha256 c1dc827c…4503eff3 — 빌드 폴더 원본과 일치 · cp -p(시각 보존)
+→ 3-부록 「백업 목록」에 넣었다
+```
+
+#### [5] 내용 대조 — AAB를 풀어 안을 봤다
+
+```
+웹 자산   AAB base/assets/public/ 193개 ↔ 방금 빌드한 app/dist-app 191개
+         **191개 sha256 전부 동일** · 다름 0 · AAB에 빠진 것 0
+         AAB에만 있는 2개 = cordova.js · cordova_plugins.js (cap sync가 넣는다 · v100에도 있다)
+         ★ 2.131은 js 6 + index.html 7개만 봤다 — 이번에는 krv · icons · manifest까지 전부 봤다
+
+이번 변경 표지                         v101 / v100
+   pymBack (js)                         1 / 0
+   window.pymBack (dex)                 2 / 0    MainActivity 콜백 (2.146 ③)
+   from=app (js)                        1 / 0    About PRIVACY_URL_APP (2.141 안 2)
+   retrace (js · FLOW.RETRACE 값)        2 / 0    (2.146 ③ · 10-08 번복판)
+   eraseRecords                         0 / 0    ⛔ 함수 이름은 최소화로 사라진다 — 표지가 못 된다
+     → 대신 주입 키 cancelNotifications · clearStore · clearTraces   각 2 / 0   (2.147 ㄱ-2)
+   resetToPicker                        1 / 1    ⛔ v100에도 있다(분류 실패 화면) — 개수로 못 가른다
+     → 대신 **빈 입력 화면 Msg의 onBack이 가리키는 함수**를 봤다 (2.148)
+        v101  empty_input … onBack:Xs   Xs=useCallback(()=>…(q.RESET_TO_PICKER))   ✅
+        v100  empty_input … onBack:ve   ve=useCallback(()=>…(le.RESET))            (v100의 결함 그대로)
+★ 2.131 교훈의 연장 — 최소화는 **주석만이 아니라 지역 이름도 지운다.**
+  남는 것은 문자열 값 · 객체 키 · 속성 이름이다. 표지는 그중에서 고른다
+```
+
+#### [6] 게이트 — CI(deploy-app.yml)와 같은 일곱
+
+```
+verify_verses.py --check   exit 0  (303구절 일치)
+fill_verses.py --verify    exit 0
+messages_test.py           exit 0
+tagging_test.py            exit 0
+spread_test.py             exit 0
+stats.py --check           처음 exit 1 — 앱 블록 「0.1.0 (versionCode 100)」 ↔ 실측 「0.1.1 (versionCode 101)」
+                           → 버전을 올린 결과다. --write로 **그 한 줄만** 바뀌었다 → exit 0
+npm test                   342/342 pass · fail 0
+```
+
+#### ⏳ 남은 것 — 사용자
+
+```
+① Play 콘솔 업로드 — 프로덕션 → 새 버전 → 위 AAB(빌드 폴더든 백업 사본이든 sha256이 같다) → 출시 노트 [2]
+② 업로드 뒤 앱 무결성 화면에서 업로드 키 지문 AF:23:…:DE:22 대조 (2.132 절차)
+③ 관리형 게시 — 검토 통과 뒤 **「변경사항 게시」를 한 번 더** (2.140 · 2.143)
+④ 출시가 나간 뒤 태그 **v101** — 이 절을 넣은 커밋이다(AAB를 빌드한 작업 트리 = 219af21 + 버전 두 파일)
+⚠ 출시 방식(전체 / 단계적)은 사용자가 정한다 — 단계적이면 중단(Halt)을 더 적은 사용자에서 쓸 수 있다 (2.146 ㄷ)
+```
+
+---
+
 
 ## 3. 다음 세션 할 일 — Phase 4 운영과 남은 과제
 
@@ -16669,7 +16809,12 @@ NOTIFY_LAST_BOOK · NOTIFY_OFF_BY가 **없다.** 같은 저장소에 있고 기�
           ✅ 디버그 APK(10-06) 실기기 확인 → 토글 어긋남·기록 지우기 발견(2.147) · 결과 뒤로가기 **비우기로 번복**
           ✅ 2.147 안 3 · ㄱ-2 · 번복 구현 → 디버그 APK 다시(10-08 09:04)
           ✅ 빈 입력 「골라서 찾기」 → resetToPicker(2.148 · v100부터의 결함) → 디버그 APK 다시(10-08 13:27)
-          ⏳ 실기기 재확인(사용자 · 체크리스트 A·N1~N5) · ④ · 버전 코드(확인 뒤)
+          ✅ 실기기 재확인 — 사용자 전달(10-21 「실기기 확인도 끝났다」)
+          ✅✅ **릴리스 AAB 101 빌드**(2026-10-21 · 2.149) — versionCode 101 · 0.1.1 · 서명 AF:23:…:DE:22 일치 ·
+               웹 자산 191/191 dist-app과 동일 · 표지 넷 확인 · 게이트 일곱 통과 · 100 백업 sha256 그대로
+               파일  app/android/app/build/outputs/bundle/release/app-release.aab · sha256 c1dc827c…4503eff3
+               백업  Demo_29_PYM_key_backup/aab/pym-release-v101-vc101.aab · 출시 노트 본문은 2.149 [2]
+          ⏳ 사용자 — Play 업로드 → 지문 대조 → 검토 → **「변경사항 게시」** → 출시 뒤 태그 v101
 ⛔ 공개 테스트는 쓰지 않는다 · ⚠ 버전 101도 관리형 게시다 — 검토 통과 뒤 **버튼을 한 번 더**
 ★ 광고 클릭 기준 — 개발자·테스터 ⛔ · 일반 사용자 ✅ (2.145)
 ⏱ 출시 후 별건 — DEX 난독화(기한 2027-02) · 엣지-투-엣지 확인(⑥ 때) (2.142)
@@ -16974,7 +17119,7 @@ Phase 4  사전 보강 · UI 개정 · 구절 확장                            
 ```
 앱 아이디    io.github.appleap385.peaceinmind
 표시 이름    Peace in Mind
-버전        0.1.0  (versionCode 100)
+버전        0.1.1  (versionCode 101)
 SDK        min 24 · compile 36 · target 36
 권한 선언    INTERNET · AD_ID
 권한 제거    SCHEDULE_EXACT_ALARM   (tools:node=remove)
@@ -19592,6 +19737,19 @@ Play     ⏳ 「최신 버전 및 번들」 — 원본 .aab를 내려받을 수 
 코드     ✅ git 태그 **v100** — 같은 앱을 다시 빌드할 수 있다(2.146 ㄱ에서 번들 데이터까지 대조)
 ★ 되돌릴 때 올리는 것은 이 파일이 아니다(versionCode 100은 다시 못 올린다).
   **v100 + versionCode 102로 새로 빌드**하고, 이 파일은 그 결과를 **대조하는 기준**으로 쓴다
+✅ 2026-10-21 101 빌드 **전·후** sha256 재확인 — 위 값 그대로다(덮어쓰지 않았다 · 2.149)
+```
+
+#### ★ 버전 101 AAB — **어디에 있는가** (2026-10-21 · 2.149)
+
+```
+정본     D:/jaehyuk.myung/claude_demo/Demo_29_PYM_key_backup/aab/pym-release-v101-vc101.aab
+         7,793,405 바이트 · 2026-10-21 18:54 · sha256
+         c1dc827cb8ef464c6d5c5b0cab58561d55e95c5dd5cf8c7ca2a969544503eff3
+         versionCode 101 · versionName 0.1.1 · 업로드 키 서명 AF:23:…:DE:22
+빌드 폴더  app/android/app/build/outputs/bundle/release/app-release.aab — 같은 sha256
+         ⛔⛔ 다음 bundleRelease(102)가 덮어쓴다 — 정본은 위 사본이다
+코드     태그 **v101**은 ⛔ 아직 없다 — 출시가 나간 뒤 단다(2.149 남은 것 ④)
 ```
 
 #### ✅ ③ 다시 만들면 된다 (백업 불필요)
