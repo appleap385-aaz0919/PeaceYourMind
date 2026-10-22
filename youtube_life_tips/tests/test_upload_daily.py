@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 import unittest
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -24,6 +24,19 @@ class UploadScheduleTests(unittest.TestCase):
             scheduled.astimezone(upload_daily.ZoneInfo("UTC")).isoformat(),
             "2026-10-21T22:00:00+00:00",
         )
+
+    def test_one_off_release_parses_and_requires_fifteen_minutes_lead(self) -> None:
+        scheduled = upload_daily.parse_publish_at(date(2026, 10, 23), "2026-10-23T08:30")
+        now = datetime(2026, 10, 23, 8, 0, tzinfo=upload_daily.KST)
+        upload_daily.validate_publish_window(scheduled, now, one_off=True)
+        with self.assertRaisesRegex(RuntimeError, "at least 15 minutes"):
+            upload_daily.validate_publish_window(
+                scheduled, datetime(2026, 10, 23, 8, 16, tzinfo=upload_daily.KST), one_off=True
+            )
+
+    def test_one_off_release_must_match_requested_date(self) -> None:
+        with self.assertRaisesRegex(ValueError, "requested --date"):
+            upload_daily.parse_publish_at(date(2026, 10, 23), "2026-10-24T08:30")
 
     def test_oauth_files_cannot_escape_private_state_folder(self) -> None:
         with self.assertRaises(ValueError):

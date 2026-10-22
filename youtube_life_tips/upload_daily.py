@@ -25,6 +25,26 @@ def publish_at_for(day: date, clock: str) -> datetime:
     return local_time
 
 
+def parse_publish_at(day: date, value: str) -> datetime:
+    """Parse one explicitly selected release time and require it to be for this KST date."""
+    scheduled = datetime.fromisoformat(value)
+    if scheduled.tzinfo is None:
+        scheduled = scheduled.replace(tzinfo=KST)
+    else:
+        scheduled = scheduled.astimezone(KST)
+    if scheduled.date() != day:
+        raise ValueError("--publish-at-kst must be on the requested --date")
+    return scheduled
+
+
+def validate_publish_window(publish_at: datetime, now: datetime, *, one_off: bool) -> None:
+    minimum_lead = timedelta(minutes=15 if one_off else 30)
+    if now > publish_at - minimum_lead:
+        if one_off:
+            raise RuntimeError("one-off scheduled publishing requires at least 15 minutes of lead time")
+        raise RuntimeError("missed the configured publishing cutoff; today's post is skipped")
+
+
 def validate_channel(access_token: str, target_id: str) -> None:
     channels = my_channels(access_token)
     if not any(channel["id"] == target_id for channel in channels):
@@ -95,6 +115,7 @@ def upload_resumable(video: Path, metadata: dict[str, object], access_token: str
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--date", help="Asia/Seoul date in YYYY-MM-DD; defaults to today")
+    parser.add_argument("--publish-at-kst", help="one-off release time in KST, e.g. 2026-10-23T08:30")
     parser.add_argument("--dry-run", action="store_true", help="validate local files/config without uploading")
     args = parser.parse_args()
     day = date.fromisoformat(args.date) if args.date else datetime.now(KST).date()
@@ -122,11 +143,14 @@ def main() -> None:
     channel_id = str(config.get("youtube_channel_id", "")).strip()
     if not channel_id or channel_id == "REPLACE_WITH_LIFE_TIPS_CHANNEL_ID":
         raise ValueError("state/config.local.json must contain the separate life-tips channel ID")
-    publish_time = str(config.get("publish_time_kst", "07:00"))
-    publish_at = publish_at_for(day, publish_time)
     now = datetime.now(KST)
-    if now > publish_at - timedelta(minutes=30):
-        raise RuntimeError(f"missed the {publish_time} KST publishing cutoff; today's post is skipped")
+    if args.publish_at_kst:
+        publish_at = parse_publish_at(day, args.publish_at_kst)
+        validate_publish_window(publish_at, now, one_off=True)
+    else:
+        publish_time = str(config.get("publish_time_kst", "07:00"))
+        publish_at = publish_at_for(day, publish_time)
+        validate_publish_window(publish_at, now, one_off=False)
     if args.dry_run:
         print(json.dumps({
             "date": day.isoformat(), "channel_id": channel_id,

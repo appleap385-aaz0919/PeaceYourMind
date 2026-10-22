@@ -111,6 +111,34 @@ class MailboxQueueTests(unittest.TestCase):
                 result = codex_mailbox.enqueue_today(root=root, at=current)
             self.assertEqual(result["status"], "skipped")
 
+    def test_one_off_enqueue_retries_only_a_missed_routine_cutoff(self) -> None:
+        day = date(2026, 10, 23)
+        current = datetime(2026, 10, 23, 7, 0, tzinfo=codex_mailbox.KST)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            report = codex_mailbox.report_path(day, root)
+            codex_mailbox.atomic_json(report, {
+                "date": day.isoformat(), "status": "skipped", "reason": "missed_0630_kst_upload_cutoff",
+            })
+            with patch.object(codex_mailbox, "preflight", return_value=("UC-LIFE", "07:00")):
+                result = codex_mailbox.enqueue_today(
+                    root=root, at=current, publish_at_kst="2026-10-23T08:30",
+                )
+            self.assertEqual(result["status"], "pending")
+            self.assertEqual(result["publish_at_kst"], "2026-10-23T08:30+09:00")
+            self.assertFalse(report.exists())
+            self.assertTrue((report.parent / "history" / "2026-10-23-missed-routine-cutoff.json").is_file())
+
+    def test_one_off_enqueue_rejects_release_with_too_little_lead(self) -> None:
+        day = date(2026, 10, 23)
+        current = datetime(2026, 10, 23, 8, 16, tzinfo=codex_mailbox.KST)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = codex_mailbox.enqueue_today(
+                root=Path(temp_dir), at=current, publish_at_kst="2026-10-23T08:30",
+            )
+        self.assertEqual(result["status"], "skipped")
+        self.assertEqual(result["reason"], "one_off_release_has_less_than_15_minutes_lead_time")
+
     def test_recover_processing_moves_unreported_request_back_to_inbox(self) -> None:
         day = date(2026, 10, 23)
         with tempfile.TemporaryDirectory() as temp_dir:

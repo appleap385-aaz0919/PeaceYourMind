@@ -12,7 +12,7 @@ import subprocess
 import sys
 import time
 import uuid
-from datetime import date, datetime, time as datetime_time
+from datetime import date, datetime, time as datetime_time, timedelta
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -34,6 +34,7 @@ PUBLISH_TIME = "07:00"
 CODEX_MODEL = "gpt-6.1-sol"
 CODEX_TIMEOUT_SECONDS = 15 * 60
 POLL_SECONDS = 2
+ONE_OFF_MINIMUM_LEAD = timedelta(minutes=15)
 
 
 class WorkflowSkipped(RuntimeError):
@@ -196,16 +197,46 @@ def preflight(root: Path = ROOT) -> tuple[str, str]:
     return validate_youtube_auth()
 
 
-def enqueue_today(root: Path = ROOT, at: datetime | None = None) -> dict[str, Any]:
+def parse_publish_at(day: date, value: str) -> datetime:
+    scheduled = datetime.fromisoformat(value)
+    if scheduled.tzinfo is None:
+        scheduled = scheduled.replace(tzinfo=KST)
+    else:
+        scheduled = scheduled.astimezone(KST)
+    if scheduled.date() != day:
+        raise ValueError("publish_at_kst must be on the request's Korea date")
+    return scheduled
+
+
+def enqueue_today(
+    root: Path = ROOT,
+    at: datetime | None = None,
+    publish_at_kst: str | None = None,
+) -> dict[str, Any]:
     current = at.astimezone(KST) if at else now_kst()
     day = current.date()
+    scheduled = parse_publish_at(day, publish_at_kst) if publish_at_kst else None
+    if scheduled and current > scheduled - ONE_OFF_MINIMUM_LEAD:
+        return write_report(day, "skipped", "enqueue", "one_off_release_has_less_than_15_minutes_lead_time", root=root)
     existing = report_path(day, root)
     if existing.exists():
-        return json.loads(existing.read_text(encoding="utf-8"))
+        previous = json.loads(existing.read_text(encoding="utf-8"))
+        if not (
+            scheduled
+            and previous.get("status") == "skipped"
+            and previous.get("reason") == "missed_0630_kst_upload_cutoff"
+        ):
+            return previous
+        history = existing.parent / "history"
+        history.mkdir(parents=True, exist_ok=True)
+        archived_report = history / f"{day.isoformat()}-missed-routine-cutoff.json"
+        if archived_report.exists():
+            archived_report = history / f"{day.isoformat()}-missed-routine-cutoff-{uuid.uuid4().hex[:8]}.json"
+        os.replace(existing, archived_report)
     request_file = root / "work" / "mailbox" / "inbox" / f"{day.isoformat()}.json"
     if request_file.exists() or (root / "work" / "mailbox" / "processing" / request_file.name).exists():
         return {"date": day.isoformat(), "status": "already_queued"}
-    if current.time() >= PUBLISH_CUTOFF:
+    if scheduled is None and current.time() >= PUBLISH_CUTOFF:
         return write_report(day, "skipped", "enqueue", "missed_0630_kst_upload_cutoff", root=root)
     try:
         preflight(root)
@@ -217,6 +248,8 @@ def enqueue_today(root: Path = ROOT, at: datetime | None = None) -> dict[str, An
         "created_at_kst": current.isoformat(timespec="seconds"),
         "status": "pending",
     }
+    if scheduled:
+        request["publish_at_kst"] = scheduled.isoformat(timespec="minutes")
     atomic_json(request_file, request)
     return request
 
@@ -457,10 +490,14 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
     request = json.loads(request_file.read_text(encoding="utf-8"))
     day = date.fromisoformat(str(request["date"]))
     current = now_kst()
+    publish_at_kst = str(request["publish_at_kst"]) if request.get("publish_at_kst") else None
+    scheduled = parse_publish_at(day, publish_at_kst) if publish_at_kst else None
     if day != current.date():
         result = write_report(day, "skipped", "dispatch", "request_is_not_for_today", root=root)
         return result
-    if current.time() >= PUBLISH_CUTOFF:
+    if scheduled and current > scheduled - ONE_OFF_MINIMUM_LEAD:
+        return write_report(day, "skipped", "dispatch", "one_off_release_has_less_than_15_minutes_lead_time", root=root)
+    if scheduled is None and current.time() >= PUBLISH_CUTOFF:
         return write_report(day, "skipped", "dispatch", "missed_0630_kst_upload_cutoff", root=root)
     if report_path(day, root).exists():
         return json.loads(report_path(day, root).read_text(encoding="utf-8"))
@@ -537,11 +574,16 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
             or not all(checks.get(key) is True for key in required_audit_checks)
         ):
             raise WorkflowSkipped("main session did not approve the rendered result")
-        if now_kst().time() >= PUBLISH_CUTOFF:
+        upload_args = [sys.executable, str(root / "upload_daily.py"), "--date", day.isoformat()]
+        if publish_at_kst:
+            if now_kst() > scheduled - ONE_OFF_MINIMUM_LEAD:
+                raise WorkflowSkipped("one_off_release_has_less_than_15_minutes_lead_time")
+            upload_args.extend(["--publish-at-kst", publish_at_kst])
+        elif now_kst().time() >= PUBLISH_CUTOFF:
             raise WorkflowSkipped("missed_0630_kst_upload_cutoff")
 
         upload = subprocess.run(
-            [sys.executable, str(root / "upload_daily.py"), "--date", day.isoformat()],
+            upload_args,
             cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=20 * 60,
         )
         (run_dir / "upload.log").write_text((upload.stdout or "") + (upload.stderr or ""), encoding="utf-8")
@@ -711,6 +753,7 @@ def main() -> None:
     )
     enqueue_parser = subparsers.add_parser("enqueue", help="write today's request file after preflight")
     enqueue_parser.add_argument("--today", action="store_true", help="enqueue only for the current Korea date")
+    enqueue_parser.add_argument("--publish-at-kst", help="one-off release time, e.g. 2026-10-23T08:30")
     watch_parser = subparsers.add_parser("watch", help="watch the local inbox and dispatch one request at a time")
     watch_parser.add_argument("--poll-seconds", type=float, default=POLL_SECONDS)
     watch_parser.add_argument("--once", action="store_true", help="process at most one queued request and exit")
@@ -722,7 +765,7 @@ def main() -> None:
     if args.command == "enqueue":
         if not args.today:
             parser.error("enqueue requires --today")
-        result = enqueue_today()
+        result = enqueue_today(publish_at_kst=args.publish_at_kst)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         raise SystemExit(0 if result.get("status") in ("pending", "already_queued") else 1)
     watch_loop(poll_seconds=args.poll_seconds, once=args.once)
