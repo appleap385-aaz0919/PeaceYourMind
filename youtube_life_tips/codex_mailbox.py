@@ -409,8 +409,7 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path) -> dict[str, str]:
             "approved (boolean), selection_rule_pass (boolean), originality_pass (boolean), "
             "sources_verified (boolean), safety_pass (boolean), "
             "issues (array of specific findings), and reviewer_summary (string).\n\n"
-            f"PLAN FILE: {run_dir / 'draft.json'}\n" +
-            (run_dir / "draft.json").read_text(encoding="utf-8")
+            f"PLAN FILE TO READ: {run_dir / 'draft.json'}\n"
         ),
         "main_approve": common + (
             "ROLE: MAIN SESSION — address the reviewer's findings, revise the plan where needed, and produce "
@@ -420,10 +419,8 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path) -> dict[str, str]:
             "difference from prior tips. Do not avoid a broad topic category when the specific advice differs. "
             "Output ONLY JSON. "
             "For an approved plan, use exactly the daily plan schema in the main-draft instructions, with "
-            "date, season, topic_strategy, fallback_reason, topic, hook, title, description, scenes, sources.\n\n"
-            f"DRAFT: {run_dir / 'draft.json'}\n" +
-            (run_dir / "draft.json").read_text(encoding="utf-8") +
-            "\n\nREVIEW: " + (run_dir / "review.json").read_text(encoding="utf-8")
+            "date, season, topic_strategy, fallback_reason, topic, hook, title, description, scenes, sources. "
+            f"Read the draft and review files from disk: {run_dir / 'draft.json'} and {run_dir / 'review.json'}.\n"
         ),
         "developer_image": common + (
             "ROLE: DEVELOPER SESSION — make only today's new visual asset from the approved plan. "
@@ -432,9 +429,9 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path) -> dict[str, str]:
             "script. No letters, subtitles, logos, watermark, borrowed references, or source images. "
             "Save it exactly to this path, inside the project: " + str(day_dir / "storyboard.png") + ". "
             "Do not call an image API or substitute code-drawn/downloaded images. If ImageGen is unavailable "
-            "or cannot save the file, report failure and stop. After generation, output ONLY JSON with "
+            "or cannot save the file, report failure and stop. Read the approved plan from disk at "
+            f"{run_dir / 'approved.json'}. After generation, output ONLY JSON with "
             "built_in_imagegen_called (boolean), saved_path (string), and status (\"ok\" or \"failed\").\n\n"
-            "APPROVED PLAN: " + (run_dir / "approved.json").read_text(encoding="utf-8")
         ),
         "main_audit": common + (
             "ROLE: MAIN SESSION — perform the final independent review before publishing. The attached 2x2 "
@@ -450,12 +447,8 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path) -> dict[str, str]:
             "approved (boolean), checks (object of booleans containing plan_matches_content, sources_verified, "
             "season_decision_valid, history_distinct, four_scenes_match_plan, captions_readable, no_visual_defects, "
             "dimensions_valid, audio_present, and duration_valid), issues (array), and summary (string).\n\n"
-            f"APPROVED PLAN: {run_dir / 'approved.json'}\n" +
-            (run_dir / "approved.json").read_text(encoding="utf-8") +
-            f"\n\nCONTENT: {day_dir / 'content.json'}\n" +
-            (day_dir / "content.json").read_text(encoding="utf-8") +
-            f"\n\nRENDER METADATA: {day_dir / 'metadata.json'}\n" +
-            (day_dir / "metadata.json").read_text(encoding="utf-8")
+            "Read these files from disk before auditing: "
+            f"{run_dir / 'approved.json'}, {day_dir / 'content.json'}, and {day_dir / 'metadata.json'}.\n"
         ),
     }
 
@@ -476,8 +469,8 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
     day_dir = root / "work" / "daily" / day.isoformat()
     run_dir.mkdir(parents=True, exist_ok=True)
     day_dir.mkdir(parents=True, exist_ok=True)
-    prompts = build_prompts(day, run_dir, day_dir)
     try:
+        prompts = build_prompts(day, run_dir, day_dir)
         preflight(root)
         draft_path = call_codex(root, run_dir, "main-draft", prompts["main_draft"], web_search=True)
         draft = parse_json_response(draft_path)
@@ -572,10 +565,38 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
 
 
 def move_request(request_file: Path, destination: Path) -> Path:
-    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.mkdir(parents=True, exist_ok=True)
     target = destination / request_file.name
     os.replace(request_file, target)
     return target
+
+
+def recover_processing_requests(root: Path = ROOT) -> None:
+    """Recover requests left behind if the watcher stopped during a run."""
+    inbox = root / "work" / "mailbox" / "inbox"
+    processing = root / "work" / "mailbox" / "processing"
+    archive = root / "work" / "mailbox" / "archive"
+    for request_file in sorted(processing.glob("*.json")):
+        try:
+            request = json.loads(request_file.read_text(encoding="utf-8"))
+            day = date.fromisoformat(str(request["date"]))
+            output_dir = root / "work" / "daily" / day.isoformat()
+            upload_file = output_dir / "upload.json"
+            if report_path(day, root).exists():
+                destination = archive
+            elif upload_file.is_file():
+                upload = json.loads(upload_file.read_text(encoding="utf-8"))
+                write_report(day, "scheduled", "recovered_upload", "", {
+                    "url": upload.get("url"),
+                    "title": upload.get("title"),
+                    "scheduled_publish_at_kst": upload.get("scheduled_publish_at_kst"),
+                }, root=root)
+                destination = archive
+            else:
+                destination = inbox
+            move_request(request_file, destination)
+        except Exception:
+            logging.exception("could not recover processing request %s", request_file.name)
 
 
 def watch_loop(root: Path = ROOT, poll_seconds: float = POLL_SECONDS, once: bool = False) -> None:
@@ -598,10 +619,12 @@ def watch_loop(root: Path = ROOT, poll_seconds: float = POLL_SECONDS, once: bool
                 msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
             except OSError as exc:
                 raise RuntimeError("mailbox watcher is already running") from exc
+        recover_processing_requests(root)
         while True:
             requests = sorted(inbox.glob("*.json"))
             if requests:
                 request_file = requests[0]
+                claimed: Path | None = None
                 try:
                     request = json.loads(request_file.read_text(encoding="utf-8"))
                     day = date.fromisoformat(str(request["date"]))
@@ -616,9 +639,17 @@ def watch_loop(root: Path = ROOT, poll_seconds: float = POLL_SECONDS, once: bool
                 except Exception:
                     logging.exception("mailbox request failed: %s", request_file.name)
                     try:
-                        if request_file.exists():
-                            move_request(request_file, archive)
-                    except OSError:
+                        stranded = claimed if claimed is not None and claimed.exists() else request_file
+                        if stranded.exists():
+                            failed_request = json.loads(stranded.read_text(encoding="utf-8"))
+                            failed_day = date.fromisoformat(str(failed_request["date"]))
+                            if not report_path(failed_day, root).exists():
+                                write_report(
+                                    failed_day, "failed", "watcher",
+                                    "request processing raised an unexpected exception", root=root,
+                                )
+                            move_request(stranded, archive)
+                    except Exception:
                         logging.exception("could not archive malformed request")
                 if once:
                     return

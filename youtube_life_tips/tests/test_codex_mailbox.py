@@ -56,6 +56,20 @@ class KoreanSeasonTests(unittest.TestCase):
             codex_mailbox.validate_plan(plan, day)
 
 
+class PromptConstructionTests(unittest.TestCase):
+    def test_prompts_build_before_stage_files_exist(self) -> None:
+        day = date(2026, 10, 23)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            run_dir = root / "work" / "mailbox" / "runs" / day.isoformat()
+            day_dir = root / "work" / "daily" / day.isoformat()
+            prompts = codex_mailbox.build_prompts(day, run_dir, day_dir)
+        self.assertIn("draft.json", prompts["review"])
+        self.assertIn("draft.json", prompts["main_approve"])
+        self.assertIn("approved.json", prompts["developer_image"])
+        self.assertIn("content.json", prompts["main_audit"])
+
+
 class MailboxQueueTests(unittest.TestCase):
     def test_final_report_sends_email_but_pending_report_does_not(self) -> None:
         day = date(2026, 10, 22)
@@ -96,6 +110,31 @@ class MailboxQueueTests(unittest.TestCase):
             with patch.object(codex_mailbox, "preflight", side_effect=AssertionError("must not run")):
                 result = codex_mailbox.enqueue_today(root=root, at=current)
             self.assertEqual(result["status"], "skipped")
+
+    def test_recover_processing_moves_unreported_request_back_to_inbox(self) -> None:
+        day = date(2026, 10, 23)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            processing = root / "work" / "mailbox" / "processing"
+            processing.mkdir(parents=True)
+            request = processing / f"{day.isoformat()}.json"
+            request.write_text(json.dumps({"date": day.isoformat()}), encoding="utf-8")
+            codex_mailbox.recover_processing_requests(root)
+            self.assertFalse(request.exists())
+            self.assertTrue((root / "work" / "mailbox" / "inbox" / request.name).is_file())
+
+    def test_recover_processing_archives_request_with_existing_report(self) -> None:
+        day = date(2026, 10, 23)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            processing = root / "work" / "mailbox" / "processing"
+            processing.mkdir(parents=True)
+            request = processing / f"{day.isoformat()}.json"
+            request.write_text(json.dumps({"date": day.isoformat()}), encoding="utf-8")
+            codex_mailbox.atomic_json(codex_mailbox.report_path(day, root), {"date": day.isoformat(), "status": "skipped"})
+            codex_mailbox.recover_processing_requests(root)
+            self.assertFalse(request.exists())
+            self.assertTrue((root / "work" / "mailbox" / "archive" / request.name).is_file())
 
 
 if __name__ == "__main__":
