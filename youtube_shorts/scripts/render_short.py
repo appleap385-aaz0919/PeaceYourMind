@@ -13,7 +13,6 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 WIDTH, HEIGHT, FPS = 1080, 1920, 30
-DURATION = 7
 VOICE_NAME = os.environ.get("PYM_TTS_VOICE", "ko-KR-Neural2-C")
 
 
@@ -269,7 +268,8 @@ def main() -> None:
     image_paths = [*typing_pages, verse_page, video_page, *player_pages]
     transition = 0.16
     intro_duration = max(5.8, intro_time + 1.0)
-    verse_duration = max(DURATION, math.ceil(verse_time + 1.3))
+    # The video list starts about two seconds after the verse audio ends.
+    verse_duration = verse_time + 2.0 + transition
     video_duration = max(4.0, math.ceil(video_time + 0.9))
     durations = ([intro_duration / len(typing_pages)] * len(typing_pages)
                  + [verse_duration, video_duration, 1.2, 1.2, 1.2])
