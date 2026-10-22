@@ -221,10 +221,20 @@ def enqueue_today(
     existing = report_path(day, root)
     if existing.exists():
         previous = json.loads(existing.read_text(encoding="utf-8"))
+        retryable_reasons = {
+            "missed_0630_kst_upload_cutoff",
+            "today's storyboard duplicates a sample or a previous daily image",
+            "one_off_release_has_less_than_15_minutes_lead_time",
+        }
+        upload_receipt = root / "work" / "daily" / day.isoformat() / "upload.json"
         if not (
             scheduled
             and previous.get("status") == "skipped"
-            and previous.get("reason") == "missed_0630_kst_upload_cutoff"
+            and (
+                previous.get("reason") in retryable_reasons
+                or str(previous.get("reason", "")).startswith("local render or validation failed:")
+            )
+            and not upload_receipt.exists()
         ):
             return previous
         history = existing.parent / "history"
@@ -343,9 +353,15 @@ def validate_new_storyboard(path: Path, day_dir: Path, root: Path = ROOT) -> str
     if not path.is_file():
         raise WorkflowSkipped("built-in ImageGen did not save today's storyboard.png")
     sample = root / "work" / "sample" / "storyboard.png"
+    current_path = path.resolve()
     candidates = [sample, *(root / "work" / "daily").glob("*/storyboard.png")]
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    if any(item.is_file() and hashlib.sha256(item.read_bytes()).hexdigest() == digest for item in candidates):
+    if any(
+        item.is_file()
+        and item.resolve() != current_path
+        and hashlib.sha256(item.read_bytes()).hexdigest() == digest
+        for item in candidates
+    ):
         raise WorkflowSkipped("today's storyboard duplicates a sample or a previous daily image")
     try:
         from PIL import Image
@@ -509,12 +525,16 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
     try:
         prompts = build_prompts(day, run_dir, day_dir)
         preflight(root)
-        draft_path = call_codex(root, run_dir, "main-draft", prompts["main_draft"], web_search=True)
+        draft_path = run_dir / "main-draft.json"
+        if not draft_path.is_file():
+            draft_path = call_codex(root, run_dir, "main-draft", prompts["main_draft"], web_search=True)
         draft = parse_json_response(draft_path)
         validate_plan(draft, day)
         atomic_json(run_dir / "draft.json", draft)
 
-        review_path = call_codex(root, run_dir, "review", prompts["review"], web_search=True)
+        review_path = run_dir / "review.json"
+        if not review_path.is_file():
+            review_path = call_codex(root, run_dir, "review", prompts["review"], web_search=True)
         review = parse_json_response(review_path)
         atomic_json(run_dir / "review.json", review)
         if (
@@ -526,14 +546,18 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
         ):
             raise WorkflowSkipped("review session rejected the draft or found unresolved issues")
 
-        approved_path = call_codex(root, run_dir, "main-approve", prompts["main_approve"], web_search=True)
+        approved_path = run_dir / "main-approve.json"
+        if not approved_path.is_file():
+            approved_path = call_codex(root, run_dir, "main-approve", prompts["main_approve"], web_search=True)
         approved = parse_json_response(approved_path)
         if approved.get("approved") is False:
             raise WorkflowSkipped(str(approved.get("reason", "main session did not approve the reviewed plan")))
         validate_plan(approved, day)
         atomic_json(run_dir / "approved.json", approved)
 
-        image_result = call_codex(root, run_dir, "developer-image", prompts["developer_image"])
+        image_result = run_dir / "developer-image.json"
+        if not image_result.is_file():
+            image_result = call_codex(root, run_dir, "developer-image", prompts["developer_image"])
         image_receipt = parse_json_response(image_result)
         if image_receipt.get("status") != "ok" or image_receipt.get("built_in_imagegen_called") is not True:
             raise WorkflowSkipped("developer session did not confirm one successful built-in ImageGen call")
@@ -547,6 +571,7 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
         render = subprocess.run(
             [sys.executable, str(root / "render_daily.py"), "--date", day.isoformat()],
             cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=20 * 60,
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
         )
         (run_dir / "render.log").write_text((render.stdout or "") + (render.stderr or ""), encoding="utf-8")
         if render.returncode:

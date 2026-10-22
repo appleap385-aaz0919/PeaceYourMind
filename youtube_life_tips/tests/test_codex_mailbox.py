@@ -69,6 +69,19 @@ class PromptConstructionTests(unittest.TestCase):
         self.assertIn("approved.json", prompts["developer_image"])
         self.assertIn("content.json", prompts["main_audit"])
 
+    def test_storyboard_validator_does_not_compare_the_image_to_itself(self) -> None:
+        from PIL import Image
+
+        day = date(2026, 10, 23)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            day_dir = root / "work" / "daily" / day.isoformat()
+            day_dir.mkdir(parents=True)
+            image_path = day_dir / "storyboard.png"
+            Image.new("RGB", (900, 1400), color="blue").save(image_path)
+            digest = codex_mailbox.validate_new_storyboard(image_path, day_dir, root)
+        self.assertEqual(len(digest), 64)
+
 
 class MailboxQueueTests(unittest.TestCase):
     def test_final_report_sends_email_but_pending_report_does_not(self) -> None:
@@ -138,6 +151,23 @@ class MailboxQueueTests(unittest.TestCase):
             )
         self.assertEqual(result["status"], "skipped")
         self.assertEqual(result["reason"], "one_off_release_has_less_than_15_minutes_lead_time")
+
+    def test_later_one_off_can_replace_a_previously_too_close_release(self) -> None:
+        day = date(2026, 10, 23)
+        current = datetime(2026, 10, 23, 8, 19, tzinfo=codex_mailbox.KST)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            report = codex_mailbox.report_path(day, root)
+            codex_mailbox.atomic_json(report, {
+                "date": day.isoformat(), "status": "skipped",
+                "reason": "one_off_release_has_less_than_15_minutes_lead_time",
+            })
+            with patch.object(codex_mailbox, "preflight", return_value=("UC-LIFE", "07:00")):
+                result = codex_mailbox.enqueue_today(
+                    root=root, at=current, publish_at_kst="2026-10-23T08:50",
+                )
+            self.assertEqual(result["status"], "pending")
+            self.assertEqual(result["publish_at_kst"], "2026-10-23T08:50+09:00")
 
     def test_recover_processing_moves_unreported_request_back_to_inbox(self) -> None:
         day = date(2026, 10, 23)
