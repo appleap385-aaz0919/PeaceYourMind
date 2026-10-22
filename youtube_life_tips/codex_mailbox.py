@@ -386,7 +386,10 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path) -> dict[str, str]:
             "reliable sources, preferably government, public institutions, manufacturers, or other "
             "primary sources. If two reliable sources do not support a suitable seasonal tip, switch "
             "to a season-neutral household tip and state why in fallback_reason; do not force seasonality. "
-            "Choose a distinct topic not used in other work/daily/*/content.json. Avoid medical, legal, "
+            "Review work/sample/metadata.json and previous work/daily/*/content.json for content-level repetition. "
+            "Avoid repeating the same main practical takeaway and action, or substantially the same solution sequence and hook. "
+            "A broad subject, appliance, room, category, or individual supporting fact may recur when the actual tip and angle differ materially; "
+            "do not reject an idea for broad-topic overlap alone. Avoid medical, legal, "
             "financial, electrical, gas, hazardous chemical, and safety-critical advice. Write original "
             "conversational Korean for four short scenes and under 55 seconds total. Source URLs belong "
             "in the description, not rendered into the video. Output ONLY one JSON object following this schema:\n"
@@ -394,12 +397,17 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path) -> dict[str, str]:
         ),
         "review": common + (
             "ROLE: REVIEW SESSION — independently check the proposed plan below. Verify the source URLs "
-            "and whether they support the specific claims; check the Korean seasonal fit first, or whether "
+            "support the specific claims. Compare the main practical takeaway, recommended action, solution sequence, "
+            "and hook against work/sample/metadata.json and previous work/daily/*/content.json. Set originality_pass=true "
+            "when the practical tip and angle are materially different; overlap in broad topic, appliance, category, "
+            "or an individual supporting fact alone is not a duplicate. Set it false only when the actual advice "
+            "materially repeats, and explain the closest match. Check the Korean seasonal fit first, or whether "
             "the evergreen fallback is justified. Set selection_rule_pass=true only if the topic matches "
             "the current Korean season or the neutral fallback is supported by a clear evidence gap. "
-            "Check safety, originality, four-scene structure, title, "
+            "Check safety, content-level originality, four-scene structure, title, "
             "and under-55-second narration. Do not rewrite the plan. Return only JSON with fields "
-            "approved (boolean), selection_rule_pass (boolean), sources_verified (boolean), safety_pass (boolean), "
+            "approved (boolean), selection_rule_pass (boolean), originality_pass (boolean), "
+            "sources_verified (boolean), safety_pass (boolean), "
             "issues (array of specific findings), and reviewer_summary (string).\n\n"
             f"PLAN FILE: {run_dir / 'draft.json'}\n" +
             (run_dir / "draft.json").read_text(encoding="utf-8")
@@ -408,7 +416,9 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path) -> dict[str, str]:
             "ROLE: MAIN SESSION — address the reviewer's findings, revise the plan where needed, and produce "
             "the approved final script. If the review has any unresolved factual or safety issue, return "
             "{\"approved\":false,\"reason\":\"...\"}. Do not invent new sources. Preserve verified facts, "
-            "the season-first selection rule, four scenes, and original Korean wording. Output ONLY JSON. "
+            "the season-first selection rule, four scenes, original Korean wording, and the content-level "
+            "difference from prior tips. Do not avoid a broad topic category when the specific advice differs. "
+            "Output ONLY JSON. "
             "For an approved plan, use exactly the daily plan schema in the main-draft instructions, with "
             "date, season, topic_strategy, fallback_reason, topic, hook, title, description, scenes, sources.\n\n"
             f"DRAFT: {run_dir / 'draft.json'}\n" +
@@ -430,11 +440,15 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path) -> dict[str, str]:
             "ROLE: MAIN SESSION — perform the final independent review before publishing. The attached 2x2 "
             "contact sheet contains four frames sampled from the final MP4 in scene order. Inspect it for "
             "cropping, caption clipping, legibility, and consistency with the approved storyboard. Check the "
-            "approved plan, content.json, review.json, and metadata.json. Confirm the script matches the "
+            "approved plan, content.json, review.json, and metadata.json. Compare the practical takeaway and action "
+            "with work/sample/metadata.json and previous work/daily/*/content.json. Same broad topic is allowed; "
+            "Set history_distinct=true when the actionable tip and angle are materially different; set it false "
+            "when the practical advice materially repeats. Broad-topic overlap alone does not fail this check. "
+            "Confirm the script matches the "
             "approved plan, source evidence is present, seasonal choice or fallback is justified, and metadata "
             "says 720x1280, audio present, and duration no more than 55 seconds. Do not upload. Output ONLY JSON with "
             "approved (boolean), checks (object of booleans containing plan_matches_content, sources_verified, "
-            "season_decision_valid, four_scenes_match_plan, captions_readable, no_visual_defects, "
+            "season_decision_valid, history_distinct, four_scenes_match_plan, captions_readable, no_visual_defects, "
             "dimensions_valid, audio_present, and duration_valid), issues (array), and summary (string).\n\n"
             f"APPROVED PLAN: {run_dir / 'approved.json'}\n" +
             (run_dir / "approved.json").read_text(encoding="utf-8") +
@@ -476,6 +490,7 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
         if (
             review.get("approved") is not True
             or review.get("selection_rule_pass") is not True
+            or review.get("originality_pass") is not True
             or review.get("sources_verified") is not True
             or review.get("safety_pass") is not True
         ):
@@ -518,7 +533,7 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
         audit = parse_json_response(audit_path)
         atomic_json(run_dir / "audit.json", audit)
         required_audit_checks = {
-            "plan_matches_content", "sources_verified", "season_decision_valid",
+            "plan_matches_content", "sources_verified", "season_decision_valid", "history_distinct",
             "four_scenes_match_plan", "captions_readable", "no_visual_defects",
             "dimensions_valid", "audio_present", "duration_valid",
         }

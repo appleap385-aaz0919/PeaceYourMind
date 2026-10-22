@@ -10,10 +10,14 @@ Work only inside `youtube_life_tips`. Do not read or use the parent Peace in Min
 
 Use the current Korean season for topic selection: spring is March-May, summer June-August, autumn September-November, and winter December-February. Search seasonal household needs first and verify the practical claim against at least two reliable sources, preferably primary sources. If no suitable seasonal topic can be supported by two reliable sources, use a season-neutral household tip and explain the fallback in `fallback_reason`. Never force a seasonal angle or invent seasonal evidence. Record `topic_strategy` as `seasonal` or `evergreen_fallback`; the independent reviewer must verify the season fit or fallback reason.
 
+## Content-level repetition check
+
+Before drafting, compare the idea with `work/sample/metadata.json` and previous `work/daily/*/content.json` records. Avoid reusing the same actionable recommendation, central factual claim, solution steps, or distinctive hook. Repeating a broad subject, appliance, room, or category is acceptable when the practical advice and editorial angle are meaningfully different. The reviewer must reject material content repetition, but must not reject a tip just because it shares a broad topic.
+
 ## Daily handoff
 
 1. Main researches the seasonal-first topic and writes `draft.json` with four short original Korean narration/caption scenes and at least two HTTPS sources.
-2. Reviewer independently verifies the cited claims, safety, originality, and season selection. Any unresolved issue means skip.
+2. Reviewer independently verifies the cited claims, safety, content-level originality, and season selection. Any unresolved issue means skip.
 3. Main incorporates review findings and writes `approved.json`. The plan must record the date, season, `topic_strategy`, fallback reason when relevant, title, description, scenes, and sources.
 4. Developer makes exactly one new ImageGen storyboard and saves `work/daily/YYYY-MM-DD/storyboard.png`. Reused or duplicate art is rejected.
 5. The local renderer creates and checks a 720x1280, 15fps video with Korean Edge TTS and one FFmpeg thread.
