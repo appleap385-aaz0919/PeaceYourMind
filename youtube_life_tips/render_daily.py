@@ -1,0 +1,280 @@
+"""Render one newly generated daily storyboard and Korean narration to a Short."""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import json
+import math
+import subprocess
+import sys
+from datetime import date, datetime
+from pathlib import Path
+from typing import Any
+from zoneinfo import ZoneInfo
+
+from PIL import Image, ImageDraw, ImageFont, ImageOps
+
+
+ROOT = Path(__file__).resolve().parent
+WORK = ROOT / "work" / "daily"
+VENDOR = ROOT / "work" / "vendor"
+WIDTH, HEIGHT, FPS = 720, 1280, 15
+VOICE = "ko-KR-InJoonNeural"
+
+
+def run(args: list[str]) -> bytes:
+    result = subprocess.run(args, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return result.stdout
+
+
+def media_duration(path: Path) -> float:
+    value = run([
+        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1", str(path),
+    ])
+    return float(value.decode("ascii").strip())
+
+
+def dimensions(path: Path) -> tuple[int, int]:
+    result = run([
+        "ffprobe", "-v", "error", "-select_streams", "v:0",
+        "-show_entries", "stream=width,height", "-of", "json", str(path),
+    ])
+    stream = json.loads(result)["streams"][0]
+    return int(stream["width"]), int(stream["height"])
+
+
+def has_audio(path: Path) -> bool:
+    result = run([
+        "ffprobe", "-v", "error", "-select_streams", "a:0",
+        "-show_entries", "stream=codec_type", "-of", "json", str(path),
+    ])
+    return bool(json.loads(result).get("streams"))
+
+
+def load_content(path: Path, requested_date: date) -> dict[str, Any]:
+    content = json.loads(path.read_text(encoding="utf-8"))
+    if content.get("date") != requested_date.isoformat():
+        raise ValueError("content.json date must match the requested Korea date")
+    scenes, sources = content.get("scenes"), content.get("sources")
+    if not isinstance(scenes, list) or len(scenes) != 4:
+        raise ValueError("content.json must contain exactly four scenes")
+    if not isinstance(sources, list) or len(sources) < 2:
+        raise ValueError("content.json must contain at least two verified sources")
+    for index, scene in enumerate(scenes, start=1):
+        if not scene.get("narration", "").strip() or not scene.get("caption", "").strip():
+            raise ValueError(f"scene {index} needs narration and caption")
+    if not content.get("topic") or not content.get("hook") or not content.get("title"):
+        raise ValueError("content.json needs topic, hook, and title")
+    if any(not item.get("title") or not item.get("url", "").startswith("https://") for item in sources):
+        raise ValueError("each source must have a title and https URL")
+    return content
+
+
+async def synthesize_segments(scenes: list[dict[str, str]], output_paths: list[Path]) -> None:
+    if not VENDOR.is_dir():
+        raise RuntimeError("local TTS package folder work/vendor is missing")
+    sys.path.insert(0, str(VENDOR))
+    try:
+        import edge_tts
+    except ImportError as exc:
+        raise RuntimeError("Edge TTS is not installed in work/vendor; daily run skipped") from exc
+    for scene, output in zip(scenes, output_paths, strict=True):
+        await edge_tts.Communicate(
+            scene["narration"], VOICE, rate="+8%", pitch="+1Hz"
+        ).save(str(output))
+
+
+def load_panels(path: Path) -> list[Image.Image]:
+    if not path.is_file():
+        raise FileNotFoundError("today's newly generated storyboard.png is missing")
+    sample_dir = (ROOT / "work" / "sample").resolve()
+    if sample_dir in path.resolve().parents:
+        raise ValueError("sample assets are not valid daily artwork")
+    with Image.open(path) as opened:
+        storyboard = opened.convert("RGB")
+    width, height = storyboard.size
+    if width < 768 or height < 1152 or height / width < 1.35:
+        raise ValueError("storyboard must be a high-resolution portrait 2x2 grid")
+    gutter_x, gutter_y = max(4, round(width * 0.008)), max(4, round(height * 0.005))
+    middle_x, middle_y = width // 2, height // 2
+    boxes = [
+        (0, 0, middle_x - gutter_x, middle_y - gutter_y),
+        (middle_x + gutter_x, 0, width, middle_y - gutter_y),
+        (0, middle_y + gutter_y, middle_x - gutter_x, height),
+        (middle_x + gutter_x, middle_y + gutter_y, width, height),
+    ]
+    return [
+        ImageOps.fit(
+            storyboard.crop(box), (WIDTH, HEIGHT),
+            method=Image.Resampling.LANCZOS, centering=(0.5, 0.5),
+        )
+        for box in boxes
+    ]
+
+
+def fonts() -> tuple[ImageFont.FreeTypeFont, ImageFont.FreeTypeFont, ImageFont.FreeTypeFont]:
+    regular, bold = Path("C:/Windows/Fonts/malgun.ttf"), Path("C:/Windows/Fonts/malgunbd.ttf")
+    if not regular.is_file() or not bold.is_file():
+        raise RuntimeError("Korean Malgun fonts are required for readable captions")
+    return (
+        ImageFont.truetype(str(bold), 42),
+        ImageFont.truetype(str(bold), 34),
+        ImageFont.truetype(str(regular), 25),
+    )
+
+
+def wrap_text(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont, max_width: int) -> list[str]:
+    lines: list[str] = []
+    current = ""
+    for word in text.split():
+        candidate = f"{current} {word}".strip()
+        if current and draw.textbbox((0, 0), candidate, font=font)[2] > max_width:
+            lines.append(current)
+            current = word
+        else:
+            current = candidate
+    if current:
+        lines.append(current)
+    return lines
+
+
+def overlay_for_scene(
+    scene_image: Image.Image,
+    caption: str,
+    hook: str,
+    index: int,
+    hook_font: ImageFont.FreeTypeFont,
+    caption_font: ImageFont.FreeTypeFont,
+    small_font: ImageFont.FreeTypeFont,
+) -> Image.Image:
+    image = scene_image.copy().convert("RGBA")
+    shade = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    shade_draw = ImageDraw.Draw(shade)
+    for y in range(0, 360, 4):
+        alpha = max(0, int(180 * (1 - y / 430)))
+        shade_draw.rectangle((0, y, WIDTH, y + 3), fill=(8, 14, 22, alpha))
+    for y in range(790, HEIGHT, 4):
+        alpha = min(220, int(215 * (y - 790) / 250))
+        shade_draw.rectangle((0, y, WIDTH, y + 3), fill=(8, 14, 22, alpha))
+    image = Image.alpha_composite(image, shade)
+    draw = ImageDraw.Draw(image)
+
+    draw.rounded_rectangle((36, 38, 260, 84), radius=22, fill=(13, 23, 36, 210))
+    draw.text((55, 47), "생활꿀팁  ·  오늘의 한 가지", font=small_font, fill="#ffffff")
+    if index == 0:
+        y = 126
+        for line in wrap_text(draw, hook, hook_font, 630)[:2]:
+            draw.text((38, y), line, font=hook_font, fill="#fff3a1", stroke_width=2, stroke_fill="#101820")
+            y += 54
+
+    caption_lines = wrap_text(draw, caption, caption_font, 575)[:3]
+    box_height = max(154, 46 + 52 * len(caption_lines))
+    top = HEIGHT - 212 - box_height
+    draw.rounded_rectangle(
+        (34, top, WIDTH - 34, top + box_height), radius=26,
+        fill=(8, 16, 25, 222), outline=(255, 255, 255, 65), width=2,
+    )
+    y = top + (box_height - 52 * len(caption_lines)) // 2 - 2
+    for line in caption_lines:
+        draw.text((61, y), line, font=caption_font, fill="#ffffff", stroke_width=1, stroke_fill="#111922")
+        y += 52
+    draw.text((38, HEIGHT - 78), "하루 한 가지, 생활이 더 편해집니다", font=small_font, fill="#e4eef2")
+    return image.convert("RGB")
+
+
+def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path], output: Path) -> None:
+    lengths = [media_duration(path) for path in voice_paths]
+    starts: list[float] = []
+    cursor = 0.0
+    for length in lengths:
+        starts.append(cursor)
+        cursor += length
+    total = cursor
+    if total <= 0 or total > 55:
+        raise ValueError(f"narration duration {total:.1f}s is outside the 1-55s Short limit")
+
+    voice = day_dir / "narration.mp3"
+    args = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y"]
+    for path in voice_paths:
+        args.extend(["-i", str(path)])
+    filters, labels = [], []
+    for i in range(len(voice_paths)):
+        filters.append(f"[{i}:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[a{i}]")
+        labels.append(f"[a{i}]")
+    filters.append("".join(labels) + f"concat=n={len(labels)}:v=0:a=1[out]")
+    args.extend([
+        "-filter_complex", ";".join(filters), "-map", "[out]", "-threads", "1",
+        "-c:a", "libmp3lame", "-q:a", "4", str(voice),
+    ])
+    run(args)
+
+    panels = load_panels(day_dir / "storyboard.png")
+    hook_font, caption_font, small_font = fonts()
+    frames = [
+        overlay_for_scene(panel, scene["caption"], content["hook"], i, hook_font, caption_font, small_font)
+        for i, (panel, scene) in enumerate(zip(panels, content["scenes"], strict=True))
+    ]
+    output.parent.mkdir(parents=True, exist_ok=True)
+    ffmpeg = subprocess.Popen(
+        [
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-threads", "1",
+            "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{WIDTH}x{HEIGHT}",
+            "-r", str(FPS), "-i", "-", "-i", str(voice), "-t", f"{total:.3f}", "-shortest",
+            "-c:v", "libx264", "-preset", "veryfast", "-threads", "1", "-crf", "24",
+            "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", str(output),
+        ],
+        stdin=subprocess.PIPE,
+    )
+    assert ffmpeg.stdin is not None
+    try:
+        for frame_number in range(math.ceil(total * FPS)):
+            t = frame_number / FPS
+            scene_index = max(i for i, start in enumerate(starts) if start <= t)
+            transition = t - starts[scene_index]
+            current = frames[scene_index]
+            if scene_index > 0 and transition < 0.28:
+                current = Image.blend(frames[scene_index - 1], current, max(0.0, min(1.0, transition / 0.28)))
+            ffmpeg.stdin.write(current.tobytes())
+    finally:
+        ffmpeg.stdin.close()
+    if ffmpeg.wait() != 0:
+        raise RuntimeError("FFmpeg could not encode today's video")
+
+    actual_width, actual_height = dimensions(output)
+    actual_duration = media_duration(output)
+    if actual_width != WIDTH or actual_height != HEIGHT or actual_duration > 55.5 or not has_audio(output):
+        raise RuntimeError("render validation failed: incorrect dimensions/duration or missing audio")
+    title = content["title"].strip()
+    if "#Shorts" not in title:
+        title += " #Shorts"
+    source_lines = [f"- {item['title']}: {item['url']}" for item in content["sources"]]
+    description = content.get("description", "오늘 바로 써볼 수 있는 생활꿀팁을 전해드립니다.").strip()
+    description += "\n\n참고 자료\n" + "\n".join(source_lines)
+    metadata = {
+        "date": content["date"], "topic": content["topic"], "title": title,
+        "season": content.get("season"), "topic_strategy": content.get("topic_strategy"),
+        "fallback_reason": content.get("fallback_reason"),
+        "description": description, "duration_seconds": round(actual_duration, 2),
+        "width": actual_width, "height": actual_height, "voice": VOICE,
+        "narration_seconds": [round(value, 2) for value in lengths], "sources": content["sources"],
+    }
+    (day_dir / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps(metadata, ensure_ascii=False, indent=2))
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--date", help="Asia/Seoul date in YYYY-MM-DD; defaults to today")
+    args = parser.parse_args()
+    today = date.fromisoformat(args.date) if args.date else datetime.now(ZoneInfo("Asia/Seoul")).date()
+    day_dir = WORK / today.isoformat()
+    content = load_content(day_dir / "content.json", today)
+    voice_paths = [day_dir / f"voice_{index + 1}.mp3" for index in range(4)]
+    asyncio.run(synthesize_segments(content["scenes"], voice_paths))
+    render_video(day_dir, content, voice_paths, day_dir / f"life-tip-{today.isoformat()}.mp4")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,8 @@
+work/
+state/
+.tools/
+*.local.json
+*.local.yaml
+*.mp4
+*.mp3
+*.wav

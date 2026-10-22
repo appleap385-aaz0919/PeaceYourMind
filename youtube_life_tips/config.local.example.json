@@ -1,0 +1,13 @@
+{
+  "youtube_channel_id": "REPLACE_WITH_LIFE_TIPS_CHANNEL_ID",
+  "publish_time_kst": "07:00",
+  "timezone": "Asia/Seoul",
+  "oauth_client_file": "state/google_oauth_client.json",
+  "oauth_token_file": "state/youtube_token.json",
+  "email_notifications": {
+    "enabled": false,
+    "sender": "appleap385@gmail.com",
+    "recipient": "aaz0919@naver.com",
+    "password_file": "state/gmail_app_password.dpapi"
+  }
+}

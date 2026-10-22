@@ -1,0 +1,60 @@
+channel:
+  language: ko-KR
+  timezone: Asia/Seoul
+  publish_time_kst: "07:00"
+  duration_seconds_max: 55
+
+automation:
+  provider: codex_cli_file_mailbox_windows_task_scheduler
+  enqueue_time_kst: "05:00"
+  publish_cutoff_kst: "06:30"
+  project_scope: youtube_life_tips_only
+  image_generation: built_in_imagegen_one_call_per_day
+  on_quota_or_image_failure: skip_day
+  email_notifications: enable_after_secure_local_setup
+
+research:
+  seasonal_first: true
+  seasonal_calendar: korean
+  season_months:
+    spring: [3, 4, 5]
+    summer: [6, 7, 8]
+    autumn: [9, 10, 11]
+    winter: [12, 1, 2]
+  fallback: season_neutral_only_if_reliable_seasonal_topic_is_unavailable
+  record_fallback_reason: true
+  minimum_sources: 2
+  prefer_primary_sources: true
+  exclude_topics:
+    - medical diagnosis or treatment
+    - financial or legal advice
+    - dangerous chemical mixtures
+    - electrical or gas repairs
+    - unsupported safety claims
+
+references:
+  style_reference_only: true
+  reuse_reference_video_thumbnail_frames_script_or_audio: false
+
+script:
+  language: ko
+  original_wording_required: true
+  include_source_urls_in_description: true
+  title_template: "오늘의 생활꿀팁 | {topic} #Shorts"
+
+voice:
+  provider: microsoft_edge_neural_tts
+  language_code: ko-KR
+  voice_name: ko-KR-InJoonNeural
+  speaking_rate: "+8%"
+  pitch: "+1Hz"
+  # Uses the edge-tts Python client to call Microsoft's online service; no separate Cloud TTS/Gemini key is required.
+
+video:
+  width: 720
+  height: 1280
+  fps: 15
+  visuals: one_new_generated_2x2_storyboard_per_day
+  use_external_media: false
+  background_music: none
+  ffmpeg_threads: 1
