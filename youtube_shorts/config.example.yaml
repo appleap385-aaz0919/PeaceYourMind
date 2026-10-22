@@ -1,6 +1,6 @@
 # Copy to config.yaml after deciding the publication time and review mode.
 timezone: Asia/Seoul
-publish_time: "09:00"
+publish_time: "07:00"
 
 links:
   website: https://appleap385-aaz0919.github.io/PeaceYourMind/

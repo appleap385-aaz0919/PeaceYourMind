@@ -2,8 +2,8 @@ name: Peace in Mind daily YouTube Short
 
 on:
   schedule:
-    # 04:00 KST; upload a private video scheduled for 09:00 KST.
-    - cron: "0 19 * * *"
+    # 05:30 KST; build ahead of the 07:00 KST release.
+    - cron: "30 20 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -29,6 +29,7 @@ jobs:
     env:
       PYM_TTS_SERVICE_ACCOUNT_JSON: ${{ secrets.PYM_TTS_SERVICE_ACCOUNT_JSON }}
       PYM_YOUTUBE_TOKEN_JSON: ${{ secrets.PYM_YOUTUBE_TOKEN_JSON }}
+      PYM_SMTP_APP_PASSWORD: ${{ secrets.PYM_SMTP_APP_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v4
@@ -37,6 +38,7 @@ jobs:
         id: credentials
         env:
           YOUTUBE_TOKEN_JSON: ${{ secrets.PYM_YOUTUBE_TOKEN_JSON }}
+          SMTP_APP_PASSWORD: ${{ secrets.PYM_SMTP_APP_PASSWORD }}
         shell: bash
         run: |
           if [[ -n "$PYM_TTS_SERVICE_ACCOUNT_JSON" ]]; then
@@ -50,6 +52,16 @@ jobs:
           else
             echo "youtube=false" >> "$GITHUB_OUTPUT"
             echo "YouTube upload skipped. Add its OAuth secret after reviewing a dry-run preview."
+          fi
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then
+            missing=()
+            [[ -n "$PYM_TTS_SERVICE_ACCOUNT_JSON" ]] || missing+=("PYM_TTS_SERVICE_ACCOUNT_JSON")
+            [[ -n "$YOUTUBE_TOKEN_JSON" ]] || missing+=("PYM_YOUTUBE_TOKEN_JSON")
+            [[ -n "$SMTP_APP_PASSWORD" ]] || missing+=("PYM_SMTP_APP_PASSWORD")
+            if (( ${#missing[@]} )); then
+              printf 'Scheduled run needs these GitHub Actions secrets: %s\n' "${missing[*]}" >&2
+              exit 1
+            fi
           fi
 
       - name: Set up Python
@@ -116,7 +128,7 @@ jobs:
           python youtube_shorts/scripts/render_short.py "$manifest"
           python youtube_shorts/scripts/build_metadata.py "$manifest"
 
-      - name: Upload for 09:00 KST release
+      - name: Upload for 07:00 KST release
         id: upload-scheduled
         if: steps.credentials.outputs.tts == 'true' && steps.credentials.outputs.youtube == 'true' && github.event_name == 'schedule'
         run: |
@@ -124,7 +136,7 @@ jobs:
           python youtube_shorts/scripts/upload_short.py \
             "youtube_shorts/work/$date_kst/short-draft.mp4" \
             "youtube_shorts/work/$date_kst/metadata.json" \
-            --publish-at-kst "${date_kst}T09:00"
+            --publish-at-kst "${date_kst}T07:00"
 
       - name: Upload for a manually selected KST release
         id: upload-manual
@@ -163,3 +175,14 @@ jobs:
               git push
             fi
           fi
+
+      - name: Email the daily result
+        if: always() && github.event_name == 'schedule'
+        env:
+          SMTP_APP_PASSWORD: ${{ secrets.PYM_SMTP_APP_PASSWORD }}
+          SMTP_USER: appleap385@gmail.com
+          NOTIFY_TO: aaz0919@naver.com
+          RUN_STATUS: ${{ job.status }}
+          RUN_DATE_KST: ${{ steps.day.outputs.date_kst }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python youtube_shorts/scripts/notify_result.py

@@ -41,13 +41,17 @@ With that credential, a generated video can be uploaded privately by default. To
 python youtube_shorts/scripts/upload_short.py `
   youtube_shorts/work/2026-10-22/short-draft.mp4 `
   youtube_shorts/work/2026-10-22/metadata.json `
-  --publish-at-kst 2026-10-22T09:00
+  --publish-at-kst 2026-10-22T07:00
 ```
 
 The upload history is stored in `youtube_shorts/state/uploads.json` to prevent a repeat upload for the same KST date. Tokens and OAuth client secrets are excluded by `.gitignore`.
 
 ## Daily automation
 
-The daily runner is `.github/workflows/youtube-shorts.yml`, separate from the app and video-data workflows. It builds at 04:00 KST, uploads a private Short, and asks YouTube to publish it at 09:00 KST. First add only the repository Actions secret `PYM_TTS_SERVICE_ACCOUNT_JSON`, dispatch a dry run, and listen to the preview artifact. After confirming the KRV pronunciation and adding both links to the channel profile, add `PYM_YOUTUBE_TOKEN_JSON`. That secret enables the scheduled daily public releases.
+The daily runner is `.github/workflows/youtube-shorts.yml`, separate from the app and video-data workflows. It starts at 05:30 KST, uploads a private Short, and asks YouTube to publish it at 07:00 KST. GitHub Actions uses UTC for cron, so the schedule is `30 20 * * *`. Scheduled runs require the repository Actions secrets `PYM_TTS_SERVICE_ACCOUNT_JSON`, `PYM_YOUTUBE_TOKEN_JSON`, and `PYM_SMTP_APP_PASSWORD`; the workflow stops before rendering if any are missing. `PYM_YOUTUBE_TOKEN_JSON` must contain the channel owner's OAuth token JSON with the `youtube.upload` scope. A YouTube API key alone cannot upload videos.
+
+Daily status is sent from `appleap385@gmail.com` to `aaz0919@naver.com` through Gmail SMTP at no per-message charge. Create a Google App Password for the sender account (2-Step Verification must be enabled) and store it only as the GitHub Actions secret `PYM_SMTP_APP_PASSWORD`; never commit or paste the password into project files. The email contains the scheduled Short link on success, or the GitHub Actions run link if generation or upload fails.
+
+For Google OAuth, set the consent screen publishing status to Production before relying on the scheduled refresh token. In Testing mode, YouTube-scope authorizations for external users expire after seven days.
 
 Google Cloud requires billing to be enabled for Text-to-Speech. The Neural2 tier currently includes one million input characters per month, then costs US$16 per million characters. A single short verse each day is far below that monthly allowance. See [official pricing](https://cloud.google.com/text-to-speech/pricing?hl=ko) and the [Korean voice list](https://docs.cloud.google.com/text-to-speech/docs/list-voices-and-types?hl=ko).
