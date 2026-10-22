@@ -112,29 +112,8 @@ def app_scenes(manifest: dict, work: Path) -> tuple[list[Path], list[Path]]:
     draw_wrapped(draw, verse_text, verse_font, 60, 235, 940, paper, 22)
     draw.text((60, 635), manifest["reference"], font=ref_font, fill=gold)
     draw_wrapped(draw, "\uC624\uB298\uC758 \uB9C8\uC74C\uC5D0 \uBA38\uBB34\uB294 \uD55C \uAD6C\uC808", ref_font, 60, 825, 900, muted, 14)
+    select_reading_tab(image, reading_screen)
     path = work / "app-verse.png"
-    image.save(path, optimize=True)
-    pages.append(path)
-
-    chapter, start_verse, context_verses, progress = reading_context(manifest)
-    image = Image.open(reading_screen).convert("RGB")
-    draw = ImageDraw.Draw(image)
-    reader_top = image.getpixel((10, 180))
-    reader_body = image.getpixel((10, 900))
-    verse_font = fit_context_font(context_verses, korean_font, 50, 34, 865, 900, 16, 28)
-    draw.rectangle((35, 35, 1045, 415), fill=reader_top)
-    draw.rectangle((35, 605, 1045, 1630), fill=reader_body)
-    draw.text((60, 135), "\uB9D0\uC500\uC744 \uCC9C\uCC9C\uD788 \uC774\uC5B4 \uC77D\uC5B4\uBCF4\uC138\uC694.", font=title_font, fill=muted)
-    draw.text((60, 635), chapter["title"], font=ref_font, fill=gold)
-    draw.text((300, 635), progress, font=ref_font, fill=muted)
-    y = 760
-    for number, verse in enumerate(context_verses, start=start_verse):
-        draw.text((60, y), str(number), font=ref_font, fill=gold)
-        for line in wrap(verse, verse_font, 865):
-            draw.text((112, y), line, font=verse_font, fill=paper)
-            y += verse_font.size + 16
-        y += 28
-    path = work / "app-reading.png"
     image.save(path, optimize=True)
     pages.append(path)
 
@@ -170,33 +149,22 @@ def app_scenes(manifest: dict, work: Path) -> tuple[list[Path], list[Path]]:
     return pages, player_pages
 
 
-def reading_context(manifest: dict) -> tuple[dict, int, list[str], str]:
-    """Mirror ChapterReader's four-verse page starting after the selected verse."""
-    root = Path(__file__).resolve().parents[2]
-    data = json.loads((root / "app" / "src" / "data" / "verses.json").read_text(encoding="utf-8"))
-    selected = next(item for item in data["verses"] if item["id"] == manifest["verse_id"])
-    read = selected["read"]
-    chapter_path = root / "app" / "public" / "krv" / read["book"] / f"{read['chapter']}.json"
-    chapter = json.loads(chapter_path.read_text(encoding="utf-8"))
-    start = read["from"]
-    verses = chapter["verses"][start - 1:start + 3]
-    end = start + len(verses) - 1
-    span = f"{start}-{end}" if end > start else str(start)
-    return chapter, start, verses, f"{span} / {len(chapter['verses'])}"
+def select_reading_tab(result: Image.Image, reader_screen: Path) -> None:
+    """Keep the result page intact while borrowing its real selected-tab state."""
+    tabs = Image.open(reader_screen).convert("RGB").crop((0, 480, WIDTH, 570))
+    target_y = 1136
 
+    # Remove the old praise underline while preserving the result screenshot's background.
+    for y in range(1217, 1224):
+        for x in range(500, 636):
+            result.putpixel((x, y), result.getpixel((x, 1210)))
 
-def fit_context_font(verses: list[str], font_file: Path, start_size: int, min_size: int,
-                     max_width: int, max_height: int, line_gap: int,
-                     verse_gap: int) -> ImageFont.FreeTypeFont:
-    measure = ImageDraw.Draw(Image.new("RGB", (1, 1)))
-    for size in range(start_size, min_size - 1, -1):
-        font = ImageFont.truetype(str(font_file), size)
-        line_height = max(measure.textbbox((0, 0), "가", font=font)[3], size)
-        lines = sum(len(wrap(verse, font, max_width)) for verse in verses)
-        height = lines * (line_height + line_gap) + max(0, len(verses) - 1) * verse_gap
-        if height <= max_height:
-            return font
-    return ImageFont.truetype(str(font_file), min_size)
+    # Copy only visible tab pixels; the result page and video recommendations stay intact.
+    for y in range(tabs.height):
+        for x in range(WIDTH):
+            pixel = tabs.getpixel((x, y))
+            if max(pixel) > 44:
+                result.putpixel((x, target_y + y), pixel)
 
 
 def synthesize_text(text: str, output: Path, voice_name: str, speaking_rate: float = 0.9) -> None:
@@ -296,24 +264,23 @@ def main() -> None:
     verse_time = media_duration(verse_audio, args.ffprobe)
     video_time = media_duration(video_audio, args.ffprobe)
     pages, player_pages = app_scenes(manifest, work)
-    typing_pages = pages[:-3]
-    verse_page, reading_page, video_page = pages[-3:]
-    image_paths = [*typing_pages, verse_page, reading_page, video_page, *player_pages]
+    typing_pages = pages[:-2]
+    verse_page, video_page = pages[-2:]
+    image_paths = [*typing_pages, verse_page, video_page, *player_pages]
     transition = 0.16
     intro_duration = max(5.8, intro_time + 1.0)
-    verse_preview = 1.25
-    reading_duration = max(DURATION, math.ceil(verse_time + 1.3))
+    verse_duration = max(DURATION, math.ceil(verse_time + 1.3))
     video_duration = max(4.0, math.ceil(video_time + 0.9))
     durations = ([intro_duration / len(typing_pages)] * len(typing_pages)
-                 + [verse_preview, reading_duration, video_duration, 1.2, 1.2, 1.2])
+                 + [verse_duration, video_duration, 1.2, 1.2, 1.2])
     if sum(durations) > 60:
         raise ValueError(f"Narration is too long for a Short: estimated {sum(durations)} seconds")
 
     def scene_start(index: int) -> float:
         return sum(durations[:index]) - transition * index
 
-    audio_clips = [(intro_audio, 0.0), (verse_audio, scene_start(len(typing_pages) + 1)),
-                   (video_audio, scene_start(len(typing_pages) + 2))]
+    audio_clips = [(intro_audio, 0.0), (verse_audio, scene_start(len(typing_pages))),
+                   (video_audio, scene_start(len(typing_pages) + 1))]
 
     output = args.output or work / "short-draft.mp4"
     output.parent.mkdir(parents=True, exist_ok=True)
