@@ -68,6 +68,13 @@ jobs:
         if: steps.credentials.outputs.tts == 'true'
         run: python -m pip install -r youtube_shorts/requirements.txt
 
+      - name: Generate app scripture data for the walkthrough
+        if: steps.credentials.outputs.tts == 'true'
+        run: |
+          python scripts/gen_taxonomy_json.py
+          python scripts/gen_verses_json.py
+          python scripts/gen_krv_chapters.py
+
       - name: Load credentials into ignored local files
         if: steps.credentials.outputs.tts == 'true'
         env:
