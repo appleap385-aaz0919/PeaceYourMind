@@ -223,7 +223,9 @@ def render_mp4(images: list[Path], durations: list[float], audio_clips: list[tup
     audio_base = len(images)
     for audio, _ in audio_clips:
         command += ["-i", str(audio)]
-    filters = [f"[{i}:v]fps={FPS},settb=AVTB,setpts=PTS-STARTPTS,setsar=1[v{i}]"
+    # FFmpeg 7 clears frame-rate metadata in setpts. Restore fps afterwards
+    # so xfade receives constant-rate inputs on both bundled and system FFmpeg.
+    filters = [f"[{i}:v]setpts=PTS-STARTPTS,fps={FPS},settb=AVTB,setsar=1[v{i}]"
                for i in range(len(images))]
     current = "v0"
     for index in range(1, len(images)):

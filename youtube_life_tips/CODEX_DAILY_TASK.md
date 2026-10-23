@@ -2,7 +2,7 @@
 
 This workflow is launched by the project's Windows Task Scheduler mailbox. It is not a Codex Scheduled task. The watcher invokes separate, short-lived Codex CLI sessions for the main writer, reviewer, visual developer, and final auditor; they exchange JSON and image files under `work/mailbox/` and `work/daily/`.
 
-At 05:00 Asia/Seoul, enqueue today's request only if local Codex, the renderer, and this project's own YouTube OAuth/channel configuration pass preflight. The watcher runs the stages serially and may upload only if every stage completes before 06:30. The YouTube uploader schedules the video privately for 07:00 Asia/Seoul. If the PC is off/asleep at the scheduled start, the network or Codex quota is unavailable, or any validation is incomplete, skip the date. Never catch up or upload on a later date.
+At 03:00 Asia/Seoul, enqueue today's request only if local Codex, the renderer, and this project's own YouTube OAuth/channel configuration pass preflight. The watcher runs the stages serially and may upload only if every stage completes before 06:30. Starting at 03:00 leaves 3.5 hours before the upload cutoff. The YouTube uploader schedules the video privately for 07:00 Asia/Seoul. If the PC is off/asleep at the scheduled start, the network or Codex quota is unavailable, or any validation is incomplete, skip the date. Never catch up or upload on a later date.
 
 Work only inside `youtube_life_tips`. Do not read or use the parent Peace in Mind project, its credentials, assets, or channel. Do not use Gemini, paid APIs, downloaded media, or prior/sample visuals. Use the built-in `$imagegen` exactly once for one new four-panel storyboard. If ImageGen is unavailable, fails, reaches a limit, or cannot save into today's folder, skip the date.
 

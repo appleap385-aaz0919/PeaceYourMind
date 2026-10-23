@@ -10,7 +10,7 @@ if (-not (Test-Path -LiteralPath $PythonExe)) { throw "Python 3 could not be res
 
 $TimeZone = Get-TimeZone
 if ($TimeZone.Id -ne "Korea Standard Time") {
-    throw "Set the Windows time zone to Korea Standard Time before registering the 05:00/07:00 schedule."
+    throw "Set the Windows time zone to Korea Standard Time before registering the 03:00/07:00 schedule."
 }
 
 Write-Host "Checking Codex, renderer, OAuth, and the separate YouTube channel..."
@@ -31,7 +31,7 @@ $WatcherAction = New-ScheduledTaskAction -Execute $PythonwExe `
 $DailyAction = New-ScheduledTaskAction -Execute $PythonExe `
     -Argument "`"$MailboxScript`" enqueue --today" -WorkingDirectory $ProjectRoot
 $WatcherTrigger = New-ScheduledTaskTrigger -AtLogOn -User $UserId
-$DailyTrigger = New-ScheduledTaskTrigger -Daily -At "5:00AM"
+$DailyTrigger = New-ScheduledTaskTrigger -Daily -At "3:00AM"
 $WatcherSettings = New-ScheduledTaskSettingsSet -Hidden -StartWhenAvailable:$false -WakeToRun:$false `
     -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew `
     -ExecutionTimeLimit ([TimeSpan]::Zero)
@@ -42,8 +42,8 @@ $DailySettings = New-ScheduledTaskSettingsSet -Hidden -StartWhenAvailable:$false
 Register-ScheduledTask -TaskName $WatcherTaskName -Action $WatcherAction -Trigger $WatcherTrigger `
     -Principal $Principal -Settings $WatcherSettings -Description "Low-memory local Codex life-tips mailbox watcher." -Force | Out-Null
 Register-ScheduledTask -TaskName $DailyTaskName -Action $DailyAction -Trigger $DailyTrigger `
-    -Principal $Principal -Settings $DailySettings -Description "Queues today's life-tips short at 05:00 Korea time; missed starts are skipped." -Force | Out-Null
+    -Principal $Principal -Settings $DailySettings -Description "Queues today's life-tips short at 03:00 Korea time; missed starts are skipped." -Force | Out-Null
 
 Write-Host "Registered '$WatcherTaskName' (starts at your Windows logon)."
-Write-Host "Registered '$DailyTaskName' (daily at 05:00 Korea time; no catch-up after a missed start)."
+Write-Host "Registered '$DailyTaskName' (daily at 03:00 Korea time; no catch-up after a missed start)."
 Write-Host "The workflow stops accepting uploads at 06:30 so a completed video can be scheduled for 07:00."
