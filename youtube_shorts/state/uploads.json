@@ -10,9 +10,11 @@
   },
   "2026-10-24": {
     "date_kst": "2026-10-24",
-    "status": "uploading",
+    "status": "uploaded",
     "operation_id": "2211a5e2fbea49bc9d1c8916fb5cef2b",
     "channel_id": "UCLQczQnzBHzB8jOO0sMeP2w",
+    "video_id": "bYqtfWp--Wk",
+    "privacy": "private",
     "publish_at": "2026-10-24T07:00:00+09:00"
   }
 }
