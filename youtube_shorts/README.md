@@ -46,6 +46,10 @@ python youtube_shorts/scripts/upload_short.py `
 
 The upload history is stored in `youtube_shorts/state/uploads.json` to prevent a repeat upload for the same KST date. Tokens and OAuth client secrets are excluded by `.gitignore`.
 
+The cloud uploader commits an `uploading` intent before transmitting media, then saves a separate completion receipt and commits the video ID immediately after the API responds. The client retries transient requests up to three times. Preview/artifact failures cannot silently erase a completed upload record. Scheduled runs check out current `main` and can restore a completed receipt from a prior `pim-upload-receipt-YYYY-MM-DD` artifact before checking the ledger.
+
+An intent without a completion receipt blocks a fresh upload and produces an attention notice. This deliberately requires reconciliation if a runner dies after YouTube accepted the video but before any completion receipt was saved. Never delete that intent just to rerun: first identify the existing video in the intended channel. Resumable session URLs and OAuth credentials are never committed to the ledger. Local manual uploads write local records; the GitHub workflow additionally enables remote checkpointing through `PYM_PERSIST_LEDGER=true`.
+
 ## Daily automation
 
 The daily runner is `.github/workflows/youtube-shorts.yml`, separate from the app and video-data workflows. It has primary and retry starts at 01:30 and 02:15 KST, then uploads a private Short and asks YouTube to publish it at 07:00 KST. GitHub Actions uses UTC for cron, so these starts are `30 16 * * *` and `15 17 * * *`. Before rendering, each scheduled run checks the date-to-video-ID ledger and skips the day if a Short is already recorded. Scheduled runs require the repository Actions secrets `PYM_TTS_SERVICE_ACCOUNT_JSON`, `PYM_YOUTUBE_TOKEN_JSON`, and `PYM_SMTP_APP_PASSWORD`; the workflow stops before rendering if any are missing. `PYM_YOUTUBE_TOKEN_JSON` must contain the channel owner's OAuth token JSON with the `youtube.upload` scope. A YouTube API key alone cannot upload videos.

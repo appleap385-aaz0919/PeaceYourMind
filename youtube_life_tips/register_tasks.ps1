@@ -34,9 +34,9 @@ $WatcherTrigger = New-ScheduledTaskTrigger -AtLogOn -User $UserId
 $DailyTrigger = New-ScheduledTaskTrigger -Daily -At "3:00AM"
 $WatcherSettings = New-ScheduledTaskSettingsSet -Hidden -StartWhenAvailable:$false -WakeToRun:$false `
     -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew `
-    -ExecutionTimeLimit ([TimeSpan]::Zero)
+    -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
 $DailySettings = New-ScheduledTaskSettingsSet -Hidden -StartWhenAvailable:$false -WakeToRun:$false `
-    -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RunOnlyIfNetworkAvailable `
+    -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
     -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 2)
 
 Register-ScheduledTask -TaskName $WatcherTaskName -Action $WatcherAction -Trigger $WatcherTrigger `

@@ -10,6 +10,9 @@ from datetime import date, datetime, time as datetime_time, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import resumable_upload
+from reliability import atomic_json, file_lock, read_receipt
+
 from youtube_auth import get_access_token, load_local_config, load_oauth_client, my_channels, state_path
 
 
@@ -63,53 +66,13 @@ def api_call(request: urllib.request.Request) -> tuple[int, dict[str, str], byte
         raise RuntimeError(f"YouTube upload API failed ({exc.code}): {detail}") from exc
 
 
-def upload_resumable(video: Path, metadata: dict[str, object], access_token: str) -> dict[str, object]:
-    payload = json.dumps(metadata, ensure_ascii=False).encode("utf-8")
-    initiate = urllib.request.Request(
-        "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status",
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json; charset=UTF-8",
-            "X-Upload-Content-Type": "video/mp4",
-            "X-Upload-Content-Length": str(video.stat().st_size),
-        },
-        method="POST",
+def upload_resumable(video: Path, metadata: dict[str, object], access_token: str,
+                     *, receipt_context: dict | None = None, deadline: datetime | None = None) -> dict[str, object]:
+    return resumable_upload.upload(
+        video, metadata, access_token, api_call=api_call, chunk_size=CHUNK_SIZE,
+        session_path=video.parent / "upload_session.json",
+        receipt_context=receipt_context or {}, deadline=deadline,
     )
-    _, headers, _ = api_call(initiate)
-    upload_url = next((value for key, value in headers.items() if key.lower() == "location"), None)
-    if not upload_url:
-        raise RuntimeError("YouTube API did not return a resumable upload URL")
-
-    total = video.stat().st_size
-    offset = 0
-    final_body = b""
-    with video.open("rb") as stream:
-        while offset < total:
-            chunk = stream.read(CHUNK_SIZE)
-            end = offset + len(chunk) - 1
-            request = urllib.request.Request(
-                upload_url,
-                data=chunk,
-                headers={
-                    "Authorization": f"Bearer {access_token}",
-                    "Content-Type": "video/mp4",
-                    "Content-Length": str(len(chunk)),
-                    "Content-Range": f"bytes {offset}-{end}/{total}",
-                },
-                method="PUT",
-            )
-            status, _, body = api_call(request)
-            if status in (200, 201):
-                final_body = body
-                offset = total
-            elif status == 308:
-                offset = end + 1
-            else:
-                raise RuntimeError(f"unexpected resumable upload status: {status}")
-    if not final_body:
-        raise RuntimeError("YouTube upload ended without a completed video response")
-    return json.loads(final_body)
 
 
 def main() -> None:
@@ -119,9 +82,17 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="validate local files/config without uploading")
     args = parser.parse_args()
     day = date.fromisoformat(args.date) if args.date else datetime.now(KST).date()
+    with file_lock(WORK / day.isoformat() / "upload.lock"):
+        upload_day(day, args)
+
+
+def upload_day(day: date, args: argparse.Namespace) -> None:
     day_dir = WORK / day.isoformat()
     result_path = day_dir / "upload.json"
-    if result_path.exists():
+    config = load_local_config()
+    channel_id = str(config.get("youtube_channel_id", "")).strip()
+    resumable_upload.recovered_receipt(day_dir)
+    if read_receipt(result_path, day.isoformat(), channel_id):
         print(f"Already uploaded or scheduled for {day.isoformat()}; leaving existing result untouched.")
         return
     metadata_path = day_dir / "metadata.json"
@@ -139,8 +110,6 @@ def main() -> None:
         raise ValueError("only the validated 720x1280 render can be uploaded")
     if float(metadata.get("duration_seconds", 0)) <= 0 or float(metadata["duration_seconds"]) > 55.5:
         raise ValueError("only a validated Short up to 55.5 seconds can be uploaded")
-    config = load_local_config()
-    channel_id = str(config.get("youtube_channel_id", "")).strip()
     if not channel_id or channel_id == "REPLACE_WITH_LIFE_TIPS_CHANNEL_ID":
         raise ValueError("state/config.local.json must contain the separate life-tips channel ID")
     now = datetime.now(KST)
@@ -177,7 +146,14 @@ def main() -> None:
             "selfDeclaredMadeForKids": False,
         },
     }
-    uploaded = upload_resumable(video_path, video_metadata, access_token)
+    receipt_context = {
+        "date": day.isoformat(), "channel_id": channel_id,
+        "scheduled_publish_at_kst": publish_at.isoformat(), "title": metadata["title"],
+    }
+    uploaded = upload_resumable(
+        video_path, video_metadata, access_token, receipt_context=receipt_context,
+        deadline=publish_at - timedelta(minutes=5),
+    )
     video_id = uploaded.get("id")
     if not video_id:
         raise RuntimeError("YouTube response did not contain a video ID")
@@ -189,8 +165,8 @@ def main() -> None:
         "scheduled_publish_at_kst": publish_at.isoformat(),
         "title": metadata["title"],
     }
-    result_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    atomic_json(result_path, result)
+    print(json.dumps(result, ensure_ascii=True, indent=2))
 
 
 if __name__ == "__main__":

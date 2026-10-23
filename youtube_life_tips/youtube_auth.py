@@ -9,6 +9,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any
+from reliability import atomic_json
 
 
 ROOT = Path(__file__).resolve().parent
@@ -57,8 +58,7 @@ def post_form(url: str, values: dict[str, str]) -> dict[str, Any]:
 
 
 def save_token(path: Path, token: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(token, indent=2), encoding="utf-8")
+    atomic_json(path, token)
 
 
 def get_access_token(client: dict[str, str], token_path: Path) -> str:

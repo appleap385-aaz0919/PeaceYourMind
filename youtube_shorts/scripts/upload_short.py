@@ -6,10 +6,12 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import tempfile
+import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
+
+from upload_ledger import persist, save_state
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -31,14 +33,6 @@ def get_credentials(path: Path) -> Credentials:
     return creds
 
 
-def save_state(path: Path, state: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent,
-                                     delete=False, suffix=".tmp") as handle:
-        json.dump(state, handle, ensure_ascii=False, indent=2)
-        handle.write("\n")
-        temp = Path(handle.name)
-    os.replace(temp, path)
 
 
 def main() -> None:
@@ -64,11 +58,14 @@ def main() -> None:
 
     state = json.loads(args.state.read_text(encoding="utf-8")) if args.state.is_file() else {}
     if date_key in state:
-        raise SystemExit(f"Already uploaded for {date_key}: {state[date_key]['video_id']}")
+        raise SystemExit(f"Upload already recorded or awaiting reconciliation for {date_key}; refusing a new upload")
 
     status = {"privacyStatus": "private", "selfDeclaredMadeForKids": False}
     if args.publish_at_kst:
-        publish_at = datetime.fromisoformat(args.publish_at_kst).replace(tzinfo=KST)
+        publish_at = datetime.fromisoformat(args.publish_at_kst)
+        publish_at = publish_at.replace(tzinfo=KST) if publish_at.tzinfo is None else publish_at.astimezone(KST)
+        if publish_at.date().isoformat() != date_key:
+            parser.error("publish date must match metadata date_kst")
         if publish_at <= datetime.now(KST) + timedelta(minutes=15):
             parser.error("scheduled publish time must be at least 15 minutes in the future")
         status["publishAt"] = publish_at.isoformat()
@@ -90,13 +87,31 @@ def main() -> None:
         media_body=MediaFileUpload(str(args.video), mimetype="video/mp4", resumable=True),
         notifySubscribers=False,
     )
-    response = request.execute()
+    operation_id = uuid.uuid4().hex
+    expected_channel = "UCLQczQnzBHzB8jOO0sMeP2w"
+    # Commit intent BEFORE transmitting media. A runner crash must not permit
+    # the next scheduled run to blindly insert a second video.
     state[date_key] = {
+        "date_kst": date_key, "status": "uploading", "operation_id": operation_id,
+        "channel_id": expected_channel, "publish_at": status.get("publishAt"),
+    }
+    save_state(args.state, state)
+    persist(args.state)
+    response = request.execute(num_retries=3)
+    receipt = {
+        "date_kst": date_key, "status": "uploaded", "operation_id": operation_id,
+        "channel_id": response.get("snippet", {}).get("channelId", expected_channel),
         "video_id": response["id"],
         "privacy": status["privacyStatus"],
         "publish_at": status.get("publishAt"),
     }
+    # Save the independent receipt first, so an interrupted ledger push can be recovered.
+    save_state(args.video.parent / "upload_receipt.json", receipt)
+    state[date_key] = receipt
     save_state(args.state, state)
+    persist(args.state)
+    if receipt["channel_id"] != expected_channel:
+        raise RuntimeError("uploaded video channel mismatch; inspect saved receipt")
     print(f"Uploaded {date_key}: https://youtube.com/shorts/{response['id']}")
 
 

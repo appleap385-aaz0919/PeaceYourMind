@@ -18,6 +18,8 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from youtube_auth import get_access_token, load_local_config, load_oauth_client, my_channels, state_path
+from reliability import RetryableError, atomic_json, is_transient, read_receipt
+from resumable_upload import recovered_receipt
 
 
 ROOT = Path(__file__).resolve().parent
@@ -35,6 +37,7 @@ CODEX_MODEL = "gpt-6.1-sol"
 CODEX_TIMEOUT_SECONDS = 15 * 60
 POLL_SECONDS = 2
 ONE_OFF_MINIMUM_LEAD = timedelta(minutes=15)
+MAX_ATTEMPTS = 3
 
 
 class WorkflowSkipped(RuntimeError):
@@ -51,13 +54,6 @@ def daily_dir(day: date) -> Path:
 
 def report_path(day: date, root: Path = ROOT) -> Path:
     return root / "work" / "mailbox" / "outbox" / f"{day.isoformat()}.json"
-
-
-def atomic_json(path: Path, value: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
-    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
 
 
 def send_result_email(report: dict[str, Any], root: Path) -> str | None:
@@ -96,6 +92,11 @@ def write_report(
     *,
     root: Path = ROOT,
 ) -> dict[str, Any]:
+    output_path = report_path(day, root)
+    if output_path.exists() and status != "scheduled":
+        previous = json.loads(output_path.read_text(encoding="utf-8"))
+        if previous.get("status") == "scheduled":
+            return previous
     report: dict[str, Any] = {
         "date": day.isoformat(),
         "status": status,
@@ -108,7 +109,14 @@ def write_report(
     output_path = report_path(day, root)
     atomic_json(output_path, report)
     try:
-        email_status = send_result_email(report, root)
+        for attempt in range(3):
+            try:
+                email_status = send_result_email(report, root)
+                break
+            except Exception:
+                if attempt == 2:
+                    raise
+                time.sleep(2 ** attempt)
         if email_status:
             report["email_notification"] = email_status
     except Exception as exc:
@@ -120,6 +128,49 @@ def write_report(
             log.write(f"{now_kst().isoformat(timespec='seconds')} {report['date']} email failed: {report['email_error']}\n")
     atomic_json(output_path, report)
     return report
+
+
+def reconcile_report(day: date, root: Path) -> dict[str, Any] | None:
+    """A completed upload receipt takes precedence over a failed process/report."""
+    output = report_path(day, root)
+    previous = json.loads(output.read_text(encoding="utf-8")) if output.exists() else None
+    day_dir = root / "work" / "daily" / day.isoformat()
+    if not (day_dir / "upload.json").exists():
+        recovered_receipt(day_dir)
+    config_path = root / "state" / "config.local.json"
+    channel_id = None
+    if config_path.exists():
+        channel_id = json.loads(config_path.read_text(encoding="utf-8")).get("youtube_channel_id")
+    receipt = read_receipt(day_dir / "upload.json", day.isoformat(), channel_id)
+    if not receipt:
+        return previous
+    if previous and previous.get("status") == "scheduled" and previous.get("url") == receipt.get("url"):
+        return previous
+    return write_report(day, "scheduled", "recovered_upload", "", receipt, root=root)
+
+
+def retry_report(day: date, request: dict, error: BaseException, root: Path) -> dict:
+    attempt = int(request.get("attempt", 1))
+    delay = 60 * (3 ** (attempt - 1))
+    next_attempt = now_kst() + timedelta(seconds=delay)
+    cutoff = (parse_publish_at(day, request["publish_at_kst"]) - ONE_OFF_MINIMUM_LEAD
+              if request.get("publish_at_kst") else datetime.combine(day, PUBLISH_CUTOFF, tzinfo=KST))
+    if attempt >= MAX_ATTEMPTS or next_attempt >= cutoff:
+        return write_report(day, "failed", "retry_exhausted", str(error), {"attempts": attempt}, root=root)
+    return write_report(day, "retry_pending", "transient_error", str(error), {
+        "attempts": attempt, "next_attempt_at_kst": next_attempt.isoformat(),
+    }, root=root)
+
+
+def retry_due(report: dict | None) -> bool:
+    return not report or report.get("status") != "retry_pending" or now_kst() >= datetime.fromisoformat(report["next_attempt_at_kst"])
+
+
+def stage_timeout(deadline: datetime | None, limit: int) -> float:
+    remaining = (deadline - now_kst()).total_seconds() if deadline else limit
+    if remaining <= 0:
+        raise WorkflowSkipped("publishing preparation deadline reached")
+    return min(limit, remaining)
 
 
 def codex_executable(root: Path = ROOT) -> Path:
@@ -216,6 +267,9 @@ def enqueue_today(
     current = at.astimezone(KST) if at else now_kst()
     day = current.date()
     scheduled = parse_publish_at(day, publish_at_kst) if publish_at_kst else None
+    reconciled = reconcile_report(day, root)
+    if reconciled and reconciled.get("status") == "scheduled":
+        return reconciled
     if scheduled and current > scheduled - ONE_OFF_MINIMUM_LEAD:
         return write_report(day, "skipped", "enqueue", "one_off_release_has_less_than_15_minutes_lead_time", root=root)
     existing = report_path(day, root)
@@ -251,7 +305,9 @@ def enqueue_today(
     try:
         preflight(root)
     except Exception as exc:
-        return write_report(day, "skipped", "preflight", str(exc), root=root)
+        if not is_transient(exc):
+            return write_report(day, "skipped", "preflight", str(exc), root=root)
+        # Queue transient preflight failures; the watcher owns bounded retries.
     request = {
         "date": day.isoformat(),
         "run_id": uuid.uuid4().hex,
@@ -292,6 +348,7 @@ def call_codex(
     *,
     web_search: bool = False,
     image: Path | None = None,
+    deadline: datetime | None = None,
 ) -> Path:
     exe = codex_executable(root)
     final_path = run_dir / f"{stage}.json"
@@ -308,17 +365,31 @@ def call_codex(
     args.extend(["-o", str(final_path), "-"])
     run_dir.mkdir(parents=True, exist_ok=True)
     (run_dir / f"{stage}-instructions.txt").write_text(prompt, encoding="utf-8")
+    image_attempt = run_dir / "imagegen-attempt.json"
+    if stage == "developer-image":
+        if image_attempt.exists():
+            raise WorkflowSkipped("ImageGen was already attempted today; refusing a second generation")
+        atomic_json(image_attempt, {"started_at_kst": now_kst().isoformat()})
     try:
         result = subprocess.run(
             args, input=prompt, capture_output=True, text=True, encoding="utf-8", errors="replace",
-            timeout=CODEX_TIMEOUT_SECONDS, cwd=root,
+            timeout=stage_timeout(deadline, CODEX_TIMEOUT_SECONDS), cwd=root,
         )
     except subprocess.TimeoutExpired as exc:
-        raise WorkflowSkipped(f"Codex {stage} step exceeded the 15-minute limit") from exc
+        partial = "".join(value.decode("utf-8", "replace") if isinstance(value, bytes) else value or ""
+                          for value in (exc.stdout, exc.stderr))
+        (run_dir / f"{stage}.log").write_text(partial, encoding="utf-8")
+        if stage == "developer-image":
+            raise WorkflowSkipped("ImageGen timed out; its completion is uncertain and it will not be called twice") from exc
+        final_path.unlink(missing_ok=True)
+        raise RetryableError(f"Codex {stage} timed out") from exc
     log_path = run_dir / f"{stage}.log"
     log_path.write_text((result.stdout or "") + (result.stderr or ""), encoding="utf-8")
     if result.returncode:
         tail = (result.stderr or result.stdout or "Codex returned a non-zero exit code")[-1200:].strip()
+        if stage != "developer-image" and is_transient(tail):
+            final_path.unlink(missing_ok=True)
+            raise RetryableError(f"Codex {stage} temporarily failed: {tail}")
         raise WorkflowSkipped(f"Codex {stage} step failed: {tail}")
     if not final_path.is_file() or not final_path.read_text(encoding="utf-8").strip():
         raise WorkflowSkipped(f"Codex {stage} step produced no final report")
@@ -505,6 +576,9 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path) -> dict[str, str]:
 def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
     request = json.loads(request_file.read_text(encoding="utf-8"))
     day = date.fromisoformat(str(request["date"]))
+    existing = reconcile_report(day, root)
+    if existing and (existing.get("status") != "retry_pending" or not retry_due(existing)):
+        return existing
     current = now_kst()
     publish_at_kst = str(request["publish_at_kst"]) if request.get("publish_at_kst") else None
     scheduled = parse_publish_at(day, publish_at_kst) if publish_at_kst else None
@@ -515,26 +589,29 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
         return write_report(day, "skipped", "dispatch", "one_off_release_has_less_than_15_minutes_lead_time", root=root)
     if scheduled is None and current.time() >= PUBLISH_CUTOFF:
         return write_report(day, "skipped", "dispatch", "missed_0630_kst_upload_cutoff", root=root)
-    if report_path(day, root).exists():
-        return json.loads(report_path(day, root).read_text(encoding="utf-8"))
 
     run_dir = root / "work" / "mailbox" / "runs" / day.isoformat()
     day_dir = root / "work" / "daily" / day.isoformat()
     run_dir.mkdir(parents=True, exist_ok=True)
     day_dir.mkdir(parents=True, exist_ok=True)
+    if int(request.get("attempt", 0)) >= MAX_ATTEMPTS:
+        return write_report(day, "failed", "retry_exhausted", "maximum daily attempts reached", root=root)
+    request["attempt"] = int(request.get("attempt", 0)) + 1
+    atomic_json(request_file, request)
+    deadline = scheduled - ONE_OFF_MINIMUM_LEAD if scheduled else datetime.combine(day, PUBLISH_CUTOFF, tzinfo=KST)
     try:
         prompts = build_prompts(day, run_dir, day_dir)
         preflight(root)
         draft_path = run_dir / "main-draft.json"
         if not draft_path.is_file():
-            draft_path = call_codex(root, run_dir, "main-draft", prompts["main_draft"], web_search=True)
+            draft_path = call_codex(root, run_dir, "main-draft", prompts["main_draft"], web_search=True, deadline=deadline)
         draft = parse_json_response(draft_path)
         validate_plan(draft, day)
         atomic_json(run_dir / "draft.json", draft)
 
         review_path = run_dir / "review.json"
         if not review_path.is_file():
-            review_path = call_codex(root, run_dir, "review", prompts["review"], web_search=True)
+            review_path = call_codex(root, run_dir, "review", prompts["review"], web_search=True, deadline=deadline)
         review = parse_json_response(review_path)
         atomic_json(run_dir / "review.json", review)
         if (
@@ -548,7 +625,7 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
 
         approved_path = run_dir / "main-approve.json"
         if not approved_path.is_file():
-            approved_path = call_codex(root, run_dir, "main-approve", prompts["main_approve"], web_search=True)
+            approved_path = call_codex(root, run_dir, "main-approve", prompts["main_approve"], web_search=True, deadline=deadline)
         approved = parse_json_response(approved_path)
         if approved.get("approved") is False:
             raise WorkflowSkipped(str(approved.get("reason", "main session did not approve the reviewed plan")))
@@ -557,7 +634,7 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
 
         image_result = run_dir / "developer-image.json"
         if not image_result.is_file():
-            image_result = call_codex(root, run_dir, "developer-image", prompts["developer_image"])
+            image_result = call_codex(root, run_dir, "developer-image", prompts["developer_image"], deadline=deadline)
         image_receipt = parse_json_response(image_result)
         if image_receipt.get("status") != "ok" or image_receipt.get("built_in_imagegen_called") is not True:
             raise WorkflowSkipped("developer session did not confirm one successful built-in ImageGen call")
@@ -568,22 +645,37 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
         content = dict(approved)
         content["sources"] = approved["sources"]
         atomic_json(day_dir / "content.json", content)
-        render = subprocess.run(
+        video_path = day_dir / f"life-tip-{day.isoformat()}.mp4"
+        render_marker = day_dir / "render-ready.json"
+        render_identity = hashlib.sha256(json.dumps(content, sort_keys=True).encode() + storyboard.read_bytes()).hexdigest()
+        cached_render = json.loads(render_marker.read_text(encoding="utf-8")) if render_marker.exists() else {}
+        render_valid = (cached_render.get("input_sha256") == render_identity and video_path.exists()
+                        and (day_dir / "metadata.json").exists()
+                        and cached_render.get("video_sha256") == hashlib.sha256(video_path.read_bytes()).hexdigest())
+        render = subprocess.CompletedProcess([], 0, "Reusing validated render", "") if render_valid else subprocess.run(
             [sys.executable, str(root / "render_daily.py"), "--date", day.isoformat()],
-            cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=20 * 60,
+            cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=stage_timeout(deadline, 20 * 60),
             env={**os.environ, "PYTHONIOENCODING": "utf-8"},
         )
         (run_dir / "render.log").write_text((render.stdout or "") + (render.stderr or ""), encoding="utf-8")
         if render.returncode:
-            raise WorkflowSkipped("local render or validation failed: " + (render.stderr or render.stdout)[-1000:])
+            detail = "local render or validation failed: " + (render.stderr or render.stdout)[-1000:]
+            if is_transient(detail):
+                raise RetryableError(detail)
+            raise WorkflowSkipped(detail)
+        video_hash = hashlib.sha256(video_path.read_bytes()).hexdigest()
+        atomic_json(render_marker, {"input_sha256": render_identity, "video_sha256": video_hash})
         metadata_path = day_dir / "metadata.json"
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
         audit_contact_sheet = make_render_contact_sheet(
             day_dir / f"life-tip-{day.isoformat()}.mp4", day_dir, metadata,
         )
 
-        audit_path = call_codex(
-            root, run_dir, "main-audit", prompts["main_audit"], image=audit_contact_sheet,
+        audit_path = run_dir / "main-audit.json"
+        audit_marker = run_dir / "audit-ready.json"
+        cached_audit = json.loads(audit_marker.read_text(encoding="utf-8")) if audit_marker.exists() else {}
+        audit_path = audit_path if audit_path.exists() and cached_audit.get("video_sha256") == video_hash else call_codex(
+            root, run_dir, "main-audit", prompts["main_audit"], image=audit_contact_sheet, deadline=deadline,
         )
         audit = parse_json_response(audit_path)
         atomic_json(run_dir / "audit.json", audit)
@@ -599,6 +691,7 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
             or not all(checks.get(key) is True for key in required_audit_checks)
         ):
             raise WorkflowSkipped("main session did not approve the rendered result")
+        atomic_json(audit_marker, {"video_sha256": video_hash})
         upload_args = [sys.executable, str(root / "upload_daily.py"), "--date", day.isoformat()]
         if publish_at_kst:
             if now_kst() > scheduled - ONE_OFF_MINIMUM_LEAD:
@@ -608,10 +701,13 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
             raise WorkflowSkipped("missed_0630_kst_upload_cutoff")
 
         upload = subprocess.run(
-            upload_args,
+            upload_args, env={**os.environ, "PYTHONIOENCODING": "utf-8"},
             cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=20 * 60,
         )
         (run_dir / "upload.log").write_text((upload.stdout or "") + (upload.stderr or ""), encoding="utf-8")
+        reconciled = reconcile_report(day, root)
+        if reconciled and reconciled.get("status") == "scheduled":
+            return reconciled
         if upload.returncode:
             raise RuntimeError("YouTube upload failed: " + (upload.stderr or upload.stdout)[-1200:])
         upload_path = day_dir / "upload.json"
@@ -628,6 +724,11 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
     except WorkflowSkipped as exc:
         return write_report(day, "skipped", "workflow", str(exc), root=root)
     except Exception as exc:
+        reconciled = reconcile_report(day, root)
+        if reconciled and reconciled.get("status") == "scheduled":
+            return reconciled
+        if is_transient(exc):
+            return retry_report(day, request, exc, root)
         return write_report(day, "failed", "workflow", f"{type(exc).__name__}: {exc}", root=root)
 
 
@@ -647,17 +748,8 @@ def recover_processing_requests(root: Path = ROOT) -> None:
         try:
             request = json.loads(request_file.read_text(encoding="utf-8"))
             day = date.fromisoformat(str(request["date"]))
-            output_dir = root / "work" / "daily" / day.isoformat()
-            upload_file = output_dir / "upload.json"
-            if report_path(day, root).exists():
-                destination = archive
-            elif upload_file.is_file():
-                upload = json.loads(upload_file.read_text(encoding="utf-8"))
-                write_report(day, "scheduled", "recovered_upload", "", {
-                    "url": upload.get("url"),
-                    "title": upload.get("title"),
-                    "scheduled_publish_at_kst": upload.get("scheduled_publish_at_kst"),
-                }, root=root)
+            report = reconcile_report(day, root)
+            if report and report.get("status") != "retry_pending":
                 destination = archive
             else:
                 destination = inbox
@@ -687,6 +779,7 @@ def watch_loop(root: Path = ROOT, poll_seconds: float = POLL_SECONDS, once: bool
             except OSError as exc:
                 raise RuntimeError("mailbox watcher is already running") from exc
         recover_processing_requests(root)
+        logging.info("watcher ready; bounded retries and upload receipt recovery enabled")
         while True:
             requests = sorted(inbox.glob("*.json"))
             if requests:
@@ -695,14 +788,20 @@ def watch_loop(root: Path = ROOT, poll_seconds: float = POLL_SECONDS, once: bool
                 try:
                     request = json.loads(request_file.read_text(encoding="utf-8"))
                     day = date.fromisoformat(str(request["date"]))
-                    if report_path(day, root).exists():
+                    report = reconcile_report(day, root)
+                    if report and report.get("status") != "retry_pending":
                         move_request(request_file, archive)
+                    elif not retry_due(report):
+                        time.sleep(max(0.5, poll_seconds))
+                        if once:
+                            return
+                        continue
                     else:
                         claimed = move_request(request_file, processing)
                         logging.info("claimed request %s", request.get("run_id", day.isoformat()))
                         result = process_request(claimed, root)
                         logging.info("finished %s with status %s", day.isoformat(), result.get("status"))
-                        move_request(claimed, archive)
+                        move_request(claimed, inbox if result.get("status") == "retry_pending" else archive)
                 except Exception:
                     logging.exception("mailbox request failed: %s", request_file.name)
                     try:
@@ -710,11 +809,10 @@ def watch_loop(root: Path = ROOT, poll_seconds: float = POLL_SECONDS, once: bool
                         if stranded.exists():
                             failed_request = json.loads(stranded.read_text(encoding="utf-8"))
                             failed_day = date.fromisoformat(str(failed_request["date"]))
-                            if not report_path(failed_day, root).exists():
-                                write_report(
-                                    failed_day, "failed", "watcher",
-                                    "request processing raised an unexpected exception", root=root,
-                                )
+                            write_report(
+                                failed_day, "failed", "watcher",
+                                "request processing raised an unexpected exception; inspect watcher.log", root=root,
+                            )
                             move_request(stranded, archive)
                     except Exception:
                         logging.exception("could not archive malformed request")

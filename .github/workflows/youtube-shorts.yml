@@ -23,6 +23,7 @@ concurrency:
 
 permissions:
   contents: write # Retain the date-to-video-ID ledger and prevent a repeat upload.
+  actions: read # Recover a prior run's completed upload receipt.
 
 jobs:
   make-and-upload:
@@ -32,9 +33,19 @@ jobs:
       PYM_TTS_SERVICE_ACCOUNT_JSON: ${{ secrets.PYM_TTS_SERVICE_ACCOUNT_JSON }}
       PYM_YOUTUBE_TOKEN_JSON: ${{ secrets.PYM_YOUTUBE_TOKEN_JSON }}
       PYM_SMTP_APP_PASSWORD: ${{ secrets.PYM_SMTP_APP_PASSWORD }}
+      PYM_PERSIST_LEDGER: 'true'
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main # A queued retry must read the latest durable upload ledger.
+          fetch-depth: 0
+
+      - name: Recover a completed upload receipt
+        if: github.event_name == 'schedule' || inputs.dry_run == false
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 youtube_shorts/scripts/recover_upload_receipt.py
 
       - name: Check today's upload ledger
         id: ledger
@@ -190,6 +201,18 @@ jobs:
             "youtube_shorts/work/$date_kst/metadata.json" \
             --publish-at-kst "$PUBLISH_AT_KST"
 
+      - name: Preserve upload receipt for crash recovery
+        if: always() && hashFiles('youtube_shorts/work/*/upload_receipt.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: pim-upload-receipt-${{ steps.ledger.outputs.date_kst }}
+          path: youtube_shorts/work/${{ steps.ledger.outputs.date_kst }}/upload_receipt.json
+          retention-days: 30
+
+      - name: Commit the no-duplicate upload ledger
+        if: always() && (steps.upload-scheduled.outcome == 'success' || steps.upload-scheduled.outcome == 'failure' || steps.upload-manual.outcome == 'success' || steps.upload-manual.outcome == 'failure')
+        run: python3 youtube_shorts/scripts/upload_ledger.py
+
       - name: Keep a local copy of the preview
         if: always() && steps.ledger.outputs.already_uploaded != 'true' && steps.credentials.outputs.tts == 'true' && steps.day.outcome == 'success'
         uses: actions/upload-artifact@v4
@@ -197,20 +220,6 @@ jobs:
           name: youtube-short-${{ steps.ledger.outputs.date_kst }}
           path: youtube_shorts/work/${{ steps.ledger.outputs.date_kst }}/
           retention-days: 7
-
-      - name: Commit the no-duplicate upload ledger
-        if: steps.upload-scheduled.outcome == 'success' || steps.upload-manual.outcome == 'success'
-        run: |
-          if [[ -f youtube_shorts/state/uploads.json ]]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add youtube_shorts/state/uploads.json
-            if ! git diff --cached --quiet; then
-              git commit -m "chore: record daily YouTube Short"
-              git pull --rebase origin main
-              git push
-            fi
-          fi
 
       - name: Email the daily result
         if: always() && github.event_name == 'schedule'

@@ -21,7 +21,12 @@ def already_uploaded(date_key: str, state_path: Path) -> bool:
     state = json.loads(state_path.read_text(encoding="utf-8"))
     if not isinstance(state, dict):
         raise ValueError(f"Upload ledger must contain a JSON object: {state_path}")
-    return date_key in state
+    record = state.get(date_key)
+    if record is None:
+        return False
+    if not isinstance(record, dict) or not isinstance(record.get("video_id"), str) or not record["video_id"]:
+        raise ValueError(f"Upload for {date_key} is incomplete or uncertain; reconcile its receipt before retrying")
+    return True
 
 
 def main() -> None:
