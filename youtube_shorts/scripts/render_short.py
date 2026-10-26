@@ -12,6 +12,7 @@ import subprocess
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
+from release_schedule import release_key
 
 WIDTH, HEIGHT, FPS = 1080, 1920, 30
 VOICE_NAME = os.environ.get("PYM_TTS_VOICE", "ko-KR-Neural2-C")
@@ -269,7 +270,7 @@ def main() -> None:
     for field in ("date_kst", "verse_id", "reference", "text", "translation"):
         if not isinstance(manifest.get(field), str) or not manifest[field].strip():
             raise ValueError(f"Manifest requires a non-empty '{field}'")
-    work = Path(__file__).resolve().parents[1] / "work" / manifest["date_kst"]
+    work = Path(__file__).resolve().parents[1] / "work" / release_key(manifest["date_kst"], manifest.get("slot", "am"))
     work.mkdir(parents=True, exist_ok=True)
     prompts = work / "narration"
     prompts.mkdir(parents=True, exist_ok=True)
