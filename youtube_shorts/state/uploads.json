@@ -34,5 +34,14 @@
     "video_id": "CbbJtacW3Lk",
     "privacy": "private",
     "publish_at": "2026-10-26T07:00:00+09:00"
+  },
+  "2026-10-26-pm": {
+    "date_kst": "2026-10-26",
+    "slot": "pm",
+    "release_key": "2026-10-26-pm",
+    "status": "uploading",
+    "operation_id": "b73682f0169441d5926d844e6c00e462",
+    "channel_id": "UCLQczQnzBHzB8jOO0sMeP2w",
+    "publish_at": "2026-10-26T19:00:00+09:00"
   }
 }
