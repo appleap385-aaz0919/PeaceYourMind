@@ -1,8 +1,11 @@
 # 생활꿀팁 YouTube Shorts
 
 이 자동화는 이 폴더 안의 Codex CLI, 파일 우편함, Windows 작업 스케줄러만 사용합니다. Codex CLI는 이미 설치된 `D:\Tools\Codex`를 사용합니다. 예약 실행 중 Codex 데스크톱의 Scheduled 작업을 따로 띄우지 않으며, 일이 있을 때만 Codex 세션을 순서대로 실행합니다.
+예약 작업은 `pythonw.exe`로 실행하고, 감시기와 렌더러가 실행하는 Codex·FFmpeg 등의 자식 프로세스에는 Windows 콘솔 창을 만들지 않는 옵션을 적용합니다. 실행 결과와 오류는 기존 로그에 기록됩니다.
 
 ## 매일 실행
+
+신규 업로드는 오전·오후 모두 `status.containsSyntheticMedia=true`를 설정해 YouTube의 AI 콘텐츠 라벨을 적용합니다. 이미 업로드한 영상은 변경하지 않습니다.
 
 - Windows 작업 스케줄러가 로그인할 때 파일 감시기를 시작하고, 매일 03:00과 15:00(한국 시간)에 각각 오전·오후 회차의 요청을 만듭니다. 업로드 마감은 각각 06:30과 18:30입니다.
 - 메인 작성, 독립 검수, 시각 자료 제작, 최종 감사 단계를 별도 Codex CLI 실행으로 처리합니다. 단계 사이의 전달 내용은 `work/mailbox/runs/`와 `work/daily/`의 파일로 남습니다.

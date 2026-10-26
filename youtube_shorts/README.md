@@ -2,6 +2,8 @@
 
 This folder is a standalone Shorts pipeline. It reads verified verses from `../verses.yaml`, creates a narrated Korean vertical video, adds the app and website call to action, and uploads through the YouTube Data API. It does not change the PWA, Android app, or existing video collection batch.
 
+Every new upload sets `status.containsSyntheticMedia=true` to disclose AI use through YouTube's native label. This applies to morning and evening releases; existing uploads are not modified.
+
 The picker uses only verified, non-crisis entries whose reference identifies one verse. Starting on 2026-10-26, morning and evening releases advance through consecutive entries, so the same day's two videos use different verses. The current pool has 266 single-verse entries. KRV text and the attribution `성경전서 개역한글판, 대한성서공회` are preserved.
 
 ## Viewer journey and links

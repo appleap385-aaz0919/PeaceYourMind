@@ -152,6 +152,7 @@ def upload_day(day: date, args: argparse.Namespace) -> None:
             "privacyStatus": "private",
             "publishAt": publish_at.astimezone(ZoneInfo("UTC")).isoformat().replace("+00:00", "Z"),
             "selfDeclaredMadeForKids": False,
+            "containsSyntheticMedia": True,
         },
     }
     receipt_context = {

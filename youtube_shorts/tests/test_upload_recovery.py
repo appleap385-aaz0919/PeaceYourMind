@@ -55,6 +55,7 @@ class UploadCheckpointTests(unittest.TestCase):
              patch.object(uploader, "persist", side_effect=lambda path: snapshots.append(json.loads(path.read_text(encoding="utf-8")))):
             uploader.main()
         self.assertEqual(snapshots[-1]["2026-10-24"]["video_id"], "MOCK")
+        self.assertIs(client.videos.return_value.insert.call_args.kwargs["body"]["status"]["containsSyntheticMedia"], True)
         self.assertEqual(json.loads((self.root / "upload_receipt.json").read_text())["video_id"], "MOCK")
 
     def test_intent_push_failure_prevents_upload(self):
@@ -80,6 +81,7 @@ class UploadCheckpointTests(unittest.TestCase):
         self.assertEqual(records["2026-10-24-pm"]["video_id"], "PM")
         self.assertEqual(records["2026-10-24-pm"]["date_kst"], "2026-10-24")
         self.assertTrue(check.already_uploaded("2026-10-24-pm", self.state))
+        self.assertIs(client.videos.return_value.insert.call_args.kwargs["body"]["status"]["containsSyntheticMedia"], True)
 
     def test_unknown_previous_upload_blocks_new_insert(self):
         save_state(self.state, {"2026-10-24": {"status": "uploading"}})

@@ -65,7 +65,7 @@ def main() -> None:
     if date_key in state:
         raise SystemExit(f"Upload already recorded or awaiting reconciliation for {date_key}; refusing a new upload")
 
-    status = {"privacyStatus": "private", "selfDeclaredMadeForKids": False}
+    status = {"privacyStatus": "private", "selfDeclaredMadeForKids": False, "containsSyntheticMedia": True}
     if args.publish_at_kst:
         publish_at = datetime.fromisoformat(args.publish_at_kst)
         publish_at = publish_at.replace(tzinfo=KST) if publish_at.tzinfo is None else publish_at.astimezone(KST)

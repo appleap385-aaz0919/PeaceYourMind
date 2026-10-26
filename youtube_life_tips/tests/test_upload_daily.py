@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import sys
+import json
+import tempfile
 import unittest
+from argparse import Namespace
 from datetime import date, datetime
 from pathlib import Path
 from unittest.mock import patch
@@ -17,6 +20,37 @@ from youtube_auth import state_path
 
 
 class UploadScheduleTests(unittest.TestCase):
+    def test_new_uploads_disclose_ai_and_keep_each_release_time(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            day = date(2099, 1, 1)
+            for slot, key, publish_at in (
+                ("am", "2099-01-01", "2098-12-31T22:00:00Z"),
+                ("pm", "2099-01-01-pm", "2099-01-01T10:00:00Z"),
+            ):
+                with self.subTest(slot=slot):
+                    folder = root / key
+                    folder.mkdir()
+                    (folder / "life-tip-2099-01-01.mp4").write_bytes(b"test-video")
+                    (folder / "metadata.json").write_text(json.dumps({
+                        "date": day.isoformat(), "slot": slot, "release_key": key,
+                        "title": "test", "description": "test", "sources": ["https://example.org"],
+                        "width": 720, "height": 1280, "duration_seconds": 30,
+                    }), encoding="utf-8")
+                    with (
+                        patch.object(upload_daily, "WORK", root),
+                        patch.object(upload_daily, "load_local_config", return_value={"youtube_channel_id": "UC-LIFE"}),
+                        patch.object(upload_daily, "load_oauth_client"),
+                        patch.object(upload_daily, "get_access_token", return_value="fake-token"),
+                        patch.object(upload_daily, "my_channels", return_value=[{"id": "UC-LIFE"}]),
+                        patch.object(upload_daily, "upload_resumable", return_value={"id": "MOCK"}) as upload,
+                    ):
+                        upload_daily.upload_day(day, Namespace(slot=slot, publish_at_kst=None, dry_run=False))
+                    status = upload.call_args.args[1]["status"]
+                    self.assertIs(status["containsSyntheticMedia"], True)
+                    self.assertEqual(status["publishAt"], publish_at)
+                    self.assertEqual(status["privacyStatus"], "private")
+
     def test_seven_am_korea_maps_to_previous_day_utc(self) -> None:
         scheduled = upload_daily.publish_at_for(date(2026, 10, 22), "07:00")
         self.assertEqual(scheduled.isoformat(), "2026-10-22T07:00:00+09:00")
