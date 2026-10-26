@@ -25,6 +25,11 @@ class KoreanSeasonTests(unittest.TestCase):
             "season": codex_mailbox.season_for(day),
             "topic_strategy": strategy,
             "topic": "계절 생활 팁",
+            "viewer_value": {
+                "common_approach": "얼룩을 힘주어 문지른다",
+                "better_decision": "물로 불린 뒤 닦는다",
+                "why_it_matters": "얼룩을 쉽게 제거할 수 있다",
+            },
             "hook": "바로 써보세요",
             "title": "생활 팁 #Shorts",
             "scenes": [{"narration": "설명", "caption": "설명"} for _ in range(4)],
@@ -44,9 +49,39 @@ class KoreanSeasonTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "fallback requires a reason"):
             codex_mailbox.validate_plan(self.make_plan(day, "evergreen_fallback"), day)
         codex_mailbox.validate_plan(
-            self.make_plan(day, "evergreen_fallback", fallback_reason="계절 자료 두 곳에서 확인하지 못함"),
+            self.make_plan(day, "evergreen_fallback", fallback_reason="유용한 계절 팁을 두 출처에서 확인하지 못함"),
             day,
         )
+
+    def test_plan_requires_a_specific_viewer_decision(self) -> None:
+        day = date(2026, 10, 22)
+        plan = self.make_plan(day, "seasonal")
+        plan["viewer_value"] = {"common_approach": "냉장 보관", "better_decision": "", "why_it_matters": "신선도"}
+        with self.assertRaisesRegex(ValueError, "concrete new decision"):
+            codex_mailbox.validate_plan(plan, day)
+        plan["viewer_value"]["better_decision"] = None
+        with self.assertRaisesRegex(ValueError, "concrete new decision"):
+            codex_mailbox.validate_plan(plan, day)
+
+    def test_review_requires_usefulness_and_narration_flow(self) -> None:
+        review = {
+            "approved": True, "selection_rule_pass": True, "originality_pass": True,
+            "sources_verified": True, "safety_pass": True,
+            "usefulness_pass": False, "flow_pass": True,
+            "usefulness_reason": "냉장고에 넣으라는 일반적인 조언뿐이다",
+            "flow_reason": "네 장면이 자연스럽게 이어진다",
+        }
+        with self.assertRaises(codex_mailbox.WorkflowSkipped):
+            codex_mailbox.validate_review(review)
+        review["usefulness_pass"] = True
+        review["flow_pass"] = False
+        with self.assertRaises(codex_mailbox.WorkflowSkipped):
+            codex_mailbox.validate_review(review)
+        review["flow_pass"] = True
+        codex_mailbox.validate_review(review)
+        review["usefulness_reason"] = None
+        with self.assertRaises(codex_mailbox.WorkflowSkipped):
+            codex_mailbox.validate_review(review)
 
     def test_plan_must_record_the_current_korean_season(self) -> None:
         day = date(2026, 10, 22)
@@ -68,6 +103,10 @@ class PromptConstructionTests(unittest.TestCase):
         self.assertIn("draft.json", prompts["main_approve"])
         self.assertIn("approved.json", prompts["developer_image"])
         self.assertIn("content.json", prompts["main_audit"])
+        self.assertIn("usefulness_pass", prompts["review"])
+        self.assertIn("flow_pass", prompts["review"])
+        self.assertIn("viewer_value_valid", prompts["main_audit"])
+        self.assertIn("narration_flow_valid", prompts["main_audit"])
 
     def test_storyboard_validator_does_not_compare_the_image_to_itself(self) -> None:
         from PIL import Image

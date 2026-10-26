@@ -47,7 +47,7 @@ def recover(day: str) -> bool:
                 if info.file_size > 100_000:
                     raise ValueError("unexpected upload receipt artifact size")
                 receipt = json.loads(archive.read(info))
-            if (receipt.get("date_kst") == day and receipt.get("operation_id") == record.get("operation_id")
+            if (receipt.get("release_key", receipt.get("date_kst")) == day and receipt.get("operation_id") == record.get("operation_id")
                     and receipt.get("channel_id") == record.get("channel_id") and receipt.get("video_id")):
                 receipts.append(receipt)
         if len(artifacts) < 100:
@@ -66,4 +66,4 @@ def recover(day: str) -> bool:
 
 
 if __name__ == "__main__":
-    recover(datetime.now(ZoneInfo("Asia/Seoul")).date().isoformat())
+    recover(os.environ.get("RUN_KEY") or datetime.now(ZoneInfo("Asia/Seoul")).date().isoformat())

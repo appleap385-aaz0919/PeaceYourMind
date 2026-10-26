@@ -11,6 +11,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import yaml
+from release_schedule import release_key
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SOURCE = ROOT / "verses.yaml"
@@ -50,12 +51,20 @@ def load_verses(source: Path) -> list[dict]:
     return eligible
 
 
-def make_manifest(day: date, verses: list[dict]) -> dict:
+def make_manifest(day: date, verses: list[dict], slot: str = "am") -> dict:
     # Consecutive dates select consecutive entries, so the single-verse pool is
     # exhausted before any verse repeats. YAML order remains the editorial order.
-    selected = verses[(day.toordinal() - 1) % len(verses)]
+    key = release_key(day.isoformat(), slot)
+    twice_daily_start = date(2026, 10, 26)
+    index = day.toordinal() - 1
+    if day >= twice_daily_start:
+        index = twice_daily_start.toordinal() - 1 + 2 * (day - twice_daily_start).days
+    index += int(slot == "pm")
+    selected = verses[index % len(verses)]
     return {
         "date_kst": day.isoformat(),
+        "slot": slot,
+        "release_key": key,
         "verse_id": selected["id"],
         "reference": selected["ref"],
         "text": selected["text"].strip(),
@@ -74,13 +83,14 @@ def make_manifest(day: date, verses: list[dict]) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--date", help="KST calendar date, YYYY-MM-DD (defaults to today)")
+    parser.add_argument("--slot", choices=("am", "pm"), default="am")
     parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
 
     day = target_date(args.date)
     verses = load_verses(args.source)
-    manifest = make_manifest(day, verses)
+    manifest = make_manifest(day, verses, args.slot)
     target = args.output_dir / f"{day.isoformat()}.json"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

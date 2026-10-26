@@ -4,6 +4,7 @@ $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $MailboxScript = Join-Path $ProjectRoot "codex_mailbox.py"
 $WatcherTaskName = "Life Tips - Mailbox Watcher"
 $DailyTaskName = "Life Tips - Daily Queue"
+$EveningTaskName = "Life Tips - Evening Queue"
 $PythonLauncher = (Get-Command py.exe -ErrorAction Stop).Source
 $PythonExe = (& $PythonLauncher -3 -c "import sys; print(sys.executable)" | Select-Object -Last 1).Trim()
 if (-not (Test-Path -LiteralPath $PythonExe)) { throw "Python 3 could not be resolved from the py launcher." }
@@ -30,8 +31,11 @@ $WatcherAction = New-ScheduledTaskAction -Execute $PythonwExe `
     -Argument "`"$MailboxScript`" watch --poll-seconds 2" -WorkingDirectory $ProjectRoot
 $DailyAction = New-ScheduledTaskAction -Execute $PythonExe `
     -Argument "`"$MailboxScript`" enqueue --today" -WorkingDirectory $ProjectRoot
+$EveningAction = New-ScheduledTaskAction -Execute $PythonExe `
+    -Argument "`"$MailboxScript`" enqueue --today --slot pm" -WorkingDirectory $ProjectRoot
 $WatcherTrigger = New-ScheduledTaskTrigger -AtLogOn -User $UserId
 $DailyTrigger = New-ScheduledTaskTrigger -Daily -At "3:00AM"
+$EveningTrigger = New-ScheduledTaskTrigger -Daily -At "3:00PM"
 $WatcherSettings = New-ScheduledTaskSettingsSet -Hidden -StartWhenAvailable:$false -WakeToRun:$false `
     -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew `
     -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
@@ -43,7 +47,10 @@ Register-ScheduledTask -TaskName $WatcherTaskName -Action $WatcherAction -Trigge
     -Principal $Principal -Settings $WatcherSettings -Description "Low-memory local Codex life-tips mailbox watcher." -Force | Out-Null
 Register-ScheduledTask -TaskName $DailyTaskName -Action $DailyAction -Trigger $DailyTrigger `
     -Principal $Principal -Settings $DailySettings -Description "Queues today's life-tips short at 03:00 Korea time; missed starts are skipped." -Force | Out-Null
+Register-ScheduledTask -TaskName $EveningTaskName -Action $EveningAction -Trigger $EveningTrigger `
+    -Principal $Principal -Settings $DailySettings -Description "Queues a distinct evening Short at 15:00 KST for 19:00 release; missed starts are skipped." -Force | Out-Null
 
 Write-Host "Registered '$WatcherTaskName' (starts at your Windows logon)."
 Write-Host "Registered '$DailyTaskName' (daily at 03:00 Korea time; no catch-up after a missed start)."
-Write-Host "The workflow stops accepting uploads at 06:30 so a completed video can be scheduled for 07:00."
+Write-Host "Registered '$EveningTaskName' (daily at 15:00 Korea time; no catch-up after a missed start)."
+Write-Host "Upload cutoffs: 06:30/18:30; public releases: 07:00/19:00 KST."

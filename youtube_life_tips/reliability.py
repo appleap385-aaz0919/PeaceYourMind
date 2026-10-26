@@ -37,11 +37,12 @@ def atomic_json(path: Path, value: dict) -> None:
     os.replace(temporary, path)
 
 
-def read_receipt(path: Path, day: str, channel_id: str | None = None) -> dict | None:
+def read_receipt(path: Path, day: str, channel_id: str | None = None, slot: str = "am") -> dict | None:
     if not path.exists():
         return None
     receipt = json.loads(path.read_text(encoding="utf-8"))
     if (not isinstance(receipt, dict) or receipt.get("date") != day
+            or receipt.get("slot", "am") != slot
             or not isinstance(receipt.get("video_id"), str) or not receipt["video_id"]
             or not receipt.get("channel_id")
             or (channel_id and receipt["channel_id"] != channel_id)):

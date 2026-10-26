@@ -14,6 +14,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
+from life_schedule import release_key
 
 
 ROOT = Path(__file__).resolve().parent
@@ -253,7 +254,9 @@ def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path]
     description = content.get("description", "오늘 바로 써볼 수 있는 생활꿀팁을 전해드립니다.").strip()
     description += "\n\n참고 자료\n" + "\n".join(source_lines)
     metadata = {
-        "date": content["date"], "topic": content["topic"], "title": title,
+        "date": content["date"], "slot": content.get("slot", "am"),
+        "release_key": release_key(content["date"], content.get("slot", "am")),
+        "topic": content["topic"], "title": title,
         "season": content.get("season"), "topic_strategy": content.get("topic_strategy"),
         "fallback_reason": content.get("fallback_reason"),
         "description": description, "duration_seconds": round(actual_duration, 2),
@@ -261,16 +264,19 @@ def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path]
         "narration_seconds": [round(value, 2) for value in lengths], "sources": content["sources"],
     }
     (day_dir / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps(metadata, ensure_ascii=False, indent=2))
+    print(json.dumps(metadata, ensure_ascii=True, indent=2))
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--date", help="Asia/Seoul date in YYYY-MM-DD; defaults to today")
+    parser.add_argument("--slot", choices=("am", "pm"), default="am")
     args = parser.parse_args()
     today = date.fromisoformat(args.date) if args.date else datetime.now(ZoneInfo("Asia/Seoul")).date()
-    day_dir = WORK / today.isoformat()
+    day_dir = WORK / release_key(today, args.slot)
     content = load_content(day_dir / "content.json", today)
+    if content.get("slot", "am") != args.slot:
+        raise ValueError("content slot does not match the requested release")
     voice_paths = [day_dir / f"voice_{index + 1}.mp3" for index in range(4)]
     asyncio.run(synthesize_segments(content["scenes"], voice_paths))
     render_video(day_dir, content, voice_paths, day_dir / f"life-tip-{today.isoformat()}.mp4")

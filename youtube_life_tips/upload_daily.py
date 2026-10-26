@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo
 
 import resumable_upload
 from reliability import atomic_json, file_lock, read_receipt
+from life_schedule import release_key, publish_clock
 
 from youtube_auth import get_access_token, load_local_config, load_oauth_client, my_channels, state_path
 
@@ -78,21 +79,24 @@ def upload_resumable(video: Path, metadata: dict[str, object], access_token: str
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--date", help="Asia/Seoul date in YYYY-MM-DD; defaults to today")
+    parser.add_argument("--slot", choices=("am", "pm"), default="am")
     parser.add_argument("--publish-at-kst", help="one-off release time in KST, e.g. 2026-10-23T08:30")
     parser.add_argument("--dry-run", action="store_true", help="validate local files/config without uploading")
     args = parser.parse_args()
     day = date.fromisoformat(args.date) if args.date else datetime.now(KST).date()
-    with file_lock(WORK / day.isoformat() / "upload.lock"):
+    with file_lock(WORK / release_key(day, args.slot) / "upload.lock"):
         upload_day(day, args)
 
 
 def upload_day(day: date, args: argparse.Namespace) -> None:
-    day_dir = WORK / day.isoformat()
+    slot = getattr(args, "slot", "am")
+    key = release_key(day, slot)
+    day_dir = WORK / key
     result_path = day_dir / "upload.json"
     config = load_local_config()
     channel_id = str(config.get("youtube_channel_id", "")).strip()
     resumable_upload.recovered_receipt(day_dir)
-    if read_receipt(result_path, day.isoformat(), channel_id):
+    if read_receipt(result_path, day.isoformat(), channel_id, slot):
         print(f"Already uploaded or scheduled for {day.isoformat()}; leaving existing result untouched.")
         return
     metadata_path = day_dir / "metadata.json"
@@ -100,6 +104,8 @@ def upload_day(day: date, args: argparse.Namespace) -> None:
     if not metadata_path.is_file() or not video_path.is_file():
         raise FileNotFoundError("today's rendered MP4 and metadata.json are both required")
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    if metadata.get("slot", "am") != slot or metadata.get("release_key", key) != key:
+        raise ValueError("render metadata belongs to a different release slot")
     if metadata.get("date") != day.isoformat() or not metadata.get("sources"):
         raise ValueError("render metadata is missing today's date or source records")
     if not metadata.get("title") or len(metadata["title"]) > 100:
@@ -115,9 +121,11 @@ def upload_day(day: date, args: argparse.Namespace) -> None:
     now = datetime.now(KST)
     if args.publish_at_kst:
         publish_at = parse_publish_at(day, args.publish_at_kst)
+        if ("pm" if publish_at.hour >= 12 else "am") != slot:
+            raise ValueError("--publish-at-kst must match the selected --slot")
         validate_publish_window(publish_at, now, one_off=True)
     else:
-        publish_time = str(config.get("publish_time_kst", "07:00"))
+        publish_time = publish_clock(slot)
         publish_at = publish_at_for(day, publish_time)
         validate_publish_window(publish_at, now, one_off=False)
     if args.dry_run:
@@ -148,6 +156,7 @@ def upload_day(day: date, args: argparse.Namespace) -> None:
     }
     receipt_context = {
         "date": day.isoformat(), "channel_id": channel_id,
+        "slot": slot, "release_key": key,
         "scheduled_publish_at_kst": publish_at.isoformat(), "title": metadata["title"],
     }
     uploaded = upload_resumable(
@@ -159,6 +168,7 @@ def upload_day(day: date, args: argparse.Namespace) -> None:
         raise RuntimeError("YouTube response did not contain a video ID")
     result = {
         "date": day.isoformat(),
+        "slot": slot, "release_key": key,
         "channel_id": channel_id,
         "video_id": video_id,
         "url": f"https://www.youtube.com/shorts/{video_id}",

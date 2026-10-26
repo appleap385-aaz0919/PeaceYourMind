@@ -6,6 +6,9 @@ on:
     - cron: "30 16 * * *"
     # Retry window at 02:15 KST if the primary run was missed or failed.
     - cron: "15 17 * * *"
+    # Afternoon production and retry for the additional 19:00 KST release.
+    - cron: "30 4 * * *"
+    - cron: "15 5 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -40,6 +43,10 @@ jobs:
         with:
           ref: main # A queued retry must read the latest durable upload ledger.
           fetch-depth: 0
+
+      - name: Resolve morning or evening release
+        id: release
+        run: python3 youtube_shorts/scripts/release_schedule.py
 
       - name: Recover a completed upload receipt
         if: github.event_name == 'schedule' || inputs.dry_run == false
@@ -161,29 +168,30 @@ jobs:
         id: day
         shell: bash
         run: |
-          date_kst="$(TZ=Asia/Seoul date +'%Y-%m-%d')"
+          date_kst="$RUN_DATE_KST"
           echo "date_kst=$date_kst" >> "$GITHUB_OUTPUT"
           python youtube_shorts/scripts/choose_verse.py \
             --date "$date_kst" \
-            --output-dir "youtube_shorts/work/$date_kst"
+            --slot "$RUN_SLOT" \
+            --output-dir "youtube_shorts/work/$RUN_KEY"
 
       - name: Render Korean TTS Short and metadata
         if: steps.ledger.outputs.already_uploaded != 'true' && steps.credentials.outputs.tts == 'true'
         run: |
           date_kst='${{ steps.day.outputs.date_kst }}'
-          manifest="youtube_shorts/work/$date_kst/$date_kst.json"
+          manifest="youtube_shorts/work/$RUN_KEY/$date_kst.json"
           python youtube_shorts/scripts/render_short.py "$manifest"
           python youtube_shorts/scripts/build_metadata.py "$manifest"
 
-      - name: Upload for 07:00 KST release
+      - name: Upload for the selected 07:00 or 19:00 KST release
         id: upload-scheduled
         if: steps.ledger.outputs.already_uploaded != 'true' && steps.credentials.outputs.tts == 'true' && steps.credentials.outputs.youtube == 'true' && github.event_name == 'schedule'
         run: |
           date_kst='${{ steps.day.outputs.date_kst }}'
           python youtube_shorts/scripts/upload_short.py \
-            "youtube_shorts/work/$date_kst/short-draft.mp4" \
-            "youtube_shorts/work/$date_kst/metadata.json" \
-            --publish-at-kst "${date_kst}T07:00"
+            "youtube_shorts/work/$RUN_KEY/short-draft.mp4" \
+            "youtube_shorts/work/$RUN_KEY/metadata.json" \
+            --publish-at-kst "$PUBLISH_AT_KST"
 
       - name: Upload for a manually selected KST release
         id: upload-manual
@@ -197,16 +205,16 @@ jobs:
           fi
           date_kst='${{ steps.day.outputs.date_kst }}'
           python youtube_shorts/scripts/upload_short.py \
-            "youtube_shorts/work/$date_kst/short-draft.mp4" \
-            "youtube_shorts/work/$date_kst/metadata.json" \
+            "youtube_shorts/work/$RUN_KEY/short-draft.mp4" \
+            "youtube_shorts/work/$RUN_KEY/metadata.json" \
             --publish-at-kst "$PUBLISH_AT_KST"
 
       - name: Preserve upload receipt for crash recovery
         if: always() && hashFiles('youtube_shorts/work/*/upload_receipt.json') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: pim-upload-receipt-${{ steps.ledger.outputs.date_kst }}
-          path: youtube_shorts/work/${{ steps.ledger.outputs.date_kst }}/upload_receipt.json
+          name: pim-upload-receipt-${{ steps.release.outputs.release_key }}
+          path: youtube_shorts/work/${{ steps.release.outputs.release_key }}/upload_receipt.json
           retention-days: 30
 
       - name: Commit the no-duplicate upload ledger
@@ -217,8 +225,8 @@ jobs:
         if: always() && steps.ledger.outputs.already_uploaded != 'true' && steps.credentials.outputs.tts == 'true' && steps.day.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: youtube-short-${{ steps.ledger.outputs.date_kst }}
-          path: youtube_shorts/work/${{ steps.ledger.outputs.date_kst }}/
+          name: youtube-short-${{ steps.release.outputs.release_key }}
+          path: youtube_shorts/work/${{ steps.release.outputs.release_key }}/
           retention-days: 7
 
       - name: Email the daily result

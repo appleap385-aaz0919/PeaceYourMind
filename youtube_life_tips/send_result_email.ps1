@@ -33,6 +33,7 @@ try {
             $Message.Body = "테스트 메일입니다. 자동화 실행 결과가 이 주소로 발송됩니다."
         } else {
             $Report = Get-Content -LiteralPath $ReportPath -Raw -Encoding UTF8 | ConvertFrom-Json
+            $ReleaseLabel = if ($Report.slot -eq "pm") { "오후 7시" } else { "오전 7시" }
             $StatusLabel = switch ($Report.status) {
                 "scheduled" { "성공: YouTube 공개 예약 완료" }
                 "skipped" { "건너뜀" }
@@ -41,6 +42,7 @@ try {
             }
             $Lines = @(
                 "날짜: $($Report.date) (한국 시간)",
+                "회차: $ReleaseLabel",
                 "결과: $StatusLabel",
                 "단계: $($Report.stage)"
             )
@@ -50,7 +52,7 @@ try {
             if ($Report.url) { $Lines += "YouTube: $($Report.url)" }
             if ($Report.reason) { $Lines += "사유: $($Report.reason)" }
             if ($Report.email_notification -eq "failed") { $Lines += "주의: 결과 메일 발송에도 실패했습니다. PC의 work/mailbox/logs/email.log를 확인하세요." }
-            $Message.Subject = "하루 생활꿀팁 실행 결과 - $($Report.date) - $($Report.status)"
+            $Message.Subject = "생활꿀팁 실행 결과 - $($Report.date) $ReleaseLabel - $($Report.status)"
             $Message.Body = $Lines -join [Environment]::NewLine
         }
 

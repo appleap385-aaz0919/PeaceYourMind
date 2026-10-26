@@ -2,15 +2,16 @@ channel:
   language: ko-KR
   timezone: Asia/Seoul
   publish_time_kst: "07:00"
+  publish_times_kst: ["07:00", "19:00"]
   duration_seconds_max: 55
 
 automation:
   provider: codex_cli_file_mailbox_windows_task_scheduler
-  enqueue_time_kst: "05:00"
-  publish_cutoff_kst: "06:30"
+  enqueue_times_kst: ["03:00", "15:00"]
+  publish_cutoffs_kst: ["06:30", "18:30"]
   project_scope: youtube_life_tips_only
-  image_generation: built_in_imagegen_one_call_per_day
-  on_quota_or_image_failure: skip_day
+  image_generation: built_in_imagegen_one_call_per_release
+  on_quota_or_image_failure: skip_release
   email_notifications: enable_after_secure_local_setup
 
 research:

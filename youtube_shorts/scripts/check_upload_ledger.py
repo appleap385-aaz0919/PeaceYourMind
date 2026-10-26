@@ -9,6 +9,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from release_schedule import release_key
 
 
 DEFAULT_STATE = Path(__file__).resolve().parents[1] / "state" / "uploads.json"
@@ -33,13 +34,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--date", help="KST date in YYYY-MM-DD format (defaults to today)")
     parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
+    parser.add_argument("--slot", choices=("am", "pm"), default=os.environ.get("RUN_SLOT", "am"))
     args = parser.parse_args()
 
-    date_key = args.date or datetime.now(KST).date().isoformat()
+    day = args.date or os.environ.get("RUN_DATE_KST") or datetime.now(KST).date().isoformat()
+    date_key = release_key(day, args.slot)
     github_output = os.environ.get("GITHUB_OUTPUT")
     if github_output:
         with open(github_output, "a", encoding="utf-8") as output:
-            output.write(f"date_kst={date_key}\n")
+            output.write(f"date_kst={day}\nrelease_key={date_key}\n")
 
     is_scheduled = os.environ.get("GITHUB_EVENT_NAME") == "schedule"
     uploaded = is_scheduled and already_uploaded(date_key, args.state)

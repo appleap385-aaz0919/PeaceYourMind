@@ -36,6 +36,8 @@ def main() -> None:
     ])
     payload = {
         "date_kst": manifest["date_kst"],
+        "slot": manifest.get("slot", "am"),
+        "release_key": manifest.get("release_key", manifest["date_kst"]),
         "verse_id": manifest["verse_id"],
         "title": f"오늘의 말씀 | {manifest['reference']} #Shorts",
         "description": description,

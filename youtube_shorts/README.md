@@ -2,7 +2,7 @@
 
 This folder is a standalone Shorts pipeline. It reads verified verses from `../verses.yaml`, creates a narrated Korean vertical video, adds the app and website call to action, and uploads through the YouTube Data API. It does not change the PWA, Android app, or existing video collection batch.
 
-The daily picker uses only verified, non-crisis entries whose reference identifies one verse. Consecutive dates go through the pool before a verse can repeat. The current pool has 266 single-verse entries. KRV text and the attribution `성경전서 개역한글판, 대한성서공회` are preserved.
+The picker uses only verified, non-crisis entries whose reference identifies one verse. Starting on 2026-10-26, morning and evening releases advance through consecutive entries, so the same day's two videos use different verses. The current pool has 266 single-verse entries. KRV text and the attribution `성경전서 개역한글판, 대한성서공회` are preserved.
 
 ## Viewer journey and links
 
@@ -44,7 +44,7 @@ python youtube_shorts/scripts/upload_short.py `
   --publish-at-kst 2026-10-22T07:00
 ```
 
-The upload history is stored in `youtube_shorts/state/uploads.json` to prevent a repeat upload for the same KST date. Tokens and OAuth client secrets are excluded by `.gitignore`.
+The upload history is stored in `youtube_shorts/state/uploads.json` to prevent repeat uploads for the same release. Legacy morning keys remain `YYYY-MM-DD`; evening keys use `YYYY-MM-DD-pm`. Work folders, artifacts, recovery receipts, and notifications use the same release key. Tokens and OAuth client secrets are excluded by `.gitignore`.
 
 The cloud uploader commits an `uploading` intent before transmitting media, then saves a separate completion receipt and commits the video ID immediately after the API responds. The client retries transient requests up to three times. Preview/artifact failures cannot silently erase a completed upload record. Scheduled runs check out current `main` and can restore a completed receipt from a prior `pim-upload-receipt-YYYY-MM-DD` artifact before checking the ledger.
 
@@ -52,9 +52,9 @@ An intent without a completion receipt blocks a fresh upload and produces an att
 
 ## Daily automation
 
-The daily runner is `.github/workflows/youtube-shorts.yml`, separate from the app and video-data workflows. It has primary and retry starts at 01:30 and 02:15 KST, then uploads a private Short and asks YouTube to publish it at 07:00 KST. GitHub Actions uses UTC for cron, so these starts are `30 16 * * *` and `15 17 * * *`. Before rendering, each scheduled run checks the date-to-video-ID ledger and skips the day if a Short is already recorded. Scheduled runs require the repository Actions secrets `PYM_TTS_SERVICE_ACCOUNT_JSON`, `PYM_YOUTUBE_TOKEN_JSON`, and `PYM_SMTP_APP_PASSWORD`; the workflow stops before rendering if any are missing. `PYM_YOUTUBE_TOKEN_JSON` must contain the channel owner's OAuth token JSON with the `youtube.upload` scope. A YouTube API key alone cannot upload videos.
+The runner is `.github/workflows/youtube-shorts.yml`, separate from the app and video-data workflows. Morning production/retry remain at 01:30/02:15 KST for 07:00 publication. Afternoon production/retry run at 13:30/14:15 KST for an additional 19:00 publication. Their UTC crons are `30 16 * * *`, `15 17 * * *`, `30 4 * * *`, and `15 5 * * *`. Each scheduled run resolves its slot from the triggering cron, checks that release's ledger, and skips completed uploads. Scheduled runs require `PYM_TTS_SERVICE_ACCOUNT_JSON`, `PYM_YOUTUBE_TOKEN_JSON`, and `PYM_SMTP_APP_PASSWORD`; the workflow stops before rendering if any are missing. The YouTube token must contain the owner's `youtube.upload` scope.
 
-Daily status is sent from `appleap385@gmail.com` to `aaz0919@naver.com` through Gmail SMTP at no per-message charge. Create a Google App Password for the sender account (2-Step Verification must be enabled) and store it only as the GitHub Actions secret `PYM_SMTP_APP_PASSWORD`; never commit or paste the password into project files. The email contains the scheduled Short link on success, or the GitHub Actions run link if generation or upload fails.
+Release status is sent from `appleap385@gmail.com` to `aaz0919@naver.com` through Gmail SMTP. A durable `success_email` entry is committed before sending a success message and marked sent afterward. A retry with the same release key does not resend it; morning and evening each receive their own result. An uncertain SMTP send is not repeated automatically. Store the Gmail App Password only as `PYM_SMTP_APP_PASSWORD`. Success messages contain the Short link; failures include the workflow link.
 
 For Google OAuth, set the consent screen publishing status to Production before relying on the scheduled refresh token. In Testing mode, YouTube-scope authorizations for external users expire after seven days.
 

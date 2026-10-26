@@ -65,6 +65,22 @@ class UploadCheckpointTests(unittest.TestCase):
             uploader.main()
         client.videos.return_value.insert.return_value.execute.assert_not_called()
 
+    def test_evening_upload_preserves_the_existing_morning_receipt(self):
+        save_state(self.state, {"2026-10-24": {"video_id": "AM"}})
+        metadata = json.loads(self.metadata.read_text(encoding="utf-8"))
+        metadata.update(slot="pm", release_key="2026-10-24-pm")
+        self.metadata.write_text(json.dumps(metadata), encoding="utf-8")
+        client = Mock()
+        client.videos.return_value.insert.return_value.execute.return_value = {"id": "PM"}
+        with patch.object(sys, "argv", self.argv), patch.object(uploader, "get_credentials"), \
+             patch.object(uploader, "build", return_value=client), patch.object(uploader, "persist"):
+            uploader.main()
+        records = json.loads(self.state.read_text(encoding="utf-8"))
+        self.assertEqual(records["2026-10-24"]["video_id"], "AM")
+        self.assertEqual(records["2026-10-24-pm"]["video_id"], "PM")
+        self.assertEqual(records["2026-10-24-pm"]["date_kst"], "2026-10-24")
+        self.assertTrue(check.already_uploaded("2026-10-24-pm", self.state))
+
     def test_unknown_previous_upload_blocks_new_insert(self):
         save_state(self.state, {"2026-10-24": {"status": "uploading"}})
         with patch.object(sys, "argv", self.argv), patch.object(uploader, "build") as build, self.assertRaises(SystemExit):

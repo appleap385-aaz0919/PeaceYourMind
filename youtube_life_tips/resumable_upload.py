@@ -45,7 +45,7 @@ def recovered_receipt(day_dir: Path) -> dict | None:
     context = session.get("receipt_context", {})
     if not response.get("id") or not context.get("date") or not context.get("channel_id"):
         return None
-    if context["date"] != day_dir.name:
+    if context.get("release_key", context["date"]) != day_dir.name:
         raise ValueError("saved upload response date mismatch")
     result = {**context, "video_id": response["id"],
               "url": f"https://www.youtube.com/shorts/{response['id']}"}

@@ -201,18 +201,22 @@ class MailboxRecoveryTests(unittest.TestCase):
             atomic_json(request, {"date": str(DAY)})
             stages, renders, uploads = [], [], []
             plan = {"date": str(DAY), "season": "가을", "topic_strategy": "seasonal", "topic": "tip",
+                    "viewer_value": {
+                        "common_approach": "문지르기", "better_decision": "불린 뒤 닦기", "why_it_matters": "쉽게 닦기",
+                    },
                     "hook": "hook", "title": "tip #Shorts", "scenes": [{"narration": "text", "caption": "text"} for _ in range(4)],
                     "sources": [{"title": "source", "url": "https://example.org"} for _ in range(2)]}
             def stage(root_arg, run_arg, name, prompt, **kwargs):
                 stages.append(name)
                 result = plan
                 if name == "review":
-                    result = dict.fromkeys(["approved", "selection_rule_pass", "originality_pass", "sources_verified", "safety_pass"], True)
+                    result = dict.fromkeys(["approved", "selection_rule_pass", "originality_pass", "sources_verified", "safety_pass", "usefulness_pass", "flow_pass"], True)
+                    result.update({"usefulness_reason": "새 행동을 알려준다", "flow_reason": "장면이 자연스럽게 이어진다"})
                 if name == "developer-image":
                     Image.new("RGB", (900, 1400), "blue").save(daily / "storyboard.png")
                     result = {"status": "ok", "built_in_imagegen_called": True}
                 if name == "main-audit":
-                    keys = ["plan_matches_content", "sources_verified", "season_decision_valid", "history_distinct", "four_scenes_match_plan", "captions_readable", "no_visual_defects", "dimensions_valid", "audio_present", "duration_valid"]
+                    keys = ["plan_matches_content", "sources_verified", "season_decision_valid", "history_distinct", "viewer_value_valid", "narration_flow_valid", "four_scenes_match_plan", "captions_readable", "no_visual_defects", "dimensions_valid", "audio_present", "duration_valid"]
                     result = {"approved": True, "checks": dict.fromkeys(keys, True)}
                 path = run_arg / f"{name}.json"
                 atomic_json(path, result)

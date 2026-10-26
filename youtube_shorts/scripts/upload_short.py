@@ -12,6 +12,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from upload_ledger import persist, save_state
+from release_schedule import release_key
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -52,9 +53,13 @@ def main() -> None:
     metadata = json.loads(args.metadata.read_text(encoding="utf-8"))
     if metadata.get("status") != "ready":
         parser.error("metadata must be marked ready by build_metadata.py")
-    date_key = metadata.get("date_kst")
-    if not isinstance(date_key, str) or not date_key:
+    day = metadata.get("date_kst")
+    if not isinstance(day, str) or not day:
         parser.error("metadata must contain date_kst")
+    slot = metadata.get("slot", "am")
+    date_key = release_key(day, slot)
+    if metadata.get("release_key", date_key) != date_key:
+        parser.error("metadata release_key does not match date and slot")
 
     state = json.loads(args.state.read_text(encoding="utf-8")) if args.state.is_file() else {}
     if date_key in state:
@@ -64,8 +69,10 @@ def main() -> None:
     if args.publish_at_kst:
         publish_at = datetime.fromisoformat(args.publish_at_kst)
         publish_at = publish_at.replace(tzinfo=KST) if publish_at.tzinfo is None else publish_at.astimezone(KST)
-        if publish_at.date().isoformat() != date_key:
+        if publish_at.date().isoformat() != day:
             parser.error("publish date must match metadata date_kst")
+        if ("pm" if publish_at.hour >= 12 else "am") != slot:
+            parser.error("publish time does not match metadata slot")
         if publish_at <= datetime.now(KST) + timedelta(minutes=15):
             parser.error("scheduled publish time must be at least 15 minutes in the future")
         status["publishAt"] = publish_at.isoformat()
@@ -92,14 +99,14 @@ def main() -> None:
     # Commit intent BEFORE transmitting media. A runner crash must not permit
     # the next scheduled run to blindly insert a second video.
     state[date_key] = {
-        "date_kst": date_key, "status": "uploading", "operation_id": operation_id,
+        "date_kst": day, "slot": slot, "release_key": date_key, "status": "uploading", "operation_id": operation_id,
         "channel_id": expected_channel, "publish_at": status.get("publishAt"),
     }
     save_state(args.state, state)
     persist(args.state)
     response = request.execute(num_retries=3)
     receipt = {
-        "date_kst": date_key, "status": "uploaded", "operation_id": operation_id,
+        "date_kst": day, "slot": slot, "release_key": date_key, "status": "uploaded", "operation_id": operation_id,
         "channel_id": response.get("snippet", {}).get("channelId", expected_channel),
         "video_id": response["id"],
         "privacy": status["privacyStatus"],
