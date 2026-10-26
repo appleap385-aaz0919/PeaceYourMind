@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
+from background_process import hidden_process_options
 
 
 ROOT = Path(__file__).resolve().parent
@@ -31,7 +32,7 @@ PHRASES = [
 
 
 def run(args: list[str], *, input_data: bytes | None = None) -> bytes:
-    result = subprocess.run(args, input=input_data, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(args, input=input_data, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **hidden_process_options())
     return result.stdout
 
 
@@ -162,6 +163,7 @@ def main() -> None:
             "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", str(video),
         ],
         stdin=subprocess.PIPE,
+        **hidden_process_options(),
     )
     assert ffmpeg.stdin is not None
     frame_count = math.ceil(total * FPS)

@@ -24,14 +24,14 @@ if ($DoctorExitCode -ne 0) {
 
 $PythonDirectory = Split-Path -Parent $PythonExe
 $PythonwExe = Join-Path $PythonDirectory "pythonw.exe"
-if (-not (Test-Path -LiteralPath $PythonwExe)) { $PythonwExe = $PythonExe }
+if (-not (Test-Path -LiteralPath $PythonwExe)) { throw "pythonw.exe is required to run scheduled tasks without console windows." }
 $UserId = "$env:USERDOMAIN\$env:USERNAME"
 $Principal = New-ScheduledTaskPrincipal -UserId $UserId -LogonType Interactive -RunLevel Limited
 $WatcherAction = New-ScheduledTaskAction -Execute $PythonwExe `
     -Argument "`"$MailboxScript`" watch --poll-seconds 2" -WorkingDirectory $ProjectRoot
-$DailyAction = New-ScheduledTaskAction -Execute $PythonExe `
+$DailyAction = New-ScheduledTaskAction -Execute $PythonwExe `
     -Argument "`"$MailboxScript`" enqueue --today" -WorkingDirectory $ProjectRoot
-$EveningAction = New-ScheduledTaskAction -Execute $PythonExe `
+$EveningAction = New-ScheduledTaskAction -Execute $PythonwExe `
     -Argument "`"$MailboxScript`" enqueue --today --slot pm" -WorkingDirectory $ProjectRoot
 $WatcherTrigger = New-ScheduledTaskTrigger -AtLogOn -User $UserId
 $DailyTrigger = New-ScheduledTaskTrigger -Daily -At "3:00AM"

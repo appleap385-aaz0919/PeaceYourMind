@@ -15,6 +15,8 @@ from zoneinfo import ZoneInfo
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from life_schedule import release_key
+from background_process import hidden_process_options
+from editorial import validate_script
 
 
 ROOT = Path(__file__).resolve().parent
@@ -25,7 +27,7 @@ VOICE = "ko-KR-InJoonNeural"
 
 
 def run(args: list[str]) -> bytes:
-    result = subprocess.run(args, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(args, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **hidden_process_options())
     return result.stdout
 
 
@@ -59,8 +61,8 @@ def load_content(path: Path, requested_date: date) -> dict[str, Any]:
     if content.get("date") != requested_date.isoformat():
         raise ValueError("content.json date must match the requested Korea date")
     scenes, sources = content.get("scenes"), content.get("sources")
-    if not isinstance(scenes, list) or len(scenes) != 4:
-        raise ValueError("content.json must contain exactly four scenes")
+    if not isinstance(scenes, list) or not scenes:
+        raise ValueError("content.json must contain scenes matched to the script")
     if not isinstance(sources, list) or len(sources) < 2:
         raise ValueError("content.json must contain at least two verified sources")
     for index, scene in enumerate(scenes, start=1):
@@ -70,6 +72,7 @@ def load_content(path: Path, requested_date: date) -> dict[str, Any]:
         raise ValueError("content.json needs topic, hook, and title")
     if any(not item.get("title") or not item.get("url", "").startswith("https://") for item in sources):
         raise ValueError("each source must have a title and https URL")
+    validate_script(content)
     return content
 
 
@@ -87,7 +90,7 @@ async def synthesize_segments(scenes: list[dict[str, str]], output_paths: list[P
         ).save(str(output))
 
 
-def load_panels(path: Path) -> list[Image.Image]:
+def load_panels(path: Path, columns: int = 2, rows: int = 2) -> list[Image.Image]:
     if not path.is_file():
         raise FileNotFoundError("today's newly generated storyboard.png is missing")
     sample_dir = (ROOT / "work" / "sample").resolve()
@@ -97,15 +100,13 @@ def load_panels(path: Path) -> list[Image.Image]:
         storyboard = opened.convert("RGB")
     width, height = storyboard.size
     if width < 768 or height < 1152 or height / width < 1.35:
-        raise ValueError("storyboard must be a high-resolution portrait 2x2 grid")
+        raise ValueError("storyboard must be a high-resolution portrait grid")
     gutter_x, gutter_y = max(4, round(width * 0.008)), max(4, round(height * 0.005))
-    middle_x, middle_y = width // 2, height // 2
-    boxes = [
-        (0, 0, middle_x - gutter_x, middle_y - gutter_y),
-        (middle_x + gutter_x, 0, width, middle_y - gutter_y),
-        (0, middle_y + gutter_y, middle_x - gutter_x, height),
-        (middle_x + gutter_x, middle_y + gutter_y, width, height),
-    ]
+    boxes = [(col * width // columns + (gutter_x if col else 0),
+              row * height // rows + (gutter_y if row else 0),
+              (col + 1) * width // columns - (gutter_x if col < columns - 1 else 0),
+              (row + 1) * height // rows - (gutter_y if row < rows - 1 else 0))
+             for row in range(rows) for col in range(columns)]
     return [
         ImageOps.fit(
             storyboard.crop(box), (WIDTH, HEIGHT),
@@ -128,17 +129,55 @@ def fonts() -> tuple[ImageFont.FreeTypeFont, ImageFont.FreeTypeFont, ImageFont.F
 
 def wrap_text(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont, max_width: int) -> list[str]:
     lines: list[str] = []
-    current = ""
-    for word in text.split():
-        candidate = f"{current} {word}".strip()
-        if current and draw.textbbox((0, 0), candidate, font=font)[2] > max_width:
+    for paragraph in text.splitlines():
+        current = ""
+        for word in paragraph.split():
+            if draw.textlength(word, font=font) > max_width:
+                raise ValueError(f"Text cannot fit without clipping: {word!r}")
+            candidate = f"{current} {word}".strip()
+            if current and draw.textlength(candidate, font=font) > max_width:
+                lines.append(current)
+                current = word
+            else:
+                current = candidate
+        if current:
             lines.append(current)
-            current = word
-        else:
-            current = candidate
-    if current:
-        lines.append(current)
     return lines
+
+
+def checked_text_lines(draw, text, font, width, max_lines, label):
+    lines = wrap_text(draw, text, font, width)
+    if not lines or len(lines) > max_lines:
+        raise ValueError(f"{label} needs {len(lines)} lines; maximum is {max_lines}. Shorten the wording; never truncate it.")
+    return lines
+
+
+def fitted_text(draw, text, font, width, max_lines, min_size, label):
+    """Reflow and modestly resize; retain every word and a readable minimum."""
+    error = None
+    for size in range(font.size, min_size - 1, -2):
+        candidate = font.font_variant(size=size)
+        for wording in (text, " ".join(text.split())):
+            try:
+                return checked_text_lines(draw, wording, candidate, width, max_lines, label), candidate
+            except ValueError as exc:
+                error = exc
+    raise error
+
+
+def validate_layout(content):
+    draw = ImageDraw.Draw(Image.new("RGB", (WIDTH, HEIGHT)))
+    hook_font, caption_font, _ = fonts()
+    fitted_text(draw, content["hook"], hook_font, 630, 2, 36, "hook")
+    for i, scene in enumerate(content["scenes"]):
+        fitted_text(draw, scene["caption"], caption_font, 575, 3, 30, f"scene {i + 1} caption")
+    grid = content.get("storyboard_grid", {"columns": 2, "rows": math.ceil(len(content["scenes"]) / 2)})
+    if any(type(grid.get(key)) is not int or grid[key] < 1 for key in ("columns", "rows")):
+        raise ValueError("storyboard_grid dimensions must be positive integers")
+    for i, scene in enumerate(content["scenes"]):
+        index = scene.get("panel_index", i)
+        if type(index) is not int or not 0 <= index < grid["columns"] * grid["rows"]:
+            raise ValueError("Every scene must have an existing storyboard panel")
 
 
 def overlay_for_scene(
@@ -149,6 +188,7 @@ def overlay_for_scene(
     hook_font: ImageFont.FreeTypeFont,
     caption_font: ImageFont.FreeTypeFont,
     small_font: ImageFont.FreeTypeFont,
+    scene_count: int = 4,
 ) -> Image.Image:
     image = scene_image.copy().convert("RGBA")
     shade = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
@@ -166,11 +206,12 @@ def overlay_for_scene(
     draw.text((55, 47), "생활꿀팁  ·  오늘의 한 가지", font=small_font, fill="#ffffff")
     if index == 0:
         y = 126
-        for line in wrap_text(draw, hook, hook_font, 630)[:2]:
+        hook_lines, hook_font = fitted_text(draw, hook, hook_font, 630, 2, 36, "hook")
+        for line in hook_lines:
             draw.text((38, y), line, font=hook_font, fill="#fff3a1", stroke_width=2, stroke_fill="#101820")
             y += 54
 
-    caption_lines = wrap_text(draw, caption, caption_font, 575)[:3]
+    caption_lines, caption_font = fitted_text(draw, caption, caption_font, 575, 3, 30, f"scene {index + 1} caption")
     box_height = max(154, 46 + 52 * len(caption_lines))
     top = HEIGHT - 212 - box_height
     draw.rounded_rectangle(
@@ -181,11 +222,13 @@ def overlay_for_scene(
     for line in caption_lines:
         draw.text((61, y), line, font=caption_font, fill="#ffffff", stroke_width=1, stroke_fill="#111922")
         y += 52
-    draw.text((38, HEIGHT - 78), "하루 한 가지, 생활이 더 편해집니다", font=small_font, fill="#e4eef2")
+    draw.text((38, HEIGHT - 78), f"{index + 1} / {scene_count}", font=small_font, fill="#e4eef2")
     return image.convert("RGB")
 
 
 def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path], output: Path) -> None:
+    validate_script(content)
+    validate_layout(content)
     lengths = [media_duration(path) for path in voice_paths]
     starts: list[float] = []
     cursor = 0.0
@@ -211,11 +254,14 @@ def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path]
     ])
     run(args)
 
-    panels = load_panels(day_dir / "storyboard.png")
+    scene_count = len(content["scenes"])
+    grid = content.get("storyboard_grid", {"columns": 2, "rows": math.ceil(scene_count / 2)})
+    panels = load_panels(day_dir / "storyboard.png", grid["columns"], grid["rows"])
     hook_font, caption_font, small_font = fonts()
     frames = [
-        overlay_for_scene(panel, scene["caption"], content["hook"], i, hook_font, caption_font, small_font)
-        for i, (panel, scene) in enumerate(zip(panels, content["scenes"], strict=True))
+        overlay_for_scene(panels[scene.get("panel_index", i)], scene["caption"], content["hook"], i,
+                          hook_font, caption_font, small_font, scene_count)
+        for i, scene in enumerate(content["scenes"])
     ]
     output.parent.mkdir(parents=True, exist_ok=True)
     ffmpeg = subprocess.Popen(
@@ -227,6 +273,7 @@ def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path]
             "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", str(output),
         ],
         stdin=subprocess.PIPE,
+        **hidden_process_options(),
     )
     assert ffmpeg.stdin is not None
     try:
@@ -262,6 +309,7 @@ def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path]
         "description": description, "duration_seconds": round(actual_duration, 2),
         "width": actual_width, "height": actual_height, "voice": VOICE,
         "narration_seconds": [round(value, 2) for value in lengths], "sources": content["sources"],
+        "screen_text": {"hook": content["hook"], "captions": [scene["caption"] for scene in content["scenes"]]},
     }
     (day_dir / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(metadata, ensure_ascii=True, indent=2))
@@ -277,7 +325,8 @@ def main() -> None:
     content = load_content(day_dir / "content.json", today)
     if content.get("slot", "am") != args.slot:
         raise ValueError("content slot does not match the requested release")
-    voice_paths = [day_dir / f"voice_{index + 1}.mp3" for index in range(4)]
+    validate_layout(content)
+    voice_paths = [day_dir / f"voice_{index + 1}.mp3" for index in range(len(content["scenes"]))]
     asyncio.run(synthesize_segments(content["scenes"], voice_paths))
     render_video(day_dir, content, voice_paths, day_dir / f"life-tip-{today.isoformat()}.mp4")
 

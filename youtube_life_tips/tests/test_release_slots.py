@@ -41,12 +41,13 @@ class ReleaseSlotTests(unittest.TestCase):
             plan = {"date": str(DAY), "season": "가을", "topic_strategy": "seasonal", "topic": "tip",
                     "hook": "hook", "title": "tip", "viewer_value": {
                         "common_approach": "a", "better_decision": "b", "why_it_matters": "c"},
-                    "scenes": [{"narration": "text", "caption": "text"} for _ in range(4)],
+                    "spoken_script": "text text text text",
+                    "scenes": [{"narration": "text", "caption": "text", "visual_action": "show the action"} for _ in range(4)],
                     "sources": [{"title": "source", "url": "https://example.org"} for _ in range(2)]}
             def stage(root_arg, run_dir, name, prompt, **kwargs):
                 daily = root / "work/daily" / run_dir.name
                 result = plan
-                if name == "review":
+                if name == "review" or name.startswith("final-review"):
                     result = dict.fromkeys(("approved", "selection_rule_pass", "originality_pass", "sources_verified",
                                             "safety_pass", "usefulness_pass", "flow_pass"), True)
                     result.update(usefulness_reason="useful", flow_reason="connected")
@@ -56,8 +57,12 @@ class ReleaseSlotTests(unittest.TestCase):
                 elif name == "main-audit":
                     result = {"approved": True, "checks": dict.fromkeys(("plan_matches_content", "sources_verified",
                         "season_decision_valid", "history_distinct", "viewer_value_valid", "narration_flow_valid",
-                        "four_scenes_match_plan", "captions_readable", "no_visual_defects", "dimensions_valid",
+                        "scenes_match_plan", "captions_readable", "no_visual_defects", "dimensions_valid",
                         "audio_present", "duration_valid"), True)}
+                if name == "review" or name.startswith("final-review"):
+                    result.update(viewer_recap="ordered actions and outcomes", transition_checks=[
+                        {"from_scene": i, "to_scene": i + 1, "clear": True, "evidence": "after the previous action"}
+                        for i in range(1, 4)])
                 path = run_dir / f"{name}.json"
                 atomic_json(path, result)
                 return path

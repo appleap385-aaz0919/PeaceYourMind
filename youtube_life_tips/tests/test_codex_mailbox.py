@@ -32,7 +32,8 @@ class KoreanSeasonTests(unittest.TestCase):
             },
             "hook": "바로 써보세요",
             "title": "생활 팁 #Shorts",
-            "scenes": [{"narration": "설명", "caption": "설명"} for _ in range(4)],
+            "spoken_script": "설명 설명 설명 설명",
+            "scenes": [{"narration": "설명", "caption": "설명", "visual_action": "설명에 맞는 행동"} for _ in range(4)],
             "sources": [
                 {"title": "기관 안내 1", "url": "https://example.org/1"},
                 {"title": "기관 안내 2", "url": "https://example.org/2"},
@@ -70,6 +71,8 @@ class KoreanSeasonTests(unittest.TestCase):
             "usefulness_pass": False, "flow_pass": True,
             "usefulness_reason": "냉장고에 넣으라는 일반적인 조언뿐이다",
             "flow_reason": "네 장면이 자연스럽게 이어진다",
+            "viewer_recap": "먼저 세탁하고 말린 뒤 물을 뿌려 결과를 확인한다",
+            "transition_checks": [{"from_scene": i, "to_scene": i + 1, "clear": True, "evidence": "앞 행동을 끝낸 뒤 다음 행동을 한다"} for i in range(1, 4)],
         }
         with self.assertRaises(codex_mailbox.WorkflowSkipped):
             codex_mailbox.validate_review(review)
