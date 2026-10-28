@@ -27,6 +27,7 @@ class UploadScheduleTests(unittest.TestCase):
             for slot, key, publish_at in (
                 ("am", "2099-01-01", "2098-12-31T22:00:00Z"),
                 ("pm", "2099-01-01-pm", "2099-01-01T10:00:00Z"),
+                ("manual", "2099-01-01-manual", None),
             ):
                 with self.subTest(slot=slot):
                     folder = root / key
@@ -45,11 +46,16 @@ class UploadScheduleTests(unittest.TestCase):
                         patch.object(upload_daily, "my_channels", return_value=[{"id": "UC-LIFE"}]),
                         patch.object(upload_daily, "upload_resumable", return_value={"id": "MOCK"}) as upload,
                     ):
-                        upload_daily.upload_day(day, Namespace(slot=slot, publish_at_kst=None, dry_run=False))
+                        upload_daily.upload_day(day, Namespace(slot=slot, publish_at_kst=None,
+                                                              publish_now=slot == "manual", dry_run=False))
                     status = upload.call_args.args[1]["status"]
                     self.assertIs(status["containsSyntheticMedia"], True)
-                    self.assertEqual(status["publishAt"], publish_at)
-                    self.assertEqual(status["privacyStatus"], "private")
+                    if slot == "manual":
+                        self.assertNotIn("publishAt", status)
+                        self.assertEqual(status["privacyStatus"], "public")
+                    else:
+                        self.assertEqual(status["publishAt"], publish_at)
+                        self.assertEqual(status["privacyStatus"], "private")
 
     def test_seven_am_korea_maps_to_previous_day_utc(self) -> None:
         scheduled = upload_daily.publish_at_for(date(2026, 10, 22), "07:00")

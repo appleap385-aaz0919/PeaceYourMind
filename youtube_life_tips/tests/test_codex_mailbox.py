@@ -11,6 +11,18 @@ from unittest.mock import patch
 import codex_mailbox
 
 
+class CodexFailureTests(unittest.TestCase):
+    def test_usage_error_reports_actual_event_instead_of_printed_source(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output = json.dumps({"type": "error", "message": "You've hit your usage limit. Try later."})
+            result = subprocess.CompletedProcess([], 1, output, "printed source code")
+            with patch.object(codex_mailbox, "codex_executable", return_value=root / "codex.exe"), \
+                 patch.object(codex_mailbox.subprocess, "run", return_value=result):
+                with self.assertRaisesRegex(codex_mailbox.WorkflowSkipped, "main-draft: You've hit your usage limit"):
+                    codex_mailbox.call_codex(root, root / "run", "main-draft", "draft")
+
+
 class KoreanSeasonTests(unittest.TestCase):
     def test_korean_months_map_to_expected_seasons(self) -> None:
         self.assertEqual(codex_mailbox.season_for(date(2026, 3, 1)), "봄")

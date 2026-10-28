@@ -14,6 +14,50 @@ DAY = date(2026, 10, 26)
 
 
 class ReleaseSlotTests(unittest.TestCase):
+    def test_rejected_candidates_preserve_media_and_stop_after_three(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            folder = root / "work/daily/2026-10-26-manual"
+            folder.mkdir(parents=True)
+            request = {"date": str(DAY), "slot": "manual", "attempt": 2}
+            for number in (1, 2):
+                atomic_json(folder / "content.json", {"topic": f"topic {number}"})
+                (folder / "storyboard.png").write_bytes(bytes([number]))
+                self.assertTrue(m.prepare_next_candidate(request, "bad visual", root))
+                self.assertEqual(request["candidate_attempt"], number + 1)
+                self.assertEqual(request["attempt"], 0)
+                self.assertTrue((folder / f"rejected-candidates/{number}/storyboard.png").exists())
+                self.assertFalse((folder / "storyboard.png").exists())
+            self.assertFalse(m.prepare_next_candidate(request, "bad visual", root))
+            self.assertEqual(len(request["rejected_candidates"]), 2)
+
+    def test_third_final_rejection_is_cancelled_without_uploading(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(m, "now_kst", return_value=datetime(2026, 10, 26, 12, tzinfo=m.KST)), \
+             patch.object(m, "send_result_email", return_value=None), \
+             patch.object(m, "preflight", side_effect=m.FinalReviewRejected("bad visual")), \
+             patch.object(m.subprocess, "run") as external:
+            root = Path(tmp)
+            path = root / "request.json"
+            atomic_json(path, {"date": str(DAY), "slot": "manual", "publish_now": True,
+                               "candidate_attempt": 3})
+            result = m.process_request(path, root)
+            self.assertEqual(result["status"], "cancelled")
+            self.assertEqual(result["candidate_attempts"], 3)
+            external.assert_not_called()
+
+    def test_immediate_release_has_its_own_key_even_after_regular_failures(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(m, "preflight"):
+            root = Path(tmp)
+            for slot in ("am", "pm"):
+                atomic_json(m.report_path(DAY, root, slot), {"status": "skipped"})
+            result = m.enqueue_today(root, datetime(2026, 10, 26, 20, tzinfo=m.KST),
+                                     publish_now=True, editorial_instruction="Exclude knitting")
+            self.assertEqual(result["slot"], "manual")
+            self.assertTrue(result["publish_now"])
+            self.assertEqual(result["editorial_instruction"], "Exclude knitting")
+            self.assertTrue((root / "work/mailbox/inbox/2026-10-26-manual.json").exists())
+
     def test_morning_success_does_not_block_evening_enqueue(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(m, "preflight"):
             root = Path(tmp)

@@ -1,5 +1,11 @@
 # 생활꿀팁 YouTube Shorts
 
+최종 검수에서 탈락한 영상은 최대 두 번 보정·재검수합니다. 그래도 탈락하거나 안전한 보정이 불가능하면 실패 소재를 제외하고 다른 소재의 대본·그림부터 다시 제작합니다. 첫 제작을 포함해 최대 3개 후보까지만 진행하며, 세 번째 후보도 탈락하면 `cancelled`로 종료합니다. 실패한 산출물은 `work/daily/RELEASE-KEY/rejected-candidates/`에 보존합니다. 인증·사용량 제한·통신 오류는 이 소재 교체 규칙으로 우회하지 않습니다.
+
+명시적으로 요청한 즉시 게시에는 `python codex_mailbox.py enqueue --today --publish-now --editorial-instruction "주제 지시"`를 사용합니다. 즉시 게시 산출물은 `YYYY-MM-DD-manual`로 구분되어 오전·오후 정규 회차와 충돌하지 않습니다. 검수를 모두 통과한 영상만 예약 없이 공개하며 AI 라벨을 설정합니다. 같은 날짜의 즉시 게시 요청은 중복 업로드하지 않습니다.
+
+감시기 실행 버전과 PID는 `state/watcher-version.json`에 기록합니다. 감시기 코드가 변경되면 진행 중인 작업을 마친 후 종료하고 Windows 작업 스케줄러의 재시작 설정을 통해 새 코드를 읽습니다.
+
 이 자동화는 이 폴더 안의 Codex CLI, 파일 우편함, Windows 작업 스케줄러만 사용합니다. Codex CLI는 이미 설치된 `D:\Tools\Codex`를 사용합니다. 예약 실행 중 Codex 데스크톱의 Scheduled 작업을 따로 띄우지 않으며, 일이 있을 때만 Codex 세션을 순서대로 실행합니다.
 예약 작업은 `pythonw.exe`로 실행하고, 감시기와 렌더러가 실행하는 Codex·FFmpeg 등의 자식 프로세스에는 Windows 콘솔 창을 만들지 않는 옵션을 적용합니다. 실행 결과와 오류는 기존 로그에 기록됩니다.
 

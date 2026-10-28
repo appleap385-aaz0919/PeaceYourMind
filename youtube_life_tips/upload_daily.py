@@ -79,8 +79,9 @@ def upload_resumable(video: Path, metadata: dict[str, object], access_token: str
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--date", help="Asia/Seoul date in YYYY-MM-DD; defaults to today")
-    parser.add_argument("--slot", choices=("am", "pm"), default="am")
+    parser.add_argument("--slot", choices=("am", "pm", "manual"), default="am")
     parser.add_argument("--publish-at-kst", help="one-off release time in KST, e.g. 2026-10-23T08:30")
+    parser.add_argument("--publish-now", action="store_true", help="upload as public immediately instead of scheduling")
     parser.add_argument("--dry-run", action="store_true", help="validate local files/config without uploading")
     args = parser.parse_args()
     day = date.fromisoformat(args.date) if args.date else datetime.now(KST).date()
@@ -119,7 +120,14 @@ def upload_day(day: date, args: argparse.Namespace) -> None:
     if not channel_id or channel_id == "REPLACE_WITH_LIFE_TIPS_CHANNEL_ID":
         raise ValueError("state/config.local.json must contain the separate life-tips channel ID")
     now = datetime.now(KST)
-    if args.publish_at_kst:
+    publish_now = getattr(args, "publish_now", False)
+    if slot == "manual" and not publish_now:
+        raise ValueError("manual releases require --publish-now")
+    if publish_now and args.publish_at_kst:
+        raise ValueError("choose either --publish-now or --publish-at-kst")
+    if publish_now:
+        publish_at = None
+    elif args.publish_at_kst:
         publish_at = parse_publish_at(day, args.publish_at_kst)
         if ("pm" if publish_at.hour >= 12 else "am") != slot:
             raise ValueError("--publish-at-kst must match the selected --slot")
@@ -132,7 +140,8 @@ def upload_day(day: date, args: argparse.Namespace) -> None:
         print(json.dumps({
             "date": day.isoformat(), "channel_id": channel_id,
             "title": metadata.get("title"), "video_bytes": video_path.stat().st_size,
-            "publish_at_kst": publish_at.isoformat(), "dry_run": True,
+            "publish_now": publish_now,
+            "publish_at_kst": publish_at.isoformat() if publish_at else None, "dry_run": True,
         }, ensure_ascii=False, indent=2))
         return
 
@@ -149,20 +158,33 @@ def upload_day(day: date, args: argparse.Namespace) -> None:
             "tags": ["생활꿀팁", "살림팁", "Shorts"],
         },
         "status": {
-            "privacyStatus": "private",
-            "publishAt": publish_at.astimezone(ZoneInfo("UTC")).isoformat().replace("+00:00", "Z"),
+            "privacyStatus": "public" if publish_now else "private",
             "selfDeclaredMadeForKids": False,
             "containsSyntheticMedia": True,
         },
     }
+    if publish_at:
+        video_metadata["status"]["publishAt"] = publish_at.astimezone(ZoneInfo("UTC")).isoformat().replace("+00:00", "Z")
+    published_at = datetime.now(KST) if publish_now else None
+    # Resuming must retain the original context; a new timestamp would make the
+    # durable upload session look like a different upload.
+    session_path = day_dir / "upload_session.json"
+    if publish_now and session_path.exists():
+        saved_context = json.loads(session_path.read_text(encoding="utf-8")).get("receipt_context", {})
+        if saved_context.get("published_immediately") and saved_context.get("published_at_kst"):
+            published_at = datetime.fromisoformat(saved_context["published_at_kst"])
     receipt_context = {
         "date": day.isoformat(), "channel_id": channel_id,
         "slot": slot, "release_key": key,
-        "scheduled_publish_at_kst": publish_at.isoformat(), "title": metadata["title"],
+        "published_immediately": publish_now,
+        "published_at_kst": published_at.isoformat(timespec="seconds") if published_at else None,
+        "scheduled_publish_at_kst": publish_at.isoformat() if publish_at else None,
+        "title": metadata["title"],
     }
     uploaded = upload_resumable(
         video_path, video_metadata, access_token, receipt_context=receipt_context,
-        deadline=publish_at - timedelta(minutes=5),
+        deadline=publish_at - timedelta(minutes=5) if publish_at else
+        published_at + timedelta(minutes=30) if published_at else None,
     )
     video_id = uploaded.get("id")
     if not video_id:
@@ -173,7 +195,9 @@ def upload_day(day: date, args: argparse.Namespace) -> None:
         "channel_id": channel_id,
         "video_id": video_id,
         "url": f"https://www.youtube.com/shorts/{video_id}",
-        "scheduled_publish_at_kst": publish_at.isoformat(),
+        "published_immediately": publish_now,
+        "published_at_kst": published_at.isoformat(timespec="seconds") if published_at else None,
+        "scheduled_publish_at_kst": publish_at.isoformat() if publish_at else None,
         "title": metadata["title"],
     }
     atomic_json(result_path, result)

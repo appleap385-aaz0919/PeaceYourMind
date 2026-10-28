@@ -107,13 +107,16 @@ def load_panels(path: Path, columns: int = 2, rows: int = 2) -> list[Image.Image
               (col + 1) * width // columns - (gutter_x if col < columns - 1 else 0),
               (row + 1) * height // rows - (gutter_y if row < rows - 1 else 0))
              for row in range(rows) for col in range(columns)]
-    return [
-        ImageOps.fit(
-            storyboard.crop(box), (WIDTH, HEIGHT),
-            method=Image.Resampling.LANCZOS, centering=(0.5, 0.5),
-        )
-        for box in boxes
-    ]
+    panels = []
+    for box in boxes:
+        panel = storyboard.crop(box)
+        # Keep every part of the generated panel visible. A center crop can hide
+        # hands, tools, or the result that the narration asks viewers to inspect.
+        foreground = ImageOps.contain(panel, (WIDTH, HEIGHT), method=Image.Resampling.LANCZOS)
+        canvas = Image.new("RGB", (WIDTH, HEIGHT), (20, 20, 20))
+        canvas.paste(foreground, ((WIDTH - foreground.width) // 2, (HEIGHT - foreground.height) // 2))
+        panels.append(canvas)
+    return panels
 
 
 def fonts() -> tuple[ImageFont.FreeTypeFont, ImageFont.FreeTypeFont, ImageFont.FreeTypeFont]:
@@ -318,7 +321,7 @@ def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path]
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--date", help="Asia/Seoul date in YYYY-MM-DD; defaults to today")
-    parser.add_argument("--slot", choices=("am", "pm"), default="am")
+    parser.add_argument("--slot", choices=("am", "pm", "manual"), default="am")
     args = parser.parse_args()
     today = date.fromisoformat(args.date) if args.date else datetime.now(ZoneInfo("Asia/Seoul")).date()
     day_dir = WORK / release_key(today, args.slot)

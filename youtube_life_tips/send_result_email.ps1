@@ -33,9 +33,11 @@ try {
             $Message.Body = "테스트 메일입니다. 자동화 실행 결과가 이 주소로 발송됩니다."
         } else {
             $Report = Get-Content -LiteralPath $ReportPath -Raw -Encoding UTF8 | ConvertFrom-Json
-            $ReleaseLabel = if ($Report.slot -eq "pm") { "오후 7시" } else { "오전 7시" }
+            $ReleaseLabel = if ($Report.slot -eq "manual") { "요청에 따른 즉시 게시" } elseif ($Report.slot -eq "pm") { "오후 7시" } else { "오전 7시" }
             $StatusLabel = switch ($Report.status) {
                 "scheduled" { "성공: YouTube 공개 예약 완료" }
+                "published" { "성공: YouTube 즉시 공개 완료" }
+                "cancelled" { "취소: 소재 3회 제작 후 최종 검수 미통과" }
                 "skipped" { "건너뜀" }
                 "failed" { "실패" }
                 default { [string]$Report.status }

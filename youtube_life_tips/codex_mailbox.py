@@ -47,6 +47,10 @@ class WorkflowSkipped(RuntimeError):
     """A safe, intentional stop that must not proceed to upload."""
 
 
+class FinalReviewRejected(WorkflowSkipped):
+    """The completed candidate failed quality review; try another topic."""
+
+
 def now_kst() -> datetime:
     return datetime.now(KST)
 
@@ -60,7 +64,7 @@ def report_path(day: date, root: Path = ROOT, slot: str = "am") -> Path:
 
 
 def send_result_email(report: dict[str, Any], root: Path) -> str | None:
-    if report.get("status") not in {"scheduled", "skipped", "failed"}:
+    if report.get("status") not in {"scheduled", "published", "cancelled", "skipped", "failed"}:
         return None
     config_path = root / "state" / "config.local.json"
     if not config_path.is_file():
@@ -98,9 +102,9 @@ def write_report(
     slot: str = "am",
 ) -> dict[str, Any]:
     output_path = report_path(day, root, slot)
-    if output_path.exists() and status != "scheduled":
+    if output_path.exists() and status not in {"scheduled", "published"}:
         previous = json.loads(output_path.read_text(encoding="utf-8"))
-        if previous.get("status") == "scheduled":
+        if previous.get("status") in {"scheduled", "published"}:
             return previous
     report: dict[str, Any] = {
         "date": day.isoformat(),
@@ -150,9 +154,10 @@ def reconcile_report(day: date, root: Path, slot: str = "am") -> dict[str, Any] 
     receipt = read_receipt(day_dir / "upload.json", day.isoformat(), channel_id, slot)
     if not receipt:
         return previous
-    if previous and previous.get("status") == "scheduled" and previous.get("url") == receipt.get("url"):
+    if previous and previous.get("status") in {"scheduled", "published"} and previous.get("url") == receipt.get("url"):
         return previous
-    return write_report(day, "scheduled", "recovered_upload", "", receipt, root=root, slot=slot)
+    status = "published" if receipt.get("published_immediately") is True else "scheduled"
+    return write_report(day, status, "recovered_upload", "", receipt, root=root, slot=slot)
 
 
 def retry_report(day: date, request: dict, error: BaseException, root: Path) -> dict:
@@ -160,7 +165,9 @@ def retry_report(day: date, request: dict, error: BaseException, root: Path) -> 
     attempt = int(request.get("attempt", 1))
     delay = 60 * (3 ** (attempt - 1))
     next_attempt = now_kst() + timedelta(seconds=delay)
-    cutoff = (parse_publish_at(day, request["publish_at_kst"]) - ONE_OFF_MINIMUM_LEAD
+    cutoff = (datetime.fromisoformat(request["created_at_kst"]) + timedelta(hours=2)
+              if request.get("publish_now") else
+              parse_publish_at(day, request["publish_at_kst"]) - ONE_OFF_MINIMUM_LEAD
               if request.get("publish_at_kst") else datetime.combine(day, cutoff_clock(slot), tzinfo=KST))
     if attempt >= MAX_ATTEMPTS or next_attempt >= cutoff:
         return write_report(day, "failed", "retry_exhausted", str(error), {"attempts": attempt}, root=root, slot=slot)
@@ -273,15 +280,21 @@ def enqueue_today(
     at: datetime | None = None,
     publish_at_kst: str | None = None,
     slot: str = "am",
+    publish_now: bool = False,
+    editorial_instruction: str = "",
 ) -> dict[str, Any]:
     current = at.astimezone(KST) if at else now_kst()
     day = current.date()
+    if publish_now:
+        slot = "manual"
     key = release_key(day, slot)
     scheduled = parse_publish_at(day, publish_at_kst) if publish_at_kst else None
+    if publish_now and scheduled:
+        raise ValueError("choose either immediate publishing or a scheduled time")
     if scheduled and ("pm" if scheduled.hour >= 12 else "am") != slot:
         raise ValueError("publish_at_kst must match the selected slot")
     reconciled = reconcile_report(day, root, slot)
-    if reconciled and reconciled.get("status") == "scheduled":
+    if reconciled and reconciled.get("status") in {"scheduled", "published"}:
         return reconciled
     if scheduled and current > scheduled - ONE_OFF_MINIMUM_LEAD:
         return write_report(day, "skipped", "enqueue", "one_off_release_has_less_than_15_minutes_lead_time", root=root, slot=slot)
@@ -314,7 +327,7 @@ def enqueue_today(
     request_file = root / "work" / "mailbox" / "inbox" / f"{key}.json"
     if request_file.exists() or (root / "work" / "mailbox" / "processing" / request_file.name).exists():
         return {"date": day.isoformat(), "slot": slot, "status": "already_queued"}
-    if scheduled is None and current.time() >= cutoff_clock(slot):
+    if scheduled is None and not publish_now and current.time() >= cutoff_clock(slot):
         return write_report(day, "skipped", "enqueue", cutoff_reason(slot), root=root, slot=slot)
     try:
         preflight(root)
@@ -331,6 +344,10 @@ def enqueue_today(
     }
     if scheduled:
         request["publish_at_kst"] = scheduled.isoformat(timespec="minutes")
+    if publish_now:
+        request["publish_now"] = True
+    if editorial_instruction:
+        request["editorial_instruction"] = editorial_instruction
     atomic_json(request_file, request)
     return request
 
@@ -402,6 +419,15 @@ def call_codex(
     log_path = run_dir / f"{stage}.log"
     log_path.write_text((result.stdout or "") + (result.stderr or ""), encoding="utf-8")
     if result.returncode:
+        # CLI output also contains commands and source excerpts. Report the
+        # actual error event instead of mistaking a printed code line for it.
+        for line in (result.stdout or "").splitlines():
+            try:
+                event = json.loads(line)
+            except ValueError:
+                continue
+            if event.get("type") == "error" and "usage limit" in str(event.get("message", "")).lower():
+                raise WorkflowSkipped(f"Codex {stage}: {event['message']}")
         tail = (result.stderr or result.stdout or "Codex returned a non-zero exit code")[-1200:].strip()
         if stage != "developer-image" and is_transient(tail):
             final_path.unlink(missing_ok=True)
@@ -641,6 +667,8 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
             "portrait storyboard with distinct, photorealistic panels matching the approved "
             "script: use the approved storyboard_grid columns and rows, one panel per scene in row-major order. "
             "Unused cells in the last row must be blank. Keep important subjects centered and fully visible. "
+            "Show hands, tools, direction of movement, and the completed state clearly whenever a scene describes them. "
+            "Each panel must provide visible evidence for its exact visual_action; avoid tiny hidden manipulations. "
             "No letters, subtitles, logos, watermark, borrowed references, or source images. "
             "Follow each scene's visual_action. Keep the same object/garment identity between scenes and show "
             "the correct before/after state. Do not show a prohibited action or a product being applied before its test. "
@@ -722,6 +750,33 @@ def refine_editorial_plan(plan, day, root, run_dir, prompts, deadline):
         return plan
 
 
+def prepare_next_candidate(request: dict, reason: str, root: Path) -> bool:
+    """Preserve rejected media and allocate a fresh plan/ImageGen attempt."""
+    candidate = int(request.get("candidate_attempt", 1))
+    if candidate >= 3:
+        return False
+    day_dir = root / "work" / "daily" / release_key(request["date"], request.get("slot", "am"))
+    if (day_dir / "upload_session.json").exists() or (day_dir / "upload.json").exists():
+        raise RuntimeError("an upload exists; reconcile it before changing candidates")
+    destination = day_dir / "rejected-candidates" / str(candidate)
+    destination.mkdir(parents=True, exist_ok=False)
+    plan_path = day_dir / "content.json"
+    plan = json.loads(plan_path.read_text(encoding="utf-8")) if plan_path.exists() else {}
+    request.setdefault("rejected_candidates", []).append({
+        "candidate": candidate, "topic": plan.get("topic"), "reason": reason,
+    })
+    for path in list(day_dir.iterdir()):
+        if path.name == "rejected-candidates":
+            continue
+        target = destination / path.name
+        if root.resolve() not in path.resolve().parents or day_dir.resolve() not in target.resolve().parents:
+            raise ValueError("candidate archive must remain inside the workspace")
+        path.replace(target)
+    request["candidate_attempt"] = candidate + 1
+    request["attempt"] = 0
+    return True
+
+
 def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
     request = json.loads(request_file.read_text(encoding="utf-8"))
     day = date.fromisoformat(str(request["date"]))
@@ -732,16 +787,24 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
         return existing
     current = now_kst()
     publish_at_kst = str(request["publish_at_kst"]) if request.get("publish_at_kst") else None
+    publish_now = request.get("publish_now") is True
+    if publish_now and publish_at_kst:
+        raise WorkflowSkipped("request cannot combine immediate and scheduled publishing")
     scheduled = parse_publish_at(day, publish_at_kst) if publish_at_kst else None
     if day != current.date():
         result = write_report(day, "skipped", "dispatch", "request_is_not_for_today", root=root, slot=slot)
         return result
     if scheduled and current > scheduled - ONE_OFF_MINIMUM_LEAD:
         return write_report(day, "skipped", "dispatch", "one_off_release_has_less_than_15_minutes_lead_time", root=root, slot=slot)
-    if scheduled is None and current.time() >= cutoff_clock(slot):
+    if scheduled is None and not publish_now and current.time() >= cutoff_clock(slot):
         return write_report(day, "skipped", "dispatch", cutoff_reason(slot), root=root, slot=slot)
 
     run_dir = root / "work" / "mailbox" / "runs" / key
+    candidate = int(request.get("candidate_attempt", 1))
+    if candidate not in (1, 2, 3):
+        raise ValueError("candidate_attempt must be between 1 and 3")
+    if candidate > 1:
+        run_dir = run_dir / "candidates" / str(candidate)
     day_dir = root / "work" / "daily" / key
     run_dir.mkdir(parents=True, exist_ok=True)
     day_dir.mkdir(parents=True, exist_ok=True)
@@ -749,9 +812,24 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
         return write_report(day, "failed", "retry_exhausted", "maximum release attempts reached", root=root, slot=slot)
     request["attempt"] = int(request.get("attempt", 0)) + 1
     atomic_json(request_file, request)
-    deadline = scheduled - ONE_OFF_MINIMUM_LEAD if scheduled else datetime.combine(day, cutoff_clock(slot), tzinfo=KST)
+    deadline = (scheduled - ONE_OFF_MINIMUM_LEAD if scheduled else
+                current + timedelta(hours=2) if publish_now else
+                datetime.combine(day, cutoff_clock(slot), tzinfo=KST))
     try:
         prompts = build_prompts(day, run_dir, day_dir, slot)
+        instruction = request.get("editorial_instruction", "")
+        if instruction:
+            prompts = {name: prompt + "\nUSER EDITORIAL INSTRUCTION: " + instruction
+                       for name, prompt in prompts.items()}
+        if request.get("rejected_candidates"):
+            retry_instruction = (
+                "\nThis is a new candidate after failed FINAL visual review. Choose a DIFFERENT topic, "
+                "with a different practical action, from all rejected topics below. Write a fresh script and "
+                "generate one new storyboard for THIS candidate. The user authorizes up to three candidates "
+                "per release, with exactly one ImageGen call per candidate. Rejected candidates: "
+                + json.dumps(request["rejected_candidates"], ensure_ascii=False)
+            )
+            prompts = {name: prompt + retry_instruction for name, prompt in prompts.items()}
         preflight(root)
         draft_path = run_dir / "main-draft.json"
         if not draft_path.is_file():
@@ -823,35 +901,109 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
             day_dir / f"life-tip-{day.isoformat()}.mp4", day_dir, metadata,
         )
 
-        audit_path = run_dir / "main-audit.json"
-        audit_marker = run_dir / "audit-ready.json"
-        cached_audit = json.loads(audit_marker.read_text(encoding="utf-8")) if audit_marker.exists() else {}
-        audit_path = audit_path if audit_path.exists() and cached_audit.get("video_sha256") == video_hash else call_codex(
-            root, run_dir, "main-audit", prompts["main_audit"], image=audit_contact_sheet, deadline=deadline,
-        )
-        audit = parse_json_response(audit_path)
-        atomic_json(run_dir / "audit.json", audit)
         required_audit_checks = {
             "plan_matches_content", "sources_verified", "season_decision_valid", "history_distinct",
             "viewer_value_valid", "narration_flow_valid",
             "scenes_match_plan", "captions_readable", "no_visual_defects",
             "dimensions_valid", "audio_present", "duration_valid",
         }
-        checks = audit.get("checks")
-        if (
-            audit.get("approved") is not True
-            or not isinstance(checks, dict)
-            or not all(checks.get(key) is True for key in required_audit_checks)
-        ):
-            raise WorkflowSkipped("main session did not approve the rendered result")
+        audit = None
+        for repair_attempt in range(3):
+            audit_path = run_dir / ("main-audit.json" if repair_attempt == 0 else f"main-audit-repair-{repair_attempt}.json")
+            audit_marker = run_dir / "audit-ready.json"
+            cached_audit = json.loads(audit_marker.read_text(encoding="utf-8")) if audit_marker.exists() else {}
+            if not (audit_path.exists() and cached_audit.get("video_sha256") == video_hash):
+                audit_path = call_codex(
+                    root, run_dir, "main-audit" if repair_attempt == 0 else f"main-audit-repair-{repair_attempt}",
+                    prompts["main_audit"], image=audit_contact_sheet, deadline=deadline,
+                )
+            audit = parse_json_response(audit_path)
+            atomic_json(run_dir / "audit.json", audit)
+            checks = audit.get("checks")
+            if (audit.get("approved") is True and isinstance(checks, dict)
+                    and all(checks.get(key) is True for key in required_audit_checks)):
+                break
+
+            repairable = {
+                "narration_flow_valid", "scenes_match_plan", "captions_readable", "no_visual_defects",
+            }
+            factual_and_technical = required_audit_checks - repairable
+            if (repair_attempt >= 2 or not isinstance(checks, dict)
+                    or any(checks.get(key) is not True for key in factual_and_technical)
+                    or not any(checks.get(key) is not True for key in repairable)):
+                issues = audit.get("issues", [])
+                detail = "; ".join(str(item) for item in issues[:3]) if isinstance(issues, list) else str(issues)
+                raise FinalReviewRejected("rendered result failed final review" + (f": {detail}" if detail else ""))
+
+            feedback = {
+                "checks": checks,
+                "issues": audit.get("issues", []),
+                "instruction": (
+                    "Revise narration, captions, scene boundaries, or visual_action only when the existing "
+                    "storyboard visibly supports the revised wording. Preserve verified facts, source conditions, "
+                    "viewer value, and natural spoken flow. Never claim an action or result that the still panel "
+                    "does not show. If it cannot be made accurate against storyboard.png, leave the plan unchanged "
+                    "and state why; the release will be skipped. Do not generate another image."
+                ),
+            }
+            atomic_json(run_dir / f"render-audit-feedback-{repair_attempt + 1}.json", feedback)
+            repair_prompt = prompts["main_approve"] + (
+                "\nPOST-RENDER REVISION: Read approved.json, content.json, storyboard.png, and "
+                f"render-audit-feedback-{repair_attempt + 1}.json. Return the complete corrected plan JSON. "
+                "Only correct wording/scene mapping to match what the existing image visibly proves. "
+                "Keep the existing scene count, panel order, and storyboard_grid unchanged. "
+                "Do not invent missing visual evidence or change verified facts. This uses the already generated image; "
+                "do not invoke ImageGen or upload. If safe correction is impossible, return the plan unchanged."
+            )
+            repaired_path = call_codex(
+                root, run_dir, f"main-postrender-refine-{repair_attempt + 1}", repair_prompt, deadline=deadline,
+            )
+            revised = parse_json_response(repaired_path)
+            if revised == approved:
+                issues = audit.get("issues", [])
+                detail = "; ".join(str(item) for item in issues[:3]) if isinstance(issues, list) else str(issues)
+                raise FinalReviewRejected("storyboard cannot support a safe editorial repair" + (f": {detail}" if detail else ""))
+            fixed_grid = approved.get("storyboard_grid")
+            fixed_count = len(approved["scenes"])
+            try:
+                approved = refine_editorial_plan(revised, day, root, run_dir, prompts, deadline)
+            except (WorkflowSkipped, ValueError) as exc:
+                raise FinalReviewRejected(f"post-render editorial repair failed: {exc}") from exc
+            if len(approved["scenes"]) != fixed_count or approved.get("storyboard_grid") != fixed_grid:
+                raise FinalReviewRejected("post-render repair changed the fixed storyboard panel mapping")
+            atomic_json(run_dir / "approved.json", approved)
+            content = dict(approved)
+            content["slot"] = slot
+            content["sources"] = approved["sources"]
+            atomic_json(day_dir / "content.json", content)
+            render = subprocess.run(
+                [sys.executable, str(root / "render_daily.py"), "--date", day.isoformat(), "--slot", slot],
+                cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                timeout=stage_timeout(deadline, 20 * 60), env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+                **hidden_process_options(),
+            )
+            (run_dir / f"render-repair-{repair_attempt + 1}.log").write_text(
+                (render.stdout or "") + (render.stderr or ""), encoding="utf-8",
+            )
+            if render.returncode:
+                raise WorkflowSkipped("editorial repair could not be rendered: " + (render.stderr or render.stdout)[-800:])
+            video_hash = hashlib.sha256(video_path.read_bytes()).hexdigest()
+            render_identity = hashlib.sha256(json.dumps(content, sort_keys=True).encode() + storyboard.read_bytes()).hexdigest()
+            atomic_json(render_marker, {"input_sha256": render_identity, "video_sha256": video_hash})
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            audit_contact_sheet = make_render_contact_sheet(video_path, day_dir, metadata)
+        else:
+            raise FinalReviewRejected("final review repair attempts exhausted")
         atomic_json(audit_marker, {"video_sha256": video_hash})
         upload_args = [sys.executable, str(root / "upload_daily.py"), "--date", day.isoformat(), "--slot", slot]
         if publish_at_kst:
             if now_kst() > scheduled - ONE_OFF_MINIMUM_LEAD:
                 raise WorkflowSkipped("one_off_release_has_less_than_15_minutes_lead_time")
             upload_args.extend(["--publish-at-kst", publish_at_kst])
-        elif now_kst().time() >= cutoff_clock(slot):
+        elif not publish_now and now_kst().time() >= cutoff_clock(slot):
             raise WorkflowSkipped(cutoff_reason(slot))
+        if publish_now:
+            upload_args.append("--publish-now")
 
         upload = subprocess.run(
             upload_args, env={**os.environ, "PYTHONIOENCODING": "utf-8"},
@@ -860,7 +1012,7 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
         )
         (run_dir / "upload.log").write_text((upload.stdout or "") + (upload.stderr or ""), encoding="utf-8")
         reconciled = reconcile_report(day, root, slot)
-        if reconciled and reconciled.get("status") == "scheduled":
+        if reconciled and reconciled.get("status") in {"scheduled", "published"}:
             return reconciled
         if upload.returncode:
             raise RuntimeError("YouTube upload failed: " + (upload.stderr or upload.stdout)[-1200:])
@@ -868,13 +1020,20 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
         if not upload_path.is_file():
             raise RuntimeError("uploader completed without writing upload.json")
         uploaded = json.loads(upload_path.read_text(encoding="utf-8"))
-        return write_report(day, "scheduled", "complete", "", {
+        uploaded_status = "published" if uploaded.get("published_immediately") is True else "scheduled"
+        return write_report(day, uploaded_status, "complete", "", {
             "url": uploaded.get("url"),
             "title": uploaded.get("title"),
             "scheduled_publish_at_kst": uploaded.get("scheduled_publish_at_kst"),
             "topic": approved.get("topic"),
             "season_strategy": approved.get("topic_strategy"),
         }, root=root, slot=slot)
+    except FinalReviewRejected as exc:
+        if prepare_next_candidate(request, str(exc), root):
+            atomic_json(request_file, request)
+            return process_request(request_file, root)
+        return write_report(day, "cancelled", "final_review", f"3 candidates rejected; last issue: {exc}",
+                            {"candidate_attempts": 3}, root=root, slot=slot)
     except WorkflowSkipped as exc:
         return write_report(day, "skipped", "workflow", str(exc), root=root, slot=slot)
     except Exception as exc:
@@ -932,9 +1091,13 @@ def watch_loop(root: Path = ROOT, poll_seconds: float = POLL_SECONDS, once: bool
                 msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
             except OSError as exc:
                 raise RuntimeError("mailbox watcher is already running") from exc
+        source_hash = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+        atomic_json(root / "state" / "watcher-version.json", {"pid": os.getpid(), "source_sha256": source_hash})
         recover_processing_requests(root)
         logging.info("watcher ready; bounded retries and upload receipt recovery enabled")
         while True:
+            if hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != source_hash:
+                raise RuntimeError("watcher source changed; Task Scheduler will restart with the new code")
             requests = sorted(inbox.glob("*.json"))
             if requests:
                 request_file = requests[0]
@@ -1034,6 +1197,8 @@ def main() -> None:
     enqueue_parser.add_argument("--today", action="store_true", help="enqueue only for the current Korea date")
     enqueue_parser.add_argument("--slot", choices=("am", "pm"), default="am")
     enqueue_parser.add_argument("--publish-at-kst", help="one-off release time, e.g. 2026-10-23T08:30")
+    enqueue_parser.add_argument("--publish-now", action="store_true", help="publish immediately after review")
+    enqueue_parser.add_argument("--editorial-instruction", default="", help="user instructions for this release")
     watch_parser = subparsers.add_parser("watch", help="watch the local inbox and dispatch one request at a time")
     watch_parser.add_argument("--poll-seconds", type=float, default=POLL_SECONDS)
     watch_parser.add_argument("--once", action="store_true", help="process at most one queued request and exit")
@@ -1045,7 +1210,8 @@ def main() -> None:
     if args.command == "enqueue":
         if not args.today:
             parser.error("enqueue requires --today")
-        result = enqueue_today(publish_at_kst=args.publish_at_kst, slot=args.slot)
+        result = enqueue_today(publish_at_kst=args.publish_at_kst, slot=args.slot, publish_now=args.publish_now,
+                               editorial_instruction=args.editorial_instruction)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         raise SystemExit(0 if result.get("status") in ("pending", "already_queued") else 1)
     watch_loop(poll_seconds=args.poll_seconds, once=args.once)
