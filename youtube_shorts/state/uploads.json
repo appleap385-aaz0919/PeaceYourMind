@@ -114,5 +114,37 @@
       "run_url": "https://github.com/appleap385-aaz0919/PeaceYourMind/actions/runs/40769990105",
       "at": "2026-10-29T06:13:33.804805+09:00"
     }
+  },
+  "2026-10-29-pm": {
+    "date_kst": "2026-10-29",
+    "slot": "pm",
+    "release_key": "2026-10-29-pm",
+    "status": "uploaded",
+    "operation_id": "8a8e70d0409b40e2a64a7b81162ff95d",
+    "channel_id": "UCLQczQnzBHzB8jOO0sMeP2w",
+    "video_id": "8zNnUOD_wBY",
+    "privacy": "private",
+    "publish_at": "2026-10-29T19:00:00+09:00",
+    "success_email": {
+      "status": "sent",
+      "run_url": "https://github.com/appleap385-aaz0919/PeaceYourMind/actions/runs/40861859424",
+      "at": "2026-10-29T19:59:37.193408+09:00"
+    }
+  },
+  "2026-10-30": {
+    "date_kst": "2026-10-30",
+    "slot": "am",
+    "release_key": "2026-10-30",
+    "status": "uploaded",
+    "operation_id": "d934d936d31f4cf285aaec3beec13e0f",
+    "channel_id": "UCLQczQnzBHzB8jOO0sMeP2w",
+    "video_id": "_fqd5if5KTc",
+    "privacy": "private",
+    "publish_at": "2026-10-30T07:00:00+09:00",
+    "success_email": {
+      "status": "sent",
+      "run_url": "https://github.com/appleap385-aaz0919/PeaceYourMind/actions/runs/40956322214",
+      "at": "2026-10-30T06:16:51.459854+09:00"
+    }
   }
 }
