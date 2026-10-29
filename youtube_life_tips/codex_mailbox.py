@@ -614,8 +614,10 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
             "in the ending, or force a generic 'try this today' call to action. "
             "Avoid medical, legal, "
             "financial, electrical, gas, hazardous chemical, and safety-critical advice. Write original "
-            "conversational Korean for as many short scenes as the explanation needs and under 55 seconds total. Source URLs belong "
-            "in the description, not rendered into the video. Output ONLY one JSON object following this schema:\n"
+            "conversational Korean for as many short scenes as the explanation needs and under 55 seconds total. "
+            "Put source URLs only in the sources array; the renderer adds them to the video description. "
+            "Keep the description as a concise viewer-facing summary without a reference list. "
+            "Do not render source URLs into the video. Output ONLY one JSON object following this schema:\n"
             + plan_schema
         ),
         "review": common + (

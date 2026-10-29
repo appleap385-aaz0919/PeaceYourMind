@@ -300,9 +300,11 @@ def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path]
     title = content["title"].strip()
     if "#Shorts" not in title:
         title += " #Shorts"
-    source_lines = [f"- {item['title']}: {item['url']}" for item in content["sources"]]
     description = content.get("description", "오늘 바로 써볼 수 있는 생활꿀팁을 전해드립니다.").strip()
-    description += "\n\n참고 자료\n" + "\n".join(source_lines)
+    source_lines = [f"- {item['title']}: {item['url']}" for item in content["sources"]
+                    if item["url"] not in description]
+    if source_lines:
+        description += "\n\n참고 자료\n" + "\n".join(source_lines)
     metadata = {
         "date": content["date"], "slot": content.get("slot", "am"),
         "release_key": release_key(content["date"], content.get("slot", "am")),
