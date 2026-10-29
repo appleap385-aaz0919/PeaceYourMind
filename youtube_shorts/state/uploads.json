@@ -135,9 +135,11 @@
     "date_kst": "2026-10-30",
     "slot": "am",
     "release_key": "2026-10-30",
-    "status": "uploading",
+    "status": "uploaded",
     "operation_id": "d934d936d31f4cf285aaec3beec13e0f",
     "channel_id": "UCLQczQnzBHzB8jOO0sMeP2w",
+    "video_id": "_fqd5if5KTc",
+    "privacy": "private",
     "publish_at": "2026-10-30T07:00:00+09:00"
   }
 }
