@@ -42,9 +42,31 @@ class ReleaseSlotTests(unittest.TestCase):
             atomic_json(path, {"date": str(DAY), "slot": "manual", "publish_now": True,
                                "candidate_attempt": 3})
             result = m.process_request(path, root)
-            self.assertEqual(result["status"], "cancelled")
+            self.assertEqual(result["status"], "cancelled", result)
             self.assertEqual(result["candidate_attempts"], 3)
             external.assert_not_called()
+
+    def test_main_rejection_tries_next_topic(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(m, "now_kst", return_value=datetime(2026, 10, 26, 12, tzinfo=m.KST)), \
+             patch.object(m, "send_result_email", return_value=None), \
+             patch.object(m, "preflight"), \
+             patch.object(m, "validate_plan"), \
+             patch.object(m, "validate_review"), \
+             patch.object(m, "call_codex", side_effect=m.FinalReviewRejected("third topic rejected")):
+            root = Path(tmp)
+            request_path = root / "request.json"
+            atomic_json(request_path, {"date": str(DAY), "slot": "am", "publish_now": True,
+                                       "candidate_attempt": 2, "rejected_candidates": [{"candidate": 1, "topic": "first"}]})
+            second = root / "work/mailbox/runs/2026-10-26/candidates/2"
+            atomic_json(second / "main-draft.json", {"topic": "duplicate second", "scenes": []})
+            atomic_json(second / "review.json", {"approved": True})
+            atomic_json(second / "main-approve.json", {"approved": False, "reason": "duplicate topic"})
+            result = m.process_request(request_path, root)
+            self.assertEqual(result["status"], "cancelled", result)
+            saved = json.loads(request_path.read_text(encoding="utf-8"))
+            self.assertEqual(saved["candidate_attempt"], 3)
+            self.assertEqual(saved["rejected_candidates"][-1]["topic"], "duplicate second")
 
     def test_immediate_release_has_its_own_key_even_after_regular_failures(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(m, "preflight"):

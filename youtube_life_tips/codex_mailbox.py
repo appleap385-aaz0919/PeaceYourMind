@@ -776,6 +776,11 @@ def prepare_next_candidate(request: dict, reason: str, root: Path) -> bool:
     destination = day_dir / "rejected-candidates" / str(candidate)
     destination.mkdir(parents=True, exist_ok=False)
     plan_path = day_dir / "content.json"
+    if not plan_path.exists():
+        run_dir = root / "work" / "mailbox" / "runs" / release_key(request["date"], request.get("slot", "am"))
+        if candidate > 1:
+            run_dir = run_dir / "candidates" / str(candidate)
+        plan_path = run_dir / "main-draft.json"
     plan = json.loads(plan_path.read_text(encoding="utf-8")) if plan_path.exists() else {}
     request.setdefault("rejected_candidates", []).append({
         "candidate": candidate, "topic": plan.get("topic"), "reason": reason,
@@ -871,7 +876,7 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
             approved_path = call_codex(root, run_dir, "main-approve", prompts["main_approve"], web_search=True, deadline=deadline)
         approved = parse_json_response(approved_path)
         if approved.get("approved") is False:
-            raise WorkflowSkipped(str(approved.get("reason", "main session did not approve the reviewed plan")))
+            raise FinalReviewRejected(str(approved.get("reason", "main session did not approve the reviewed plan")))
         validate_plan(approved, day)
         approved = refine_editorial_plan(approved, day, root, run_dir, prompts, deadline)
         atomic_json(run_dir / "approved.json", approved)
