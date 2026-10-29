@@ -571,6 +571,7 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
         "spoken action. Never phrase a warning as an ambiguous command ending in a question mark. "
         "Introduce applicability and important exceptions before the affected action, not as an unrelated ending. "
         "Avoid tips whose jargon or exceptions cannot be explained clearly within the time limit. "
+        "Avoid topics whose correctness depends on tiny exact care symbols, icons, or printed labels in generated artwork. "
         "Every scene needs visual_action describing the same object, state, and action as the narration. "
         "Captions must communicate the action and its conditions without sound, rather than isolated keywords. "
         "The hook is a short screen headline (roughly 25 Korean characters or less), not the full opening narration; "
@@ -674,6 +675,8 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
             "Unused cells in the last row must be blank. Keep important subjects centered and fully visible. "
             "Show hands, tools, direction of movement, and the completed state clearly whenever a scene describes them. "
             "Each panel must provide visible evidence for its exact visual_action; avoid tiny hidden manipulations. "
+            "Make all grid cells equal-sized with straight, aligned row and column boundaries. "
+            "Never put a collage or nested subpanel inside a cell. "
             "No letters, subtitles, logos, watermark, borrowed references, or source images. "
             "Follow each scene's visual_action. Keep the same object/garment identity between scenes and show "
             "the correct before/after state. Do not show a prohibited action or a product being applied before its test. "
@@ -702,7 +705,12 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
             "including wet/dry state and before/after order. Do not simply repeat the earlier approval. "
             "Confirm the script matches the "
             "approved plan, source evidence is present, seasonal choice or fallback is justified, and metadata "
-            "says 720x1280, audio present, and duration no more than 55 seconds. Do not upload. Output ONLY JSON with "
+            "says 720x1280, audio present, and duration no more than 55 seconds. "
+            "For sources_verified, compare the approved source claims with the independent review.json. "
+            "A temporary failure to reopen a source already verified in review.json is not evidence that "
+            "the claim is false. Fail sources_verified if review.json did not verify it, the approved plan "
+            "introduced a new unsupported claim, or the cited evidence contradicts the final script. "
+            "Do not upload. Output ONLY JSON with "
             "approved (boolean), checks (object of booleans containing plan_matches_content, sources_verified, "
             "season_decision_valid, history_distinct, viewer_value_valid, narration_flow_valid, "
             "scenes_match_plan, captions_readable, no_visual_defects, "
@@ -829,9 +837,9 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
         if request.get("rejected_candidates"):
             retry_instruction = (
                 "\nThis is a new candidate after failed FINAL visual review. Choose a DIFFERENT topic, "
-                "with a different practical action, from all rejected topics below. Write a fresh script and "
-                "generate one new storyboard for THIS candidate. The user authorizes up to three candidates "
-                "per release, with exactly one ImageGen call per candidate. Rejected candidates: "
+                "with a different practical action, from all rejected topics below. Write a fresh script. "
+                "Do not invoke ImageGen during drafting, review, or approval; only the developer-image stage "
+                "may generate one storyboard for this candidate. Rejected candidates: "
                 + json.dumps(request["rejected_candidates"], ensure_ascii=False)
             )
             prompts = {name: prompt + retry_instruction for name, prompt in prompts.items()}
@@ -851,9 +859,10 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
         try:
             validate_review(review, len(draft["scenes"]))
         except WorkflowSkipped:
-            # Editorial problems can be revised before media generation; unverified facts cannot.
+            # An unverified or unsafe candidate needs a new topic, never publication.
             if review.get("sources_verified") is not True or review.get("safety_pass") is not True:
-                raise
+                raise FinalReviewRejected("candidate failed source or safety review: "
+                                          + "; ".join(str(issue) for issue in review.get("issues", [])))
 
         approved_path = run_dir / "main-approve.json"
         if not approved_path.is_file():
