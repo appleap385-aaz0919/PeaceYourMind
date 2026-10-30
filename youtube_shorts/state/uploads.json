@@ -156,6 +156,11 @@
     "channel_id": "UCLQczQnzBHzB8jOO0sMeP2w",
     "video_id": "aK4iYWZbtB8",
     "privacy": "private",
-    "publish_at": "2026-10-31T07:00:00+09:00"
+    "publish_at": "2026-10-31T07:00:00+09:00",
+    "success_email": {
+      "status": "attempted",
+      "run_url": "https://github.com/appleap385-aaz0919/PeaceYourMind/actions/runs/41127134768",
+      "at": "2026-10-31T05:57:19.814929+09:00"
+    }
   }
 }
