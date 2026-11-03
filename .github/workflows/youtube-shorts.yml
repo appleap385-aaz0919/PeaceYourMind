@@ -191,7 +191,8 @@ jobs:
           python youtube_shorts/scripts/upload_short.py \
             "youtube_shorts/work/$RUN_KEY/short-draft.mp4" \
             "youtube_shorts/work/$RUN_KEY/metadata.json" \
-            --publish-at-kst "$PUBLISH_AT_KST"
+            --publish-at-kst "$PUBLISH_AT_KST" \
+            --recover-late-schedule
 
       - name: Upload for a manually selected KST release
         id: upload-manual

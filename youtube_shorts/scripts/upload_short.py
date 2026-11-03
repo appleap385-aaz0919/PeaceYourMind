@@ -7,12 +7,12 @@ import argparse
 import json
 import os
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from upload_ledger import persist, save_state
-from release_schedule import release_key
+from release_schedule import release_key, upload_publish_time
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -44,6 +44,8 @@ def main() -> None:
                         default=Path(__file__).resolve().parents[1] / "token.local.json")
     parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
     parser.add_argument("--publish-at-kst", help="YYYY-MM-DDTHH:MM; auto-publish a private upload")
+    parser.add_argument("--recover-late-schedule", action="store_true",
+                        help="reschedule a delayed automatic release within four hours of its original time")
     args = parser.parse_args()
 
     if not args.video.is_file() or args.video.stat().st_size < 1024:
@@ -73,8 +75,10 @@ def main() -> None:
             parser.error("publish date must match metadata date_kst")
         if ("pm" if publish_at.hour >= 12 else "am") != slot:
             parser.error("publish time does not match metadata slot")
-        if publish_at <= datetime.now(KST) + timedelta(minutes=15):
-            parser.error("scheduled publish time must be at least 15 minutes in the future")
+        try:
+            publish_at = upload_publish_time(publish_at, datetime.now(KST), slot, args.recover_late_schedule)
+        except ValueError as exc:
+            parser.error(str(exc))
         status["publishAt"] = publish_at.isoformat()
 
     youtube = build("youtube", "v3", credentials=get_credentials(args.token), cache_discovery=False)

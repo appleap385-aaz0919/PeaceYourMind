@@ -3,12 +3,26 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 KST = ZoneInfo("Asia/Seoul")
 EVENING_CRONS = {"30 4 * * *", "15 5 * * *"}
+
+
+def upload_publish_time(requested: datetime, now: datetime, slot: str, recover_late: bool = False) -> datetime:
+    """Keep a delayed scheduled run on the same release day and away from the next slot."""
+    requested = requested.astimezone(KST)
+    now = now.astimezone(KST)
+    if requested > now + timedelta(minutes=15):
+        return requested
+    if not recover_late or now > requested + timedelta(hours=4):
+        raise ValueError("scheduled publish time must be at least 15 minutes in the future")
+    recovered = now + timedelta(minutes=30)
+    if recovered.date() != requested.date() or ("pm" if recovered.hour >= 12 else "am") != slot:
+        raise ValueError("late scheduled run cannot be recovered within its release slot")
+    return recovered
 
 
 def release_key(day: str, slot: str = "am") -> str:

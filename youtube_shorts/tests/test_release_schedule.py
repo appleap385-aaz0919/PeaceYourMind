@@ -13,6 +13,16 @@ import notify_result
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_delayed_scheduled_upload_gets_a_safe_time_in_the_same_slot(self):
+        target = datetime(2026, 11, 3, 7, tzinfo=schedule.KST)
+        now = datetime(2026, 11, 3, 8, 53, tzinfo=schedule.KST)
+        self.assertEqual(schedule.upload_publish_time(target, now, "am", True),
+                         datetime(2026, 11, 3, 9, 23, tzinfo=schedule.KST))
+        with self.assertRaises(ValueError):
+            schedule.upload_publish_time(target, now, "am")
+        with self.assertRaises(ValueError):
+            schedule.upload_publish_time(target, datetime(2026, 11, 3, 11, 1, tzinfo=schedule.KST), "am", True)
+
     def test_primary_and_retry_resolve_to_the_same_release(self):
         now = datetime(2026, 10, 26, 4, tzinfo=schedule.KST)
         am = [schedule.resolve({"schedule": cron}, now) for cron in ("30 16 * * *", "15 17 * * *")]
