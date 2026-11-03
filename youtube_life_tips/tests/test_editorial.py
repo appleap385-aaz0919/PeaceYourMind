@@ -7,9 +7,10 @@ from unittest.mock import patch
 
 from PIL import Image, ImageDraw
 from editorial import validate_script, validate_comprehension
-from render_daily import checked_text_lines, fitted_text, fonts, overlay_for_scene, validate_layout
+from render_daily import checked_text_lines, fitted_text, fonts, load_panels, overlay_for_scene, validate_layout
 import codex_mailbox as mailbox
 from reliability import atomic_json
+from video_limits import validate_duration
 
 
 class EditorialTests(unittest.TestCase):
@@ -56,6 +57,42 @@ class EditorialTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_comprehension(review, 4)
 
+    def test_eight_scenes_require_four_distinct_storyboard_rows(self):
+        plan = {"hook": "확인하세요", "spoken_script": " ".join(["설명"] * 8),
+                "scenes": [{"narration": "설명", "caption": "다음 행동", "visual_action": "행동"}
+                           for _ in range(8)],
+                "storyboard_grid": {"columns": 2, "rows": 4}}
+        validate_layout(plan)
+        plan["storyboard_grid"]["rows"] = 3
+        with self.assertRaisesRegex(ValueError, "one panel per scene"):
+            validate_layout(plan)
+
+    def test_shifted_storyboard_row_divider_does_not_leak_next_scene(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "storyboard.png"
+            board = Image.new("RGB", (1024, 1536), "white")
+            draw = ImageDraw.Draw(board)
+            boundaries = [0, 370, 745, 1095, 1536]
+            colors = ["red", "green", "blue", "yellow"]
+            for row, color in enumerate(colors):
+                draw.rectangle((0, boundaries[row] + 6, 1023, boundaries[row + 1] - 7), fill=color)
+            board.save(path)
+            panels = load_panels(path, columns=2, rows=4)
+            self.assertEqual(len(panels), 8)
+            middle_of_third_row = panels[5].getpixel((360, 640))
+            self.assertGreater(middle_of_third_row[2], 200)
+            for y in range(0, 1280, 8):
+                for x in range(0, 720, 8):
+                    red, green, blue = panels[5].getpixel((x, y))
+                    self.assertFalse(red > 200 and green > 200 and blue < 80)
+
+    def test_duration_range_is_inclusive(self):
+        validate_duration(65)
+        validate_duration(90)
+        for seconds in (64.9, 90.1):
+            with self.subTest(seconds=seconds), self.assertRaises(ValueError):
+                validate_duration(seconds)
+
     def test_caption_overflow_and_unbroken_long_word_are_rejected(self):
         draw = ImageDraw.Draw(Image.new("RGB", (720, 1280)))
         _, font, _ = fonts()
@@ -73,15 +110,17 @@ class EditorialTests(unittest.TestCase):
 
     def test_overflow_is_revised_and_reviewed_before_media_generation(self):
         plan = {"date": "2026-10-26", "season": "가을", "topic_strategy": "seasonal",
-                "topic": "test", "title": "test",
-                "viewer_value": {"common_approach": "a", "better_decision": "b", "why_it_matters": "c"},
+                "topic": "test", "title": "test", "category_choice_reason": "의류와 식품을 비교함",
+                "viewer_value": {"common_approach": "a", "better_decision": "b", "why_it_matters": "c", "new_insight": "d",
+                                 "decision_points": [{"when": "first", "do": "check", "result": "known"},
+                                                     {"when": "second", "do": "act", "result": "resolved"}]},
                 "hook": "긴 설명 " * 80, "spoken_script": "설명 다음 설명",
                 "scenes": [{"narration": n, "caption": "짧은 설명", "visual_action": "행동"} for n in ("설명", "다음 설명")],
                 "sources": [{"title": "source", "url": "https://example.org"}] * 2}
         fixed = {**plan, "hook": "먼저 확인하세요"}
-        review = dict.fromkeys(("approved", "selection_rule_pass", "originality_pass", "sources_verified",
-                               "safety_pass", "usefulness_pass", "flow_pass"), True)
-        review.update(usefulness_reason="a", flow_reason="b", viewer_recap="앞 행동 뒤 확인",
+        review = dict.fromkeys(("approved", "selection_rule_pass", "category_balance_pass", "originality_pass", "sources_verified",
+                               "safety_pass", "usefulness_pass", "novelty_pass", "density_pass", "flow_pass"), True)
+        review.update(usefulness_reason="a", novelty_reason="new", density_reason="two useful decisions", flow_reason="b", viewer_recap="앞 행동 뒤 확인",
                       transition_checks=[{"from_scene": 1, "to_scene": 2, "clear": True, "evidence": "다음 설명"}])
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -98,6 +137,43 @@ class EditorialTests(unittest.TestCase):
                 self.assertEqual(stages, ["main-refine-1", "final-review-1"])
                 mailbox.refine_editorial_plan(fixed, date(2026, 10, 26), root, root, prompts, None)
                 self.assertEqual(len(stages), 2)
+
+    def test_short_tts_narration_is_revised_before_image_generation(self):
+        day = date(2026, 10, 26)
+        plan = {"date": day.isoformat(), "season": mailbox.season_for(day),
+                "topic_strategy": "seasonal", "topic": "test", "hook": "확인하세요", "title": "test",
+                "category_choice_reason": "의류와 식품을 비교함",
+                "viewer_value": {"common_approach": "a", "better_decision": "b", "why_it_matters": "c", "new_insight": "d",
+                                 "decision_points": [{"when": "first", "do": "check", "result": "known"},
+                                                     {"when": "second", "do": "act", "result": "resolved"}]},
+                "spoken_script": "먼저 확인합니다. 다음 행동을 합니다.",
+                "scenes": [{"narration": "먼저 확인합니다.", "caption": "먼저 확인", "visual_action": "확인"},
+                           {"narration": "다음 행동을 합니다.", "caption": "다음 행동", "visual_action": "행동"}],
+                "sources": [{"title": "source", "url": "https://example.org"}] * 2}
+        revised = copy.deepcopy(plan)
+        revised["spoken_script"] = "먼저 상태를 확인합니다. 다음 행동을 하고 결과를 확인합니다."
+        revised["scenes"][0]["narration"] = "먼저 상태를 확인합니다."
+        revised["scenes"][1]["narration"] = "다음 행동을 하고 결과를 확인합니다."
+        review = dict.fromkeys(("approved", "selection_rule_pass", "category_balance_pass", "originality_pass", "sources_verified",
+                               "safety_pass", "usefulness_pass", "novelty_pass", "density_pass", "flow_pass"), True)
+        review.update(usefulness_reason="a", novelty_reason="new", density_reason="two useful decisions", flow_reason="b", viewer_recap="확인 후 행동",
+                      transition_checks=[{"from_scene": 1, "to_scene": 2, "clear": True,
+                                          "evidence": "확인한 다음 행동"}])
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            def stage(_root, run, name, _prompt, **_kwargs):
+                path = run / f"{name}.json"
+                atomic_json(path, revised if name == "main-refine-1" else review)
+                return path
+            with patch.object(mailbox, "measure_narration_duration", side_effect=[
+                    ValueError("narration duration 50.0s is outside the 65-90s Short range"), 75]) as measure, \
+                 patch.object(mailbox, "call_codex", side_effect=stage) as codex:
+                result = mailbox.refine_editorial_plan(plan, day, root, root,
+                                                       {"review": "draft.json", "main_approve": "repair"},
+                                                       None, check_duration=True)
+            self.assertEqual(result, revised)
+            self.assertEqual(measure.call_count, 2)
+            self.assertEqual(codex.call_count, 2)
 
     def test_unfixed_overflow_stops_only_after_two_repairs(self):
         with tempfile.TemporaryDirectory() as tmp:

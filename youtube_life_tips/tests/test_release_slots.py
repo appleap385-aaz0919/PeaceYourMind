@@ -105,8 +105,11 @@ class ReleaseSlotTests(unittest.TestCase):
              patch.object(m, "send_result_email", return_value="sent") as mail:
             root = Path(tmp)
             plan = {"date": str(DAY), "season": "가을", "topic_strategy": "seasonal", "topic": "tip",
+                    "category_choice_reason": "식품과 의류를 비교함",
                     "hook": "hook", "title": "tip", "viewer_value": {
-                        "common_approach": "a", "better_decision": "b", "why_it_matters": "c"},
+                        "common_approach": "a", "better_decision": "b", "why_it_matters": "c", "new_insight": "d",
+                        "decision_points": [{"when": "first", "do": "check", "result": "known"},
+                                            {"when": "second", "do": "act", "result": "resolved"}]},
                     "spoken_script": "text text text text",
                     "scenes": [{"narration": "text", "caption": "text", "visual_action": "show the action"} for _ in range(4)],
                     "sources": [{"title": "source", "url": "https://example.org"} for _ in range(2)]}
@@ -114,15 +117,15 @@ class ReleaseSlotTests(unittest.TestCase):
                 daily = root / "work/daily" / run_dir.name
                 result = plan
                 if name == "review" or name.startswith("final-review"):
-                    result = dict.fromkeys(("approved", "selection_rule_pass", "originality_pass", "sources_verified",
-                                            "safety_pass", "usefulness_pass", "flow_pass"), True)
-                    result.update(usefulness_reason="useful", flow_reason="connected")
+                    result = dict.fromkeys(("approved", "selection_rule_pass", "category_balance_pass", "originality_pass", "sources_verified",
+                                            "safety_pass", "usefulness_pass", "novelty_pass", "density_pass", "flow_pass"), True)
+                    result.update(usefulness_reason="useful", novelty_reason="new", density_reason="two decisions", flow_reason="connected")
                 elif name == "developer-image":
                     Image.new("RGB", (900, 1400), "red" if run_dir.name.endswith("-pm") else "blue").save(daily / "storyboard.png")
                     result = {"status": "ok", "built_in_imagegen_called": True}
                 elif name == "main-audit":
                     result = {"approved": True, "checks": dict.fromkeys(("plan_matches_content", "sources_verified",
-                        "season_decision_valid", "history_distinct", "viewer_value_valid", "narration_flow_valid",
+                        "season_decision_valid", "history_distinct", "viewer_value_valid", "novelty_valid", "density_valid", "narration_flow_valid",
                         "scenes_match_plan", "captions_readable", "no_visual_defects", "dimensions_valid",
                         "audio_present", "duration_valid"), True)}
                 if name == "review" or name.startswith("final-review"):
@@ -143,7 +146,8 @@ class ReleaseSlotTests(unittest.TestCase):
                     atomic_json(daily / "upload.json", {"date": str(DAY), "slot": slot,
                         "release_key": release_key(DAY, slot), "channel_id": "UC", "video_id": slot, "url": slot})
                 return subprocess.CompletedProcess(args, 0, "", "")
-            with patch.object(m, "call_codex", side_effect=stage), patch.object(m.subprocess, "run", side_effect=external), \
+            with patch.object(m, "call_codex", side_effect=stage), patch.object(m, "measure_narration_duration", return_value=75), \
+                 patch.object(m.subprocess, "run", side_effect=external), \
                  patch.object(m, "make_render_contact_sheet", return_value=root / "contact.png"):
                 for slot, hour in (("am", 3), ("pm", 15)):
                     request = root / f"{slot}.json"
@@ -152,6 +156,8 @@ class ReleaseSlotTests(unittest.TestCase):
                         result = m.process_request(request, root)
                         self.assertEqual(result["status"], "scheduled", result)
                         self.assertEqual(result["url"], slot)
+                        self.assertEqual((root / "tiktok_uploads" / str(DAY) /
+                                          f"life-tip-{DAY}-{slot}.mp4").read_bytes(), slot.encode())
                         self.assertEqual(m.process_request(request, root)["url"], slot)
             self.assertEqual(mail.call_count, 2)
 

@@ -23,7 +23,8 @@ def is_transient(error: BaseException | str) -> bool:
     return bool(re.search(r"\b(408|429|500|502|503|504)\b", text)) or any(
         word in text for word in ("timed out", "timeout", "temporarily unavailable", "connection reset",
                                  "connection aborted", "connection refused", "name resolution",
-                                 "cannot connect", "network is unreachable", "remote end closed")
+                                 "cannot connect", "network is unreachable", "remote end closed",
+                                 "selected model is at capacity")
     )
 
 

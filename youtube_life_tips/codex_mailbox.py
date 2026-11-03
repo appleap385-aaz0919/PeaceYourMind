@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import hashlib
 import json
 import logging
@@ -23,6 +24,7 @@ from resumable_upload import recovered_receipt
 from life_schedule import release_key, publish_clock, cutoff_clock, cutoff_reason
 from background_process import hidden_process_options
 from editorial import validate_script, validate_comprehension
+from video_limits import MIN_DURATION_SECONDS, MAX_DURATION_SECONDS, validate_duration
 
 
 ROOT = Path(__file__).resolve().parent
@@ -443,12 +445,22 @@ def validate_plan(plan: dict[str, Any], day: date) -> None:
         raise ValueError("daily plan date does not match today's Korea date")
     if not plan.get("topic") or not plan.get("hook") or not plan.get("title"):
         raise ValueError("daily plan must include topic, hook, and title")
+    if not isinstance(plan.get("category_choice_reason"), str) or not plan["category_choice_reason"].strip():
+        raise ValueError("daily plan must explain its category choice against recent releases")
     viewer_value = plan.get("viewer_value")
     if not isinstance(viewer_value, dict) or any(
         not isinstance(viewer_value.get(key), str) or not viewer_value[key].strip()
-        for key in ("common_approach", "better_decision", "why_it_matters")
+        for key in ("common_approach", "better_decision", "why_it_matters", "new_insight")
     ):
         raise ValueError("daily plan must explain the viewer's concrete new decision")
+    decisions = viewer_value.get("decision_points")
+    if not isinstance(decisions, list) or not 2 <= len(decisions) <= 3 or any(
+        not isinstance(point, dict) or any(
+            not isinstance(point.get(key), str) or not point[key].strip()
+            for key in ("when", "do", "result")
+        ) for point in decisions
+    ):
+        raise ValueError("daily plan needs two or three concrete, distinct decision points")
     if plan.get("season") != season_for(day):
         raise ValueError("daily plan must record the current Korean season")
     if plan.get("topic_strategy") not in {"seasonal", "evergreen_fallback"}:
@@ -475,14 +487,14 @@ def validate_review(review: dict[str, Any], scene_count: int | None = None) -> N
     except ValueError as exc:
         raise WorkflowSkipped(str(exc)) from exc
     required_checks = (
-        "approved", "selection_rule_pass", "originality_pass", "sources_verified",
-        "safety_pass", "usefulness_pass", "flow_pass",
+        "approved", "selection_rule_pass", "category_balance_pass", "originality_pass", "sources_verified",
+        "safety_pass", "usefulness_pass", "novelty_pass", "density_pass", "flow_pass",
     )
     if any(review.get(key) is not True for key in required_checks):
         raise WorkflowSkipped("review session rejected the draft or found unresolved issues")
     if any(not isinstance(review.get(key), str) or not review[key].strip()
-           for key in ("usefulness_reason", "flow_reason")):
-        raise WorkflowSkipped("review session did not explain viewer value and narration flow")
+           for key in ("usefulness_reason", "novelty_reason", "density_reason", "flow_reason")):
+        raise WorkflowSkipped("review session did not explain viewer value, density, novelty, and narration flow")
 
 
 def validate_new_storyboard(path: Path, day_dir: Path, root: Path = ROOT) -> str:
@@ -564,7 +576,13 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
         "EDITORIAL STANDARD: The viewer must understand the problem, why the action helps, the ordered steps, "
         "and the result after one viewing without reading the description. Write spoken_script as one continuous "
         "conversational Korean explanation FIRST; only then split it into scenes sized to the explanation at natural meaning boundaries, "
-        "without dropping or rewriting connective words. Choose the count from the explanation, never force four. A checklist is not proof of coherent narration. "
+        "without dropping or rewriting connective words. Choose the count from the explanation, never force four. "
+        "The 65-90 seconds must solve one concrete viewer problem with two or three distinct, supported decisions, "
+        "or a genuinely nontrivial demonstration with two or three decision points. Do not turn one 15-second "
+        "micro-tip into a long explanation. Each decision must change what the viewer does under a stated condition "
+        "and have a visible or otherwise concrete result. A prerequisite, repeated instruction, or decorative "
+        "fact is not another decision. Use only as many scenes as these decisions and their demonstration need. "
+        "A checklist is not proof of coherent narration. "
         "At each boundary explicitly carry forward any prerequisite or state: e.g. '세탁과 건조를 마친 뒤, 마른 옷에 "
         "물을 조금 뿌려보세요', not just '옷이 마르면'. Explain the cause before giving the action; do not make "
         "the viewer infer why washing helps. Replace report language such as '재처리를 검토해요' with a concrete "
@@ -584,7 +602,10 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
         '{"date":"YYYY-MM-DD","season":"봄|여름|가을|겨울",'
         '"topic_strategy":"seasonal|evergreen_fallback","fallback_reason":null,'
         '"topic":"...",'
-        '"viewer_value":{"common_approach":"...","better_decision":"...","why_it_matters":"..."},'
+        '"category_choice_reason":"...",'
+        '"viewer_value":{"common_approach":"...","better_decision":"...","why_it_matters":"...","new_insight":"...",'
+        '"decision_points":[{"when":"...","do":"...","result":"..."},'
+        '{"when":"...","do":"...","result":"..."}]},'
         '"hook":"...","title":"... #Shorts",'
         '"description":"...","spoken_script":"complete continuous narration",'
         '"storyboard_grid":{"columns":2,"rows":3},'
@@ -601,10 +622,30 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
             "to a season-neutral household tip and state why in fallback_reason; do not force seasonality. "
             "A sourced seasonal fact alone does not make a useful Short. "
             "Review work/sample/metadata.json and previous work/daily/*/content.json for content-level repetition. "
+            "Before choosing, compare at least three candidate tips from different household categories, including "
+            "clothing, cleaning, or home care when credible. Identify recent uploaded releases by their "
+            "work/daily/*/upload.json receipts and read those releases' content.json files; skipped drafts do not count. "
+            "Rank the candidates by how often an ordinary viewer faces the problem, how much time, effort, or "
+            "waste the solution saves, whether the payoff can be shown, and whether two distinct decisions are "
+            "supported by sources. Explain this comparison in category_choice_reason; do not select a niche "
+            "seasonal fact merely because it is easy to source. "
+            "If three or "
+            "more in a row are food, prefer an equally useful and well-sourced non-food tip. This is a soft preference, "
+            "never a reason to use weak advice. Food is still allowed when non-food candidates lack value, evidence, "
+            "or clear visuals. Record the compared categories and concrete selection reason in category_choice_reason. "
             "Avoid repeating the same main practical takeaway and action, or substantially the same solution sequence and hook. "
             "Before writing, identify the ordinary approach, the specific better decision a viewer can make, "
             "and why that difference matters in viewer_value. The better decision must include a sourced, "
             "non-obvious condition, threshold, exception, or technique that materially changes what the viewer does. "
+            "Write new_insight as the one-sentence takeaway a viewer is unlikely to know already. Reject an idea "
+            "if that sentence reduces to common advice when numbers, jargon, and background explanation are removed. "
+            "A surprising detail does not rescue an obvious core action. Choose a genuinely different decision, "
+            "not extra facts or an arbitrary precise number to dress up a familiar tip. "
+            "Before writing, apply a 20-second compression test: if the useful takeaway fits in 20 seconds and "
+            "the rest would only explain routine preparation, choose a richer candidate instead. Record two or "
+            "three distinct decision_points in viewer_value; each must be backed by the listed sources and taught "
+            "in the spoken script. Prefer a compact comparison, a common failure with a diagnostic branch and "
+            "correction, or a technique whose critical steps are visibly different. Do not bundle unrelated hacks. "
             "Reject generic advice such as putting fruit in a refrigerator or folding clothes into a drawer, "
             "even if supported by sources. If removing the interesting fact leaves the same obvious action, "
             "the fact is decorative and the idea fails. Repeating a household category is allowed when the "
@@ -614,7 +655,10 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
             "in the ending, or force a generic 'try this today' call to action. "
             "Avoid medical, legal, "
             "financial, electrical, gas, hazardous chemical, and safety-critical advice. Write original "
-            "conversational Korean for as many short scenes as the explanation needs and under 55 seconds total. "
+            "conversational Korean for as many short scenes as the explanation needs and 65-90 seconds total. "
+            "Aim for 72-82 seconds of spoken narration (roughly 470-530 Korean characters including spaces at the current voice rate). "
+            "Use the added time for a clear problem, cause, ordered demonstration, meaningful condition or exception, and result; "
+            "do not add generic filler or repeat the same point to reach the minimum. "
             "Put source URLs only in the sources array; the renderer adds them to the video description. "
             "Keep the description as a concise viewer-facing summary without a reference list. "
             "Do not render source URLs into the video. Output ONLY one JSON object following this schema:\n"
@@ -625,8 +669,21 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
             "support the specific claims. Compare the main practical takeaway, recommended action, solution sequence, "
             "and hook against work/sample/metadata.json and previous work/daily/*/content.json. Set originality_pass=true "
             "when the practical tip and angle are materially different; explain the closest match if false. "
+            "Check category_choice_reason against recent uploaded releases. Set category_balance_pass=true only if "
+            "the draft considered credible non-food alternatives and preferred one after a food streak when equally useful, "
+            "or explains specifically why food was the stronger supported and visualizable choice. Do not impose a hard quota. "
+            "Also reject a candidate whose category_choice_reason ignores practical problem frequency, concrete "
+            "payoff, or visual proof when a stronger well-supported candidate was available. "
             "Separately set usefulness_pass=true only if viewer_value identifies a credible, sourced, "
             "non-obvious decision that changes an ordinary viewer's action and the scenes sized to the explanation actually teach it. "
+            "Independently set novelty_pass=true only if new_insight states a specific, sourced decision or exception "
+            "that a typical viewer is unlikely to know, the decision changes an action, and it survives removing "
+            "numbers, jargon, and decorative explanation. Judge the MAIN takeaway, not a small detail. "
+            "If the takeaway is routine advice, fail novelty even when the technique is useful or the sources are sound. "
+            "Set density_pass=true only if the final spoken script teaches all two or three decision_points, "
+            "they are genuinely different choices rather than restated steps, and the viewer gains enough "
+            "usable information to justify 65-90 seconds. In density_reason name each decision and explain "
+            "what would be lost in a 20-second version. Fail a single thin tip padded with routine preparation. "
             "Generic storage, folding, or cleaning instructions fail even when factual and original. "
             "A fact is decorative if removing it leaves the same obvious action. Set flow_pass=true only "
             "after reading all scene narration strings in order as one spoken script: each scene must "
@@ -638,13 +695,14 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
             "the current Korean season or the neutral fallback is justified by lack of a useful, "
             "well-supported seasonal candidate. "
             "Check safety, content-level originality, scene structure, title, "
-            "and likely under-55-second narration by reading the script and estimating its spoken pace. "
+            "and likely 65-90-second narration by reading the script and estimating its spoken pace. "
             "Do not require a live TTS connection during this editorial review; the renderer later measures "
-            "actual TTS audio and refuses any video over 55 seconds. Flag clearly long scripts for revision. "
+            "actual TTS audio and refuses narration outside 65-90 seconds. Flag clearly short or long scripts for revision. "
             "Do not rewrite the plan. Return only JSON with fields "
-            "approved (boolean), selection_rule_pass (boolean), originality_pass (boolean), "
-            "sources_verified (boolean), safety_pass (boolean), usefulness_pass (boolean), "
-            "flow_pass (boolean), usefulness_reason (string), flow_reason (string), "
+            "approved (boolean), selection_rule_pass (boolean), category_balance_pass (boolean), originality_pass (boolean), "
+            "sources_verified (boolean), safety_pass (boolean), usefulness_pass (boolean), novelty_pass (boolean), "
+            "density_pass (boolean), flow_pass (boolean), usefulness_reason (string), novelty_reason (string), "
+            "density_reason (string), flow_reason (string), "
             "issues (array of specific findings), and reviewer_summary (string).\n\n"
             "Also return viewer_recap (retell the tip in plain Korean using ONLY what the narration and captions say; "
             "do not fill gaps using sources or description) and scene_count (integer) and transition_checks (one object per adjacent scene pair with "
@@ -659,14 +717,14 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
             "the approved final script. If the review has any unresolved factual or safety issue, return "
             "{\"approved\":false,\"reason\":\"...\"}. Do not invent new sources. Preserve verified facts, "
             "the season-first selection rule, scenes sized to the explanation, original Korean wording, and the content-level "
-            "difference from prior tips. Preserve viewer_value; do not turn the useful decision into "
+            "difference from prior tips. Preserve all viewer_value decision_points; do not turn the useful decisions into "
             "generic advice. Read all scene narrations as one spoken script and revise abrupt transitions, "
             "repetition, and a filler ending while preserving verified facts. "
             "A pre-render TTS connection failure is not a factual or safety issue. If script duration is plausible, "
-            "allow the renderer to measure actual narration and enforce the 55-second limit. "
+            "allow the local TTS duration check to measure actual narration and enforce the 65-90-second range. "
             "Output ONLY JSON. "
             "For an approved plan, use exactly the daily plan schema in the main-draft instructions, with "
-            "date, season, topic_strategy, fallback_reason, topic, viewer_value, hook, title, description, spoken_script, scenes, sources. "
+            "date, season, topic_strategy, fallback_reason, topic, category_choice_reason, viewer_value with new_insight and decision_points, hook, title, description, spoken_script, scenes, sources. "
             f"Read the draft and review files from disk: {run_dir / 'draft.json'} and {run_dir / 'review.json'}.\n"
         ),
         "developer_image": common + (
@@ -699,6 +757,11 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
             "when the practical advice materially repeats. "
             "Set viewer_value_valid=true only if the final narration teaches the specific non-obvious "
             "better decision in viewer_value, rather than a generic action with decorative facts. "
+            "Set novelty_valid=true only if the MAIN spoken takeaway still teaches the new_insight decision or "
+            "exception and does not collapse into routine advice after removing precise numbers or extra facts. "
+            "Set density_valid=true only if the final narration teaches every decision_point as a distinct "
+            "usable choice, with its condition and result, and the images show the claimed actions or outcome. "
+            "Fail a script that spends most of 65-90 seconds repeating one small action or routine setup. "
             "Set narration_flow_valid=true only if the scene narrations form one natural spoken explanation "
             "without abrupt jumps, repeated advice, or a filler ending. "
             "Reconstruct the instruction as a first-time viewer without using the description to fill gaps. "
@@ -707,14 +770,14 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
             "including wet/dry state and before/after order. Do not simply repeat the earlier approval. "
             "Confirm the script matches the "
             "approved plan, source evidence is present, seasonal choice or fallback is justified, and metadata "
-            "says 720x1280, audio present, and duration no more than 55 seconds. "
+            "says 720x1280, audio present, and duration between 65 and 90 seconds. "
             "For sources_verified, compare the approved source claims with the independent review.json. "
             "A temporary failure to reopen a source already verified in review.json is not evidence that "
             "the claim is false. Fail sources_verified if review.json did not verify it, the approved plan "
             "introduced a new unsupported claim, or the cited evidence contradicts the final script. "
             "Do not upload. Output ONLY JSON with "
             "approved (boolean), checks (object of booleans containing plan_matches_content, sources_verified, "
-            "season_decision_valid, history_distinct, viewer_value_valid, narration_flow_valid, "
+            "season_decision_valid, history_distinct, viewer_value_valid, novelty_valid, density_valid, narration_flow_valid, "
             "scenes_match_plan, captions_readable, no_visual_defects, "
             "dimensions_valid, audio_present, and duration_valid), issues (array), and summary (string).\n\n"
             "Read these files from disk before auditing: "
@@ -723,22 +786,42 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
     }
 
 
-def refine_editorial_plan(plan, day, root, run_dir, prompts, deadline):
+def measure_narration_duration(plan: dict, run_dir: Path) -> float:
+    """Measure the actual voice before spending the image generation call."""
+    from render_daily import media_duration, synthesize_segments
+
+    preview_dir = run_dir / "duration-preview"
+    preview_dir.mkdir(parents=True, exist_ok=True)
+    paths = [preview_dir / f"voice-{index}.mp3" for index in range(len(plan["scenes"]))]
+    asyncio.run(synthesize_segments(plan["scenes"], paths))
+    seconds = sum(media_duration(path) for path in paths)
+    validate_duration(seconds)
+    return seconds
+
+
+def refine_editorial_plan(plan, day, root, run_dir, prompts, deadline, *, check_duration=False):
     """Repair text/scene layout before ImageGen, then independently review the final wording."""
     from render_daily import validate_layout
 
     marker = run_dir / "editorial-ready.json"
     signature = lambda value: hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
-    if marker.exists() and json.loads(marker.read_text(encoding="utf-8")).get("plan_sha256") == signature(plan):
+    cached = json.loads(marker.read_text(encoding="utf-8")) if marker.exists() else {}
+    cached_seconds = cached.get("narration_seconds")
+    if (cached.get("plan_sha256") == signature(plan)
+            and (not check_duration or (isinstance(cached_seconds, (int, float))
+                                        and MIN_DURATION_SECONDS <= cached_seconds <= MAX_DURATION_SECONDS))):
         validate_plan(plan, day)
         validate_layout(plan)
         return plan
     for attempt in range(3):
         review = {}
+        narration_seconds = None
         atomic_json(run_dir / "approved.json", plan)
         try:
             validate_plan(plan, day)
             validate_layout(plan)
+            if check_duration:
+                narration_seconds = measure_narration_duration(plan, run_dir)
             review_prompt = prompts["review"].replace(str(run_dir / "draft.json"), str(run_dir / "approved.json"))
             review_path = call_codex(root, run_dir, f"final-review-{attempt}", review_prompt,
                                      web_search=True, deadline=deadline)
@@ -749,7 +832,12 @@ def refine_editorial_plan(plan, day, root, run_dir, prompts, deadline):
                 raise WorkflowSkipped(f"editorial repair attempts exhausted: {exc}") from exc
             atomic_json(run_dir / "editorial-feedback.json", {
                 "error": str(exc), "review": review,
-                "instruction": "Preserve facts and conditions. Split crowded scenes, improve transitions, and shorten screen wording naturally.",
+                "instruction": (
+                    "Preserve facts and conditions. Aim for 72-82 seconds of actual speech. "
+                    "Add sourced explanation, an actionable condition, or a visible result if too short; "
+                    "tighten repeated wording if too long. Do not pad. Split crowded scenes, improve "
+                    "transitions, and shorten screen wording naturally."
+                ),
             })
             repair_prompt = prompts["main_approve"] + (
                 "\nREVISION OVERRIDE: Revise the latest approved.json using editorial-feedback.json in this run folder. "
@@ -761,7 +849,8 @@ def refine_editorial_plan(plan, day, root, run_dir, prompts, deadline):
             plan = parse_json_response(repaired)
             continue
         atomic_json(run_dir / "main-approve.json", plan)
-        atomic_json(marker, {"plan_sha256": signature(plan), "review": review_path.name})
+        atomic_json(marker, {"plan_sha256": signature(plan), "review": review_path.name,
+                             "narration_seconds": narration_seconds})
         return plan
 
 
@@ -795,6 +884,16 @@ def prepare_next_candidate(request: dict, reason: str, root: Path) -> bool:
     request["candidate_attempt"] = candidate + 1
     request["attempt"] = 0
     return True
+
+
+def save_tiktok_copy(video_path: Path, day: date, slot: str, root: Path = ROOT) -> Path:
+    """Keep the approved original MP4 in a date folder for manual TikTok upload."""
+    destination = root / "tiktok_uploads" / day.isoformat() / f"life-tip-{day.isoformat()}-{slot}.mp4"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix(".mp4.tmp")
+    shutil.copy2(video_path, temporary)
+    os.replace(temporary, destination)
+    return destination
 
 
 def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
@@ -878,7 +977,12 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
         if approved.get("approved") is False:
             raise FinalReviewRejected(str(approved.get("reason", "main session did not approve the reviewed plan")))
         validate_plan(approved, day)
-        approved = refine_editorial_plan(approved, day, root, run_dir, prompts, deadline)
+        try:
+            approved = refine_editorial_plan(approved, day, root, run_dir, prompts, deadline, check_duration=True)
+        except WorkflowSkipped as exc:
+            if str(exc).startswith("editorial repair attempts exhausted:"):
+                raise FinalReviewRejected(str(exc)) from exc
+            raise
         atomic_json(run_dir / "approved.json", approved)
 
         image_result = run_dir / "developer-image.json"
@@ -924,7 +1028,7 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
 
         required_audit_checks = {
             "plan_matches_content", "sources_verified", "season_decision_valid", "history_distinct",
-            "viewer_value_valid", "narration_flow_valid",
+            "viewer_value_valid", "novelty_valid", "density_valid", "narration_flow_valid",
             "scenes_match_plan", "captions_readable", "no_visual_defects",
             "dimensions_valid", "audio_present", "duration_valid",
         }
@@ -1016,6 +1120,7 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
         else:
             raise FinalReviewRejected("final review repair attempts exhausted")
         atomic_json(audit_marker, {"video_sha256": video_hash})
+        tiktok_copy = save_tiktok_copy(video_path, day, slot, root)
         upload_args = [sys.executable, str(root / "upload_daily.py"), "--date", day.isoformat(), "--slot", slot]
         if publish_at_kst:
             if now_kst() > scheduled - ONE_OFF_MINIMUM_LEAD:
@@ -1048,6 +1153,7 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
             "scheduled_publish_at_kst": uploaded.get("scheduled_publish_at_kst"),
             "topic": approved.get("topic"),
             "season_strategy": approved.get("topic_strategy"),
+            "tiktok_mp4": str(tiktok_copy),
         }, root=root, slot=slot)
     except FinalReviewRejected as exc:
         if prepare_next_candidate(request, str(exc), root):

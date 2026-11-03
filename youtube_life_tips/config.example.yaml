@@ -3,7 +3,8 @@ channel:
   timezone: Asia/Seoul
   publish_time_kst: "07:00"
   publish_times_kst: ["07:00", "19:00"]
-  duration_seconds_max: 55
+  duration_seconds_min: 65
+  duration_seconds_max: 90
 
 automation:
   provider: codex_cli_file_mailbox_windows_task_scheduler
@@ -55,7 +56,7 @@ video:
   width: 720
   height: 1280
   fps: 15
-  visuals: one_new_generated_2x2_storyboard_per_day
+  visuals: one_new_generated_storyboard_with_one_panel_per_scene
   use_external_media: false
   background_music: none
   ffmpeg_threads: 1

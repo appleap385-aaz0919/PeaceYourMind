@@ -36,7 +36,7 @@ class UploadScheduleTests(unittest.TestCase):
                     (folder / "metadata.json").write_text(json.dumps({
                         "date": day.isoformat(), "slot": slot, "release_key": key,
                         "title": "test", "description": "test", "sources": ["https://example.org"],
-                        "width": 720, "height": 1280, "duration_seconds": 30,
+                        "width": 720, "height": 1280, "duration_seconds": 75,
                     }), encoding="utf-8")
                     with (
                         patch.object(upload_daily, "WORK", root),

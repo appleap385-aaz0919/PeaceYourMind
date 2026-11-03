@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo
 import resumable_upload
 from reliability import atomic_json, file_lock, read_receipt
 from life_schedule import release_key, publish_clock
+from video_limits import MIN_DURATION_SECONDS, MAX_DURATION_SECONDS
 
 from youtube_auth import get_access_token, load_local_config, load_oauth_client, my_channels, state_path
 
@@ -115,8 +116,8 @@ def upload_day(day: date, args: argparse.Namespace) -> None:
         raise ValueError("YouTube description must be present and at most 5000 characters")
     if metadata.get("width") != 720 or metadata.get("height") != 1280:
         raise ValueError("only the validated 720x1280 render can be uploaded")
-    if float(metadata.get("duration_seconds", 0)) <= 0 or float(metadata["duration_seconds"]) > 55.5:
-        raise ValueError("only a validated Short up to 55.5 seconds can be uploaded")
+    if not MIN_DURATION_SECONDS <= float(metadata.get("duration_seconds", 0)) <= MAX_DURATION_SECONDS:
+        raise ValueError(f"only a validated {MIN_DURATION_SECONDS}-{MAX_DURATION_SECONDS}s Short can be uploaded")
     if not channel_id or channel_id == "REPLACE_WITH_LIFE_TIPS_CHANNEL_ID":
         raise ValueError("state/config.local.json must contain the separate life-tips channel ID")
     now = datetime.now(KST)

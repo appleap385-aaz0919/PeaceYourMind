@@ -13,7 +13,7 @@ from unittest.mock import patch
 import codex_mailbox as m
 import resumable_upload as r
 import upload_daily as uploader
-from reliability import RetryableError, atomic_json, file_lock, read_receipt
+from reliability import RetryableError, atomic_json, file_lock, is_transient, read_receipt
 
 DAY = date(2026, 10, 24)
 NOW = datetime(2026, 10, 24, 3, 0, tzinfo=m.KST)
@@ -112,7 +112,7 @@ class ResumableTests(unittest.TestCase):
         (self.root / f"life-tip-{DAY}.mp4").write_bytes(b"mock-video")
         atomic_json(self.root / "metadata.json", {
             "date": str(DAY), "title": "Tip 🍀 #Shorts", "description": "audit", "sources": ["audit"],
-            "width": 720, "height": 1280, "duration_seconds": 20,
+            "width": 720, "height": 1280, "duration_seconds": 75,
         })
         output = io.TextIOWrapper(io.BytesIO(), encoding="cp949", errors="strict")
         with patch.object(uploader, "WORK", self.root.parent), \
@@ -133,6 +133,9 @@ class MailboxRecoveryTests(unittest.TestCase):
             result = m.enqueue_today(root, at=NOW)
             self.assertEqual(result["status"], "pending")
             self.assertTrue((root / "work/mailbox/inbox" / f"{DAY}.json").exists())
+
+    def test_model_capacity_is_a_retryable_error(self):
+        self.assertTrue(is_transient("Selected model is at capacity. Please try a different model."))
 
     def test_success_survives_too_close_one_off(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -201,8 +204,11 @@ class MailboxRecoveryTests(unittest.TestCase):
             atomic_json(request, {"date": str(DAY)})
             stages, renders, uploads = [], [], []
             plan = {"date": str(DAY), "season": "가을", "topic_strategy": "seasonal", "topic": "tip",
+                    "category_choice_reason": "식품과 의류를 비교함",
                     "viewer_value": {
-                        "common_approach": "문지르기", "better_decision": "불린 뒤 닦기", "why_it_matters": "쉽게 닦기",
+                        "common_approach": "문지르기", "better_decision": "불린 뒤 닦기", "why_it_matters": "쉽게 닦기", "new_insight": "얼룩의 종류에 따라 불리는 방법을 바꾼다",
+                        "decision_points": [{"when": "first", "do": "check", "result": "known"},
+                                            {"when": "second", "do": "act", "result": "resolved"}],
                     },
                     "hook": "hook", "title": "tip #Shorts", "spoken_script": "text text text text",
                     "scenes": [{"narration": "text", "caption": "text", "visual_action": "show the action"} for _ in range(4)],
@@ -211,13 +217,13 @@ class MailboxRecoveryTests(unittest.TestCase):
                 stages.append(name)
                 result = plan
                 if name == "review" or name.startswith("final-review"):
-                    result = dict.fromkeys(["approved", "selection_rule_pass", "originality_pass", "sources_verified", "safety_pass", "usefulness_pass", "flow_pass"], True)
-                    result.update({"usefulness_reason": "새 행동을 알려준다", "flow_reason": "장면이 자연스럽게 이어진다"})
+                    result = dict.fromkeys(["approved", "selection_rule_pass", "category_balance_pass", "originality_pass", "sources_verified", "safety_pass", "usefulness_pass", "novelty_pass", "density_pass", "flow_pass"], True)
+                    result.update({"usefulness_reason": "새 행동을 알려준다", "novelty_reason": "새로운 판단을 알려준다", "density_reason": "서로 다른 두 행동", "flow_reason": "장면이 자연스럽게 이어진다"})
                 if name == "developer-image":
                     Image.new("RGB", (900, 1400), "blue").save(daily / "storyboard.png")
                     result = {"status": "ok", "built_in_imagegen_called": True}
                 if name == "main-audit":
-                    keys = ["plan_matches_content", "sources_verified", "season_decision_valid", "history_distinct", "viewer_value_valid", "narration_flow_valid", "scenes_match_plan", "captions_readable", "no_visual_defects", "dimensions_valid", "audio_present", "duration_valid"]
+                    keys = ["plan_matches_content", "sources_verified", "season_decision_valid", "history_distinct", "viewer_value_valid", "novelty_valid", "density_valid", "narration_flow_valid", "scenes_match_plan", "captions_readable", "no_visual_defects", "dimensions_valid", "audio_present", "duration_valid"]
                     result = {"approved": True, "checks": dict.fromkeys(keys, True)}
                 if name == "review" or name.startswith("final-review"):
                     result.update(viewer_recap="ordered actions and outcomes", transition_checks=[
@@ -238,7 +244,8 @@ class MailboxRecoveryTests(unittest.TestCase):
                         return subprocess.CompletedProcess(args, 1, "", "HTTP 503 temporarily unavailable")
                     atomic_json(daily / "upload.json", {"date": str(DAY), "channel_id": "UC-LIFE", "video_id": "MOCK", "url": "saved"})
                 return subprocess.CompletedProcess(args, 0, "", "")
-            with patch.object(m, "call_codex", side_effect=stage), patch.object(m.subprocess, "run", side_effect=external), \
+            with patch.object(m, "call_codex", side_effect=stage), patch.object(m, "measure_narration_duration", return_value=75), \
+                 patch.object(m.subprocess, "run", side_effect=external), \
                  patch.object(m, "make_render_contact_sheet", return_value=daily / "contact.png"):
                 self.assertEqual(m.process_request(request, root)["status"], "retry_pending")
                 clock.return_value = NOW + timedelta(minutes=2)

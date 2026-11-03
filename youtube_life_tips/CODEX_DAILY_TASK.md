@@ -10,6 +10,8 @@ Work only inside `youtube_life_tips`. Do not read or use the parent Peace in Min
 
 Use the current Korean season for topic selection: spring is March-May, summer June-August, autumn September-November, and winter December-February. Search seasonal household needs first and verify the practical claim against at least two reliable sources, preferably primary sources. If no seasonal tip is both well-supported and genuinely useful, use a season-neutral household tip and explain the fallback in `fallback_reason`. Never force a seasonal angle or invent seasonal evidence. Record `topic_strategy` as `seasonal` or `evergreen_fallback`; the independent reviewer must verify the season fit or fallback reason.
 
+Compare at least three useful candidates from different household categories before choosing. Rank them by how often viewers face the problem, the time, effort, or waste saved, whether the payoff is visible, and whether two distinct decisions have source support. When the last three uploaded tips are food, prefer an equally useful, sourced non-food candidate. This is a preference, not a quota: a better-supported food tip may still win. Record the comparison in `category_choice_reason`, and have the reviewer check `category_balance_pass`.
+
 ## Content-level repetition check
 
 Before drafting, compare the idea with `work/sample/metadata.json`, `work/previews/*/content.json`, and previous `work/daily/*/content.json` records, including the other release on the same date. Exclude only the current release's own content from comparison. Avoid repeating the same actionable recommendation, central factual claim, solution steps, or distinctive hook. Repeating a broad subject, appliance, room, or category is acceptable when the practical advice and editorial angle are meaningfully different.
@@ -17,6 +19,10 @@ Before drafting, compare the idea with `work/sample/metadata.json`, `work/previe
 ## Viewer value and narration flow
 
 Record `viewer_value.common_approach`, `better_decision`, and `why_it_matters`. The better decision must be a sourced, non-obvious condition, threshold, exception, or technique that materially changes what the viewer does. Reject scripts whose takeaway is merely “put fruit in the refrigerator” or “fold clothes into a drawer,” even if those statements are correct. A fact that can be removed without changing the obvious advice is decorative, not viewer value. Repeating a broad household category is allowed when the actual advice is useful and distinct. Read all scene narrations aloud as one script: each scene must advance the explanation, transitions must make sense, and the ending must add a payoff rather than repeat the advice. The reviewer must explain and pass both `usefulness_pass` and `flow_pass` before image generation. The final audit checks both again.
+
+Record `viewer_value.new_insight` as the one-sentence new decision a viewer learns. The independent reviewer must pass `novelty_pass` separately from usefulness and explain `novelty_reason`. Reject an idea whose main action is routine after removing numbers, jargon, or decorative facts. The final audit must pass `novelty_valid` on the rendered narration before upload.
+
+The 65-90 seconds must contain two or three distinct, sourced `viewer_value.decision_points` (`when`, `do`, `result`) for one viewer problem. A complete but nontrivial technique may qualify when its critical choices and outcome are visibly demonstrable. Apply a 20-second compression test before choosing: if the useful takeaway fits in 20 seconds and the remaining time would be routine setup or repetition, choose another topic. The reviewer must pass `density_pass` with a `density_reason` naming the decisions and explaining why the longer format earns its time. The final audit must pass `density_valid` against the actual narration and frames. Do not bundle unrelated tricks merely to fill the time.
 
 ## Daily handoff
 

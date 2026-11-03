@@ -34,6 +34,8 @@ $DailyAction = New-ScheduledTaskAction -Execute $PythonwExe `
 $EveningAction = New-ScheduledTaskAction -Execute $PythonwExe `
     -Argument "`"$MailboxScript`" enqueue --today --slot pm" -WorkingDirectory $ProjectRoot
 $WatcherTrigger = New-ScheduledTaskTrigger -AtLogOn -User $UserId
+$WatcherHeartbeatTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date `
+    -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration (New-TimeSpan -Days 3650)
 $DailyTrigger = New-ScheduledTaskTrigger -Daily -At "3:00AM"
 $EveningTrigger = New-ScheduledTaskTrigger -Daily -At "3:00PM"
 $WatcherSettings = New-ScheduledTaskSettingsSet -Hidden -StartWhenAvailable:$false -WakeToRun:$false `
@@ -43,14 +45,14 @@ $DailySettings = New-ScheduledTaskSettingsSet -Hidden -StartWhenAvailable:$false
     -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
     -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 2)
 
-Register-ScheduledTask -TaskName $WatcherTaskName -Action $WatcherAction -Trigger $WatcherTrigger `
+Register-ScheduledTask -TaskName $WatcherTaskName -Action $WatcherAction -Trigger @($WatcherTrigger, $WatcherHeartbeatTrigger) `
     -Principal $Principal -Settings $WatcherSettings -Description "Low-memory local Codex life-tips mailbox watcher." -Force | Out-Null
 Register-ScheduledTask -TaskName $DailyTaskName -Action $DailyAction -Trigger $DailyTrigger `
     -Principal $Principal -Settings $DailySettings -Description "Queues today's life-tips short at 03:00 Korea time; missed starts are skipped." -Force | Out-Null
 Register-ScheduledTask -TaskName $EveningTaskName -Action $EveningAction -Trigger $EveningTrigger `
     -Principal $Principal -Settings $DailySettings -Description "Queues a distinct evening Short at 15:00 KST for 19:00 release; missed starts are skipped." -Force | Out-Null
 
-Write-Host "Registered '$WatcherTaskName' (starts at your Windows logon)."
+Write-Host "Registered '$WatcherTaskName' (starts at logon and checks every five minutes for a stopped watcher)."
 Write-Host "Registered '$DailyTaskName' (daily at 03:00 Korea time; no catch-up after a missed start)."
 Write-Host "Registered '$EveningTaskName' (daily at 15:00 Korea time; no catch-up after a missed start)."
 Write-Host "Upload cutoffs: 06:30/18:30; public releases: 07:00/19:00 KST."

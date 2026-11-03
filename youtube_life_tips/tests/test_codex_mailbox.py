@@ -37,10 +37,16 @@ class KoreanSeasonTests(unittest.TestCase):
             "season": codex_mailbox.season_for(day),
             "topic_strategy": strategy,
             "topic": "계절 생활 팁",
+            "category_choice_reason": "식품과 의류 후보를 비교해 더 유용한 방법을 선택함",
             "viewer_value": {
                 "common_approach": "얼룩을 힘주어 문지른다",
                 "better_decision": "물로 불린 뒤 닦는다",
                 "why_it_matters": "얼룩을 쉽게 제거할 수 있다",
+                "new_insight": "얼룩의 종류에 따라 세척법을 바꾼다",
+                "decision_points": [
+                    {"when": "얼룩이 말랐을 때", "do": "먼저 불린다", "result": "문지르는 힘이 줄어든다"},
+                    {"when": "얼룩이 불었을 때", "do": "부드럽게 닦는다", "result": "섬유 손상을 줄인다"},
+                ],
             },
             "hook": "바로 써보세요",
             "title": "생활 팁 #Shorts",
@@ -69,6 +75,9 @@ class KoreanSeasonTests(unittest.TestCase):
     def test_plan_requires_a_specific_viewer_decision(self) -> None:
         day = date(2026, 10, 22)
         plan = self.make_plan(day, "seasonal")
+        del plan["viewer_value"]["new_insight"]
+        with self.assertRaisesRegex(ValueError, "concrete new decision"):
+            codex_mailbox.validate_plan(plan, day)
         plan["viewer_value"] = {"common_approach": "냉장 보관", "better_decision": "", "why_it_matters": "신선도"}
         with self.assertRaisesRegex(ValueError, "concrete new decision"):
             codex_mailbox.validate_plan(plan, day)
@@ -76,12 +85,21 @@ class KoreanSeasonTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "concrete new decision"):
             codex_mailbox.validate_plan(plan, day)
 
+    def test_plan_rejects_a_single_padded_decision(self) -> None:
+        day = date(2026, 10, 22)
+        plan = self.make_plan(day, "seasonal")
+        plan["viewer_value"]["decision_points"] = [{"when": "과일이 남으면", "do": "냉장한다", "result": "보관된다"}]
+        with self.assertRaisesRegex(ValueError, "two or three"):
+            codex_mailbox.validate_plan(plan, day)
+
     def test_review_requires_usefulness_and_narration_flow(self) -> None:
         review = {
-            "approved": True, "selection_rule_pass": True, "originality_pass": True,
+            "approved": True, "selection_rule_pass": True, "category_balance_pass": True, "originality_pass": True,
             "sources_verified": True, "safety_pass": True,
-            "usefulness_pass": False, "flow_pass": True,
+            "usefulness_pass": False, "novelty_pass": True, "density_pass": True, "flow_pass": True,
             "usefulness_reason": "냉장고에 넣으라는 일반적인 조언뿐이다",
+            "novelty_reason": "새로운 판단이 있다",
+            "density_reason": "서로 다른 두 판단이 있다",
             "flow_reason": "네 장면이 자연스럽게 이어진다",
             "viewer_recap": "먼저 세탁하고 말린 뒤 물을 뿌려 결과를 확인한다",
             "transition_checks": [{"from_scene": i, "to_scene": i + 1, "clear": True, "evidence": "앞 행동을 끝낸 뒤 다음 행동을 한다"} for i in range(1, 4)],
@@ -94,6 +112,18 @@ class KoreanSeasonTests(unittest.TestCase):
             codex_mailbox.validate_review(review)
         review["flow_pass"] = True
         codex_mailbox.validate_review(review)
+        review["density_pass"] = False
+        with self.assertRaises(codex_mailbox.WorkflowSkipped):
+            codex_mailbox.validate_review(review)
+        review["density_pass"] = True
+        review["novelty_pass"] = False
+        with self.assertRaises(codex_mailbox.WorkflowSkipped):
+            codex_mailbox.validate_review(review)
+        review["novelty_pass"] = True
+        review["novelty_reason"] = None
+        with self.assertRaises(codex_mailbox.WorkflowSkipped):
+            codex_mailbox.validate_review(review)
+        review["novelty_reason"] = "새로운 판단이 있다"
         review["usefulness_reason"] = None
         with self.assertRaises(codex_mailbox.WorkflowSkipped):
             codex_mailbox.validate_review(review)
@@ -119,8 +149,15 @@ class PromptConstructionTests(unittest.TestCase):
         self.assertIn("approved.json", prompts["developer_image"])
         self.assertIn("content.json", prompts["main_audit"])
         self.assertIn("usefulness_pass", prompts["review"])
+        self.assertIn("novelty_pass", prompts["review"])
+        self.assertIn("density_pass", prompts["review"])
+        self.assertIn("20-second compression test", prompts["main_draft"])
         self.assertIn("flow_pass", prompts["review"])
+        self.assertIn("category_balance_pass", prompts["review"])
+        self.assertIn("three candidate tips from different household categories", prompts["main_draft"])
         self.assertIn("viewer_value_valid", prompts["main_audit"])
+        self.assertIn("novelty_valid", prompts["main_audit"])
+        self.assertIn("density_valid", prompts["main_audit"])
         self.assertIn("narration_flow_valid", prompts["main_audit"])
 
     def test_storyboard_validator_does_not_compare_the_image_to_itself(self) -> None:

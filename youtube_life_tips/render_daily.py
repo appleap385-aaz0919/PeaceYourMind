@@ -17,6 +17,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from life_schedule import release_key
 from background_process import hidden_process_options
 from editorial import validate_script
+from video_limits import MIN_DURATION_SECONDS, MAX_DURATION_SECONDS, validate_duration
 
 
 ROOT = Path(__file__).resolve().parent
@@ -101,11 +102,35 @@ def load_panels(path: Path, columns: int = 2, rows: int = 2) -> list[Image.Image
     width, height = storyboard.size
     if width < 768 or height < 1152 or height / width < 1.35:
         raise ValueError("storyboard must be a high-resolution portrait grid")
+    boundaries = [0]
+    for row in range(1, rows):
+        expected = row * height // rows
+        search = max(12, height // rows // 5)
+        step = max(1, width // 128)
+        white_rows = []
+        for y in range(max(1, expected - search), min(height - 1, expected + search)):
+            samples = [storyboard.getpixel((x, y)) for x in range(0, width, step)]
+            ratio = sum(min(pixel) >= 235 for pixel in samples) / len(samples)
+            if ratio >= 0.9:
+                white_rows.append(y)
+        groups = []
+        for y in white_rows:
+            if not groups or y > groups[-1][-1] + 1:
+                groups.append([y])
+            else:
+                groups[-1].append(y)
+        seams = [group for group in groups if len(group) >= 3]
+        if seams:
+            seam = min(seams, key=lambda group: abs((group[0] + group[-1]) / 2 - expected))
+            boundaries.append((seam[0] + seam[-1]) // 2)
+        else:
+            boundaries.append(expected)
+    boundaries.append(height)
     gutter_x, gutter_y = max(4, round(width * 0.008)), max(4, round(height * 0.005))
     boxes = [(col * width // columns + (gutter_x if col else 0),
-              row * height // rows + (gutter_y if row else 0),
+              boundaries[row] + (gutter_y if row else 0),
               (col + 1) * width // columns - (gutter_x if col < columns - 1 else 0),
-              (row + 1) * height // rows - (gutter_y if row < rows - 1 else 0))
+              boundaries[row + 1] - (gutter_y if row < rows - 1 else 0))
              for row in range(rows) for col in range(columns)]
     panels = []
     for box in boxes:
@@ -177,10 +202,12 @@ def validate_layout(content):
     grid = content.get("storyboard_grid", {"columns": 2, "rows": math.ceil(len(content["scenes"]) / 2)})
     if any(type(grid.get(key)) is not int or grid[key] < 1 for key in ("columns", "rows")):
         raise ValueError("storyboard_grid dimensions must be positive integers")
+    if grid != {"columns": 2, "rows": math.ceil(len(content["scenes"]) / 2)}:
+        raise ValueError("storyboard_grid must have two columns and one panel per scene")
     for i, scene in enumerate(content["scenes"]):
         index = scene.get("panel_index", i)
-        if type(index) is not int or not 0 <= index < grid["columns"] * grid["rows"]:
-            raise ValueError("Every scene must have an existing storyboard panel")
+        if type(index) is not int or index != i:
+            raise ValueError("Every scene must use its own row-major storyboard panel")
 
 
 def overlay_for_scene(
@@ -239,8 +266,7 @@ def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path]
         starts.append(cursor)
         cursor += length
     total = cursor
-    if total <= 0 or total > 55:
-        raise ValueError(f"narration duration {total:.1f}s is outside the 1-55s Short limit")
+    validate_duration(total)
 
     voice = day_dir / "narration.mp3"
     args = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y"]
@@ -295,7 +321,9 @@ def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path]
 
     actual_width, actual_height = dimensions(output)
     actual_duration = media_duration(output)
-    if actual_width != WIDTH or actual_height != HEIGHT or actual_duration > 55.5 or not has_audio(output):
+    if (actual_width != WIDTH or actual_height != HEIGHT
+            or not MIN_DURATION_SECONDS <= actual_duration <= MAX_DURATION_SECONDS
+            or not has_audio(output)):
         raise RuntimeError("render validation failed: incorrect dimensions/duration or missing audio")
     title = content["title"].strip()
     if "#Shorts" not in title:
