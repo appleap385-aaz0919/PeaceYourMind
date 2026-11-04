@@ -258,9 +258,11 @@
     "date_kst": "2026-11-04",
     "slot": "pm",
     "release_key": "2026-11-04-pm",
-    "status": "uploading",
+    "status": "uploaded",
     "operation_id": "dac8f537453748ddb78be4c9bb36b727",
     "channel_id": "UCLQczQnzBHzB8jOO0sMeP2w",
+    "video_id": "T7mx3yhhD3A",
+    "privacy": "private",
     "publish_at": "2026-11-04T21:52:23.724821+09:00"
   }
 }
