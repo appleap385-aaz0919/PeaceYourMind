@@ -370,9 +370,11 @@
     "date_kst": "2026-11-08",
     "slot": "am",
     "release_key": "2026-11-08",
-    "status": "uploading",
+    "status": "uploaded",
     "operation_id": "e701185b1edb4364aff9d62c6a82090d",
     "channel_id": "UCLQczQnzBHzB8jOO0sMeP2w",
+    "video_id": "AGHJfG-SKt4",
+    "privacy": "private",
     "publish_at": "2026-11-08T07:00:00+09:00"
   }
 }
