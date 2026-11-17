@@ -482,9 +482,11 @@
     "date_kst": "2026-11-18",
     "slot": "am",
     "release_key": "2026-11-18",
-    "status": "uploading",
+    "status": "uploaded",
     "operation_id": "b3b1aa4741464702aff72f865b98490a",
     "channel_id": "UCLQczQnzBHzB8jOO0sMeP2w",
+    "video_id": "3g2q2Z3hRD0",
+    "privacy": "private",
     "publish_at": "2026-11-18T09:06:01.116926+09:00"
   }
 }
