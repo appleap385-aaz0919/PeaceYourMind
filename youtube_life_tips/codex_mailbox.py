@@ -181,8 +181,8 @@ def retry_report(day: date, request: dict, error: BaseException, root: Path, *, 
     maximum = MAX_PREFLIGHT_ATTEMPTS if preflight else MAX_ATTEMPTS
     delay = min(60 * (3 ** (attempt - 1)), 30 * 60)
     next_attempt = now_kst() + timedelta(seconds=delay)
-    cutoff = (datetime.fromisoformat(request["created_at_kst"]) + timedelta(hours=2)
-              if request.get("publish_now") else
+    cutoff = (datetime.fromisoformat(request.get("created_at_kst") or now_kst().isoformat()) + timedelta(hours=2)
+              if request.get("publish_now") or request.get("render_only") else
               parse_publish_at(day, request["publish_at_kst"]) - ONE_OFF_MINIMUM_LEAD
               if request.get("publish_at_kst") else datetime.combine(day, cutoff_clock(slot), tzinfo=KST))
     if attempt >= maximum or next_attempt >= cutoff:

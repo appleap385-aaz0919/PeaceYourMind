@@ -208,6 +208,15 @@ class MailboxRecoveryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, patch.object(m, "now_kst", return_value=NOW.replace(hour=6, minute=29, second=30)):
             self.assertEqual(m.retry_report(DAY, {"attempt": 1}, TimeoutError(), Path(tmp))["status"], "failed")
 
+    def test_manual_render_retry_has_no_scheduled_cutoff(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(m, "now_kst", return_value=NOW.replace(hour=23)):
+            root = Path(tmp)
+            request = {"slot": "manual", "render_only": True, "attempt": 1}
+            pending = m.retry_report(DAY, request, TimeoutError("stage timeout"), root)
+            self.assertEqual(pending["status"], "retry_pending")
+            request.update(created_at_kst=NOW.replace(hour=20).isoformat())
+            self.assertEqual(m.retry_report(DAY, request, TimeoutError(), root)["status"], "failed")
+
     def test_restart_preserves_pending_retry_request(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(m, "now_kst", return_value=NOW):
             root = Path(tmp)
