@@ -252,7 +252,7 @@ class EditorialTests(unittest.TestCase):
             self.assertEqual(measure.call_count, 2)
             self.assertEqual(codex.call_count, 2)
 
-    def test_unfixed_overflow_stops_only_after_two_repairs(self):
+    def test_unchanged_editorial_repair_stops_without_spending_a_second_call(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             broken = {"date": "2026-10-26"}
@@ -262,4 +262,4 @@ class EditorialTests(unittest.TestCase):
                 with self.assertRaisesRegex(mailbox.WorkflowSkipped, "repair attempts exhausted"):
                     mailbox.refine_editorial_plan(broken, date(2026, 10, 26), root, root,
                                                  {"review": "review", "main_approve": "repair"}, None)
-                self.assertEqual(call.call_count, 2)
+                self.assertEqual(call.call_count, 1)
