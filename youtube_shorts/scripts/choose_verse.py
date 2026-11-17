@@ -76,7 +76,7 @@ def make_manifest(day: date, verses: list[dict], slot: str = "am") -> dict:
             "android": "https://play.google.com/store/apps/details?id=io.github.appleap385.peaceinmind",
         },
         "status": "draft",
-        "publish_blockers": ["configure Google Cloud TTS and channel-owner OAuth"],
+        "publish_blockers": ["review Edge TTS narration and configure channel-owner OAuth"],
     }
 
 

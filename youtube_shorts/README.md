@@ -19,13 +19,12 @@ The same URLs are included in descriptions for reference, with a clear "프로�
 
 ## Render a local draft
 
-Python 3.12+, FFmpeg/FFprobe, a Korean font, and Google Cloud Text-to-Speech Application Default Credentials are required. Google Cloud currently offers Korean Neural2 voices; the default is the low male `ko-KR-Neural2-C` voice at a slower reading rate and lower pitch, with no background music.
+Python 3.12+, FFmpeg/FFprobe, a Korean font, and Internet access for Edge TTS are required. The default Korean male voice is `ko-KR-InJoonNeural`, with slower segment pacing and a small downward pitch adjustment. No Google Cloud TTS service account, billing activation, or API key is used. `PYM_TTS_VOICE` or `--voice` can select another Edge voice.
 
 From the repository root:
 
 ```powershell
 python -m pip install -r youtube_shorts/requirements.txt
-gcloud auth application-default login
 python youtube_shorts/scripts/choose_verse.py --date 2026-10-22 --output-dir youtube_shorts/work/2026-10-22
 python youtube_shorts/scripts/render_short.py youtube_shorts/work/2026-10-22/2026-10-22.json
 python youtube_shorts/scripts/build_metadata.py youtube_shorts/work/2026-10-22/2026-10-22.json
@@ -54,10 +53,10 @@ An intent without a completion receipt blocks a fresh upload and produces an att
 
 ## Daily automation
 
-The runner is `.github/workflows/youtube-shorts.yml`, separate from the app and video-data workflows. Morning production/retry remain at 01:30/02:15 KST for 07:00 publication. Afternoon production/retry run at 13:30/14:15 KST for an additional 19:00 publication. Their UTC crons are `30 16 * * *`, `15 17 * * *`, `30 4 * * *`, and `15 5 * * *`. Each scheduled run resolves its slot from the triggering cron, checks that release's ledger, and skips completed uploads. Scheduled runs require `PYM_TTS_SERVICE_ACCOUNT_JSON`, `PYM_YOUTUBE_TOKEN_JSON`, and `PYM_SMTP_APP_PASSWORD`; the workflow stops before rendering if any are missing. The YouTube token must contain the owner's `youtube.upload` scope.
+The runner is `.github/workflows/youtube-shorts.yml`, separate from the app and video-data workflows. Morning production/retry remain at 01:30/02:15 KST for 07:00 publication. Afternoon production/retry run at 13:30/14:15 KST for an additional 19:00 publication. Their UTC crons are `30 16 * * *`, `15 17 * * *`, `30 4 * * *`, and `15 5 * * *`. Each scheduled run resolves its slot from the triggering cron, checks that release's ledger, and skips completed uploads. Scheduled runs require `PYM_YOUTUBE_TOKEN_JSON` and `PYM_SMTP_APP_PASSWORD`; the workflow stops before rendering if any are missing. The YouTube token must contain the owner's `youtube.upload` scope.
 
 Release status is sent from `appleap385@gmail.com` to `aaz0919@naver.com` through Gmail SMTP. A durable `success_email` entry is committed before sending a success message and marked sent afterward. A retry with the same release key does not resend it; morning and evening each receive their own result. An uncertain SMTP send is not repeated automatically. Store the Gmail App Password only as `PYM_SMTP_APP_PASSWORD`. Success messages contain the Short link; failures include the workflow link.
 
 For Google OAuth, set the consent screen publishing status to Production before relying on the scheduled refresh token. In Testing mode, YouTube-scope authorizations for external users expire after seven days.
 
-Google Cloud requires billing to be enabled for Text-to-Speech. The Neural2 tier currently includes one million input characters per month, then costs US$16 per million characters. A single short verse each day is far below that monthly allowance. See [official pricing](https://cloud.google.com/text-to-speech/pricing?hl=ko) and the [Korean voice list](https://docs.cloud.google.com/text-to-speech/docs/list-voices-and-types?hl=ko).
+Edge TTS uses the online Edge read-aloud service through the third-party `edge-tts` package. It does not use the paid Azure Speech API or fall back to Google Cloud TTS. Service changes or throttling may interrupt synthesis; a failure stops the run before upload. Keep the Google Cloud project and YouTube Data API/OAuth configuration needed for YouTube uploads. The old `PYM_TTS_SERVICE_ACCOUNT_JSON` secret is no longer read by this workflow.

@@ -33,7 +33,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      PYM_TTS_SERVICE_ACCOUNT_JSON: ${{ secrets.PYM_TTS_SERVICE_ACCOUNT_JSON }}
       PYM_YOUTUBE_TOKEN_JSON: ${{ secrets.PYM_YOUTUBE_TOKEN_JSON }}
       PYM_SMTP_APP_PASSWORD: ${{ secrets.PYM_SMTP_APP_PASSWORD }}
       PYM_PERSIST_LEDGER: 'true'
@@ -59,7 +58,7 @@ jobs:
         shell: bash
         run: python3 youtube_shorts/scripts/check_upload_ledger.py
 
-      - name: Check Google TTS and YouTube OAuth credentials
+      - name: Check YouTube OAuth credentials and Edge TTS setup
         id: credentials
         if: steps.ledger.outputs.already_uploaded != 'true'
         env:
@@ -67,12 +66,7 @@ jobs:
           SMTP_APP_PASSWORD: ${{ secrets.PYM_SMTP_APP_PASSWORD }}
         shell: bash
         run: |
-          if [[ -n "$PYM_TTS_SERVICE_ACCOUNT_JSON" ]]; then
-            echo "tts=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "tts=false" >> "$GITHUB_OUTPUT"
-            echo "Rendering skipped: add the Google TTS service account secret first."
-          fi
+          echo "tts=true" >> "$GITHUB_OUTPUT" # Edge TTS needs no billing account or API key.
           if [[ -n "$YOUTUBE_TOKEN_JSON" ]]; then
             echo "youtube=true" >> "$GITHUB_OUTPUT"
           else
@@ -81,7 +75,6 @@ jobs:
           fi
           if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then
             missing=()
-            [[ -n "$PYM_TTS_SERVICE_ACCOUNT_JSON" ]] || missing+=("PYM_TTS_SERVICE_ACCOUNT_JSON")
             [[ -n "$YOUTUBE_TOKEN_JSON" ]] || missing+=("PYM_YOUTUBE_TOKEN_JSON")
             [[ -n "$SMTP_APP_PASSWORD" ]] || missing+=("PYM_SMTP_APP_PASSWORD")
             if (( ${#missing[@]} )); then
@@ -143,22 +136,18 @@ jobs:
       - name: Load credentials into ignored local files
         if: steps.ledger.outputs.already_uploaded != 'true' && steps.credentials.outputs.tts == 'true'
         env:
-          TTS_JSON: ${{ secrets.PYM_TTS_SERVICE_ACCOUNT_JSON }}
           YOUTUBE_JSON: ${{ secrets.PYM_YOUTUBE_TOKEN_JSON }}
         run: |
           python - <<'PY'
           import os
           from pathlib import Path
 
-          tts = Path(os.environ["RUNNER_TEMP"]) / "pym-tts-service-account.json"
-          tts.write_text(os.environ["TTS_JSON"], encoding="utf-8")
           youtube_json = os.environ.get("YOUTUBE_JSON", "")
           if youtube_json.strip():
               Path("youtube_shorts/token.local.json").write_text(
                   youtube_json, encoding="utf-8"
               )
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
-              env.write(f"GOOGLE_APPLICATION_CREDENTIALS={tts}\n")
               font = Path(os.environ["RUNNER_TEMP"]) / "pym-fonts" / "NotoSansCJKkr-Regular.otf"
               env.write(f"PYM_KOREAN_FONT={font}\n")
           PY

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import math
 import os
@@ -15,7 +16,7 @@ from PIL import Image, ImageDraw, ImageFont
 from release_schedule import release_key
 
 WIDTH, HEIGHT, FPS = 1080, 1920, 30
-VOICE_NAME = os.environ.get("PYM_TTS_VOICE", "ko-KR-Neural2-C")
+VOICE_NAME = os.environ.get("PYM_TTS_VOICE", "ko-KR-InJoonNeural")
 
 
 def default_ffmpeg() -> str:
@@ -182,24 +183,20 @@ def select_reading_tab(result: Image.Image, reader_screen: Path) -> None:
 
 def synthesize_text(text: str, output: Path, voice_name: str, speaking_rate: float = 0.9) -> None:
     try:
-        from google.cloud import texttospeech
+        import edge_tts
     except ImportError as error:
-        raise RuntimeError(
-            "Install youtube_shorts/requirements.txt to use Google Cloud Text-to-Speech"
-        ) from error
+        raise RuntimeError("Install youtube_shorts/requirements.txt to use Edge TTS") from error
 
-    client = texttospeech.TextToSpeechClient()
-    response = client.synthesize_speech(
-        input=texttospeech.SynthesisInput(text=" ".join(text.splitlines()).strip()),
-        voice=texttospeech.VoiceSelectionParams(language_code="ko-KR", name=voice_name),
-        audio_config=texttospeech.AudioConfig(
-            audio_encoding=texttospeech.AudioEncoding.MP3,
-            speaking_rate=speaking_rate,
-            pitch=-3.0,
-        ),
-    )
+    # Keep the existing segment pacing; Edge uses a percentage rather than a multiplier.
+    rate = f"{round((speaking_rate - 1) * 100):+d}%"
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_bytes(response.audio_content)
+
+    async def save() -> None:
+        await edge_tts.Communicate(
+            " ".join(text.splitlines()).strip(), voice_name, rate=rate, pitch="-5Hz",
+        ).save(str(output))
+
+    asyncio.run(save())
 
 
 def media_duration(path: Path, ffprobe: str) -> float:
@@ -261,7 +258,7 @@ def main() -> None:
     parser.add_argument("--ffmpeg", default=default_ffmpeg())
     parser.add_argument("--ffprobe", default="ffprobe")
     parser.add_argument("--voice", default=VOICE_NAME,
-                        help="Google Cloud TTS voice name (default: ko-KR-Neural2-C, low male voice)")
+                        help="Edge TTS voice name (default: ko-KR-InJoonNeural, Korean male voice)")
     parser.add_argument("--output", type=Path, help="Output MP4 path")
     args = parser.parse_args()
 
