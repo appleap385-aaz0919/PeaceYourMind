@@ -1,0 +1,10 @@
+{
+  "repository": "https://github.com/epoko77-ai/im-not-ai",
+  "ref": "v2.3.2",
+  "commit": "bad4ef0a2b514318b2278b65cb4545414ad84d82",
+  "upstream_path": "codex/skills/humanize-korean",
+  "scope": "project",
+  "reference_source": "skills/humanize-korean/references",
+  "reference_files": 14,
+  "local_modifications": "None; shared reference symlink materialized as local files."
+}

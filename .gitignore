@@ -95,3 +95,8 @@ keystore.properties*
 
 # scripts/measure_banner.py 가 찍은 스크린샷 — 산출물이다
 .measure/
+
+# Local production outputs and narration diagnostics are not source files.
+/work/
+/_workspace/
+/youtube_life_tips/_workspace/

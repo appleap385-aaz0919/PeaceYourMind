@@ -5,8 +5,8 @@ from datetime import date
 from pathlib import Path
 from unittest.mock import patch
 
-from PIL import Image, ImageDraw
-from editorial import validate_script, validate_comprehension
+from PIL import Image, ImageChops, ImageDraw
+from editorial import demo_storyboard_grid, validate_script, validate_comprehension
 from render_daily import checked_text_lines, fitted_text, fonts, load_panels, overlay_for_scene, validate_layout
 import codex_mailbox as mailbox
 from reliability import atomic_json
@@ -51,11 +51,27 @@ class EditorialTests(unittest.TestCase):
                 "storyboard_grid": {"columns": 2, "rows": 3}}
         validate_script(plan)
         validate_layout(plan)
-        review = {"viewer_recap": "앞 행동을 마친 뒤 다음 행동", "transition_checks": [
+        review = {"viewer_recap": "앞 행동을 마친 뒤 다음 행동", "scene_count": 6, "transition_checks": [
             {"from_scene": i, "to_scene": i + 1, "clear": True, "evidence": "앞 행동을 마친 뒤"} for i in range(1, 6)]}
         validate_comprehension(review, 6)
         with self.assertRaises(ValueError):
             validate_comprehension(review, 4)
+
+    def test_review_scene_count_must_match_the_approved_plan(self):
+        review = {"viewer_recap": "앞 행동을 마친 뒤 다음 행동", "scene_count": 9,
+                  "transition_checks": [
+                      {"from_scene": i, "to_scene": i + 1, "clear": True, "evidence": "다음 행동"}
+                      for i in range(1, 10)]}
+        with self.assertRaisesRegex(ValueError, "scene_count must match"):
+            validate_comprehension(review, 10)
+
+    def test_latest_editorial_review_comes_from_ready_marker(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            (run_dir / "review.json").write_text("{}", encoding="utf-8")
+            (run_dir / "final-review-2.json").write_text("{}", encoding="utf-8")
+            atomic_json(run_dir / "editorial-ready.json", {"review": "final-review-2.json"})
+            self.assertEqual(mailbox.latest_editorial_review_path(run_dir), (run_dir / "final-review-2.json").resolve())
 
     def test_eight_scenes_require_four_distinct_storyboard_rows(self):
         plan = {"hook": "확인하세요", "spoken_script": " ".join(["설명"] * 8),
@@ -66,6 +82,31 @@ class EditorialTests(unittest.TestCase):
         plan["storyboard_grid"]["rows"] = 3
         with self.assertRaisesRegex(ValueError, "one panel per scene"):
             validate_layout(plan)
+
+    def test_twelve_photo_scenes_keep_their_own_panel_and_full_action_area(self):
+        grid = demo_storyboard_grid(12)
+        self.assertEqual(grid, {"columns": 3, "rows": 4})
+        plan = {"hook": "헌 티셔츠가 가방으로", "storyboard_grid": grid,
+                "scenes": [{"heading": "앞뒤 조각을 묶어요", "caption": "같은 위치의 앞뒤 조각을 묶어요"}
+                           for _ in range(12)]}
+        validate_layout(plan)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "storyboard.png"
+            board = Image.new("RGB", (1086, 1448), "white")
+            draw = ImageDraw.Draw(board)
+            colors = [(40 + i * 12, 70, 120) for i in range(12)]
+            for i, color in enumerate(colors):
+                row, column = divmod(i, 3)
+                draw.rectangle((column * 362 + 6, row * 362 + 6,
+                                (column + 1) * 362 - 7, (row + 1) * 362 - 7), fill=color)
+            board.save(path)
+            panels = load_panels(path, **grid)
+            self.assertEqual(len(panels), 12)
+            for i, panel in enumerate(panels):
+                self.assertEqual(panel.getpixel((360, 614)), colors[i])
+                frame = overlay_for_scene(panel, "첫 번째 줄\n두 번째 줄\n세 번째 줄\n네 번째 줄", "제목", i,
+                                          *fonts(), 12, "앞뒤 조각을 묶어요")
+                self.assertIsNone(ImageChops.difference(panel, frame).crop((24, 278, 696, 950)).getbbox())
 
     def test_shifted_storyboard_row_divider_does_not_leak_next_scene(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -86,10 +127,29 @@ class EditorialTests(unittest.TestCase):
                     red, green, blue = panels[5].getpixel((x, y))
                     self.assertFalse(red > 200 and green > 200 and blue < 80)
 
+    def test_three_line_caption_does_not_hide_the_bottom_of_the_instruction(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "storyboard.png"
+            panel = Image.new("RGB", (500, 400), "blue")
+            ImageDraw.Draw(panel).rectangle((0, 350, 499, 399), fill="red")
+            board = Image.new("RGB", (1000, 2000))
+            for row in range(5):
+                for x in (0, 500):
+                    board.paste(panel, (x, row * 400))
+            board.save(path)
+            scene = load_panels(path, columns=2, rows=5)[0]
+            frame = overlay_for_scene(scene, "첫 번째 줄\n두 번째 줄\n세 번째 줄", "짧은 제목", 0, *fonts())
+            def visible_red(image):
+                return sum(count for count, (red, green, blue) in image.getcolors(image.width * image.height)
+                           if red >= 200 and green <= 30 and blue <= 30)
+            before, after = visible_red(scene), visible_red(frame)
+            self.assertGreater(before, 1000)
+            self.assertGreaterEqual(after, before * 0.9)
+
     def test_duration_range_is_inclusive(self):
         validate_duration(65)
         validate_duration(90)
-        for seconds in (64.9, 90.1):
+        for seconds in (50, 60, 64.9, 90.1):
             with self.subTest(seconds=seconds), self.assertRaises(ValueError):
                 validate_duration(seconds)
 
@@ -119,8 +179,12 @@ class EditorialTests(unittest.TestCase):
                 "sources": [{"title": "source", "url": "https://example.org"}] * 2}
         fixed = {**plan, "hook": "먼저 확인하세요"}
         review = dict.fromkeys(("approved", "selection_rule_pass", "category_balance_pass", "originality_pass", "sources_verified",
-                               "safety_pass", "usefulness_pass", "novelty_pass", "density_pass", "flow_pass"), True)
-        review.update(usefulness_reason="a", novelty_reason="new", density_reason="two useful decisions", flow_reason="b", viewer_recap="앞 행동 뒤 확인",
+                               "safety_pass", "usefulness_pass", "novelty_pass", "density_pass", "flow_pass", "naturalness_pass"), True)
+        review.update(usefulness_reason="a", novelty_reason="new", density_reason="two useful decisions", flow_reason="b", naturalness_reason="natural speech",
+                      problem_relevance_score=4, practical_payoff_score=4, surprise_score=4, watch_worthiness_score=4,
+                      problem_relevance_reason="common", practical_payoff_reason="useful", surprise_reason="new",
+                      watch_worthiness_reason="worthwhile", viewer_recap="앞 행동 뒤 확인",
+                      scene_count=2,
                       transition_checks=[{"from_scene": 1, "to_scene": 2, "clear": True, "evidence": "다음 설명"}])
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -155,8 +219,12 @@ class EditorialTests(unittest.TestCase):
         revised["scenes"][0]["narration"] = "먼저 상태를 확인합니다."
         revised["scenes"][1]["narration"] = "다음 행동을 하고 결과를 확인합니다."
         review = dict.fromkeys(("approved", "selection_rule_pass", "category_balance_pass", "originality_pass", "sources_verified",
-                               "safety_pass", "usefulness_pass", "novelty_pass", "density_pass", "flow_pass"), True)
-        review.update(usefulness_reason="a", novelty_reason="new", density_reason="two useful decisions", flow_reason="b", viewer_recap="확인 후 행동",
+                               "safety_pass", "usefulness_pass", "novelty_pass", "density_pass", "flow_pass", "naturalness_pass"), True)
+        review.update(usefulness_reason="a", novelty_reason="new", density_reason="two useful decisions", flow_reason="b", naturalness_reason="natural speech",
+                      problem_relevance_score=4, practical_payoff_score=4, surprise_score=4, watch_worthiness_score=4,
+                      problem_relevance_reason="common", practical_payoff_reason="useful", surprise_reason="new",
+                      watch_worthiness_reason="worthwhile", viewer_recap="확인 후 행동",
+                      scene_count=2,
                       transition_checks=[{"from_scene": 1, "to_scene": 2, "clear": True,
                                           "evidence": "확인한 다음 행동"}])
         with tempfile.TemporaryDirectory() as tmp:

@@ -1,0 +1,77 @@
+{
+  "reviewed_on": "2026-11-10",
+  "install_scope": "repository/.agents/skills",
+  "skills": [
+    {
+      "name": "remotion-best-practices",
+      "repository": "remotion-dev/skills",
+      "source_path": "skills/remotion-best-practices",
+      "commit": "1af7e69a2a613437d46095924057970a6a7df40d",
+      "upstream_skill_sha256": "fe799aec97385b4bdffca66fd083b20b067a54da83a4c361c8e0e4f685f214ee",
+      "installed_skill_sha256": "9913a5f660dead5bec0a91f91742a4de1d4891f9ea6a44319923b1a34312386f",
+      "local_changes": [
+        "Project-local policy pointer prepended after frontmatter"
+      ],
+      "file_count": 148
+    },
+    {
+      "name": "hyperframes",
+      "repository": "heygen-com/hyperframes",
+      "source_path": "skills/hyperframes",
+      "commit": "651de1d948b0f619001e3705cba98fa415baf0dd",
+      "upstream_skill_sha256": "85afaf987ee74bdb022bb952857695ccaabf2137f3a3924bbfa9aad81a436243",
+      "installed_skill_sha256": "3472cdf19faa1d5c7e9aac0ee3764f418f6bf7b0b9ec7ddaf9dc41e71f15781e",
+      "local_changes": [
+        "Project-local policy pointer prepended after frontmatter",
+        "Root Apache-2.0 license retained as LICENSE.upstream"
+      ],
+      "file_count": 79
+    },
+    {
+      "name": "hyperframes-cli",
+      "repository": "heygen-com/hyperframes",
+      "source_path": "skills/hyperframes-cli",
+      "commit": "651de1d948b0f619001e3705cba98fa415baf0dd",
+      "upstream_skill_sha256": "341c509a4eac5ec32e3e33211904629b8837a0fe49d82fb82273fdf9584d839b",
+      "installed_skill_sha256": "dcdaae315650b7d9c1dae73821f3f120c8d374591805ec1e1e03963867f37771",
+      "local_changes": [
+        "Project-local policy pointer prepended after frontmatter",
+        "Root Apache-2.0 license retained as LICENSE.upstream"
+      ],
+      "file_count": 14
+    },
+    {
+      "name": "hyperframes-registry",
+      "repository": "heygen-com/hyperframes",
+      "source_path": "skills/hyperframes-registry",
+      "commit": "651de1d948b0f619001e3705cba98fa415baf0dd",
+      "upstream_skill_sha256": "843f9459912d464e84aa9cdeb21ec3d2628d444d252e1db13c2f947582792b70",
+      "installed_skill_sha256": "9444d0a108733bf754dc05906507a133051c9786b66a54b8143ba6e2d97ced09",
+      "local_changes": [
+        "Project-local policy pointer prepended after frontmatter",
+        "Root Apache-2.0 license retained as LICENSE.upstream"
+      ],
+      "file_count": 14
+    },
+    {
+      "name": "media-use",
+      "repository": "heygen-com/hyperframes",
+      "source_path": "skills/media-use",
+      "commit": "651de1d948b0f619001e3705cba98fa415baf0dd",
+      "upstream_skill_sha256": "d059b1686e7f9cd887edda774027d745e7fb319c0a10b21d3e6ba592faa04337",
+      "installed_skill_sha256": "71f7f0a9675b39e73091a403866ca53175672b40fb18c33d9158a6a680d0f3f7",
+      "local_changes": [
+        "Project-local policy pointer prepended after frontmatter",
+        "Root Apache-2.0 license retained as LICENSE.upstream"
+      ],
+      "file_count": 123
+    }
+  ],
+  "runtime_installed_during_skill_install": false,
+  "subsequent_local_runtime": {
+    "requested_on": "2026-11-10",
+    "path": "youtube_life_tips/remotion_sample",
+    "remotion_version": "4.0.542",
+    "hyperframes_runtime_installed": false
+  }
+}

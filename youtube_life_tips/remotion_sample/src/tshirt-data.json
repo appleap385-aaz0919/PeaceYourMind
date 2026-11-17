@@ -1,0 +1,406 @@
+{
+  "date": "2026-11-10",
+  "title": "헌 티셔츠로 바느질 없이 가벼운 가방 만들기",
+  "fps": 15,
+  "width": 720,
+  "height": 1280,
+  "frames": 1189,
+  "durationSeconds": 79.26666666666667,
+  "spokenScript": "이 가방, 안 입는 티셔츠 한 장으로 만들 수 있어요. 바느질 없이 가위로 자르고 묶는 방법이에요. 얇게 해진 옷은 피하고, 다시 입지 않을 티셔츠를 골라주세요. 먼저 옷을 뒤집어 펼쳐요. 마지막에 다시 뒤집으면 아래 매듭이 안으로 숨겨져요. 소매를 양쪽 모두 잘라내세요. 목둘레는 넓은 U자 모양으로 오려요. 양쪽 어깨 부분은 남겨야 손잡이가 돼요. 밑단의 앞뒤 천을 겹친 채 아래에서 위로 잘라요. 폭은 약 2센티미터, 길이는 약 10센티미터로 묶을 여유를 남겨요. 양옆도 잘라 앞뒤 조각이 따로 움직이게 해주세요. 같은 위치의 앞 조각과 뒤 조각을 하나씩 집어 두 번 묶어요. 끝까지 묶으면 매듭 사이에 작은 틈이 남을 수 있어요. 이웃한 두 매듭에서 한 가닥씩 가져와 서로 묶으세요. 옆 매듭끼리도 연결하면 바닥의 틈이 줄어요. 큰 틈이 남지 않았는지 확인한 뒤, 겉면이 밖으로 나오게 뒤집으면 완성이에요. 처음에는 수건처럼 가벼운 물건을 담아 손잡이와 바닥부터 확인하세요.",
+  "chunks": [
+    {
+      "text": "이 가방, 안 입는 티셔츠 한 장으로 만들 수 있어요.",
+      "audio": "generated/tshirt/voice-00.mp3",
+      "from": 0,
+      "frames": 75,
+      "audioSeconds": 4.872
+    },
+    {
+      "text": "바느질 없이 가위로 자르고 묶는 방법이에요.",
+      "audio": "generated/tshirt/voice-01.mp3",
+      "from": 75,
+      "frames": 61,
+      "audioSeconds": 3.96
+    },
+    {
+      "text": "얇게 해진 옷은 피하고, 다시 입지 않을 티셔츠를 골라주세요.",
+      "audio": "generated/tshirt/voice-02.mp3",
+      "from": 136,
+      "frames": 82,
+      "audioSeconds": 5.352
+    },
+    {
+      "text": "먼저 옷을 뒤집어 펼쳐요.",
+      "audio": "generated/tshirt/voice-03.mp3",
+      "from": 218,
+      "frames": 49,
+      "audioSeconds": 3.192
+    },
+    {
+      "text": "마지막에 다시 뒤집으면 아래 매듭이 안으로 숨겨져요.",
+      "audio": "generated/tshirt/voice-04.mp3",
+      "from": 267,
+      "frames": 70,
+      "audioSeconds": 4.56
+    },
+    {
+      "text": "소매를 양쪽 모두 잘라내세요.",
+      "audio": "generated/tshirt/voice-05.mp3",
+      "from": 337,
+      "frames": 51,
+      "audioSeconds": 3.288
+    },
+    {
+      "text": "목둘레는 넓은 U자 모양으로 오려요.",
+      "audio": "generated/tshirt/voice-06.mp3",
+      "from": 388,
+      "frames": 55,
+      "audioSeconds": 3.552
+    },
+    {
+      "text": "양쪽 어깨 부분은 남겨야 손잡이가 돼요.",
+      "audio": "generated/tshirt/voice-07.mp3",
+      "from": 443,
+      "frames": 58,
+      "audioSeconds": 3.768
+    },
+    {
+      "text": "밑단의 앞뒤 천을 겹친 채 아래에서 위로 잘라요.",
+      "audio": "generated/tshirt/voice-08.mp3",
+      "from": 501,
+      "frames": 67,
+      "audioSeconds": 4.344
+    },
+    {
+      "text": "폭은 약 2센티미터, 길이는 약 10센티미터로 묶을 여유를 남겨요.",
+      "audio": "generated/tshirt/voice-09.mp3",
+      "from": 568,
+      "frames": 93,
+      "audioSeconds": 6.12
+    },
+    {
+      "text": "양옆도 잘라 앞뒤 조각이 따로 움직이게 해주세요.",
+      "audio": "generated/tshirt/voice-10.mp3",
+      "from": 661,
+      "frames": 67,
+      "audioSeconds": 4.392
+    },
+    {
+      "text": "같은 위치의 앞 조각과 뒤 조각을 하나씩 집어 두 번 묶어요.",
+      "audio": "generated/tshirt/voice-11.mp3",
+      "from": 728,
+      "frames": 78,
+      "audioSeconds": 5.112
+    },
+    {
+      "text": "끝까지 묶으면 매듭 사이에 작은 틈이 남을 수 있어요.",
+      "audio": "generated/tshirt/voice-12.mp3",
+      "from": 806,
+      "frames": 71,
+      "audioSeconds": 4.656
+    },
+    {
+      "text": "이웃한 두 매듭에서 한 가닥씩 가져와 서로 묶으세요.",
+      "audio": "generated/tshirt/voice-13.mp3",
+      "from": 877,
+      "frames": 69,
+      "audioSeconds": 4.488
+    },
+    {
+      "text": "옆 매듭끼리도 연결하면 바닥의 틈이 줄어요.",
+      "audio": "generated/tshirt/voice-14.mp3",
+      "from": 946,
+      "frames": 63,
+      "audioSeconds": 4.08
+    },
+    {
+      "text": "큰 틈이 남지 않았는지 확인한 뒤, 겉면이 밖으로 나오게 뒤집으면 완성이에요.",
+      "audio": "generated/tshirt/voice-15.mp3",
+      "from": 1009,
+      "frames": 96,
+      "audioSeconds": 6.288
+    },
+    {
+      "text": "처음에는 수건처럼 가벼운 물건을 담아 손잡이와 바닥부터 확인하세요.",
+      "audio": "generated/tshirt/voice-16.mp3",
+      "from": 1105,
+      "frames": 84,
+      "audioSeconds": 5.52
+    }
+  ],
+  "scenes": [
+    {
+      "kind": "result",
+      "title": "헌 티셔츠 한 장이\n가벼운 짐 담는 가방으로",
+      "from": 0,
+      "frames": 75,
+      "chunks": [
+        {
+          "text": "이 가방, 안 입는 티셔츠 한 장으로 만들 수 있어요.",
+          "audio": "generated/tshirt/voice-00.mp3",
+          "from": 0,
+          "frames": 75,
+          "audioSeconds": 4.872
+        }
+      ],
+      "image": "generated/tshirt/scene-01.png"
+    },
+    {
+      "kind": "materials",
+      "title": "바느질 없이\n가위로 자르고 묶어요",
+      "from": 75,
+      "frames": 143,
+      "chunks": [
+        {
+          "text": "바느질 없이 가위로 자르고 묶는 방법이에요.",
+          "audio": "generated/tshirt/voice-01.mp3",
+          "from": 75,
+          "frames": 61,
+          "audioSeconds": 3.96
+        },
+        {
+          "text": "얇게 해진 옷은 피하고, 다시 입지 않을 티셔츠를 골라주세요.",
+          "audio": "generated/tshirt/voice-02.mp3",
+          "from": 136,
+          "frames": 82,
+          "audioSeconds": 5.352
+        }
+      ],
+      "image": "generated/tshirt/scene-02.png"
+    },
+    {
+      "kind": "inside-out",
+      "title": "먼저 뒤집어야\n매듭을 안으로 숨겨요",
+      "from": 218,
+      "frames": 119,
+      "chunks": [
+        {
+          "text": "먼저 옷을 뒤집어 펼쳐요.",
+          "audio": "generated/tshirt/voice-03.mp3",
+          "from": 218,
+          "frames": 49,
+          "audioSeconds": 3.192
+        },
+        {
+          "text": "마지막에 다시 뒤집으면 아래 매듭이 안으로 숨겨져요.",
+          "audio": "generated/tshirt/voice-04.mp3",
+          "from": 267,
+          "frames": 70,
+          "audioSeconds": 4.56
+        }
+      ],
+      "image": "generated/tshirt/scene-03.png"
+    },
+    {
+      "kind": "sleeves",
+      "title": "양쪽 소매부터\n잘라내세요",
+      "from": 337,
+      "frames": 51,
+      "chunks": [
+        {
+          "text": "소매를 양쪽 모두 잘라내세요.",
+          "audio": "generated/tshirt/voice-05.mp3",
+          "from": 337,
+          "frames": 51,
+          "audioSeconds": 3.288
+        }
+      ],
+      "image": "generated/tshirt/scene-04.png"
+    },
+    {
+      "kind": "neck",
+      "title": "목둘레는 넓게\n어깨는 손잡이로 남겨요",
+      "from": 388,
+      "frames": 113,
+      "chunks": [
+        {
+          "text": "목둘레는 넓은 U자 모양으로 오려요.",
+          "audio": "generated/tshirt/voice-06.mp3",
+          "from": 388,
+          "frames": 55,
+          "audioSeconds": 3.552
+        },
+        {
+          "text": "양쪽 어깨 부분은 남겨야 손잡이가 돼요.",
+          "audio": "generated/tshirt/voice-07.mp3",
+          "from": 443,
+          "frames": 58,
+          "audioSeconds": 3.768
+        }
+      ],
+      "image": "generated/tshirt/scene-05.png"
+    },
+    {
+      "kind": "fringe",
+      "title": "앞뒤 천을 함께 잘라요\n묶을 길이를 남겨주세요",
+      "from": 501,
+      "frames": 160,
+      "chunks": [
+        {
+          "text": "밑단의 앞뒤 천을 겹친 채 아래에서 위로 잘라요.",
+          "audio": "generated/tshirt/voice-08.mp3",
+          "from": 501,
+          "frames": 67,
+          "audioSeconds": 4.344
+        },
+        {
+          "text": "폭은 약 2센티미터, 길이는 약 10센티미터로 묶을 여유를 남겨요.",
+          "audio": "generated/tshirt/voice-09.mp3",
+          "from": 568,
+          "frames": 93,
+          "audioSeconds": 6.12
+        }
+      ],
+      "image": "generated/tshirt/scene-06.png"
+    },
+    {
+      "kind": "pairs",
+      "title": "양옆도 잘라\n앞뒤 조각을 분리해요",
+      "from": 661,
+      "frames": 67,
+      "chunks": [
+        {
+          "text": "양옆도 잘라 앞뒤 조각이 따로 움직이게 해주세요.",
+          "audio": "generated/tshirt/voice-10.mp3",
+          "from": 661,
+          "frames": 67,
+          "audioSeconds": 4.392
+        }
+      ],
+      "image": "generated/tshirt/scene-07.png"
+    },
+    {
+      "kind": "first-knot",
+      "title": "같은 자리의 앞·뒤 조각\n두 번 묶어요",
+      "from": 728,
+      "frames": 78,
+      "chunks": [
+        {
+          "text": "같은 위치의 앞 조각과 뒤 조각을 하나씩 집어 두 번 묶어요.",
+          "audio": "generated/tshirt/voice-11.mp3",
+          "from": 728,
+          "frames": 78,
+          "audioSeconds": 5.112
+        }
+      ],
+      "image": "generated/tshirt/scene-08.png"
+    },
+    {
+      "kind": "gaps",
+      "title": "첫 줄을 묶은 뒤\n매듭 사이 틈을 확인해요",
+      "from": 806,
+      "frames": 71,
+      "chunks": [
+        {
+          "text": "끝까지 묶으면 매듭 사이에 작은 틈이 남을 수 있어요.",
+          "audio": "generated/tshirt/voice-12.mp3",
+          "from": 806,
+          "frames": 71,
+          "audioSeconds": 4.656
+        }
+      ],
+      "image": "generated/tshirt/scene-09.png"
+    },
+    {
+      "kind": "neighbors",
+      "title": "이웃한 매듭에서 한 가닥씩\n서로 묶어 틈을 줄여요",
+      "from": 877,
+      "frames": 132,
+      "chunks": [
+        {
+          "text": "이웃한 두 매듭에서 한 가닥씩 가져와 서로 묶으세요.",
+          "audio": "generated/tshirt/voice-13.mp3",
+          "from": 877,
+          "frames": 69,
+          "audioSeconds": 4.488
+        },
+        {
+          "text": "옆 매듭끼리도 연결하면 바닥의 틈이 줄어요.",
+          "audio": "generated/tshirt/voice-14.mp3",
+          "from": 946,
+          "frames": 63,
+          "audioSeconds": 4.08
+        }
+      ],
+      "image": "generated/tshirt/scene-10.png"
+    },
+    {
+      "kind": "turn",
+      "title": "바닥을 확인하고\n겉면이 나오게 뒤집어요",
+      "from": 1009,
+      "frames": 96,
+      "chunks": [
+        {
+          "text": "큰 틈이 남지 않았는지 확인한 뒤, 겉면이 밖으로 나오게 뒤집으면 완성이에요.",
+          "audio": "generated/tshirt/voice-15.mp3",
+          "from": 1009,
+          "frames": 96,
+          "audioSeconds": 6.288
+        }
+      ],
+      "image": "generated/tshirt/scene-11.png"
+    },
+    {
+      "kind": "finish",
+      "title": "수건처럼 가벼운 짐으로\n손잡이와 바닥부터 확인",
+      "from": 1105,
+      "frames": 84,
+      "chunks": [
+        {
+          "text": "처음에는 수건처럼 가벼운 물건을 담아 손잡이와 바닥부터 확인하세요.",
+          "audio": "generated/tshirt/voice-16.mp3",
+          "from": 1105,
+          "frames": 84,
+          "audioSeconds": 5.52
+        }
+      ],
+      "image": "generated/tshirt/scene-12.png"
+    }
+  ],
+  "sources": [
+    {
+      "title": "Mommypotamus — No Sew T-Shirt Tote Bag",
+      "url": "https://mommypotamus.com/no-sew-t-shirt-tote-bag-tutorial/",
+      "claim_supported": "Creator process: remove sleeves and neckline, retain shoulders, inside-out construction, align front/back fringe, pair knots then link neighboring knot strands, turn right-side-out. Strip width about 3/4–1 inch. Fabric can stretch; thicker fabric is sturdier. Images not reused."
+    },
+    {
+      "title": "Chloe / Brit + Co — Turn a T-Shirt Into a Bag (No Sew)",
+      "url": "https://guides.brit.co/guides/turn-a-t-shirt-into-a-bag-no-sew",
+      "claim_supported": "Independent creator: cut sleeves and neckline, strips long enough for tight double knots, pair front and back, work inside-out to hide fringe. Images not reused."
+    },
+    {
+      "title": "Aurora IceLeaf — NO SEW Cute T-shirt Book Bag",
+      "url": "https://www.instructables.com/NO-SEW-Cute-T-shirt-Book-Bag/",
+      "claim_supported": "Creator tutorial body available via search: 10 cm fringe example, cut front and back and side edges, double-knot paired strips. Numerical example only, not a universal load rating."
+    },
+    {
+      "title": "edding — No-sew T-shirt bag",
+      "url": "https://www.edding.com/en-ca/ideas/idea/no-sew-t-shirt-bag/",
+      "claim_supported": "Independent step-by-step: cut neck/sleeves, match front/back fringes, tie pairs then diagonal links. Its shorter fringe dimensions are a different example, not the dimensions used in this sample."
+    },
+    {
+      "title": "Washoe County Library — No Sew T-Shirt Bag",
+      "url": "https://washoecountylibrary.us/_files/pdf/crafts/Crafternoon_tshirt_bag.pdf",
+      "claim_supported": "Cross-check: front/back paired strips; middle knot strand linked to neighbor on each side; turn finished bag right side out. No load capacity guarantee."
+    }
+  ],
+  "uploaded": false,
+  "visualType": "AI-generated photorealistic demonstration stills; no real experiment filmed",
+  "selection": {
+    "chosen": "Useful transformation: unused shirt becomes a reusable light-duty bag; show every construction step and neighbor knots.",
+    "compared": [
+      {
+        "topic": "Plastic bottle egg-yolk separation",
+        "decision": "Not selected: brief action does not justify 65 seconds without stretching."
+      },
+      {
+        "topic": "Furoshiki bottle wrapping",
+        "decision": "Not selected for this sample: a new reuse transformation is clearer than a wrapping/knot demonstration."
+      },
+      {
+        "topic": "Special pleated designer garment folding",
+        "decision": "Rejected: depends on a special garment and is not a generally usable household tip."
+      }
+    ]
+  }
+}

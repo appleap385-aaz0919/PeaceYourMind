@@ -182,7 +182,7 @@ def main() -> None:
 
     metadata = {
         "title": "전자레인지 얼룩, 힘줘서 닦지 마세요 #생활꿀팁 #Shorts",
-        "description": "전자레인지에 눌어붙은 얼룩은 물을 데워 생긴 수증기로 불린 뒤 닦을 수 있습니다. 뜨거운 그릇은 조심해서 꺼내고, 사용 중인 제품 설명서를 확인하세요.\n\n참고 자료:\n" + "\n".join(SOURCES),
+        "description": "전자레인지에 눌어붙은 얼룩은 물을 데워 생긴 수증기로 불린 뒤 닦을 수 있습니다. 뜨거운 그릇은 조심해서 꺼내고, 사용 중인 제품 설명서를 확인하세요.",
         "script": [text for text, _ in PHRASES],
         "voice_preview": {"provider": "Microsoft Edge Neural TTS", "voice": VOICE, "production_voice": "Microsoft Edge Neural TTS"},
         "visuals": "AI-generated original still images with stable framing and short cross-fades",

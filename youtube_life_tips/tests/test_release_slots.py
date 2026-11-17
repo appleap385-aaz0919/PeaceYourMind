@@ -99,6 +99,32 @@ class ReleaseSlotTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 read_receipt(receipt, str(DAY), "UC", "pm")
 
+    def test_no_eligible_topic_researches_three_times_without_images_or_upload(self):
+        for draft in (
+            {"status": "no_eligible_topic", "reason": "All candidates repeat previous tips"},
+            {"date": str(DAY), "topic": "No eligible topic", "hook": "", "title": "",
+             "spoken_script": "", "scenes": [], "fallback_reason": "All candidates repeat previous tips"},
+        ):
+            with self.subTest(draft=draft), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                request = root / "request.json"
+                atomic_json(request, {"date": str(DAY), "slot": "pm"})
+                def stage(_root, run_dir, name, _prompt, **_kwargs):
+                    path = run_dir / f"{name}.json"
+                    atomic_json(path, draft)
+                    return path
+                with patch.object(m, "preflight"), patch.object(m, "send_result_email", return_value=None), \
+                     patch.object(m, "now_kst", return_value=datetime(2026, 10, 26, 15, tzinfo=m.KST)), \
+                     patch.object(m, "call_codex", side_effect=stage) as codex, \
+                     patch.object(m.subprocess, "run") as external:
+                    result = m.process_request(request, root)
+                self.assertEqual(result["status"], "skipped")
+                self.assertIn("no_eligible_topic: All candidates repeat previous tips", result["reason"])
+                self.assertEqual(result["stage"], "topic_selection")
+                self.assertEqual(json.loads(request.read_text())["candidate_attempt"], 3)
+                self.assertEqual(codex.call_count, 3)
+                external.assert_not_called()
+
     def test_both_releases_run_with_separate_artifacts_and_receipts(self):
         from PIL import Image
         with tempfile.TemporaryDirectory() as tmp, patch.object(m, "preflight"), \
@@ -118,20 +144,38 @@ class ReleaseSlotTests(unittest.TestCase):
                 result = plan
                 if name == "review" or name.startswith("final-review"):
                     result = dict.fromkeys(("approved", "selection_rule_pass", "category_balance_pass", "originality_pass", "sources_verified",
-                                            "safety_pass", "usefulness_pass", "novelty_pass", "density_pass", "flow_pass"), True)
-                    result.update(usefulness_reason="useful", novelty_reason="new", density_reason="two decisions", flow_reason="connected")
+                                            "safety_pass", "usefulness_pass", "novelty_pass", "density_pass", "flow_pass", "naturalness_pass"), True)
+                    result.update(usefulness_reason="useful", novelty_reason="new", density_reason="two decisions", flow_reason="connected", naturalness_reason="spoken naturally",
+                                  problem_relevance_score=4, practical_payoff_score=4, surprise_score=4, watch_worthiness_score=4,
+                                  problem_relevance_reason="common", practical_payoff_reason="useful", surprise_reason="new",
+                                  watch_worthiness_reason="worthwhile")
                 elif name == "developer-image":
-                    Image.new("RGB", (900, 1400), "red" if run_dir.name.endswith("-pm") else "blue").save(daily / "storyboard.png")
+                    Image.new("RGB", (1086, 1448), "red" if run_dir.name.endswith("-pm") else "purple" if run_dir.name.endswith("-manual") else "blue").save(daily / "storyboard.png")
                     result = {"status": "ok", "built_in_imagegen_called": True}
-                elif name == "main-audit":
+                    if run_dir.name.endswith("-pm"):
+                        result.update(status="failed", failure_reason="The saved panel shows a protrusion instead of a groove.")
+                elif name == "developer-visual-repair-1":
+                    Image.new("RGB", (1086, 1448), "green").save(daily / "storyboard-visual-repair-1.png")
+                    result = {"status": "failed", "built_in_imagegen_edit_called": True,
+                              "failure_reason": "Saved edit needs independent confirmation of the corrected panel."}
+                elif name in {"main-audit", "main-audit-repair-1"}:
+                    self.assertIn("imagegen-receipt.json", prompt)
                     result = {"approved": True, "checks": dict.fromkeys(("plan_matches_content", "sources_verified",
-                        "season_decision_valid", "history_distinct", "viewer_value_valid", "novelty_valid", "density_valid", "narration_flow_valid",
+                        "season_decision_valid", "history_distinct", "viewer_value_valid", "viewer_pull_valid", "novelty_valid", "density_valid", "narration_flow_valid", "spoken_korean_valid",
                         "scenes_match_plan", "captions_readable", "no_visual_defects", "dimensions_valid",
                         "audio_present", "duration_valid"), True)}
+                    if name == "main-audit" and run_dir.name.endswith("-pm"):
+                        result["approved"] = False
+                        result["checks"].update(scenes_match_plan=False, no_visual_defects=False,
+                                                density_valid=False, viewer_pull_valid=False)
+                        result["issues"] = ["An inaccurate panel makes the otherwise approved technique hard to follow."]
                 if name == "review" or name.startswith("final-review"):
                     result.update(viewer_recap="ordered actions and outcomes", transition_checks=[
                         {"from_scene": i, "to_scene": i + 1, "clear": True, "evidence": "after the previous action"}
-                        for i in range(1, 4)])
+                        for i in range(1, 4)], scene_count=4)
+                if name == "review" and run_dir.name.endswith("-pm"):
+                    result.update(approved=False, sources_verified=False, safety_pass=False,
+                                  issues=["Remove an inaccessible extra source and move the safety condition before the action; verify the corrected plan again."])
                 path = run_dir / f"{name}.json"
                 atomic_json(path, result)
                 return path
@@ -149,17 +193,27 @@ class ReleaseSlotTests(unittest.TestCase):
             with patch.object(m, "call_codex", side_effect=stage), patch.object(m, "measure_narration_duration", return_value=75), \
                  patch.object(m.subprocess, "run", side_effect=external), \
                  patch.object(m, "make_render_contact_sheet", return_value=root / "contact.png"):
-                for slot, hour in (("am", 3), ("pm", 15)):
+                for slot, hour in (("am", 3), ("pm", 15), ("manual", 23)):
                     request = root / f"{slot}.json"
-                    atomic_json(request, {"date": str(DAY), "slot": slot})
+                    atomic_json(request, {"date": str(DAY), "slot": slot, "render_only": slot == "manual"})
                     with patch.object(m, "now_kst", return_value=datetime(2026, 10, 26, hour, tzinfo=m.KST)):
                         result = m.process_request(request, root)
-                        self.assertEqual(result["status"], "scheduled", result)
+                        self.assertEqual(result["status"], "rendered" if slot == "manual" else "scheduled", result)
+                        if slot == "manual":
+                            self.assertFalse((root / "work/daily" / release_key(DAY, slot) / "upload.json").exists())
+                            continue
+                        self.assertEqual(json.loads(request.read_text())["attempt"], 1)
+                        self.assertNotIn("candidate_attempt", json.loads(request.read_text()))
                         self.assertEqual(result["url"], slot)
                         self.assertEqual((root / "tiktok_uploads" / str(DAY) /
                                           f"life-tip-{DAY}-{slot}.mp4").read_bytes(), slot.encode())
                         self.assertEqual(m.process_request(request, root)["url"], slot)
-            self.assertEqual(mail.call_count, 2)
+            self.assertEqual(mail.call_count, 3)
+            self.assertTrue((root / "work/daily/2026-10-26-pm/repairs/before-visual-1/storyboard.png").exists())
+            self.assertTrue((root / "work/mailbox/runs/2026-10-26-pm/main-audit-repair-1.json").exists())
+            receipt = json.loads((root / "work/mailbox/runs/2026-10-26-pm/imagegen-receipt.json").read_text(encoding="utf-8"))
+            self.assertEqual(receipt["status"], "failed")
+            self.assertIn("groove", receipt["failure_reason"])
 
 
 if __name__ == "__main__":

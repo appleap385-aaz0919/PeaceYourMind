@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from life_schedule import release_key
 from background_process import hidden_process_options
-from editorial import validate_script
+from editorial import STORYBOARD_MIN_ASPECT, demo_storyboard_grid, validate_script
 from video_limits import MIN_DURATION_SECONDS, MAX_DURATION_SECONDS, validate_duration
 
 
@@ -24,6 +24,8 @@ ROOT = Path(__file__).resolve().parent
 WORK = ROOT / "work" / "daily"
 VENDOR = ROOT / "work" / "vendor"
 WIDTH, HEIGHT, FPS = 720, 1280, 15
+VISUAL_TOP, VISUAL_HEIGHT, VISUAL_WIDTH = 278, 672, 672
+BACKGROUND = "#20281f"
 VOICE = "ko-KR-InJoonNeural"
 
 
@@ -77,7 +79,9 @@ def load_content(path: Path, requested_date: date) -> dict[str, Any]:
     return content
 
 
-async def synthesize_segments(scenes: list[dict[str, str]], output_paths: list[Path]) -> None:
+async def synthesize_segments(
+    scenes: list[dict[str, str]], output_paths: list[Path], *, rate: str = "+8%"
+) -> None:
     if not VENDOR.is_dir():
         raise RuntimeError("local TTS package folder work/vendor is missing")
     sys.path.insert(0, str(VENDOR))
@@ -87,7 +91,7 @@ async def synthesize_segments(scenes: list[dict[str, str]], output_paths: list[P
         raise RuntimeError("Edge TTS is not installed in work/vendor; daily run skipped") from exc
     for scene, output in zip(scenes, output_paths, strict=True):
         await edge_tts.Communicate(
-            scene["narration"], VOICE, rate="+8%", pitch="+1Hz"
+            scene["narration"], VOICE, rate=rate, pitch="+1Hz"
         ).save(str(output))
 
 
@@ -100,7 +104,7 @@ def load_panels(path: Path, columns: int = 2, rows: int = 2) -> list[Image.Image
     with Image.open(path) as opened:
         storyboard = opened.convert("RGB")
     width, height = storyboard.size
-    if width < 768 or height < 1152 or height / width < 1.35:
+    if width < 768 or height < 1152 or height / width < STORYBOARD_MIN_ASPECT:
         raise ValueError("storyboard must be a high-resolution portrait grid")
     boundaries = [0]
     for row in range(1, rows):
@@ -137,9 +141,11 @@ def load_panels(path: Path, columns: int = 2, rows: int = 2) -> list[Image.Image
         panel = storyboard.crop(box)
         # Keep every part of the generated panel visible. A center crop can hide
         # hands, tools, or the result that the narration asks viewers to inspect.
-        foreground = ImageOps.contain(panel, (WIDTH, HEIGHT), method=Image.Resampling.LANCZOS)
-        canvas = Image.new("RGB", (WIDTH, HEIGHT), (20, 20, 20))
-        canvas.paste(foreground, ((WIDTH - foreground.width) // 2, (HEIGHT - foreground.height) // 2))
+        # Keep the complete instruction above the caption box and below the headline.
+        foreground = ImageOps.contain(panel, (VISUAL_WIDTH, VISUAL_HEIGHT), method=Image.Resampling.LANCZOS)
+        canvas = Image.new("RGB", (WIDTH, HEIGHT), BACKGROUND)
+        canvas.paste(foreground, ((WIDTH - foreground.width) // 2,
+                                 VISUAL_TOP + (VISUAL_HEIGHT - foreground.height) // 2))
         panels.append(canvas)
     return panels
 
@@ -149,9 +155,9 @@ def fonts() -> tuple[ImageFont.FreeTypeFont, ImageFont.FreeTypeFont, ImageFont.F
     if not regular.is_file() or not bold.is_file():
         raise RuntimeError("Korean Malgun fonts are required for readable captions")
     return (
-        ImageFont.truetype(str(bold), 42),
-        ImageFont.truetype(str(bold), 34),
-        ImageFont.truetype(str(regular), 25),
+        ImageFont.truetype(str(bold), 43),
+        ImageFont.truetype(str(bold), 32),
+        ImageFont.truetype(str(regular), 24),
     )
 
 
@@ -198,12 +204,13 @@ def validate_layout(content):
     hook_font, caption_font, _ = fonts()
     fitted_text(draw, content["hook"], hook_font, 630, 2, 36, "hook")
     for i, scene in enumerate(content["scenes"]):
-        fitted_text(draw, scene["caption"], caption_font, 575, 3, 30, f"scene {i + 1} caption")
-    grid = content.get("storyboard_grid", {"columns": 2, "rows": math.ceil(len(content["scenes"]) / 2)})
+        fitted_text(draw, scene.get("heading") or content["hook"], hook_font, 632, 2, 36, f"scene {i + 1} heading")
+        fitted_text(draw, scene["caption"], caption_font, 632, 4, 30, f"scene {i + 1} caption")
+    grid = content.get("storyboard_grid", demo_storyboard_grid(len(content["scenes"])))
     if any(type(grid.get(key)) is not int or grid[key] < 1 for key in ("columns", "rows")):
         raise ValueError("storyboard_grid dimensions must be positive integers")
-    if grid != {"columns": 2, "rows": math.ceil(len(content["scenes"]) / 2)}:
-        raise ValueError("storyboard_grid must have two columns and one panel per scene")
+    if grid["columns"] not in (2, 3) or grid["rows"] != math.ceil(len(content["scenes"]) / grid["columns"]):
+        raise ValueError("storyboard_grid must have two or three columns and one panel per scene")
     for i, scene in enumerate(content["scenes"]):
         index = scene.get("panel_index", i)
         if type(index) is not int or index != i:
@@ -219,41 +226,23 @@ def overlay_for_scene(
     caption_font: ImageFont.FreeTypeFont,
     small_font: ImageFont.FreeTypeFont,
     scene_count: int = 4,
+    heading: str | None = None,
 ) -> Image.Image:
-    image = scene_image.copy().convert("RGBA")
-    shade = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
-    shade_draw = ImageDraw.Draw(shade)
-    for y in range(0, 360, 4):
-        alpha = max(0, int(180 * (1 - y / 430)))
-        shade_draw.rectangle((0, y, WIDTH, y + 3), fill=(8, 14, 22, alpha))
-    for y in range(790, HEIGHT, 4):
-        alpha = min(220, int(215 * (y - 790) / 250))
-        shade_draw.rectangle((0, y, WIDTH, y + 3), fill=(8, 14, 22, alpha))
-    image = Image.alpha_composite(image, shade)
+    image = scene_image.copy().convert("RGB")
     draw = ImageDraw.Draw(image)
-
-    draw.rounded_rectangle((36, 38, 260, 84), radius=22, fill=(13, 23, 36, 210))
-    draw.text((55, 47), "생활꿀팁  ·  오늘의 한 가지", font=small_font, fill="#ffffff")
-    if index == 0:
-        y = 126
-        hook_lines, hook_font = fitted_text(draw, hook, hook_font, 630, 2, 36, "hook")
-        for line in hook_lines:
-            draw.text((38, y), line, font=hook_font, fill="#fff3a1", stroke_width=2, stroke_fill="#101820")
-            y += 54
-
-    caption_lines, caption_font = fitted_text(draw, caption, caption_font, 575, 3, 30, f"scene {index + 1} caption")
-    box_height = max(154, 46 + 52 * len(caption_lines))
-    top = HEIGHT - 212 - box_height
-    draw.rounded_rectangle(
-        (34, top, WIDTH - 34, top + box_height), radius=26,
-        fill=(8, 16, 25, 222), outline=(255, 255, 255, 65), width=2,
-    )
-    y = top + (box_height - 52 * len(caption_lines)) // 2 - 2
+    draw.text((44, 48), "살림 한 수", font=small_font, fill="#b9cdb0")
+    draw.text((WIDTH - 44, 51), "AI 재현", font=small_font, fill="#bec8b9", anchor="ra")
+    heading_lines, hook_font = fitted_text(draw, heading or hook, hook_font, 632, 2, 36, "heading")
+    for line_index, line in enumerate(heading_lines):
+        draw.text((44, 112 + line_index * 57), line, font=hook_font, fill="#f9f6ee")
+    caption_lines, caption_font = fitted_text(draw, caption, caption_font, 632, 4, 30, f"scene {index + 1} caption")
+    y = 1074 - (len(caption_lines) - 1) * 24
     for line in caption_lines:
-        draw.text((61, y), line, font=caption_font, fill="#ffffff", stroke_width=1, stroke_fill="#111922")
-        y += 52
-    draw.text((38, HEIGHT - 78), f"{index + 1} / {scene_count}", font=small_font, fill="#e4eef2")
-    return image.convert("RGB")
+        draw.text((WIDTH // 2, y), line, font=caption_font, fill="#f9f6ee", anchor="mm")
+        y += 48
+    draw.text((44, 1194), f"{index + 1:02d} / {scene_count}", font=small_font, fill="#a5b39f")
+    draw.rectangle((44, 1237, WIDTH - 44, 1241), fill="#495143")
+    return image
 
 
 def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path], output: Path) -> None:
@@ -284,12 +273,12 @@ def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path]
     run(args)
 
     scene_count = len(content["scenes"])
-    grid = content.get("storyboard_grid", {"columns": 2, "rows": math.ceil(scene_count / 2)})
+    grid = content.get("storyboard_grid", demo_storyboard_grid(scene_count))
     panels = load_panels(day_dir / "storyboard.png", grid["columns"], grid["rows"])
     hook_font, caption_font, small_font = fonts()
     frames = [
         overlay_for_scene(panels[scene.get("panel_index", i)], scene["caption"], content["hook"], i,
-                          hook_font, caption_font, small_font, scene_count)
+                          hook_font, caption_font, small_font, scene_count, scene.get("heading"))
         for i, scene in enumerate(content["scenes"])
     ]
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -311,8 +300,10 @@ def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path]
             scene_index = max(i for i, start in enumerate(starts) if start <= t)
             transition = t - starts[scene_index]
             current = frames[scene_index]
-            if scene_index > 0 and transition < 0.28:
-                current = Image.blend(frames[scene_index - 1], current, max(0.0, min(1.0, transition / 0.28)))
+            if scene_index > 0 and transition < 0.12:
+                current = Image.blend(frames[scene_index - 1], current, max(0.0, min(1.0, transition / 0.12)))
+            current = current.copy()
+            ImageDraw.Draw(current).rectangle((44, 1237, 44 + round(632 * t / total), 1241), fill="#b9cdb0")
             ffmpeg.stdin.write(current.tobytes())
     finally:
         ffmpeg.stdin.close()
@@ -329,10 +320,6 @@ def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path]
     if "#Shorts" not in title:
         title += " #Shorts"
     description = content.get("description", "오늘 바로 써볼 수 있는 생활꿀팁을 전해드립니다.").strip()
-    source_lines = [f"- {item['title']}: {item['url']}" for item in content["sources"]
-                    if item["url"] not in description]
-    if source_lines:
-        description += "\n\n참고 자료\n" + "\n".join(source_lines)
     metadata = {
         "date": content["date"], "slot": content.get("slot", "am"),
         "release_key": release_key(content["date"], content.get("slot", "am")),
@@ -341,8 +328,11 @@ def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path]
         "fallback_reason": content.get("fallback_reason"),
         "description": description, "duration_seconds": round(actual_duration, 2),
         "width": actual_width, "height": actual_height, "voice": VOICE,
+        "voice_rate": content.get("voice_rate", "+8%"),
         "narration_seconds": [round(value, 2) for value in lengths], "sources": content["sources"],
-        "screen_text": {"hook": content["hook"], "captions": [scene["caption"] for scene in content["scenes"]]},
+        "render_style": "photoreal_demo",
+        "screen_text": {"hook": content["hook"], "captions": [scene["caption"] for scene in content["scenes"]],
+                        "headings": [scene.get("heading") or content["hook"] for scene in content["scenes"]], "ai_label": "AI 재현"},
     }
     (day_dir / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(metadata, ensure_ascii=True, indent=2))
@@ -360,7 +350,7 @@ def main() -> None:
         raise ValueError("content slot does not match the requested release")
     validate_layout(content)
     voice_paths = [day_dir / f"voice_{index + 1}.mp3" for index in range(len(content["scenes"]))]
-    asyncio.run(synthesize_segments(content["scenes"], voice_paths))
+    asyncio.run(synthesize_segments(content["scenes"], voice_paths, rate=content.get("voice_rate", "+8%")))
     render_video(day_dir, content, voice_paths, day_dir / f"life-tip-{today.isoformat()}.mp4")
 
 

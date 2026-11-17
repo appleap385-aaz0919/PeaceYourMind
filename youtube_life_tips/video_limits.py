@@ -1,5 +1,6 @@
 """Shared duration limits for the life-tips video and YouTube upload."""
 
+# Keep shared YouTube/TikTok exports safely above one minute.
 MIN_DURATION_SECONDS = 65
 MAX_DURATION_SECONDS = 90
 

@@ -1,0 +1,408 @@
+{
+  "fps": 15,
+  "width": 720,
+  "height": 1280,
+  "frames": 1272,
+  "durationSeconds": 84.8,
+  "spokenScript": "뻑뻑한 나무 서랍, 집에 있는 양초로 움직임을 부드럽게 해볼까요? 나무끼리 맞닿아 움직이는 작은 서랍에 쓰는 방법이에요. 왁스가 맞닿는 면에 얇게 남아 마찰을 줄여줘요. 금속 레일이 달렸거나 나무가 휘고 갈라졌다면 이 방법은 쓰지 마세요. 먼저 작은 수납장을 평평한 곳에 놓고 서랍을 비워요. 양손으로 받쳐 꺼내되, 안 빠지면 억지로 당기지 마세요. 구조를 가까이 볼게요. 이 그림은 서랍 밑의 나무 막대가 수납장 안쪽 홈을 따라 움직이는 예예요. 양초는 이 두 부품이 서로 닿는 면에 바르면 돼요. 먼저 마른 천으로 양쪽 접촉면의 먼지를 닦아요. 그다음 굳은 파라핀 양초를 준비하세요. 불을 켜거나 녹이지 않고 그대로 써요. 꺼낸 서랍을 뒤집고, 밑에 붙은 막대의 접촉면에 양초를 길이 방향으로 얇게 문질러요. 이어서 수납장 안쪽 홈의 맞닿는 면에도 발라주세요. 이제 서랍을 바로 놓고 막대를 홈에 맞춰 끼워요. 가볍게 몇 번 여닫아 왁스를 퍼뜨리고 움직임을 확인하세요. 그래도 걸리면 세게 밀지 말고 수선을 맡기세요. 왁스가 뒤틀린 나무까지 펴주진 못해요.",
+  "scenes": [
+    {
+      "kind": "hook",
+      "title": "뻑뻑한 나무 서랍에\n양초를 문지르면?",
+      "from": 0,
+      "frames": 88,
+      "chunks": [
+        {
+          "text": "뻑뻑한 나무 서랍, 집에 있는 양초로 움직임을 부드럽게 해볼까요?",
+          "audio": "generated/voice-00.mp3",
+          "from": 0,
+          "frames": 88,
+          "audioSeconds": 5.736
+        }
+      ]
+    },
+    {
+      "kind": "principle",
+      "title": "나무끼리 비비는 면에\n얇은 왁스 막을 남겨요",
+      "from": 88,
+      "frames": 136,
+      "chunks": [
+        {
+          "text": "나무끼리 맞닿아 움직이는 작은 서랍에 쓰는 방법이에요.",
+          "audio": "generated/voice-01.mp3",
+          "from": 88,
+          "frames": 73,
+          "audioSeconds": 4.776
+        },
+        {
+          "text": "왁스가 맞닿는 면에 얇게 남아 마찰을 줄여줘요.",
+          "audio": "generated/voice-02.mp3",
+          "from": 161,
+          "frames": 63,
+          "audioSeconds": 4.08
+        }
+      ]
+    },
+    {
+      "kind": "exclude",
+      "title": "금속 레일·뒤틀린 나무는\n이 방법의 대상이 아니에요",
+      "from": 224,
+      "frames": 87,
+      "chunks": [
+        {
+          "text": "금속 레일이 달렸거나 나무가 휘고 갈라졌다면 이 방법은 쓰지 마세요.",
+          "audio": "generated/voice-03.mp3",
+          "from": 224,
+          "frames": 87,
+          "audioSeconds": 5.712
+        }
+      ]
+    },
+    {
+      "kind": "remove",
+      "title": "비우고, 받쳐서\n천천히 꺼내세요",
+      "from": 311,
+      "frames": 149,
+      "chunks": [
+        {
+          "text": "먼저 작은 수납장을 평평한 곳에 놓고 서랍을 비워요.",
+          "audio": "generated/voice-04.mp3",
+          "from": 311,
+          "frames": 69,
+          "audioSeconds": 4.512
+        },
+        {
+          "text": "양손으로 받쳐 꺼내되, 안 빠지면 억지로 당기지 마세요.",
+          "audio": "generated/voice-05.mp3",
+          "from": 380,
+          "frames": 80,
+          "audioSeconds": 5.256
+        }
+      ]
+    },
+    {
+      "kind": "structure",
+      "title": "막대는 서랍 쪽\n홈은 수납장 안쪽",
+      "from": 460,
+      "frames": 199,
+      "chunks": [
+        {
+          "text": "구조를 가까이 볼게요.",
+          "audio": "generated/voice-06.mp3",
+          "from": 460,
+          "frames": 41,
+          "audioSeconds": 2.664
+        },
+        {
+          "text": "이 그림은 서랍 밑의 나무 막대가 수납장 안쪽 홈을 따라 움직이는 예예요.",
+          "audio": "generated/voice-07.mp3",
+          "from": 501,
+          "frames": 91,
+          "audioSeconds": 5.952
+        },
+        {
+          "text": "양초는 이 두 부품이 서로 닿는 면에 바르면 돼요.",
+          "audio": "generated/voice-08.mp3",
+          "from": 592,
+          "frames": 67,
+          "audioSeconds": 4.392
+        }
+      ]
+    },
+    {
+      "kind": "clean",
+      "title": "서로 닿는 양쪽 면\n먼지부터 닦아요",
+      "from": 659,
+      "frames": 64,
+      "chunks": [
+        {
+          "text": "먼저 마른 천으로 양쪽 접촉면의 먼지를 닦아요.",
+          "audio": "generated/voice-09.mp3",
+          "from": 659,
+          "frames": 64,
+          "audioSeconds": 4.176
+        }
+      ]
+    },
+    {
+      "kind": "candle",
+      "title": "굳은 파라핀 양초를\n그대로 써요",
+      "from": 723,
+      "frames": 112,
+      "chunks": [
+        {
+          "text": "그다음 굳은 파라핀 양초를 준비하세요.",
+          "audio": "generated/voice-10.mp3",
+          "from": 723,
+          "frames": 57,
+          "audioSeconds": 3.672
+        },
+        {
+          "text": "불을 켜거나 녹이지 않고 그대로 써요.",
+          "audio": "generated/voice-11.mp3",
+          "from": 780,
+          "frames": 55,
+          "audioSeconds": 3.6
+        }
+      ]
+    },
+    {
+      "kind": "wax-drawer",
+      "title": "서랍 밑 막대의 접촉면\n길이 방향으로 얇게",
+      "from": 835,
+      "frames": 104,
+      "chunks": [
+        {
+          "text": "꺼낸 서랍을 뒤집고, 밑에 붙은 막대의 접촉면에 양초를 길이 방향으로 얇게 문질러요.",
+          "audio": "generated/voice-12.mp3",
+          "from": 835,
+          "frames": 104,
+          "audioSeconds": 6.864
+        }
+      ]
+    },
+    {
+      "kind": "wax-groove",
+      "title": "수납장 안쪽 홈에도\n맞닿는 면만 얇게",
+      "from": 939,
+      "frames": 71,
+      "chunks": [
+        {
+          "text": "이어서 수납장 안쪽 홈의 맞닿는 면에도 발라주세요.",
+          "audio": "generated/voice-13.mp3",
+          "from": 939,
+          "frames": 71,
+          "audioSeconds": 4.632
+        }
+      ]
+    },
+    {
+      "kind": "assemble",
+      "title": "홈에 맞춰 다시 끼우고\n가볍게 여닫아 확인해요",
+      "from": 1010,
+      "frames": 138,
+      "chunks": [
+        {
+          "text": "이제 서랍을 바로 놓고 막대를 홈에 맞춰 끼워요.",
+          "audio": "generated/voice-14.mp3",
+          "from": 1010,
+          "frames": 64,
+          "audioSeconds": 4.2
+        },
+        {
+          "text": "가볍게 몇 번 여닫아 왁스를 퍼뜨리고 움직임을 확인하세요.",
+          "audio": "generated/voice-15.mp3",
+          "from": 1074,
+          "frames": 74,
+          "audioSeconds": 4.848
+        }
+      ]
+    },
+    {
+      "kind": "limit",
+      "title": "그래도 걸리면 멈추세요\n뒤틀림까지 펴주진 못해요",
+      "from": 1148,
+      "frames": 124,
+      "chunks": [
+        {
+          "text": "그래도 걸리면 세게 밀지 말고 수선을 맡기세요.",
+          "audio": "generated/voice-16.mp3",
+          "from": 1148,
+          "frames": 67,
+          "audioSeconds": 4.392
+        },
+        {
+          "text": "왁스가 뒤틀린 나무까지 펴주진 못해요.",
+          "audio": "generated/voice-17.mp3",
+          "from": 1215,
+          "frames": 57,
+          "audioSeconds": 3.696
+        }
+      ]
+    }
+  ],
+  "chunks": [
+    {
+      "text": "뻑뻑한 나무 서랍, 집에 있는 양초로 움직임을 부드럽게 해볼까요?",
+      "audio": "generated/voice-00.mp3",
+      "from": 0,
+      "frames": 88,
+      "audioSeconds": 5.736
+    },
+    {
+      "text": "나무끼리 맞닿아 움직이는 작은 서랍에 쓰는 방법이에요.",
+      "audio": "generated/voice-01.mp3",
+      "from": 88,
+      "frames": 73,
+      "audioSeconds": 4.776
+    },
+    {
+      "text": "왁스가 맞닿는 면에 얇게 남아 마찰을 줄여줘요.",
+      "audio": "generated/voice-02.mp3",
+      "from": 161,
+      "frames": 63,
+      "audioSeconds": 4.08
+    },
+    {
+      "text": "금속 레일이 달렸거나 나무가 휘고 갈라졌다면 이 방법은 쓰지 마세요.",
+      "audio": "generated/voice-03.mp3",
+      "from": 224,
+      "frames": 87,
+      "audioSeconds": 5.712
+    },
+    {
+      "text": "먼저 작은 수납장을 평평한 곳에 놓고 서랍을 비워요.",
+      "audio": "generated/voice-04.mp3",
+      "from": 311,
+      "frames": 69,
+      "audioSeconds": 4.512
+    },
+    {
+      "text": "양손으로 받쳐 꺼내되, 안 빠지면 억지로 당기지 마세요.",
+      "audio": "generated/voice-05.mp3",
+      "from": 380,
+      "frames": 80,
+      "audioSeconds": 5.256
+    },
+    {
+      "text": "구조를 가까이 볼게요.",
+      "audio": "generated/voice-06.mp3",
+      "from": 460,
+      "frames": 41,
+      "audioSeconds": 2.664
+    },
+    {
+      "text": "이 그림은 서랍 밑의 나무 막대가 수납장 안쪽 홈을 따라 움직이는 예예요.",
+      "audio": "generated/voice-07.mp3",
+      "from": 501,
+      "frames": 91,
+      "audioSeconds": 5.952
+    },
+    {
+      "text": "양초는 이 두 부품이 서로 닿는 면에 바르면 돼요.",
+      "audio": "generated/voice-08.mp3",
+      "from": 592,
+      "frames": 67,
+      "audioSeconds": 4.392
+    },
+    {
+      "text": "먼저 마른 천으로 양쪽 접촉면의 먼지를 닦아요.",
+      "audio": "generated/voice-09.mp3",
+      "from": 659,
+      "frames": 64,
+      "audioSeconds": 4.176
+    },
+    {
+      "text": "그다음 굳은 파라핀 양초를 준비하세요.",
+      "audio": "generated/voice-10.mp3",
+      "from": 723,
+      "frames": 57,
+      "audioSeconds": 3.672
+    },
+    {
+      "text": "불을 켜거나 녹이지 않고 그대로 써요.",
+      "audio": "generated/voice-11.mp3",
+      "from": 780,
+      "frames": 55,
+      "audioSeconds": 3.6
+    },
+    {
+      "text": "꺼낸 서랍을 뒤집고, 밑에 붙은 막대의 접촉면에 양초를 길이 방향으로 얇게 문질러요.",
+      "audio": "generated/voice-12.mp3",
+      "from": 835,
+      "frames": 104,
+      "audioSeconds": 6.864
+    },
+    {
+      "text": "이어서 수납장 안쪽 홈의 맞닿는 면에도 발라주세요.",
+      "audio": "generated/voice-13.mp3",
+      "from": 939,
+      "frames": 71,
+      "audioSeconds": 4.632
+    },
+    {
+      "text": "이제 서랍을 바로 놓고 막대를 홈에 맞춰 끼워요.",
+      "audio": "generated/voice-14.mp3",
+      "from": 1010,
+      "frames": 64,
+      "audioSeconds": 4.2
+    },
+    {
+      "text": "가볍게 몇 번 여닫아 왁스를 퍼뜨리고 움직임을 확인하세요.",
+      "audio": "generated/voice-15.mp3",
+      "from": 1074,
+      "frames": 74,
+      "audioSeconds": 4.848
+    },
+    {
+      "text": "그래도 걸리면 세게 밀지 말고 수선을 맡기세요.",
+      "audio": "generated/voice-16.mp3",
+      "from": 1148,
+      "frames": 67,
+      "audioSeconds": 4.392
+    },
+    {
+      "text": "왁스가 뒤틀린 나무까지 펴주진 못해요.",
+      "audio": "generated/voice-17.mp3",
+      "from": 1215,
+      "frames": 57,
+      "audioSeconds": 3.696
+    }
+  ],
+  "sources": [
+    {
+      "title": "니트 올 풀림 '이것' 알면 누구나 5초만에 해결할 수 있다고!? — 줌마토깽",
+      "url": "https://krtiptiptip.tistory.com/2349",
+      "claim_supported": "발굴 원문. 니트 조끼의 실고리를 실핀에 걸어 안쪽으로 넘기는 본문과 전후 설명을 확인했다. 기존 행동과 중복되어 제외했다. 제목의 시간과 매듭의 절대 효과는 채택하지 않았다."
+    },
+    {
+      "title": "겨울옷 보풀제거! 어렵지 않아요 — 퓨어비프",
+      "url": "https://pure-beef.tistory.com/522",
+      "claim_supported": "발굴 원문. 재킷 보풀에 면도기를 한 방향으로 사용하는 본문·전후 설명·귀한 옷 손상 경고를 확인했다. 개인 시연을 모든 니트의 안전성으로 확대하지 않았다."
+    },
+    {
+      "title": "비누를 거울에 문질렀더니 벌어지는 일 — 꿀정보나누미",
+      "url": "https://ubora.tistory.com/187?category=1037910",
+      "claim_supported": "발굴 원문. 마른 비누로 거울을 문지른 뒤 마른 수건으로 닦기, 비누 조각을 다시백에 넣는 본문을 읽었다. 코팅 거울 적용성과 지속 효과를 검증하지 못해 제외했다."
+    },
+    {
+      "title": "버리기 아까운 빵 클립 활용법 Best 4! — 퓨어비프",
+      "url": "https://pure-beef.tistory.com/521",
+      "claim_supported": "발굴 원문. 클립을 책상 끝에 붙여 케이블 잡기, 말아둔 이어폰·고무줄 고정, 이름표로 쓰는 본문을 확인했다. 이번 기준의 효용과 의외성이 부족해 제외했다."
+    },
+    {
+      "title": "My Go-To Hack for Reviving Wood Cabinets Works Every Time — Apartment Therapy, Megan Baker Detloff",
+      "url": "https://www.apartmenttherapy.com/wood-drawers-candle-fix-37394954",
+      "claim_supported": "발굴 및 시연 구조 설명. 원문은 서랍 밑 나무 레일과 그 레일이 들어가는 나무 트랙을 설명하고, 서랍을 뒤집어 밑 슬라이드에 파라핀 또는 밀랍 양초를 문지른 뒤 수납장 안 트랙에도 문질러 재삽입하도록 안내한다. 나레이션의 나무 막대·나무 길은 이 두 부품을 풀어 쓴 것이다. 서랍 밑 홈·수납장 돌출 받침이라는 반대 구조의 근거로 쓰지 않는다. This Old House에서 배웠다고 밝혀 독립 검증으로 중복 계산하지 않았다. 항상 성공한다는 제목은 채택하지 않았다."
+    },
+    {
+      "title": "How to help stubborn wood drawers slide better!! — Market House Restorations, Fallon Yates",
+      "url": "https://www.markethouserestorations.com/tuesdaytips/2019/1/21/how-to-help-stubborn-wooden-drawers-slide-better",
+      "claim_supported": "독립된 가구 복원 실무자의 원문 본문. 서랍과 가구 내부의 맞닿는 목재 면에 고체 왁스를 바르기, 영구 효과가 아님, 뒤틀림 등 구조 손상은 별개임을 확인했다. 내장 영상은 재생 확인하지 않았다. 온도만으로 목재 움직임을 단정하는 설명과 향의 벌레 유인 주장은 가져오지 않았다."
+    },
+    {
+      "title": "Lacy 4 Drawer Chest BRLAC4D Assembly Instruction and Maintenance Guide — Walker Edison Furniture Co.",
+      "url": "https://www.bedbathandbeyond.com/downloads/pdf/1402857049_04150c20-979d-37fd-8fb5-86780957bb38.pdf",
+      "claim_supported": "제조사 원본 Maintenance Guide 텍스트. 나무끼리 접촉하는 가이드에 밀랍 또는 보통 양초의 파라핀을 문지르며, 실온의 고체 상태로 사용하고 녹여 바르지 않는다는 안내를 확인했다. 특정 중앙 홈·막대 배치까지 입증한 자료로 확대하지 않는다. 해당 모델의 관리 주기를 일반화하지 않았다. 그림 스크린샷은 시간 초과로 열리지 않아 텍스트로 확인한 관리법만 근거로 썼다."
+    },
+    {
+      "title": "How to make timber drawers smooth to open? — Bunnings Workshop",
+      "url": "https://www.workshop.bunnings.com.au/discussion/169748/how-to-make-timber-drawers-smooth-to-open",
+      "claim_supported": "문제 관련성 A의 신호 1. ruby2020이 목제 책상 서랍 두 개의 뻑뻑함을 질문하고 나무끼리 움직인다고 확인했다. MitchellMc의 별도 답변에서 나무 접촉면에 양초를 문질러 왁스를 남기면 마찰이 줄며 금속 슬라이드는 다른 문제일 수 있다는 설명을 확인했다. 질문 자체는 효과 증거로 세지 않았다."
+    },
+    {
+      "title": "Drawers getting stuck — DutchVortex, r/Woodworkingplans",
+      "url": "https://www.reddit.com/r/Woodworkingplans/comments/15b1qpa/drawers_getting_stuck/",
+      "claim_supported": "문제 관련성 A의 독립 신호 2. 오래된 수제 가구에서 홈과 나무 받침으로 움직이는 서랍을 교체하지 않고 부드럽게 쓰고 싶다는 작성자의 본문을 읽었다. 이 이용자의 설명은 옆면 홈 구조이므로 이번 시연의 밑면 레일 구조를 확인한 자료로 쓰지 않는다. 댓글의 장기 효과와 성공담은 효능 검증에 사용하지 않았다."
+    },
+    {
+      "title": "Simple Solutions for Worn Drawers — This Old House",
+      "url": "https://www.thisoldhouse.com/furniture/fast-fix-for-worn-drawers",
+      "claim_supported": "보완 작업 안내. 서랍을 꺼내 접촉부를 닦고 양초나 파라핀을 바른 뒤 재삽입하여 앞뒤로 움직이는 순서를 확인했다. Apartment Therapy와 연결된 지식 계보이므로 독립된 두 검증 자료로 세지 않았다. 압정·사포·분사 윤활제는 포함하지 않았다."
+    }
+  ],
+  "sourcePlan": "2026-11-10/candidates/2/approved.json",
+  "upload": false,
+  "renderer": "Remotion 4.0.542",
+  "visualType": "Original explanatory SVG animation, not a filmed experiment"
+}

@@ -127,6 +127,46 @@ class ResumableTests(unittest.TestCase):
 
 
 class MailboxRecoveryTests(unittest.TestCase):
+    def test_preflight_timeouts_do_not_spend_production_attempts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            request = root / "request.json"
+            atomic_json(request, {"date": str(DAY), "slot": "am"})
+            timeout = subprocess.TimeoutExpired(["codex", "--version"], 60)
+            with patch.object(m, "preflight", side_effect=[timeout, timeout, timeout, None]), \
+                 patch.object(m, "now_kst", return_value=NOW), \
+                 patch.object(m, "retry_due", return_value=True), \
+                 patch.object(m, "send_result_email", return_value=None), \
+                 patch.object(m, "call_codex", side_effect=m.WorkflowSkipped("draft reached")) as stage:
+                for count in range(1, 4):
+                    report = m.process_request(request, root)
+                    self.assertEqual(report["status"], "retry_pending")
+                    self.assertEqual(report["stage"], "preflight_retry")
+                    saved = json.loads(request.read_text(encoding="utf-8"))
+                    self.assertEqual(saved.get("attempt", 0), 0)
+                    self.assertEqual(saved["preflight_attempt"], count)
+                stage.assert_not_called()
+                report = m.process_request(request, root)
+                self.assertEqual(report["reason"], "draft reached")
+                saved = json.loads(request.read_text(encoding="utf-8"))
+                self.assertEqual(saved["attempt"], 1)
+                self.assertEqual(saved["preflight_attempt"], 0)
+                self.assertEqual(stage.call_count, 1)
+
+    def test_preflight_retries_remain_bounded_by_count_and_cutoff(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(m, "send_result_email", return_value=None):
+            root = Path(tmp)
+            with patch.object(m, "now_kst", return_value=NOW):
+                report = m.retry_report(DAY, {"preflight_attempt": m.MAX_PREFLIGHT_ATTEMPTS},
+                                        TimeoutError("startup timeout"), root, preflight=True)
+            self.assertEqual(report["stage"], "preflight_retry_exhausted")
+            with patch.object(m, "now_kst", return_value=NOW.replace(hour=6, minute=29)):
+                report = m.retry_report(DAY, {"preflight_attempt": 1},
+                                        TimeoutError("startup timeout"), root, preflight=True)
+            self.assertEqual(report["status"], "failed")
+            self.assertEqual(report["attempts"], 1)
+
     def test_transient_preflight_is_queued_for_watcher_retry(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(m, "preflight", side_effect=TimeoutError()):
             root = Path(tmp)
@@ -217,18 +257,24 @@ class MailboxRecoveryTests(unittest.TestCase):
                 stages.append(name)
                 result = plan
                 if name == "review" or name.startswith("final-review"):
-                    result = dict.fromkeys(["approved", "selection_rule_pass", "category_balance_pass", "originality_pass", "sources_verified", "safety_pass", "usefulness_pass", "novelty_pass", "density_pass", "flow_pass"], True)
-                    result.update({"usefulness_reason": "새 행동을 알려준다", "novelty_reason": "새로운 판단을 알려준다", "density_reason": "서로 다른 두 행동", "flow_reason": "장면이 자연스럽게 이어진다"})
+                    result = dict.fromkeys(["approved", "selection_rule_pass", "category_balance_pass", "originality_pass", "sources_verified", "safety_pass", "usefulness_pass", "novelty_pass", "density_pass", "flow_pass", "naturalness_pass"], True)
+                    result.update({"usefulness_reason": "새 행동을 알려준다", "novelty_reason": "새로운 판단을 알려준다", "density_reason": "서로 다른 두 행동", "flow_reason": "장면이 자연스럽게 이어진다", "naturalness_reason": "일상적인 구어체로 자연스럽다",
+                                   "problem_relevance_score": 4, "practical_payoff_score": 4, "surprise_score": 4, "watch_worthiness_score": 4,
+                                   "problem_relevance_reason": "common", "practical_payoff_reason": "useful", "surprise_reason": "new",
+                                   "watch_worthiness_reason": "worthwhile"})
                 if name == "developer-image":
                     Image.new("RGB", (900, 1400), "blue").save(daily / "storyboard.png")
                     result = {"status": "ok", "built_in_imagegen_called": True}
                 if name == "main-audit":
-                    keys = ["plan_matches_content", "sources_verified", "season_decision_valid", "history_distinct", "viewer_value_valid", "novelty_valid", "density_valid", "narration_flow_valid", "scenes_match_plan", "captions_readable", "no_visual_defects", "dimensions_valid", "audio_present", "duration_valid"]
+                    keys = ["plan_matches_content", "sources_verified", "season_decision_valid", "history_distinct", "viewer_value_valid", "viewer_pull_valid", "novelty_valid", "density_valid", "narration_flow_valid", "spoken_korean_valid", "scenes_match_plan", "captions_readable", "no_visual_defects", "dimensions_valid", "audio_present", "duration_valid"]
                     result = {"approved": True, "checks": dict.fromkeys(keys, True)}
                 if name == "review" or name.startswith("final-review"):
                     result.update(viewer_recap="ordered actions and outcomes", transition_checks=[
                         {"from_scene": i, "to_scene": i + 1, "clear": True, "evidence": "after the previous action"}
-                        for i in range(1, 4)])
+                        for i in range(1, 4)], scene_count=4)
+                if name == "main-audit":
+                    self.assertIn("final-review-0.json", prompt)
+                    self.assertNotIn(str(run_arg / "review.json"), prompt)
                 path = run_arg / f"{name}.json"
                 atomic_json(path, result)
                 return path
