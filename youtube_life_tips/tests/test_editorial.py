@@ -14,6 +14,15 @@ from video_limits import validate_duration
 
 
 class EditorialTests(unittest.TestCase):
+    def test_opening_frame_keeps_hook_and_later_frames_use_scene_heading(self):
+        panel = Image.new("RGB", (720, 1280), "black")
+        def header(index, heading):
+            return overlay_for_scene(panel, "설명", "셔츠 단추가 커버 입구로", index,
+                                     *fonts(), heading=heading).crop((0, 100, 720, 260))
+        self.assertIsNone(ImageChops.difference(header(0, "첫 제목"), header(0, "다른 제목")).getbbox())
+        self.assertIsNotNone(ImageChops.difference(header(1, "첫 제목"), header(1, "다른 제목")).getbbox())
+        self.assertIsNone(ImageChops.difference(header(0, "첫 제목"), header(1, "셔츠 단추가 커버 입구로")).getbbox())
+
     def test_scene_split_cannot_drop_transition_words(self):
         plan = {"spoken_script": "세탁과 건조를 마친 뒤 물을 뿌려보세요.", "scenes": [
             {"narration": "물을 뿌려보세요.", "visual_action": "마른 옷에 물을 뿌린다"}]}

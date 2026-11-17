@@ -199,12 +199,17 @@ def fitted_text(draw, text, font, width, max_lines, min_size, label):
     raise error
 
 
+def display_heading(hook, heading, index):
+    """Show the approved hook first, then each scene's heading."""
+    return hook if index == 0 else heading or hook
+
+
 def validate_layout(content):
     draw = ImageDraw.Draw(Image.new("RGB", (WIDTH, HEIGHT)))
     hook_font, caption_font, _ = fonts()
     fitted_text(draw, content["hook"], hook_font, 630, 2, 36, "hook")
     for i, scene in enumerate(content["scenes"]):
-        fitted_text(draw, scene.get("heading") or content["hook"], hook_font, 632, 2, 36, f"scene {i + 1} heading")
+        fitted_text(draw, display_heading(content["hook"], scene.get("heading"), i), hook_font, 632, 2, 36, f"scene {i + 1} heading")
         fitted_text(draw, scene["caption"], caption_font, 632, 4, 30, f"scene {i + 1} caption")
     grid = content.get("storyboard_grid", demo_storyboard_grid(len(content["scenes"])))
     if any(type(grid.get(key)) is not int or grid[key] < 1 for key in ("columns", "rows")):
@@ -232,7 +237,7 @@ def overlay_for_scene(
     draw = ImageDraw.Draw(image)
     draw.text((44, 48), "살림 한 수", font=small_font, fill="#b9cdb0")
     draw.text((WIDTH - 44, 51), "AI 재현", font=small_font, fill="#bec8b9", anchor="ra")
-    heading_lines, hook_font = fitted_text(draw, heading or hook, hook_font, 632, 2, 36, "heading")
+    heading_lines, hook_font = fitted_text(draw, display_heading(hook, heading, index), hook_font, 632, 2, 36, "heading")
     for line_index, line in enumerate(heading_lines):
         draw.text((44, 112 + line_index * 57), line, font=hook_font, fill="#f9f6ee")
     caption_lines, caption_font = fitted_text(draw, caption, caption_font, 632, 4, 30, f"scene {index + 1} caption")
@@ -332,7 +337,7 @@ def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path]
         "narration_seconds": [round(value, 2) for value in lengths], "sources": content["sources"],
         "render_style": "photoreal_demo",
         "screen_text": {"hook": content["hook"], "captions": [scene["caption"] for scene in content["scenes"]],
-                        "headings": [scene.get("heading") or content["hook"] for scene in content["scenes"]], "ai_label": "AI 재현"},
+                        "headings": [display_heading(content["hook"], scene.get("heading"), i) for i, scene in enumerate(content["scenes"])], "ai_label": "AI 재현"},
     }
     (day_dir / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(metadata, ensure_ascii=True, indent=2))
