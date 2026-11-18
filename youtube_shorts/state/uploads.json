@@ -505,7 +505,7 @@
     "privacy": "private",
     "publish_at": "2026-11-18T22:47:14.690176+09:00",
     "success_email": {
-      "status": "attempted",
+      "status": "sent",
       "run_url": "https://github.com/appleap385-aaz0919/PeaceYourMind/actions/runs/44312005089",
       "at": "2026-11-18T22:17:27.180896+09:00"
     }
