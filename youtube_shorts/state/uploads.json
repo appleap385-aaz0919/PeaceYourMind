@@ -557,5 +557,14 @@
       "run_url": "https://github.com/appleap385-aaz0919/PeaceYourMind/actions/runs/44634953366",
       "at": "2026-11-20T08:08:52.916487+09:00"
     }
+  },
+  "2026-11-20-pm": {
+    "date_kst": "2026-11-20",
+    "slot": "pm",
+    "release_key": "2026-11-20-pm",
+    "status": "uploading",
+    "operation_id": "2ff3adee761c410cb48a8421cdefc1b4",
+    "channel_id": "UCLQczQnzBHzB8jOO0sMeP2w",
+    "publish_at": "2026-11-20T22:52:02.596478+09:00"
   }
 }
