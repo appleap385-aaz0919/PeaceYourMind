@@ -1,11 +1,11 @@
 {
-  "version": "2026-11-21T16:54:17Z",
-  "untagged_ratio": 0.603,
+  "version": "2026-11-22T01:29:17Z",
+  "untagged_ratio": 0.602,
   "unknown_ratio": 0.01,
-  "unknown_kept": 20,
+  "unknown_kept": 19,
   "tabs_over_cap": [],
   "tab_max_exposed": 20,
-  "kept": 1905,
+  "kept": 1901,
   "themes_empty": [
     "self_control"
   ],
@@ -33,7 +33,7 @@
   "theme_pool": {
     "peace": 38,
     "trust": 27,
-    "courage": 10,
+    "courage": 9,
     "self_control": 0,
     "justice": 5,
     "forgiveness": 5,
@@ -51,14 +51,14 @@
     "new_thing": 4,
     "quiet_worship": 255,
     "creation": 12,
-    "daily_word": 169,
+    "daily_word": 170,
     "bible_story": 17,
     "hope": 49
   },
   "theme_picked": {
     "peace": 20,
     "trust": 20,
-    "courage": 10,
+    "courage": 9,
     "self_control": 0,
     "justice": 5,
     "forgiveness": 5,
