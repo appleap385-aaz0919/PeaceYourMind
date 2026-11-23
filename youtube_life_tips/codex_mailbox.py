@@ -27,6 +27,7 @@ from editorial import STORYBOARD_MIN_ASPECT, latest_editorial_review_path, valid
 from video_limits import MIN_DURATION_SECONDS, MAX_DURATION_SECONDS, validate_duration
 from improvement import (ImprovementLimitReached, release_deadline, reserve_call,
                          correction_feedback, record_failure, budget_path)
+from scene_direction import prepare_scene_direction, plan_hash
 
 
 ROOT = Path(__file__).resolve().parent
@@ -539,6 +540,7 @@ def validate_new_storyboard(path: Path, day_dir: Path, root: Path = ROOT) -> str
     sample = root / "work" / "sample" / "storyboard.png"
     current_path = path.resolve()
     candidates = [sample, *(root / "work" / "daily").glob("*/storyboard.png"),
+                  *(root / "work" / "samples").glob("*/storyboard.png"),
                   *(root / "work" / "previews").glob("*/storyboard.png")]
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     if any(
@@ -584,6 +586,7 @@ def repair_storyboard(root: Path, run_dir: Path, day_dir: Path, audit: dict, att
             "Change only the panels identified in the final audit below; preserve every unaffected panel, "
             "object identity, grid boundary, before/after state and safety condition. Read "
             f"{run_dir / 'approved.json'} for the exact actions. "
+            f"Also read {run_dir / 'scene-direction.json'} when present for required orientation, contact and continuity. "
             "Do not replace a verified instruction with what the failed picture happens to show. "
             "No downloaded media, image API, code-drawn substitutes, generated letters or logos. "
             "Keep the original whole-canvas dimensions, aspect ratio, and grid, including portrait 3:4 photo grids; "
@@ -811,8 +814,15 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
             "or clear visuals. Record the compared categories and concrete selection reason in category_choice_reason. "
             "Avoid repeating the same main practical takeaway and action, or substantially the same solution sequence and hook. "
             "Before writing, identify the ordinary approach, the specific better decision a viewer can make, "
-            "and why that difference matters in viewer_value. The better decision must include a sourced, "
-            "non-obvious condition, threshold, exception, or technique that materially changes what the viewer does. "
+            "and why that difference matters in viewer_value. "
+            "VISUAL FEASIBILITY BEFORE SELECTION: Compare how each candidate can be taught in photorealistic still panels. "
+            "Record the critical before/action/after states and any difficult contact, cut, bend, knot or continuous-wire relationship "
+            "in category_choice_reason. Inspect source process images or equivalent concrete evidence when the mechanics depend on them; "
+            "a text claim alone cannot establish an unfamiliar construction. If no clear, physically consistent panel sequence is available, "
+            "choose a comparably useful candidate with a demonstrable result before drafting or spending ImageGen calls. "
+            "Prefer clarity among equally useful topics; never replace the usefulness/novelty standard with ease of drawing. "
+            "The better decision must include a sourced, non-obvious condition, threshold, exception, or technique "
+            "that materially changes what the viewer does. "
             "Write new_insight as the one-sentence takeaway a viewer is unlikely to know already. Reject an idea "
             "if that sentence reduces to common advice when numbers, jargon, and background explanation are removed. "
             "A surprising detail does not rescue an obvious core action. Choose a genuinely different decision, "
@@ -1049,16 +1059,19 @@ def build_prompts(day: date, run_dir: Path, day_dir: Path, slot: str = "am") -> 
 
 def measure_narration_duration(plan: dict, run_dir: Path, deadline=None) -> float:
     """Measure the actual voice before spending the image generation call."""
-    from render_daily import media_duration, synthesize_segments
+    from render_daily import media_duration, synthesize_segments, cached_voice_paths, save_voice_cache
 
     preview_dir = run_dir / "duration-preview"
     preview_dir.mkdir(parents=True, exist_ok=True)
-    paths = [preview_dir / f"voice-{index}.mp3" for index in range(len(plan["scenes"]))]
+    cached = cached_voice_paths(plan, preview_dir)
+    paths = cached or [preview_dir / f"voice-{index}.mp3" for index in range(len(plan["scenes"]))]
     async def synthesize():
-        await asyncio.wait_for(synthesize_segments(plan["scenes"], paths),
+        await asyncio.wait_for(synthesize_segments(plan["scenes"], paths, rate=plan.get("voice_rate", "+8%")),
                                timeout=stage_timeout(deadline, 5 * 60))
-    asyncio.run(synthesize())
+    if cached is None:
+        asyncio.run(synthesize())
     seconds = sum(media_duration(path) for path in paths)
+    save_voice_cache(plan, preview_dir, paths)
     validate_duration(seconds)
     return seconds
 
@@ -1071,9 +1084,11 @@ def refine_editorial_plan(plan, day, root, run_dir, prompts, deadline, *, check_
     signature = lambda value: hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
     cached = json.loads(marker.read_text(encoding="utf-8")) if marker.exists() else {}
     cached_seconds = cached.get("narration_seconds")
+    from render_daily import cached_voice_paths
     if (cached.get("plan_sha256") == signature(plan)
             and (not check_duration or (isinstance(cached_seconds, (int, float))
-                                        and MIN_DURATION_SECONDS <= cached_seconds <= MAX_DURATION_SECONDS))):
+                                        and MIN_DURATION_SECONDS <= cached_seconds <= MAX_DURATION_SECONDS
+                                        and cached_voice_paths(plan, run_dir / "duration-preview") is not None))):
         validate_plan(plan, day)
         validate_layout(plan)
         return plan
@@ -1133,26 +1148,34 @@ def refine_editorial_plan(plan, day, root, run_dir, prompts, deadline, *, check_
         return plan
 
 
-def prepare_next_candidate(request: dict, reason: str, root: Path) -> bool:
+def prepare_next_candidate(request: dict, reason: str, root: Path, *, allow_next: bool = True) -> bool:
     """Preserve rejected media and allocate a fresh plan/ImageGen attempt."""
     candidate = int(request.get("candidate_attempt", 1))
-    if candidate >= 3:
-        return False
     day_dir = root / "work" / "daily" / release_key(request["date"], request.get("slot", "am"))
-    if (day_dir / "upload_session.json").exists() or (day_dir / "upload.json").exists():
+    if allow_next and ((day_dir / "upload_session.json").exists() or (day_dir / "upload.json").exists()):
         raise RuntimeError("an upload exists; reconcile it before changing candidates")
-    destination = day_dir / "rejected-candidates" / str(candidate)
-    destination.mkdir(parents=True, exist_ok=False)
     plan_path = day_dir / "content.json"
     run_dir = root / "work" / "mailbox" / "runs" / release_key(request["date"], request.get("slot", "am"))
     if candidate > 1:
         run_dir = run_dir / "candidates" / str(candidate)
     if not plan_path.exists():
+        plan_path = run_dir / "approved.json"
+    if not plan_path.exists():
         plan_path = run_dir / "main-draft.json"
     plan = json.loads(plan_path.read_text(encoding="utf-8")) if plan_path.exists() else {}
-    request.setdefault("rejected_candidates", []).append({
-        "candidate": candidate, "topic": plan.get("topic"), "reason": reason,
-    })
+    failure = {"candidate": candidate, "topic": plan.get("topic"), "reason": reason,
+               "stage": ("final_review" if (run_dir / "audit.json").exists() else
+                         "scene_direction" if (run_dir / "scene-direction.json").exists() else
+                         "editorial" if (run_dir / "editorial-feedback.json").exists() else "topic_selection"),
+               "video_created": any(day_dir.glob("*.mp4")), "run_dir": str(run_dir)}
+    previous = request.setdefault("rejected_candidates", [])
+    previous[:] = [item for item in previous if item.get("candidate") != candidate]
+    previous.append(failure)
+    # The final rejected candidate must be recorded too, even when no retry remains.
+    if candidate >= 3 or not allow_next:
+        return False
+    destination = day_dir / "rejected-candidates" / str(candidate)
+    destination.mkdir(parents=True, exist_ok=False)
     findings = {"rejected_candidates": request["rejected_candidates"]}
     for name in ("audit.json", "editorial-feedback.json", "review.json"):
         evidence = run_dir / name
@@ -1186,6 +1209,230 @@ def save_tiktok_copy(video_path: Path, day: date, slot: str, root: Path = ROOT) 
     shutil.copy2(video_path, temporary)
     os.replace(temporary, destination)
     return destination
+
+
+def produce_reviewed_video(plan, day, slot, root, run_dir, day_dir, prompts, deadline):
+    """The same directed, reviewed production path for a manual plan or a scheduled draft."""
+    deadline = release_deadline(run_dir, now_kst(), deadline)
+    try:
+        approved = refine_editorial_plan(plan, day, root, run_dir, prompts, deadline, check_duration=True)
+    except WorkflowSkipped as exc:
+        if str(exc).startswith("editorial repair attempts exhausted:"):
+            raise FinalReviewRejected(str(exc)) from exc
+        raise
+    atomic_json(run_dir / "approved.json", approved)
+    # Downstream stages must read the review of this exact final script.
+    atomic_json(run_dir / "review.json", parse_json_response(latest_editorial_review_path(run_dir)))
+    try:
+        direction_path = prepare_scene_direction(
+            approved, root, run_dir, prompts["review"].split("ROLE: REVIEW SESSION")[0], call_codex, deadline,
+        )
+    except ValueError as exc:
+        raise FinalReviewRejected(f"scene direction rejected before ImageGen: {exc}") from exc
+    prompts = dict(prompts)
+    directed = (
+        f"\nRead the mandatory per-panel demonstration direction at {direction_path}. "
+        "Use its stable object identities, before/action/after states, exact orientation and contact checks. "
+        "Judge physical correctness, safety, spoken instructions, and required results strictly. "
+        "Incidental appearance may vary when the actual instruction and safety remain equivalent; "
+        "do not invent a new requirement from cloth color, decoration or an equivalent hand pose. "
+        "If direction conflicts with a verified spoken action or safety condition, report that conflict; never excuse it. "
+        "Inspect EVERY panel and report ALL concerns together, with scene numbers and required versus observed state. "
+        "After an edit also inspect previously correct panels for regressions. "
+        "The approved topic is frozen for this candidate. Do not select a different topic during production or review."
+    )
+    prompts["developer_image"] += directed
+    prompts["main_audit"] += directed
+    image_result = run_dir / "developer-image.json"
+    if not image_result.is_file():
+        image_result = call_codex(root, run_dir, "developer-image", prompts["developer_image"], deadline=deadline)
+    image_receipt = parse_json_response(image_result)
+    if image_receipt.get("built_in_imagegen_called") is not True:
+        detail = image_receipt.get("failure_reason") or image_receipt.get("reason")
+        raise WorkflowSkipped("developer ImageGen failed: " + str(detail) if detail else
+                              "developer session did not confirm one successful built-in ImageGen call")
+    storyboard = day_dir / "storyboard.png"
+    # A valid saved image with visual concerns still needs independent audit and bounded repair.
+    image_hash = validate_new_storyboard(storyboard, day_dir, root)
+    atomic_json(run_dir / "imagegen-receipt.json", {**image_receipt, "sha256": image_hash})
+
+    content = dict(approved)
+    content["slot"] = slot
+    content["sources"] = approved["sources"]
+    atomic_json(day_dir / "content.json", content)
+    video_path = day_dir / f"life-tip-{day.isoformat()}.mp4"
+    render_marker = day_dir / "render-ready.json"
+    render_identity = hashlib.sha256(json.dumps(content, sort_keys=True).encode() + storyboard.read_bytes()).hexdigest()
+    cached_render = json.loads(render_marker.read_text(encoding="utf-8")) if render_marker.exists() else {}
+    render_valid = (cached_render.get("input_sha256") == render_identity and video_path.exists()
+                    and cached_render.get("full_decode_verified") is True
+                    and (day_dir / "metadata.json").exists()
+                    and cached_render.get("video_sha256") == hashlib.sha256(video_path.read_bytes()).hexdigest())
+    render = subprocess.CompletedProcess([], 0, "Reusing validated render", "") if render_valid else subprocess.run(
+        [sys.executable, str(root / "render_daily.py"), "--date", day.isoformat(), "--slot", slot,
+                 "--day-dir", str(day_dir), "--voice-cache", str(run_dir / "duration-preview")],
+        cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=stage_timeout(deadline, 20 * 60),
+        env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+        **hidden_process_options(),
+    )
+    (run_dir / "render.log").write_text((render.stdout or "") + (render.stderr or ""), encoding="utf-8")
+    if render.returncode:
+        detail = "local render or validation failed: " + (render.stderr or render.stdout)[-1000:]
+        if is_transient(detail):
+            raise RetryableError(detail)
+        raise WorkflowSkipped(detail)
+    video_hash = hashlib.sha256(video_path.read_bytes()).hexdigest()
+    atomic_json(render_marker, {"input_sha256": render_identity, "video_sha256": video_hash, "full_decode_verified": True})
+    metadata_path = day_dir / "metadata.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    audit_contact_sheet = make_render_contact_sheet(
+        day_dir / f"life-tip-{day.isoformat()}.mp4", day_dir, metadata,
+    )
+
+    required_audit_checks = {
+        "plan_matches_content", "sources_verified", "season_decision_valid", "history_distinct",
+        "viewer_value_valid", "viewer_pull_valid", "novelty_valid", "density_valid", "narration_flow_valid", "spoken_korean_valid",
+        "scenes_match_plan", "captions_readable", "no_visual_defects",
+        "dimensions_valid", "audio_present", "duration_valid",
+    }
+    audit = None
+    for repair_attempt in range(3):
+        audit_path = run_dir / ("main-audit.json" if repair_attempt == 0 else f"main-audit-repair-{repair_attempt}.json")
+        audit_marker = run_dir / "audit-ready.json"
+        cached_audit = json.loads(audit_marker.read_text(encoding="utf-8")) if audit_marker.exists() else {}
+        if not (audit_path.exists() and cached_audit.get("video_sha256") == video_hash):
+            try:
+                final_review = latest_editorial_review_path(run_dir)
+            except ValueError as exc:
+                raise FinalReviewRejected(str(exc)) from exc
+            audit_prompt = prompts["main_audit"].replace(
+                str(run_dir / "review.json"), str(final_review),
+            )
+            audit_path = call_codex(
+                root, run_dir, "main-audit" if repair_attempt == 0 else f"main-audit-repair-{repair_attempt}",
+                audit_prompt, image=audit_contact_sheet, deadline=deadline,
+            )
+        audit = parse_json_response(audit_path)
+        atomic_json(run_dir / "audit.json", audit)
+        checks = audit.get("checks")
+        if (audit.get("approved") is True and isinstance(checks, dict)
+                and all(checks.get(key) is True for key in required_audit_checks)):
+            break
+
+        repairable = {
+            "narration_flow_valid", "spoken_korean_valid", "scenes_match_plan", "captions_readable", "no_visual_defects",
+        }
+        visual_repair = isinstance(checks, dict) and any(
+            checks.get(key) is not True for key in ("scenes_match_plan", "no_visual_defects")
+        )
+        if visual_repair:
+            # A faulty demonstration can lower these scores even when the approved script is sound.
+            repairable.update({"density_valid", "viewer_pull_valid"})
+        factual_and_technical = required_audit_checks - repairable
+        if (repair_attempt >= 2 or not isinstance(checks, dict)
+                or any(checks.get(key) is not True for key in factual_and_technical)
+                or not any(checks.get(key) is not True for key in repairable)):
+            issues = audit.get("issues", [])
+            detail = "; ".join(str(item) for item in issues[:3]) if isinstance(issues, list) else str(issues)
+            raise FinalReviewRejected("rendered result failed final review" + (f": {detail}" if detail else ""))
+
+        if visual_repair:
+            if not record_failure(run_dir, "visual", audit, image_hash):
+                raise FinalReviewRejected("visual repair repeated the same failed state")
+            previous_image_hash = image_hash
+            repair_storyboard(root, run_dir, day_dir, audit, repair_attempt + 1, deadline)
+            image_hash = hashlib.sha256(storyboard.read_bytes()).hexdigest()
+            if image_hash == previous_image_hash:
+                raise FinalReviewRejected("visual repair made no change to the storyboard")
+            render = subprocess.run(
+                [sys.executable, str(root / "render_daily.py"), "--date", day.isoformat(), "--slot", slot,
+                 "--day-dir", str(day_dir), "--voice-cache", str(run_dir / "duration-preview")],
+                cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                timeout=stage_timeout(deadline, 20 * 60), env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+                **hidden_process_options(),
+            )
+            if render.returncode:
+                raise WorkflowSkipped("visual repair could not be rendered: " + (render.stderr or render.stdout)[-800:])
+            video_hash = hashlib.sha256(video_path.read_bytes()).hexdigest()
+            render_identity = hashlib.sha256(json.dumps(content, sort_keys=True).encode() + storyboard.read_bytes()).hexdigest()
+            atomic_json(render_marker, {"input_sha256": render_identity, "video_sha256": video_hash, "full_decode_verified": True})
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            audit_contact_sheet = make_render_contact_sheet(video_path, day_dir, metadata)
+            continue
+
+        feedback = {
+            "checks": checks,
+            "issues": audit.get("issues", []),
+            "correction_plan": correction_feedback("editorial", audit),
+            "instruction": (
+                "Revise narration, captions, scene boundaries, or visual_action only when the existing "
+                "storyboard visibly supports the revised wording. Preserve verified facts, source conditions, "
+                "viewer value, and natural spoken flow. Never claim an action or result that the still panel "
+                "does not show. If it cannot be made accurate against storyboard.png, leave the plan unchanged "
+                "and state why; the release will be skipped. Do not generate another image."
+            ),
+        }
+        atomic_json(run_dir / f"render-audit-feedback-{repair_attempt + 1}.json", feedback)
+        repair_prompt = prompts["main_approve"] + (
+            "\nPOST-RENDER REVISION: Read approved.json, content.json, storyboard.png, and "
+            f"render-audit-feedback-{repair_attempt + 1}.json. Return the complete corrected plan JSON. "
+            "Only correct wording/scene mapping to match what the existing image visibly proves. "
+            "Keep the existing scene count, panel order, and storyboard_grid unchanged. "
+            "Do not invent missing visual evidence or change verified facts. This uses the already generated image; "
+            "do not invoke ImageGen or upload. If safe correction is impossible, return the plan unchanged."
+        )
+        repaired_path = call_codex(
+            root, run_dir, f"main-postrender-refine-{repair_attempt + 1}", repair_prompt, deadline=deadline,
+        )
+        revised = parse_json_response(repaired_path)
+        if revised == approved:
+            issues = audit.get("issues", [])
+            detail = "; ".join(str(item) for item in issues[:3]) if isinstance(issues, list) else str(issues)
+            raise FinalReviewRejected("storyboard cannot support a safe editorial repair" + (f": {detail}" if detail else ""))
+        fixed_grid = approved.get("storyboard_grid")
+        fixed_count = len(approved["scenes"])
+        try:
+            approved = refine_editorial_plan(revised, day, root, run_dir, prompts, deadline, check_duration=True)
+        except ValueError as exc:
+            raise FinalReviewRejected(f"post-render editorial repair failed: {exc}") from exc
+        except WorkflowSkipped as exc:
+            if str(exc).startswith("editorial repair attempts exhausted:"):
+                raise FinalReviewRejected(f"post-render editorial repair failed: {exc}") from exc
+            raise
+        if len(approved["scenes"]) != fixed_count or approved.get("storyboard_grid") != fixed_grid:
+            raise FinalReviewRejected("post-render repair changed the fixed storyboard panel mapping")
+        atomic_json(run_dir / "approved.json", approved)
+        try:
+            prepare_scene_direction(approved, root, run_dir, prompts["review"].split("ROLE: REVIEW SESSION")[0],
+                                    call_codex, deadline)
+        except ValueError as exc:
+            raise FinalReviewRejected(f"revised scene direction rejected: {exc}") from exc
+        content = dict(approved)
+        content["slot"] = slot
+        content["sources"] = approved["sources"]
+        atomic_json(day_dir / "content.json", content)
+        render = subprocess.run(
+            [sys.executable, str(root / "render_daily.py"), "--date", day.isoformat(), "--slot", slot,
+                 "--day-dir", str(day_dir), "--voice-cache", str(run_dir / "duration-preview")],
+            cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace",
+            timeout=stage_timeout(deadline, 20 * 60), env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+            **hidden_process_options(),
+        )
+        (run_dir / f"render-repair-{repair_attempt + 1}.log").write_text(
+            (render.stdout or "") + (render.stderr or ""), encoding="utf-8",
+        )
+        if render.returncode:
+            raise WorkflowSkipped("editorial repair could not be rendered: " + (render.stderr or render.stdout)[-800:])
+        video_hash = hashlib.sha256(video_path.read_bytes()).hexdigest()
+        render_identity = hashlib.sha256(json.dumps(content, sort_keys=True).encode() + storyboard.read_bytes()).hexdigest()
+        atomic_json(render_marker, {"input_sha256": render_identity, "video_sha256": video_hash, "full_decode_verified": True})
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        audit_contact_sheet = make_render_contact_sheet(video_path, day_dir, metadata)
+    else:
+        raise FinalReviewRejected("final review repair attempts exhausted")
+    atomic_json(audit_marker, {"video_sha256": video_hash})
+    tiktok_copy = save_tiktok_copy(video_path, day, slot, root)
+    return {"approved": approved, "video_path": video_path, "metadata": metadata, "tiktok_copy": tiktok_copy}
 
 
 def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
@@ -1230,18 +1477,6 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
     try:
         deadline = release_deadline(run_dir, current, deadline)
         prompts = build_prompts(day, run_dir, day_dir, slot)
-        prompts["developer_image"] += (
-            "\nBefore the single ImageGen call, derive a per-panel state checklist from the approved plan: "
-            "before-state, hand action, direction, contact/attachment points, and after-state. "
-            "Check continuity between adjacent panels, all cut edges and safety conditions. "
-            "Use that checklist in the image prompt and inspect EVERY resulting panel against it. "
-            "Report all concerns together in the existing receipt; do not conceal uncertain details."
-        )
-        prompts["main_audit"] += (
-            "\nInspect every panel before returning the audit. Consolidate ALL visible defects, with scene numbers "
-            "and required versus observed state, into issues. Do not stop after the first defect. "
-            "Recheck previously correct panels after an edit for regressions."
-        )
         instruction = request.get("editorial_instruction", "")
         if instruction:
             prompts = {name: prompt + "\nUSER EDITORIAL INSTRUCTION: " + instruction
@@ -1254,11 +1489,10 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
                 "may generate one storyboard for this candidate. Rejected candidates: "
                 + json.dumps(request["rejected_candidates"], ensure_ascii=False)
             )
-            prompts = {name: prompt + retry_instruction for name, prompt in prompts.items()}
+            prompts["main_draft"] += retry_instruction
         if request.get("discovery_correction"):
-            prompts = {name: prompt + "\nDISCOVERY CORRECTION PLAN: "
-                       + json.dumps(request["discovery_correction"], ensure_ascii=False)
-                       for name, prompt in prompts.items()}
+            prompts["main_draft"] += "\nDISCOVERY CORRECTION PLAN: " + json.dumps(
+                request["discovery_correction"], ensure_ascii=False)
         try:
             preflight(root)
         except Exception as exc:
@@ -1283,227 +1517,20 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
         if any(item.get("topic") == draft.get("topic") for item in request.get("rejected_candidates", [])
                if item.get("topic")):
             raise TopicSelectionRejected("discovery repeated a rejected topic without a new practical action")
-        try:
-            validate_plan(draft, day)
-        except ValueError:
-            atomic_json(run_dir / "approved.json", draft)
-            try:
-                draft = refine_editorial_plan(draft, day, root, run_dir, prompts, deadline)
-            except WorkflowSkipped as exc:
-                if str(exc).startswith("editorial repair attempts exhausted:"):
-                    raise FinalReviewRejected(str(exc)) from exc
-                raise
         atomic_json(run_dir / "draft.json", draft)
-
-        review_path = run_dir / "review.json"
-        if not review_path.is_file():
-            review_path = call_codex(root, run_dir, "review", prompts["review"], web_search=True, deadline=deadline)
-        review = parse_json_response(review_path)
-        atomic_json(run_dir / "review.json", review)
-        try:
-            validate_review(review, len(draft["scenes"]))
-        except WorkflowSkipped:
-            # Repair preliminary findings, then require every final review check before ImageGen.
-            # Main approval must reject any factual or safety issue it cannot resolve.
-            pass
-
-        approved_path = run_dir / "main-approve.json"
-        if not approved_path.is_file():
-            approval_prompt = prompts["main_approve"] + "\nPRELIMINARY CORRECTION PLAN: " + json.dumps(
-                correction_feedback("editorial", review), ensure_ascii=False)
-            approved_path = call_codex(root, run_dir, "main-approve", approval_prompt, web_search=True, deadline=deadline)
-        approved = parse_json_response(approved_path)
-        if approved.get("approved") is False:
-            raise FinalReviewRejected(str(approved.get("reason", "main session did not approve the reviewed plan")))
-        validate_plan(approved, day)
-        try:
-            approved = refine_editorial_plan(approved, day, root, run_dir, prompts, deadline, check_duration=True)
-        except WorkflowSkipped as exc:
-            if str(exc).startswith("editorial repair attempts exhausted:"):
-                raise FinalReviewRejected(str(exc)) from exc
-            raise
-        atomic_json(run_dir / "approved.json", approved)
-
-        image_result = run_dir / "developer-image.json"
-        if not image_result.is_file():
-            image_result = call_codex(root, run_dir, "developer-image", prompts["developer_image"], deadline=deadline)
-        image_receipt = parse_json_response(image_result)
-        if image_receipt.get("built_in_imagegen_called") is not True:
-            detail = image_receipt.get("failure_reason") or image_receipt.get("reason")
-            raise WorkflowSkipped("developer ImageGen failed: " + str(detail) if detail else
-                                  "developer session did not confirm one successful built-in ImageGen call")
-        storyboard = day_dir / "storyboard.png"
-        # A valid saved image with visual concerns still needs independent audit and bounded repair.
-        image_hash = validate_new_storyboard(storyboard, day_dir, root)
-        atomic_json(run_dir / "imagegen-receipt.json", {**image_receipt, "sha256": image_hash})
-
-        content = dict(approved)
-        content["slot"] = slot
-        content["sources"] = approved["sources"]
-        atomic_json(day_dir / "content.json", content)
-        video_path = day_dir / f"life-tip-{day.isoformat()}.mp4"
-        render_marker = day_dir / "render-ready.json"
-        render_identity = hashlib.sha256(json.dumps(content, sort_keys=True).encode() + storyboard.read_bytes()).hexdigest()
-        cached_render = json.loads(render_marker.read_text(encoding="utf-8")) if render_marker.exists() else {}
-        render_valid = (cached_render.get("input_sha256") == render_identity and video_path.exists()
-                        and (day_dir / "metadata.json").exists()
-                        and cached_render.get("video_sha256") == hashlib.sha256(video_path.read_bytes()).hexdigest())
-        render = subprocess.CompletedProcess([], 0, "Reusing validated render", "") if render_valid else subprocess.run(
-            [sys.executable, str(root / "render_daily.py"), "--date", day.isoformat(), "--slot", slot],
-            cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=stage_timeout(deadline, 20 * 60),
-            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
-            **hidden_process_options(),
-        )
-        (run_dir / "render.log").write_text((render.stdout or "") + (render.stderr or ""), encoding="utf-8")
-        if render.returncode:
-            detail = "local render or validation failed: " + (render.stderr or render.stdout)[-1000:]
-            if is_transient(detail):
-                raise RetryableError(detail)
-            raise WorkflowSkipped(detail)
-        video_hash = hashlib.sha256(video_path.read_bytes()).hexdigest()
-        atomic_json(render_marker, {"input_sha256": render_identity, "video_sha256": video_hash})
-        metadata_path = day_dir / "metadata.json"
-        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-        audit_contact_sheet = make_render_contact_sheet(
-            day_dir / f"life-tip-{day.isoformat()}.mp4", day_dir, metadata,
-        )
-
-        required_audit_checks = {
-            "plan_matches_content", "sources_verified", "season_decision_valid", "history_distinct",
-            "viewer_value_valid", "viewer_pull_valid", "novelty_valid", "density_valid", "narration_flow_valid", "spoken_korean_valid",
-            "scenes_match_plan", "captions_readable", "no_visual_defects",
-            "dimensions_valid", "audio_present", "duration_valid",
-        }
-        audit = None
-        for repair_attempt in range(3):
-            audit_path = run_dir / ("main-audit.json" if repair_attempt == 0 else f"main-audit-repair-{repair_attempt}.json")
-            audit_marker = run_dir / "audit-ready.json"
-            cached_audit = json.loads(audit_marker.read_text(encoding="utf-8")) if audit_marker.exists() else {}
-            if not (audit_path.exists() and cached_audit.get("video_sha256") == video_hash):
-                try:
-                    final_review = latest_editorial_review_path(run_dir)
-                except ValueError as exc:
-                    raise FinalReviewRejected(str(exc)) from exc
-                audit_prompt = prompts["main_audit"].replace(
-                    str(run_dir / "review.json"), str(final_review),
-                )
-                audit_path = call_codex(
-                    root, run_dir, "main-audit" if repair_attempt == 0 else f"main-audit-repair-{repair_attempt}",
-                    audit_prompt, image=audit_contact_sheet, deadline=deadline,
-                )
-            audit = parse_json_response(audit_path)
-            atomic_json(run_dir / "audit.json", audit)
-            checks = audit.get("checks")
-            if (audit.get("approved") is True and isinstance(checks, dict)
-                    and all(checks.get(key) is True for key in required_audit_checks)):
-                break
-
-            repairable = {
-                "narration_flow_valid", "spoken_korean_valid", "scenes_match_plan", "captions_readable", "no_visual_defects",
-            }
-            visual_repair = isinstance(checks, dict) and any(
-                checks.get(key) is not True for key in ("scenes_match_plan", "no_visual_defects")
-            )
-            if visual_repair:
-                # A faulty demonstration can lower these scores even when the approved script is sound.
-                repairable.update({"density_valid", "viewer_pull_valid"})
-            factual_and_technical = required_audit_checks - repairable
-            if (repair_attempt >= 2 or not isinstance(checks, dict)
-                    or any(checks.get(key) is not True for key in factual_and_technical)
-                    or not any(checks.get(key) is not True for key in repairable)):
-                issues = audit.get("issues", [])
-                detail = "; ".join(str(item) for item in issues[:3]) if isinstance(issues, list) else str(issues)
-                raise FinalReviewRejected("rendered result failed final review" + (f": {detail}" if detail else ""))
-
-            if visual_repair:
-                if not record_failure(run_dir, "visual", audit, image_hash):
-                    raise FinalReviewRejected("visual repair repeated the same failed state")
-                previous_image_hash = image_hash
-                repair_storyboard(root, run_dir, day_dir, audit, repair_attempt + 1, deadline)
-                image_hash = hashlib.sha256(storyboard.read_bytes()).hexdigest()
-                if image_hash == previous_image_hash:
-                    raise FinalReviewRejected("visual repair made no change to the storyboard")
-                render = subprocess.run(
-                    [sys.executable, str(root / "render_daily.py"), "--date", day.isoformat(), "--slot", slot],
-                    cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace",
-                    timeout=stage_timeout(deadline, 20 * 60), env={**os.environ, "PYTHONIOENCODING": "utf-8"},
-                    **hidden_process_options(),
-                )
-                if render.returncode:
-                    raise WorkflowSkipped("visual repair could not be rendered: " + (render.stderr or render.stdout)[-800:])
-                video_hash = hashlib.sha256(video_path.read_bytes()).hexdigest()
-                render_identity = hashlib.sha256(json.dumps(content, sort_keys=True).encode() + storyboard.read_bytes()).hexdigest()
-                atomic_json(render_marker, {"input_sha256": render_identity, "video_sha256": video_hash})
-                metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-                audit_contact_sheet = make_render_contact_sheet(video_path, day_dir, metadata)
-                continue
-
-            feedback = {
-                "checks": checks,
-                "issues": audit.get("issues", []),
-                "correction_plan": correction_feedback("editorial", audit),
-                "instruction": (
-                    "Revise narration, captions, scene boundaries, or visual_action only when the existing "
-                    "storyboard visibly supports the revised wording. Preserve verified facts, source conditions, "
-                    "viewer value, and natural spoken flow. Never claim an action or result that the still panel "
-                    "does not show. If it cannot be made accurate against storyboard.png, leave the plan unchanged "
-                    "and state why; the release will be skipped. Do not generate another image."
-                ),
-            }
-            atomic_json(run_dir / f"render-audit-feedback-{repair_attempt + 1}.json", feedback)
-            repair_prompt = prompts["main_approve"] + (
-                "\nPOST-RENDER REVISION: Read approved.json, content.json, storyboard.png, and "
-                f"render-audit-feedback-{repair_attempt + 1}.json. Return the complete corrected plan JSON. "
-                "Only correct wording/scene mapping to match what the existing image visibly proves. "
-                "Keep the existing scene count, panel order, and storyboard_grid unchanged. "
-                "Do not invent missing visual evidence or change verified facts. This uses the already generated image; "
-                "do not invoke ImageGen or upload. If safe correction is impossible, return the plan unchanged."
-            )
-            repaired_path = call_codex(
-                root, run_dir, f"main-postrender-refine-{repair_attempt + 1}", repair_prompt, deadline=deadline,
-            )
-            revised = parse_json_response(repaired_path)
-            if revised == approved:
-                issues = audit.get("issues", [])
-                detail = "; ".join(str(item) for item in issues[:3]) if isinstance(issues, list) else str(issues)
-                raise FinalReviewRejected("storyboard cannot support a safe editorial repair" + (f": {detail}" if detail else ""))
-            fixed_grid = approved.get("storyboard_grid")
-            fixed_count = len(approved["scenes"])
-            try:
-                approved = refine_editorial_plan(revised, day, root, run_dir, prompts, deadline)
-            except ValueError as exc:
-                raise FinalReviewRejected(f"post-render editorial repair failed: {exc}") from exc
-            except WorkflowSkipped as exc:
-                if str(exc).startswith("editorial repair attempts exhausted:"):
-                    raise FinalReviewRejected(f"post-render editorial repair failed: {exc}") from exc
-                raise
-            if len(approved["scenes"]) != fixed_count or approved.get("storyboard_grid") != fixed_grid:
-                raise FinalReviewRejected("post-render repair changed the fixed storyboard panel mapping")
-            atomic_json(run_dir / "approved.json", approved)
-            content = dict(approved)
-            content["slot"] = slot
-            content["sources"] = approved["sources"]
-            atomic_json(day_dir / "content.json", content)
-            render = subprocess.run(
-                [sys.executable, str(root / "render_daily.py"), "--date", day.isoformat(), "--slot", slot],
-                cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace",
-                timeout=stage_timeout(deadline, 20 * 60), env={**os.environ, "PYTHONIOENCODING": "utf-8"},
-                **hidden_process_options(),
-            )
-            (run_dir / f"render-repair-{repair_attempt + 1}.log").write_text(
-                (render.stdout or "") + (render.stderr or ""), encoding="utf-8",
-            )
-            if render.returncode:
-                raise WorkflowSkipped("editorial repair could not be rendered: " + (render.stderr or render.stdout)[-800:])
-            video_hash = hashlib.sha256(video_path.read_bytes()).hexdigest()
-            render_identity = hashlib.sha256(json.dumps(content, sort_keys=True).encode() + storyboard.read_bytes()).hexdigest()
-            atomic_json(render_marker, {"input_sha256": render_identity, "video_sha256": video_hash})
-            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-            audit_contact_sheet = make_render_contact_sheet(video_path, day_dir, metadata)
-        else:
-            raise FinalReviewRejected("final review repair attempts exhausted")
-        atomic_json(audit_marker, {"video_sha256": video_hash})
-        tiktok_copy = save_tiktok_copy(video_path, day, slot, root)
+        cached_approval = run_dir / "main-approve.json"
+        if cached_approval.exists():
+            previous_approval = parse_json_response(cached_approval)
+            if previous_approval.get("approved") is False:
+                raise FinalReviewRejected(str(previous_approval.get("reason", "main session rejected this candidate")))
+        # Resume corrected work; fresh runs go directly through the same final-review loop as manual plans.
+        ready_plan = run_dir / "approved.json"
+        plan = parse_json_response(ready_plan) if ready_plan.exists() else draft
+        production = produce_reviewed_video(plan, day, slot, root, run_dir, day_dir, prompts, deadline)
+        approved = production["approved"]
+        metadata = production["metadata"]
+        video_path = production["video_path"]
+        tiktok_copy = production["tiktok_copy"]
         if render_only:
             return write_report(day, "rendered", "complete", "", {
                 "video": str(video_path), "tiktok_mp4": str(tiktok_copy),
@@ -1545,15 +1572,24 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
             "tiktok_mp4": str(tiktok_copy),
         }, root=root, slot=slot)
     except ImprovementLimitReached as exc:
-        return write_report(day, "cancelled", "improvement_limit", str(exc), root=root, slot=slot)
+        prepare_next_candidate(request, str(exc), root, allow_next=False)
+        atomic_json(request_file, request)
+        return write_report(day, "cancelled", "improvement_limit", str(exc),
+                            {"candidate_results": request.get("rejected_candidates", [])}, root=root, slot=slot)
     except FinalReviewRejected as exc:
         if prepare_next_candidate(request, str(exc), root):
             atomic_json(request_file, request)
             return process_request(request_file, root)
-        return write_report(day, "skipped" if isinstance(exc, TopicSelectionRejected) else "cancelled",
-                            "topic_selection" if isinstance(exc, TopicSelectionRejected) else "final_review",
-                            f"3 candidates rejected; last issue: {exc}",
-                            {"candidate_attempts": 3}, root=root, slot=slot)
+        atomic_json(request_file, request)
+        failures = request.get("rejected_candidates", [])
+        video_failed = any(item.get("video_created") or item.get("stage") == "final_review" for item in failures)
+        summary = "; ".join(f"candidate {item['candidate']} [{item.get('stage', 'unknown')}]: "
+                            f"{item.get('topic') or 'unselected'} — {item.get('reason', '')}" for item in failures)
+        return write_report(day, "skipped" if isinstance(exc, TopicSelectionRejected) and not video_failed else "cancelled",
+                            "final_review" if video_failed else "topic_selection" if isinstance(exc, TopicSelectionRejected) else "final_review",
+                            f"3 candidates rejected; {summary}",
+                            {"candidate_attempts": 3, "candidate_results": failures,
+                             "last_failure_stage": failures[-1]["stage"]}, root=root, slot=slot)
     except WorkflowSkipped as exc:
         return write_report(day, "skipped", "workflow", str(exc), root=root, slot=slot)
     except Exception as exc:
@@ -1563,6 +1599,41 @@ def process_request(request_file: Path, root: Path = ROOT) -> dict[str, Any]:
         if is_transient(exc):
             return retry_report(day, request, exc, root)
         return write_report(day, "failed", "workflow", f"{type(exc).__name__}: {exc}", root=root, slot=slot)
+
+
+def render_selected_plan(plan_file: Path, output_dir: Path | None = None, root: Path = ROOT) -> dict:
+    """Render a user-selected script through the scheduled production core, without publishing."""
+    day = now_kst().date()
+    plan_file = plan_file.resolve()
+    if root.resolve() not in plan_file.parents:
+        raise ValueError("the selected plan must be inside youtube_life_tips")
+    plan = parse_json_response(plan_file)
+    validate_plan(plan, day)
+    samples = (root / "work" / "samples").resolve()
+    day_dir = output_dir.resolve() if output_dir else samples / f"{day}-manual-{uuid.uuid4().hex[:8]}"
+    if samples not in day_dir.parents:
+        raise ValueError("manual sample output must be inside youtube_life_tips/work/samples")
+    run_dir = day_dir / "production"
+    input_marker = run_dir / "manual-input.json"
+    if day_dir.exists() and any(day_dir.iterdir()) and not input_marker.exists():
+        raise ValueError("output folder already contains other work; choose a new sample folder")
+    run_dir.mkdir(parents=True, exist_ok=True)
+    if input_marker.exists() and parse_json_response(input_marker).get("plan_sha256") != plan_hash(plan):
+        raise ValueError("output folder belongs to another plan; choose a new sample folder")
+    atomic_json(input_marker, {"plan_sha256": plan_hash(plan), "source": str(plan_file)})
+    atomic_json(run_dir / "draft.json", plan)
+    validate_local_runtime(root)
+    prompts = build_prompts(day, run_dir, day_dir, "manual")
+    if (run_dir / "approved.json").exists():
+        plan = parse_json_response(run_dir / "approved.json")
+    production = produce_reviewed_video(plan, day, "manual", root, run_dir, day_dir, prompts,
+                                        now_kst() + timedelta(hours=1))
+    result = {"status": "rendered", "video": str(production["video_path"]),
+              "tiktok_mp4": str(production["tiktok_copy"]), "topic": production["approved"]["topic"],
+              "duration_seconds": production["metadata"].get("duration_seconds"),
+              "uploaded": False, "production_run": str(run_dir)}
+    atomic_json(day_dir / "result.json", result)
+    return result
 
 
 def move_request(request_file: Path, destination: Path) -> Path:
@@ -1722,7 +1793,14 @@ def main() -> None:
     watch_parser = subparsers.add_parser("watch", help="watch the local inbox and dispatch one request at a time")
     watch_parser.add_argument("--poll-seconds", type=float, default=POLL_SECONDS)
     watch_parser.add_argument("--once", action="store_true", help="process at most one queued request and exit")
+    manual_parser = subparsers.add_parser("render-plan", help="render a selected plan using the same production core as scheduled releases; no upload")
+    manual_parser.add_argument("--plan-file", type=Path, required=True)
+    manual_parser.add_argument("--output-dir", type=Path, help="optional new directory under work/samples")
     args = parser.parse_args()
+    if args.command == "render-plan":
+        result = render_selected_plan(args.plan_file, args.output_dir)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return
     if args.command == "doctor":
         result = doctor(args.require_youtube)
         print(json.dumps(result, ensure_ascii=False, indent=2))

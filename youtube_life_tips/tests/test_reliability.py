@@ -274,6 +274,11 @@ class MailboxRecoveryTests(unittest.TestCase):
                 if name == "developer-image":
                     Image.new("RGB", (900, 1400), "blue").save(daily / "storyboard.png")
                     result = {"status": "ok", "built_in_imagegen_called": True}
+                if name == "scene-direction":
+                    result = {"feasible": True, "object_identity": "same object", "unresolved_risks": [],
+                              "panels": [{"scene": i, "before_state": "before", "hand_action": "act",
+                                  "orientation_and_contact": "hold", "after_state": "after", "continuity": "next",
+                                  "critical_checks": ["actual result"], "incidental_details": []} for i in range(1, 5)]}
                 if name == "main-audit":
                     keys = ["plan_matches_content", "sources_verified", "season_decision_valid", "history_distinct", "viewer_value_valid", "viewer_pull_valid", "novelty_valid", "density_valid", "narration_flow_valid", "spoken_korean_valid", "scenes_match_plan", "captions_readable", "no_visual_defects", "dimensions_valid", "audio_present", "duration_valid"]
                     result = {"approved": True, "checks": dict.fromkeys(keys, True)}

@@ -29,7 +29,7 @@ class ReleaseSlotTests(unittest.TestCase):
                 self.assertTrue((folder / f"rejected-candidates/{number}/storyboard.png").exists())
                 self.assertFalse((folder / "storyboard.png").exists())
             self.assertFalse(m.prepare_next_candidate(request, "bad visual", root))
-            self.assertEqual(len(request["rejected_candidates"]), 2)
+            self.assertEqual(len(request["rejected_candidates"]), 3)
 
     def test_third_final_rejection_is_cancelled_without_uploading(self):
         with tempfile.TemporaryDirectory() as tmp, \
@@ -45,6 +45,20 @@ class ReleaseSlotTests(unittest.TestCase):
             self.assertEqual(result["status"], "cancelled", result)
             self.assertEqual(result["candidate_attempts"], 3)
             external.assert_not_called()
+
+    def test_budget_stop_records_current_failure_without_moving_an_upload_session(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            folder = root / "work/daily/2026-10-26-pm"
+            atomic_json(folder / "upload_session.json", {"status": "pending"})
+            atomic_json(folder / "content.json", {"topic": "selected tip"})
+            (folder / "example.mp4").write_bytes(b"keep")
+            request = {"date": str(DAY), "slot": "pm"}
+            self.assertFalse(m.prepare_next_candidate(request, "release time budget exhausted", root, allow_next=False))
+            self.assertEqual(request["rejected_candidates"][0]["topic"], "selected tip")
+            self.assertTrue((folder / "upload_session.json").exists())
+            self.assertEqual((folder / "example.mp4").read_bytes(), b"keep")
+            self.assertNotIn("candidate_attempt", request)
 
     def test_main_rejection_tries_next_topic(self):
         with tempfile.TemporaryDirectory() as tmp, \
@@ -66,7 +80,7 @@ class ReleaseSlotTests(unittest.TestCase):
             self.assertEqual(result["status"], "cancelled", result)
             saved = json.loads(request_path.read_text(encoding="utf-8"))
             self.assertEqual(saved["candidate_attempt"], 3)
-            self.assertEqual(saved["rejected_candidates"][-1]["topic"], "duplicate second")
+            self.assertEqual(saved["rejected_candidates"][-2]["topic"], "duplicate second")
 
     def test_immediate_release_has_its_own_key_even_after_regular_failures(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(m, "preflight"):
@@ -142,6 +156,8 @@ class ReleaseSlotTests(unittest.TestCase):
             def stage(root_arg, run_dir, name, prompt, **kwargs):
                 daily = root / "work/daily" / run_dir.name
                 result = plan
+                if name == "main-refine-1" and run_dir.name.endswith("-pm"):
+                    result = {**plan, "description": "Corrected source evidence and safety ordering."}
                 if name == "review" or name.startswith("final-review"):
                     result = dict.fromkeys(("approved", "selection_rule_pass", "category_balance_pass", "originality_pass", "sources_verified",
                                             "safety_pass", "usefulness_pass", "novelty_pass", "density_pass", "flow_pass", "naturalness_pass"), True)
@@ -149,7 +165,14 @@ class ReleaseSlotTests(unittest.TestCase):
                                   problem_relevance_score=4, practical_payoff_score=4, surprise_score=4, watch_worthiness_score=4,
                                   problem_relevance_reason="common", practical_payoff_reason="useful", surprise_reason="new",
                                   watch_worthiness_reason="worthwhile")
+                elif name == "scene-direction":
+                    result = {"feasible": True, "object_identity": "same object", "unresolved_risks": [],
+                              "panels": [{"scene": i, "before_state": "before", "hand_action": "act",
+                                  "orientation_and_contact": "hold", "after_state": "after", "continuity": "next",
+                                  "critical_checks": ["actual result"], "incidental_details": []} for i in range(1, 5)]}
+                    self.assertNotIn("Choose a DIFFERENT topic", prompt)
                 elif name == "developer-image":
+                    self.assertIn("scene-direction.json", prompt)
                     Image.new("RGB", (1086, 1448), "red" if run_dir.name.endswith("-pm") else "purple" if run_dir.name.endswith("-manual") else "blue").save(daily / "storyboard.png")
                     result = {"status": "ok", "built_in_imagegen_called": True}
                     if run_dir.name.endswith("-pm"):
@@ -173,7 +196,7 @@ class ReleaseSlotTests(unittest.TestCase):
                     result.update(viewer_recap="ordered actions and outcomes", transition_checks=[
                         {"from_scene": i, "to_scene": i + 1, "clear": True, "evidence": "after the previous action"}
                         for i in range(1, 4)], scene_count=4)
-                if name == "review" and run_dir.name.endswith("-pm"):
+                if name == "final-review-0" and run_dir.name.endswith("-pm"):
                     result.update(approved=False, sources_verified=False, safety_pass=False,
                                   issues=["Remove an inaccessible extra source and move the safety condition before the action; verify the corrected plan again."])
                 path = run_dir / f"{name}.json"
@@ -214,6 +237,31 @@ class ReleaseSlotTests(unittest.TestCase):
             receipt = json.loads((root / "work/mailbox/runs/2026-10-26-pm/imagegen-receipt.json").read_text(encoding="utf-8"))
             self.assertEqual(receipt["status"], "failed")
             self.assertIn("groove", receipt["failure_reason"])
+
+    def test_final_report_retains_video_failure_when_last_discovery_fails(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(m, "preflight"), \
+             patch.object(m, "send_result_email", return_value=None), \
+             patch.object(m, "now_kst", return_value=datetime(2026, 10, 26, 15, tzinfo=m.KST)):
+            root = Path(tmp)
+            request = root / "request.json"
+            atomic_json(request, {"date": str(DAY), "slot": "pm", "candidate_attempt": 3,
+                                 "rejected_candidates": [{"candidate": 1, "stage": "topic_selection"},
+                                     {"candidate": 2, "stage": "final_review", "topic": "wire hanger",
+                                      "reason": "invented joint", "video_created": True}]})
+            def stage(_root, run_dir, name, prompt, **kwargs):
+                self.assertEqual(name, "main-draft")
+                self.assertIn("Choose a DIFFERENT topic", prompt)
+                path = run_dir / f"{name}.json"
+                atomic_json(path, {"status": "no_eligible_topic", "reason": "no new supported result"})
+                return path
+            with patch.object(m, "call_codex", side_effect=stage), patch.object(m.subprocess, "run") as external:
+                result = m.process_request(request, root)
+            self.assertEqual(result["status"], "cancelled", result)
+            self.assertEqual(result["stage"], "final_review")
+            self.assertEqual(result["last_failure_stage"], "topic_selection")
+            self.assertEqual(len(result["candidate_results"]), 3)
+            self.assertEqual(result["candidate_results"][1]["reason"], "invented joint")
+            external.assert_not_called()
 
 
 if __name__ == "__main__":

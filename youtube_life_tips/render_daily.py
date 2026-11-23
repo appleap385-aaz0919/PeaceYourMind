@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import math
 import subprocess
@@ -18,6 +19,7 @@ from life_schedule import release_key
 from background_process import hidden_process_options
 from editorial import STORYBOARD_MIN_ASPECT, demo_storyboard_grid, validate_script
 from video_limits import MIN_DURATION_SECONDS, MAX_DURATION_SECONDS, validate_duration
+from reliability import atomic_json
 
 
 ROOT = Path(__file__).resolve().parent
@@ -93,6 +95,32 @@ async def synthesize_segments(
         await edge_tts.Communicate(
             scene["narration"], VOICE, rate=rate, pitch="+1Hz"
         ).save(str(output))
+
+
+def voice_signature(content: dict) -> str:
+    value = {"narration": [scene["narration"] for scene in content["scenes"]],
+             "rate": content.get("voice_rate", "+8%"), "voice": VOICE, "pitch": "+1Hz"}
+    return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
+
+
+def cached_voice_paths(content: dict, cache_dir: Path) -> list[Path] | None:
+    manifest = cache_dir / "voice-cache.json"
+    if not manifest.exists():
+        return None
+    cache = json.loads(manifest.read_text(encoding="utf-8"))
+    paths = [cache_dir / f"voice-{index}.mp3" for index in range(len(content["scenes"]))]
+    if (cache.get("narration_sha256") != voice_signature(content)
+            or cache.get("file_sha256") != [hashlib.sha256(path.read_bytes()).hexdigest()
+                                           if path.is_file() else None for path in paths]):
+        return None
+    return paths
+
+
+def save_voice_cache(content: dict, cache_dir: Path, paths: list[Path]) -> None:
+    atomic_json(cache_dir / "voice-cache.json", {
+        "narration_sha256": voice_signature(content),
+        "file_sha256": [hashlib.sha256(path.read_bytes()).hexdigest() for path in paths],
+    })
 
 
 def load_panels(path: Path, columns: int = 2, rows: int = 2) -> list[Image.Image]:
@@ -321,6 +349,8 @@ def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path]
             or not MIN_DURATION_SECONDS <= actual_duration <= MAX_DURATION_SECONDS
             or not has_audio(output)):
         raise RuntimeError("render validation failed: incorrect dimensions/duration or missing audio")
+    # Probe results alone cannot detect damaged frames later in a completed file.
+    run(["ffmpeg", "-hide_banner", "-v", "error", "-xerror", "-i", str(output), "-f", "null", "-"])
     title = content["title"].strip()
     if "#Shorts" not in title:
         title += " #Shorts"
@@ -336,6 +366,7 @@ def render_video(day_dir: Path, content: dict[str, Any], voice_paths: list[Path]
         "voice_rate": content.get("voice_rate", "+8%"),
         "narration_seconds": [round(value, 2) for value in lengths], "sources": content["sources"],
         "render_style": "photoreal_demo",
+        "full_decode_verified": True,
         "screen_text": {"hook": content["hook"], "captions": [scene["caption"] for scene in content["scenes"]],
                         "headings": [display_heading(content["hook"], scene.get("heading"), i) for i, scene in enumerate(content["scenes"])], "ai_label": "AI 재현"},
     }
@@ -347,15 +378,25 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--date", help="Asia/Seoul date in YYYY-MM-DD; defaults to today")
     parser.add_argument("--slot", choices=("am", "pm", "manual"), default="am")
+    parser.add_argument("--day-dir", type=Path, help="project work directory for a manually selected plan")
+    parser.add_argument("--voice-cache", type=Path, help="reuse the exact narration measured during editorial review")
     args = parser.parse_args()
     today = date.fromisoformat(args.date) if args.date else datetime.now(ZoneInfo("Asia/Seoul")).date()
-    day_dir = WORK / release_key(today, args.slot)
+    day_dir = args.day_dir.resolve() if args.day_dir else WORK / release_key(today, args.slot)
+    if (ROOT / "work").resolve() not in day_dir.resolve().parents:
+        raise ValueError("render output must remain inside this project's work folder")
+    if args.voice_cache and (ROOT / "work").resolve() not in args.voice_cache.resolve().parents:
+        raise ValueError("reviewed narration cache must remain inside this project's work folder")
     content = load_content(day_dir / "content.json", today)
     if content.get("slot", "am") != args.slot:
         raise ValueError("content slot does not match the requested release")
     validate_layout(content)
-    voice_paths = [day_dir / f"voice_{index + 1}.mp3" for index in range(len(content["scenes"]))]
-    asyncio.run(synthesize_segments(content["scenes"], voice_paths, rate=content.get("voice_rate", "+8%")))
+    voice_paths = cached_voice_paths(content, args.voice_cache) if args.voice_cache else None
+    if voice_paths is None:
+        if args.voice_cache:
+            raise ValueError("reviewed narration cache is missing or differs from content; remeasure before rendering")
+        voice_paths = [day_dir / f"voice_{index + 1}.mp3" for index in range(len(content["scenes"]))]
+        asyncio.run(synthesize_segments(content["scenes"], voice_paths, rate=content.get("voice_rate", "+8%")))
     render_video(day_dir, content, voice_paths, day_dir / f"life-tip-{today.isoformat()}.mp4")
 
 
